@@ -35,6 +35,7 @@ import tensorflow as tf
 from tensorflow.python.data.ops.iterator_ops import OwnedIterator as DatasetOwnedIterator
 
 from ..base import InputData, OutputData, RegressionData
+from ..experimental.check_shapes import check_shapes
 
 Data = TypeVar("Data", RegressionData, InputData, OutputData)
 
@@ -52,12 +53,15 @@ class InternalDataTrainingLossMixin:
     own their own data.
     """
 
+    @check_shapes(
+        "return: []",
+    )
     def training_loss(self) -> tf.Tensor:
         """
         Returns the training loss for this model.
         """
         # Type-ignore is because _training_loss should be added by implementing class.
-        return self._training_loss()  # type: ignore
+        return self._training_loss()  # type: ignore[attr-defined]
 
     def training_loss_closure(self, *, compile: bool = True) -> Callable[[], tf.Tensor]:
         """
@@ -88,6 +92,11 @@ class ExternalDataTrainingLossMixin:
     their own data.
     """
 
+    @check_shapes(
+        "data[0]: [N, D]",
+        "data[1]: [N, P]",
+        "return: []",
+    )
     def training_loss(self, data: Data) -> tf.Tensor:
         """
         Returns the training loss for this model.
@@ -95,7 +104,7 @@ class ExternalDataTrainingLossMixin:
         :param data: the data to be used for computing the model objective.
         """
         # Type-ignore is because _training_loss should be added by implementing class.
-        return self._training_loss(data)  # type: ignore
+        return self._training_loss(data)  # type: ignore[attr-defined]
 
     def training_loss_closure(
         self,
@@ -117,8 +126,10 @@ class ExternalDataTrainingLossMixin:
 
         if isinstance(data, DatasetOwnedIterator):
             if compile:
+                # lambda because: https://github.com/GPflow/GPflow/issues/1929
+                training_loss_lambda = lambda d: self.training_loss(d)
                 input_signature = [data.element_spec]
-                training_loss = tf.function(training_loss, input_signature=input_signature)
+                training_loss = tf.function(training_loss_lambda, input_signature=input_signature)
 
             def closure() -> tf.Tensor:
                 assert isinstance(data, DatasetOwnedIterator)  # Hint for mypy.

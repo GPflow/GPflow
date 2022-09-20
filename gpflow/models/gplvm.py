@@ -21,11 +21,12 @@ from .. import covariances, kernels, likelihoods
 from ..base import InputData, MeanAndVariance, OutputData, Parameter, RegressionData, TensorType
 from ..config import default_float, default_jitter
 from ..expectations import expectation
+from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..inducing_variables import InducingPoints
 from ..kernels import Kernel
 from ..mean_functions import MeanFunction, Zero
 from ..probability_distributions import DiagonalGaussian
-from ..utilities import positive, to_default_float
+from ..utilities import assert_params_false, positive, to_default_float
 from ..utilities.ops import pca_reduce
 from .gpr import GPR
 from .model import GPModel
@@ -38,6 +39,10 @@ class GPLVM(GPR):
     Standard GPLVM where the likelihood can be optimised with respect to the latent X.
     """
 
+    @check_shapes(
+        "data: [N, P]",
+        "X_data_mean: [N, Q]",
+    )
     def __init__(
         self,
         data: OutputData,
@@ -49,9 +54,9 @@ class GPLVM(GPR):
         """
         Initialise GPLVM object. This method only works with a Gaussian likelihood.
 
-        :param data: y data matrix, size N (number of points) x D (dimensions)
+        :param data: y data matrix.
         :param latent_dim: the number of latent dimensions (Q)
-        :param X_data_mean: latent positions ([N, Q]), for the initialisation of the latent space.
+        :param X_data_mean: latent positions, for the initialisation of the latent space.
         :param kernel: kernel specification, by default Squared Exponential
         :param mean_function: mean function, by default None.
         """
@@ -77,6 +82,13 @@ class GPLVM(GPR):
 
 
 class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
+    @check_shapes(
+        "data: [N, P]",
+        "X_data_mean: [N, Q]",
+        "X_data_var: [N, Q]",
+        "X_prior_mean: [N, Q]",
+        "X_prior_var: [N, Q]",
+    )
     def __init__(
         self,
         data: OutputData,
@@ -91,7 +103,7 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
         """
         Initialise Bayesian GPLVM object. This method only works with a Gaussian likelihood.
 
-        :param data: data matrix, size N (number of points) x D (dimensions)
+        :param data: data matrix, size N (number of points) x P (dimensions)
         :param X_data_mean: initial latent positions, size N (number of points) x
             Q (latent dimensions).
         :param X_data_var: variance of latent positions ([N, Q]), for the initialisation of the
@@ -107,17 +119,12 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
         num_data, num_latent_gps = X_data_mean.shape
         super().__init__(kernel, likelihoods.Gaussian(), num_latent_gps=num_latent_gps)
         self.data = data_input_to_tensor(data)
-        assert X_data_var.ndim == 2
 
         self.X_data_mean = Parameter(X_data_mean)
         self.X_data_var = Parameter(X_data_var, transform=positive())
 
         self.num_data = num_data
         self.output_dim = self.data.shape[-1]
-
-        assert np.all(X_data_mean.shape == X_data_var.shape)
-        assert X_data_mean.shape[0] == self.data.shape[0], "X mean and Y must be same size."
-        assert X_data_var.shape[0] == self.data.shape[0], "X var and Y must be same size."
 
         if (inducing_variable is None) == (num_inducing_variables is None):
             raise ValueError(
@@ -144,15 +151,14 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
         self.X_prior_mean = tf.convert_to_tensor(np.atleast_1d(X_prior_mean), dtype=default_float())
         self.X_prior_var = tf.convert_to_tensor(np.atleast_1d(X_prior_var), dtype=default_float())
 
-        assert self.X_prior_mean.shape[0] == self.num_data
-        assert self.X_prior_mean.shape[1] == self.num_latent_gps
-        assert self.X_prior_var.shape[0] == self.num_data
-        assert self.X_prior_var.shape[1] == self.num_latent_gps
-
     # type-ignore is because of changed method signature:
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore
+    @inherit_check_shapes
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore[override]
         return self.elbo()
 
+    @check_shapes(
+        "return: []",
+    )
     def elbo(self) -> tf.Tensor:
         """
         Construct a tensorflow function to compute the bound on the marginal
@@ -209,6 +215,7 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
         bound -= KL
         return bound
 
+    @inherit_check_shapes
     def predict_f(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
@@ -221,8 +228,7 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
 
         :param Xnew: points at which to predict
         """
-        if full_output_cov:
-            raise NotImplementedError
+        assert_params_false(self.predict_f, full_output_cov=full_output_cov)
 
         pX = DiagonalGaussian(self.X_data_mean, self.X_data_var)
 
@@ -255,8 +261,8 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
                 + tf.linalg.matmul(tmp2, tmp2, transpose_a=True)
                 - tf.linalg.matmul(tmp1, tmp1, transpose_a=True)
             )
-            shape = tf.stack([1, 1, tf.shape(Y_data)[1]])
-            var = tf.tile(tf.expand_dims(var, 2), shape)
+            shape = tf.stack([tf.shape(Y_data)[1], 1, 1])
+            var = tf.tile(tf.expand_dims(var, 0), shape)
         else:
             var = (
                 self.kernel(Xnew, full_cov=False)
@@ -267,6 +273,7 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
             var = tf.tile(tf.expand_dims(var, 1), shape)
         return mean + self.mean_function(Xnew), var
 
+    @inherit_check_shapes
     def predict_log_density(
         self, data: RegressionData, full_cov: bool = False, full_output_cov: bool = False
     ) -> tf.Tensor:

@@ -19,6 +19,7 @@ from typing import Type, Union
 import tensorflow as tf
 
 from .. import mean_functions as mfn
+from ..experimental.check_shapes import check_shapes
 from ..probability_distributions import Gaussian
 from . import dispatch
 from .expectations import expectation
@@ -27,6 +28,10 @@ NoneType: Type[None] = type(None)
 
 
 @dispatch.expectation.register(Gaussian, (mfn.Linear, mfn.Constant), NoneType, NoneType, NoneType)
+@check_shapes(
+    "p: [N, D]",
+    "return: [N, Q]",
+)
 def _expectation_gaussian_linear(
     p: Gaussian,
     mean: Union[mfn.Linear, mfn.Constant],
@@ -46,6 +51,10 @@ def _expectation_gaussian_linear(
 
 
 @dispatch.expectation.register(Gaussian, mfn.Constant, NoneType, mfn.Constant, NoneType)
+@check_shapes(
+    "p: [N, D]",
+    "return: [N, Q1, Q2]",
+)
 def _expectation_gaussian_constant__constant(
     p: Gaussian, mean1: mfn.Constant, _: None, mean2: mfn.Constant, __: None, nghp: None = None
 ) -> tf.Tensor:
@@ -60,6 +69,10 @@ def _expectation_gaussian_constant__constant(
 
 
 @dispatch.expectation.register(Gaussian, mfn.Constant, NoneType, mfn.MeanFunction, NoneType)
+@check_shapes(
+    "p: [N, D]",
+    "return: [N, Q1, Q2]",
+)
 def _expectation_gaussian_constant__meanfunction(
     p: Gaussian, mean1: mfn.Constant, _: None, mean2: mfn.Constant, __: None, nghp: None = None
 ) -> tf.Tensor:
@@ -76,6 +89,10 @@ def _expectation_gaussian_constant__meanfunction(
 
 
 @dispatch.expectation.register(Gaussian, mfn.MeanFunction, NoneType, mfn.Constant, NoneType)
+@check_shapes(
+    "p: [N, D]",
+    "return: [N, Q1, Q2]",
+)
 def _expectation_gaussian_meanfunction__constant(
     p: Gaussian,
     mean1: mfn.MeanFunction,
@@ -97,6 +114,10 @@ def _expectation_gaussian_meanfunction__constant(
 
 
 @dispatch.expectation.register(Gaussian, mfn.Identity, NoneType, mfn.Identity, NoneType)
+@check_shapes(
+    "p: [N, D]",
+    "return: [N, D, D]",
+)
 def _expectation_gaussian_identity__identity(
     p: Gaussian, mean1: mfn.Identity, _: None, mean2: mfn.Identity, __: None, nghp: None = None
 ) -> tf.Tensor:
@@ -111,6 +132,10 @@ def _expectation_gaussian_identity__identity(
 
 
 @dispatch.expectation.register(Gaussian, mfn.Identity, NoneType, mfn.Linear, NoneType)
+@check_shapes(
+    "p: [N, D]",
+    "return: [N, D, Q]",
+)
 def _expectation_gaussian_identity__linear(
     p: Gaussian, mean1: mfn.Identity, _: None, mean2: mfn.Linear, __: None, nghp: None = None
 ) -> tf.Tensor:
@@ -131,6 +156,10 @@ def _expectation_gaussian_identity__linear(
 
 
 @dispatch.expectation.register(Gaussian, mfn.Linear, NoneType, mfn.Identity, NoneType)
+@check_shapes(
+    "p: [N, D]",
+    "return: [N, Q, D]",
+)
 def _expectation_gaussian_linear__identity(
     p: Gaussian, mean1: mfn.Linear, _: None, mean2: mfn.Identity, __: None, nghp: None = None
 ) -> tf.Tensor:
@@ -153,6 +182,10 @@ def _expectation_gaussian_linear__identity(
 
 
 @dispatch.expectation.register(Gaussian, mfn.Linear, NoneType, mfn.Linear, NoneType)
+@check_shapes(
+    "p: [N, D]",
+    "return: [N, Q1, Q2]",
+)
 def _expectation_gaussian_linear__linear(
     p: Gaussian, mean1: mfn.Linear, _: None, mean2: mfn.Linear, __: None, nghp: None = None
 ) -> tf.Tensor:

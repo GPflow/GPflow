@@ -33,7 +33,7 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
-# Release 2.5.3 (next upcoming release in progress)
+# Release 2.7.0 (next upcoming release in progress)
 
 <INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
 
@@ -64,6 +64,97 @@ This release contains contributions from:
 This release contains contributions from:
 
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
+
+
+# Release 2.6.0
+
+The major theme for this release is heteroskedastic likelihoods. Changes have unfortunately caused
+some breaking changes, but makes it much easier to use heteroskedastic likelihoods, either by
+plugging together built-in GPflow classes, or when writing your own. See our
+[updated notebook](https://gpflow.github.io/GPflow/2.6.0/notebooks/advanced/varying_noise.html), for
+examples on how to use this.
+
+## Breaking Changes
+
+* All likelihood methods now take an extra `X` argument. If you have written custom likelihoods or
+  you have custom code calling likelihoods directly you will need to add this extra argument.
+* On the `CGLB` model the `xnew` parameters has changed name to `Xnew`, to be consistent with the
+  other models.
+* On the `GPLVM` model the variance returned by `predict_f` with `full_cov=True` has changed shape
+  from `[batch..., N, N, P]` to `[batch..., P, N, N]` to be consistent with the other models.
+* `gpflow.likelihoods.Gaussian.DEFAULT_VARIANCE_LOWER_BOUND` has been replaced with
+  `gpflow.likelihoods.scalar_continuous.DEFAULT_LOWER_BOUND`.
+* Change to `InducingVariables` API. `InducingVariables` must now have a `shape` property.
+* `gpflow.experimental.check_shapes.get_shape.register` has been replaced with
+  `gpflow.experimental.check_shapes.register_get_shape`.
+* `check_shapes` will no longer automatically wrap shape checking in
+  `tf.compat.v1.flags.tf_decorator.make_decorator`. This is likely to affect you if you use
+  `check_shapes` with custom Keras models. If you require the decorator you can manually enable it
+  with `check_shapes(..., tf_decorator=True)`.
+
+## Known Caveats
+
+* Shape checking is now, by default, disabled within `tf.function`. Use `set_enable_check_shapes` to
+  change this behaviour. See the
+  [API documentation](https://gpflow.github.io/GPflow/2.6.0/api/gpflow/experimental/check_shapes/index.html#speed-and-interactions-with-tf-function)
+  for more details.
+
+## Major Features and Improvements
+
+* Improved handling of variable noise
+  - All likelihood methods now take an `X` argument, allowing you to easily implement
+    heteroskedastic likelihoods.
+  - The `Gaussian` likelihood can now be parametrized by either a `variance` or a `scale`
+  - Some existing likelihoods can now take a function (of X) instead of a parameter, allowing them
+    to become heteroskedastic. The parameters are:
+    - `Gaussian` `variance`
+    - `Gaussian` `scale`
+    - `StudentT` `scale`
+    - `Gamma` `shape`
+    - `Beta` `scale`
+  - The `GPR` and `SGPR` can now be configured with a custom Gaussian likelihood, allowing you to
+    make them heteroskedastic.
+  - See the updated
+    [notebook](https://gpflow.github.io/GPflow/2.6.0/notebooks/advanced/varying_noise.html).
+  - `gpflow.mean_functions` has been renamed `gpflow.functions`, but with an alias, to avoid
+    breaking changes.
+* `gpflow.experimental.check_shapes`
+  - Can now be in three different states - ENABLED, EAGER_MODE_ONLY, and DISABLE.
+    The default is EAGER_MODE_ONLY, which only performs shape checks when the code is not compiled.
+    Compiling the shape checking code is a major bottleneck and this provides a significant speed-up
+    for performance sensitive parts of the code.
+  - Now supports multiple variable-rank dimensions at the same time, e.g. `cov: [n..., n...]`.
+  - Now supports single broadcast dimensions to have size 0 or 1, instead of only 1.
+  - Now supports variable-rank dimensions to be broadcast, even if they're not leading.
+  - Now supports `is None` and `is not None` as checks for conditional shapes.
+  - Now uses custom function `register_get_shape` instead of `get_shape.register`, for better
+    compatibility with TensorFlow.
+  - Now supports checking the shapes of `InducingVariable`s.
+  - Now adds documentation to function arguments that has declared shapes, but no other
+    documentation.
+  - All of GPflow is now consistently shape-checked.
+* All built-in kernels now consistently support broadcasting.
+
+## Bug Fixes and Other Changes
+
+* Tested with TensorFlow 2.10.
+* Add support for Apple Silicon Macs (`arm64`) via the `tensorflow-macos` dependency. (#1850)
+* New implementation of GPR and SGPR posterior objects. This primarily improves numerical stability.
+  (#1960)
+  - For the GPR this is also a speed improvement when using a GPU.
+  - For the SGPR this is a mixed bag, performance-wise.
+* Improved checking and error reporting for the models than do not support `full_cov` and
+  `full_output_cov`.
+* Documentation improvements:
+  - Improved MCMC notebook.
+  - Deleted notebooks that had no contents.
+  - Fixed some broken formatting.
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+jesnie, corwinpro, st--, vdutor
 
 
 # Release 2.5.2

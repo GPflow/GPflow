@@ -21,6 +21,7 @@ from .. import kullback_leiblers, posteriors
 from ..base import AnyNDArray, InputData, MeanAndVariance, Parameter, RegressionData
 from ..conditionals import conditional
 from ..config import default_float
+from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..inducing_variables import InducingVariables
 from ..kernels import Kernel
 from ..likelihoods import Likelihood
@@ -38,6 +39,11 @@ class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
     The key reference is :cite:t:`hensman2014scalable`.
     """
 
+    @check_shapes(
+        "q_mu: [M, P]",
+        "q_sqrt: [M, P] if q_diag",
+        "q_sqrt: [P, M, M] if (not q_diag)",
+    )
     def __init__(
         self,
         kernel: Kernel,
@@ -73,6 +79,11 @@ class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
         num_inducing = self.inducing_variable.num_inducing
         self._init_variational_parameters(num_inducing, q_mu, q_sqrt, q_diag)
 
+    @check_shapes(
+        "q_mu: [M, P]",
+        "q_sqrt: [M, P] if q_diag",
+        "q_sqrt: [P, M, M] if (not q_diag)",
+    )
     def _init_variational_parameters(
         self,
         num_inducing: int,
@@ -126,24 +137,29 @@ class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
                 self.q_sqrt = Parameter(np_q_sqrt, transform=triangular())  # [P, M, M]
         else:
             if q_diag:
-                assert q_sqrt.ndim == 2
                 self.num_latent_gps = q_sqrt.shape[1]
                 self.q_sqrt = Parameter(q_sqrt, transform=positive())  # [M, L|P]
             else:
-                assert q_sqrt.ndim == 3
                 self.num_latent_gps = q_sqrt.shape[0]
                 num_inducing = q_sqrt.shape[1]
                 self.q_sqrt = Parameter(q_sqrt, transform=triangular())  # [L|P, M, M]
 
+    @check_shapes(
+        "return: []",
+    )
     def prior_kl(self) -> tf.Tensor:
         return kullback_leiblers.prior_kl(
             self.inducing_variable, self.kernel, self.q_mu, self.q_sqrt, whiten=self.whiten
         )
 
     # type-ignore is because of changed method signature:
-    def maximum_log_likelihood_objective(self, data: RegressionData) -> tf.Tensor:  # type: ignore
+    @inherit_check_shapes
+    def maximum_log_likelihood_objective(self, data: RegressionData) -> tf.Tensor:  # type: ignore[override]
         return self.elbo(data)
 
+    @check_shapes(
+        "return: []",
+    )
     def elbo(self, data: RegressionData) -> tf.Tensor:
         """
         This gives a variational bound (the evidence lower bound or ELBO) on
@@ -152,7 +168,7 @@ class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
         X, Y = data
         kl = self.prior_kl()
         f_mean, f_var = self.predict_f(X, full_cov=False, full_output_cov=False)
-        var_exp = self.likelihood.variational_expectations(f_mean, f_var, Y)
+        var_exp = self.likelihood.variational_expectations(X, f_mean, f_var, Y)
         if self.num_data is not None:
             num_data = tf.cast(self.num_data, kl.dtype)
             minibatch_size = tf.cast(tf.shape(X)[0], kl.dtype)
@@ -161,6 +177,7 @@ class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
             scale = tf.cast(1.0, kl.dtype)
         return tf.reduce_sum(var_exp) * scale - kl
 
+    @inherit_check_shapes
     def predict_f(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
@@ -219,6 +236,7 @@ class SVGP_with_posterior(SVGP_deprecated):
             precompute_cache=precompute_cache,
         )
 
+    @inherit_check_shapes
     def predict_f(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:

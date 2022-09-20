@@ -35,19 +35,8 @@ def is_continuous_integration() -> bool:
     return "CI" in os.environ
 
 
-def ci_niter(n: int, test_n: int = 2) -> int:
+def reduce_in_tests(n: int, test_n: int = 2) -> int:
     return test_n if is_continuous_integration() else n
-
-
-def ci_range(n: int, test_n: int = 2) -> Sequence[int]:
-    return range(ci_niter(n, test_n))
-
-
-T = TypeVar("T")
-
-
-def ci_list(lst: List[T], test_n: int = 2) -> List[T]:
-    return lst[:test_n] if is_continuous_integration() else lst
 
 
 def subclasses(cls: Type[Any]) -> Iterable[Type[Any]]:

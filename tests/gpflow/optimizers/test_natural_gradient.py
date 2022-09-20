@@ -7,6 +7,7 @@ import tensorflow as tf
 import gpflow
 from gpflow import set_trainable
 from gpflow.config import default_float
+from gpflow.experimental.check_shapes import check_shapes
 from gpflow.kernels import Kernel, SquaredExponential
 from gpflow.likelihoods import Gaussian, Likelihood
 from gpflow.models import GPR, SGPR, SVGP, VGP, BayesianModel
@@ -23,6 +24,10 @@ class Setup:
 
 
 @pytest.fixture
+@check_shapes(
+    "return[0]: [N, D]",
+    "return[1]: [N, 1]",
+)
 def data() -> Tuple[tf.Tensor, tf.Tensor]:
     X = tf.convert_to_tensor(Setup.X, dtype=default_float())
     Y = tf.convert_to_tensor(Setup.Y, dtype=default_float())
@@ -30,6 +35,9 @@ def data() -> Tuple[tf.Tensor, tf.Tensor]:
 
 
 @pytest.fixture
+@check_shapes(
+    "return: [N, D]",
+)
 def inducing_variable() -> tf.Tensor:
     Z = tf.convert_to_tensor(Setup.Z, dtype=default_float())
     return Z
@@ -74,6 +82,10 @@ def sgpr_and_svgp(
     return sgpr, svgp
 
 
+@check_shapes(
+    "value1: [broadcast batch...]",
+    "value2: [broadcast batch...]",
+)
 def assert_different(value1: tf.Tensor, value2: tf.Tensor, rtol: float = 0.07) -> None:
     """ assert relative difference > rtol """
     relative_difference = (value1 - value2) / (value1 + value2)
@@ -102,7 +114,7 @@ def assert_gpr_vs_vgp(
 
     @tf.function
     def minimize_step() -> None:
-        opt.minimize(m2.training_loss, var_list=[params])  # type: ignore
+        opt.minimize(m2.training_loss, var_list=[params])  # type: ignore[list-item]
 
     for _ in range(maxiter):
         minimize_step()
@@ -168,14 +180,32 @@ def test_svgp_vs_sgpr(sgpr_and_svgp: Tuple[SGPR, SVGP]) -> None:
 
 class XiEta(gpflow.optimizers.XiTransform):
     @staticmethod
+    @check_shapes(
+        "mean: [N, D]",
+        "varsqrt: [D, N, N]",
+        "return[0]: [N, D]",
+        "return[1]: [D, N, N]",
+    )
     def meanvarsqrt_to_xi(mean: tf.Tensor, varsqrt: tf.Tensor) -> tf.Tensor:
         return gpflow.optimizers.natgrad.meanvarsqrt_to_expectation(mean, varsqrt)
 
     @staticmethod
+    @check_shapes(
+        "xi1: [N, D]",
+        "xi2: [D, N, N]",
+        "return[0]: [N, D]",
+        "return[1]: [D, N, N]",
+    )
     def xi_to_meanvarsqrt(xi1: tf.Tensor, xi2: tf.Tensor) -> tf.Tensor:
         return gpflow.optimizers.natgrad.expectation_to_meanvarsqrt(xi1, xi2)
 
     @staticmethod
+    @check_shapes(
+        "nat1: [N, D]",
+        "nat2: [D, N, N]",
+        "return[0]: [N, D]",
+        "return[1]: [D, N, N]",
+    )
     def naturals_to_xi(nat1: tf.Tensor, nat2: tf.Tensor) -> tf.Tensor:
         return gpflow.optimizers.natgrad.natural_to_expectation(nat1, nat2)
 

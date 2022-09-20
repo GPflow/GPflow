@@ -4,9 +4,16 @@ import numpy as np
 import tensorflow as tf
 
 from gpflow.base import TensorType
+from gpflow.experimental.check_shapes import check_shapes
 from gpflow.quadrature.deprecated import mvhermgauss
 
 
+@check_shapes(
+    "Fmu: [broadcast Din, N...]",
+    "Fvar: [broadcast Din, N...]",
+    "Ys.values(): [N...]",
+    "return: [broadcast Dout, N...]",
+)
 def ndiagquad(
     funcs: Union[Callable[..., tf.Tensor], Iterable[Callable[..., tf.Tensor]]],
     H: int,

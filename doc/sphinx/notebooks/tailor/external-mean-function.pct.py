@@ -34,7 +34,7 @@ from gpflow.mean_functions import MeanFunction
 from gpflow.models import GPR
 from gpflow.base import Parameter
 
-from gpflow.ci_utils import ci_niter
+from gpflow.ci_utils import reduce_in_tests
 
 # for reproducibility of this notebook:
 np.random.seed(1)
@@ -129,9 +129,10 @@ def generate_meta_and_test_tasks(num_datapoints, num_meta, num_test, N):
 num_datapoints = 5
 # Although the original experiment uses (1000, 200, 50) for the following
 # parameters, we will use (50, 10, 500) for computational reasons.
-num_meta_tasks = 50
-num_test_tasks = 10
+num_meta_tasks = reduce_in_tests(50)
+num_test_tasks = reduce_in_tests(10)
 num_data_per_task = 500
+num_iter = reduce_in_tests(5)
 meta, test = generate_meta_and_test_tasks(
     num_datapoints, num_meta_tasks, num_test_tasks, num_data_per_task
 )
@@ -215,7 +216,7 @@ def run_adam(model, iterations):
 import time
 
 
-def train_loop(meta_tasks, num_iter=5):
+def train_loop(meta_tasks):
     """
     Metalearning training loop. Trained for 100 epochs in original experiment.
 
@@ -233,7 +234,7 @@ def train_loop(meta_tasks, num_iter=5):
         for i, task in enumerate(meta_tasks):
             data = task  # (X, Y)
             model = build_model(data, mean_function=mean_function)
-            run_adam(model, ci_niter(100))
+            run_adam(model, reduce_in_tests(100))
 
         print(">>>> iteration took {:.2f} s".format(time.time() - ts))
     return mean_function

@@ -21,6 +21,7 @@ import tensorflow_probability as tfp
 from typing_extensions import Final
 
 from .config import default_float, default_summary_fmt
+from .experimental.check_shapes import check_shapes
 from .type_flags import GENERIC_NP_ARRAYS, NP_TYPE_CHECKING
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -36,9 +37,9 @@ else:
         # It would be nice to use something more interesting than `Any` here, but it looks like
         # the infrastructure in the rest of the ecosystem isn't really set up for this
         # yet. Maybe when we get Python 3.11?
-        AnyNDArray = np.ndarray[Any, Any]  # type: ignore
+        AnyNDArray = np.ndarray[Any, Any]  # type: ignore[misc]
     else:
-        AnyNDArray = Union[np.ndarray]  # type: ignore
+        AnyNDArray = Union[np.ndarray]  # type: ignore[misc]
 
 VariableData = Union[List[Any], Tuple[Any], AnyNDArray, int, float]  # deprecated
 Transform = Union[tfp.bijectors.Bijector]
@@ -178,8 +179,9 @@ class Parameter(tfp.util.TransformedVariable):
             self._shape = tf.TensorShape(constrained_shape)
 
         self.prior: Optional[Prior] = prior
-        self.prior_on = prior_on  # type: ignore  # see https://github.com/python/mypy/issues/3004
+        self.prior_on = prior_on  # type: ignore[assignment]  # see https://github.com/python/mypy/issues/3004
 
+    @check_shapes("return: []")
     def log_prior_density(self) -> tf.Tensor:
         """ Log of the prior probability density of the constrained variable. """
 
@@ -227,7 +229,7 @@ class Parameter(tfp.util.TransformedVariable):
 
         This attribute cannot be set directly. Use :func:`gpflow.set_trainable`.
         """
-        return self.unconstrained_variable.trainable  # type: ignore
+        return self.unconstrained_variable.trainable  # type: ignore[no-any-return]
 
     def assign(
         self,
@@ -298,7 +300,7 @@ def _validate_unconstrained_value(
 ) -> tf.Tensor:
     value = _cast_to_dtype(value, dtype)
     unconstrained_value = _to_unconstrained(value, transform)
-    if unconstrained_value.dtype.is_integer:  # type: ignore
+    if unconstrained_value.dtype.is_integer:
         return unconstrained_value
     message = (
         "gpflow.Parameter: the value to be assigned is incompatible with this parameter's "

@@ -48,6 +48,7 @@ from typing import (
 from lark.exceptions import UnexpectedCharacters, UnexpectedEOF, UnexpectedInput
 
 from .base_types import Shape
+from .config import get_enable_function_call_precompute
 
 if TYPE_CHECKING:  # pragma: no cover
     from .argument_ref import ArgumentRef
@@ -56,7 +57,12 @@ if TYPE_CHECKING:  # pragma: no cover
 
 _UNKNOWN_FILE = "<Unknown file>"
 _UNKNOWN_LINE = "<Unknown line>"
-_NONE_SHAPE = "<Tensor has unknown shape>"
+_DISABLED_FILE_AND_LINE = (
+    f"{_UNKNOWN_FILE}:{_UNKNOWN_LINE}"
+    " (Disabled. Call gpflow.experimental.check_shapes.set_enable_function_call_precompute(True) to"
+    " see this. (Slow.))"
+)
+_NONE_SHAPE = "<Tensor is None or has unknown shape>"
 
 _NO_VALUE = object()
 """
@@ -300,7 +306,10 @@ class FunctionCallContext(ErrorContext):
 
         :returns: A new instance with precomptued values.
         """
-        return FunctionCallContext(self.func, self._compute())
+        if get_enable_function_call_precompute():
+            return FunctionCallContext(self.func, self._compute())
+        else:
+            return FunctionCallContext(self.func, _DISABLED_FILE_AND_LINE)
 
 
 @dataclass(frozen=True)
@@ -371,6 +380,16 @@ class ArgumentContext(ErrorContext):
             with builder.indent() as b:
                 b.add_columned_line("Value:", self.value)
 
+    def __eq__(self, other: Any) -> bool:
+        return (
+            type(self) == type(other)
+            and self.name_or_index == other.name_or_index
+            and self.value is other.value
+        )
+
+    def __hash__(self) -> int:
+        return hash((self.name_or_index, id(self.value)))
+
 
 @dataclass(frozen=True)
 class AttributeContext(ErrorContext):
@@ -386,6 +405,12 @@ class AttributeContext(ErrorContext):
         if self.value is not _NO_VALUE:
             with builder.indent() as b:
                 b.add_columned_line("Value:", self.value)
+
+    def __eq__(self, other: Any) -> bool:
+        return type(self) == type(other) and self.name == other.name and self.value is other.value
+
+    def __hash__(self) -> int:
+        return hash((self.name, id(self.value)))
 
 
 @dataclass(frozen=True)
@@ -403,6 +428,12 @@ class IndexContext(ErrorContext):
             with builder.indent() as b:
                 b.add_columned_line("Value:", self.value)
 
+    def __eq__(self, other: Any) -> bool:
+        return type(self) == type(other) and self.index == other.index and self.value is other.value
+
+    def __hash__(self) -> int:
+        return hash((self.index, id(self.value)))
+
 
 @dataclass(frozen=True)
 class MappingKeyContext(ErrorContext):
@@ -414,6 +445,12 @@ class MappingKeyContext(ErrorContext):
 
     def print(self, builder: MessageBuilder) -> None:
         builder.add_columned_line("Map key:", f"[{self.key!r}]")
+
+    def __eq__(self, other: Any) -> bool:
+        return type(self) == type(other) and self.key is other.key
+
+    def __hash__(self) -> int:
+        return id(self.key)
 
 
 @dataclass(frozen=True)
@@ -430,6 +467,12 @@ class MappingValueContext(ErrorContext):
         if self.value is not _NO_VALUE:
             with builder.indent() as b:
                 b.add_columned_line("Value:", self.value)
+
+    def __eq__(self, other: Any) -> bool:
+        return type(self) == type(other) and self.key is other.key and self.value is other.value
+
+    def __hash__(self) -> int:
+        return hash((id(self.key), id(self.value)))
 
 
 @dataclass(frozen=True)
@@ -485,6 +528,12 @@ class ObjectValueContext(ErrorContext):
     def print(self, builder: MessageBuilder) -> None:
         builder.add_columned_line("Value:", repr(self.obj))
 
+    def __eq__(self, other: Any) -> bool:
+        return type(self) == type(other) and self.obj is other.obj
+
+    def __hash__(self) -> int:
+        return id(self.obj)
+
 
 @dataclass(frozen=True)
 class ObjectTypeContext(ErrorContext):
@@ -498,8 +547,14 @@ class ObjectTypeContext(ErrorContext):
         t = type(self.obj)
         builder.add_columned_line("Object type:", f"{t.__module__}.{t.__qualname__}")
 
+    def __eq__(self, other: Any) -> bool:
+        return type(self) == type(other) and self.obj is other.obj
 
-@dataclass(frozen=True)  # type: ignore  # mypy doesn't like abstract `dataclasses`.
+    def __hash__(self) -> int:
+        return id(self.obj)
+
+
+@dataclass(frozen=True)  # type: ignore[misc]  # mypy doesn't like abstract `dataclasses`.
 class ParserInputContext(ErrorContext, ABC):
     """
     Abstract base class for contexts that relate to parser input.
@@ -546,22 +601,8 @@ class LarkUnexpectedInputContext(ParserInputContext):
         if isinstance(self.error, UnexpectedEOF):
             builder.add_line("Found unexpected end of input.")
 
-
-@dataclass(frozen=True)
-class TrailingBroadcastVarrankContext(ParserInputContext):
-    """
-    An error was caused by trying to broadcast a trailing variable-rank variable.
-    """
-
-    line: int
-    column: int
-    variable: Optional[str]
-
-    def print(self, builder: MessageBuilder) -> None:
-        self.print_line(builder, self.line, self.column)
-        if self.variable is not None:
-            builder.add_columned_line("Variable", self.variable)
-        builder.add_line("Broadcasting not supported for non-leading variable-rank variables.")
+    def __hash__(self) -> int:
+        return hash((self.error, *sorted(self.terminal_descriptions.items())))
 
 
 @dataclass(frozen=True)

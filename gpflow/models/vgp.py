@@ -23,11 +23,12 @@ from .. import posteriors
 from ..base import InputData, MeanAndVariance, Parameter, RegressionData
 from ..conditionals import conditional
 from ..config import default_float, default_jitter
+from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..kernels import Kernel
 from ..kullback_leiblers import gauss_kl
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
-from ..utilities import is_variable, triangular, triangular_size
+from ..utilities import assert_params_false, is_variable, triangular, triangular_size
 from .model import GPModel
 from .training_mixins import InternalDataTrainingLossMixin
 from .util import data_input_to_tensor
@@ -52,6 +53,10 @@ class VGP_deprecated(GPModel, InternalDataTrainingLossMixin):
 
     """
 
+    @check_shapes(
+        "data[0]: [N, D]",
+        "data[1]: [N, P]",
+    )
     def __init__(
         self,
         data: RegressionData,
@@ -94,9 +99,13 @@ class VGP_deprecated(GPModel, InternalDataTrainingLossMixin):
         )
 
     # type-ignore is because of changed method signature:
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore
+    @inherit_check_shapes
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore[override]
         return self.elbo()
 
+    @check_shapes(
+        "return: []",
+    )
     def elbo(self) -> tf.Tensor:
         r"""
         This method computes the variational lower bound on the likelihood,
@@ -127,13 +136,16 @@ class VGP_deprecated(GPModel, InternalDataTrainingLossMixin):
         fvar = tf.transpose(fvar)
 
         # Get variational expectations.
-        var_exp = self.likelihood.variational_expectations(fmean, fvar, Y_data)
+        var_exp = self.likelihood.variational_expectations(X_data, fmean, fvar, Y_data)
 
         return tf.reduce_sum(var_exp) - KL
 
+    @inherit_check_shapes
     def predict_f(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
+        assert_params_false(self.predict_f, full_output_cov=full_output_cov)
+
         X_data, _Y_data = self.data
         mu, var = conditional(
             Xnew,
@@ -185,6 +197,7 @@ class VGP_with_posterior(VGP_deprecated):
             precompute_cache=precompute_cache,
         )
 
+    @inherit_check_shapes
     def predict_f(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
@@ -205,6 +218,10 @@ class VGP(VGP_with_posterior):
     pass
 
 
+@check_shapes(
+    "new_data[0]: [N, D]",
+    "new_data[1]: [N, P]",
+)
 def update_vgp_data(vgp: VGP_deprecated, new_data: RegressionData) -> None:
     """
     Set the data on the given VGP model, and update its variational parameters.
@@ -266,6 +283,10 @@ class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
 
     """
 
+    @check_shapes(
+        "data[0]: [N, D]",
+        "data[1]: [N, P]",
+    )
     def __init__(
         self,
         data: RegressionData,
@@ -291,9 +312,13 @@ class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
         )
 
     # type-ignore is because of changed method signature:
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore
+    @inherit_check_shapes
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore[override]
         return self.elbo()
 
+    @check_shapes(
+        "return: []",
+    )
     def elbo(self) -> tf.Tensor:
         r"""
         q_alpha, q_lambda are variational parameters, size [N, R]
@@ -344,9 +369,10 @@ class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
             + tf.reduce_sum(K_alpha * self.q_alpha)
         )
 
-        v_exp = self.likelihood.variational_expectations(f_mean, f_var, Y_data)
+        v_exp = self.likelihood.variational_expectations(X_data, f_mean, f_var, Y_data)
         return tf.reduce_sum(v_exp) - KL
 
+    @inherit_check_shapes
     def predict_f(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
@@ -368,8 +394,7 @@ class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
 
         Note: This model currently does not allow full output covariances
         """
-        if full_output_cov:
-            raise NotImplementedError
+        assert_params_false(self.predict_f, full_output_cov=full_output_cov)
 
         X_data, _ = self.data
         # compute kernel things

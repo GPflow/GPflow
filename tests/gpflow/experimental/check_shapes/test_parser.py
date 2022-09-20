@@ -151,6 +151,7 @@ _TEST_DATA = [
             "b: [ds..., d1]",
             "c: [d1, ds..., d2]",
             "d: [d1, ds...]",
+            "e: [*ds1, ds2..., *ds3]",
             "return: [*ds, d1, d2]",
         ),
         ParsedFunctionSpec(
@@ -172,6 +173,10 @@ _TEST_DATA = [
                     make_shape_spec("d1", varrank("ds")),
                 ),
                 make_arg_spec(
+                    make_argument_ref("e"),
+                    make_shape_spec(varrank("ds1"), varrank("ds2"), varrank("ds3")),
+                ),
+                make_arg_spec(
                     make_argument_ref("return"),
                     make_shape_spec(varrank("ds"), "d1", "d2"),
                 ),
@@ -183,6 +188,7 @@ _TEST_DATA = [
         :param b: Parameter b.
         :param c: Parameter c.
         :param d: Parameter d.
+        :param e: Parameter e.
         :returns: Return value.
         """,
         """
@@ -202,6 +208,10 @@ _TEST_DATA = [
             * **d** has shape [*d1*, *ds*...].
 
             Parameter d.
+        :param e:
+            * **e** has shape [*ds1*..., *ds2*..., *ds3*...].
+
+            Parameter e.
         :returns:
             * **return** has shape [*ds*..., *d1*, *d2*].
 
@@ -215,6 +225,7 @@ _TEST_DATA = [
             "b: [None, d2]",
             "c: [..., d1]",
             "d: [*, d2]",
+            "e: [*, ..., *]",
             "return: [..., d1, d2]",
         ),
         ParsedFunctionSpec(
@@ -236,6 +247,10 @@ _TEST_DATA = [
                     make_shape_spec(varrank(None), "d2"),
                 ),
                 make_arg_spec(
+                    make_argument_ref("e"),
+                    make_shape_spec(varrank(None), varrank(None), varrank(None)),
+                ),
+                make_arg_spec(
                     make_argument_ref("return"),
                     make_shape_spec(varrank(None), "d1", "d2"),
                 ),
@@ -247,6 +262,7 @@ _TEST_DATA = [
         :param b: Parameter b.
         :param c: Parameter c.
         :param d: Parameter d.
+        :param e: Parameter e.
         :returns: Return value.
         """,
         """
@@ -266,6 +282,10 @@ _TEST_DATA = [
             * **d** has shape [..., *d2*].
 
             Parameter d.
+        :param e:
+            * **e** has shape [..., ..., ...].
+
+            Parameter e.
         :returns:
             * **return** has shape [..., *d1*, *d2*].
 
@@ -452,6 +472,18 @@ _TEST_DATA = [
             "x: [10] if not (b1 or b2)",
             "x: [11] if not b1 and b2",
             "x: [12] if not (b1 and b2)",
+            "x: [13] if b1 is None",
+            "x: [14] if b1 is None or b2",
+            "x: [15] if b1 is None and b2",
+            "x: [16] if b1 or b2 is None",
+            "x: [17] if b1 and b2 is None",
+            "x: [18] if not b1 is None",
+            "x: [19] if b1 is not None",
+            "x: [20] if b1 is not None or b2",
+            "x: [21] if b1 is not None and b2",
+            "x: [22] if b1 or b2 is not None",
+            "x: [23] if b1 and b2 is not None",
+            "x: [24] if not b1 is not None",
         ),
         ParsedFunctionSpec(
             (
@@ -515,6 +547,66 @@ _TEST_DATA = [
                     make_shape_spec(12),
                     condition=bnot(band(barg("b1"), barg("b2"))),
                 ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(13),
+                    condition=barg("b1", "IS_NONE"),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(14),
+                    condition=bor(barg("b1", "IS_NONE"), barg("b2")),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(15),
+                    condition=band(barg("b1", "IS_NONE"), barg("b2")),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(16),
+                    condition=bor(barg("b1"), barg("b2", "IS_NONE")),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(17),
+                    condition=band(barg("b1"), barg("b2", "IS_NONE")),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(18),
+                    condition=bnot(barg("b1", "IS_NONE")),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(19),
+                    condition=barg("b1", "IS_NOT_NONE"),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(20),
+                    condition=bor(barg("b1", "IS_NOT_NONE"), barg("b2")),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(21),
+                    condition=band(barg("b1", "IS_NOT_NONE"), barg("b2")),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(22),
+                    condition=bor(barg("b1"), barg("b2", "IS_NOT_NONE")),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(23),
+                    condition=band(barg("b1"), barg("b2", "IS_NOT_NONE")),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(24),
+                    condition=bnot(barg("b1", "IS_NOT_NONE")),
+                ),
             ),
             (),
         ),
@@ -526,7 +618,19 @@ _TEST_DATA = [
             * **x** has shape [10] if not (*b1* or *b2*).
             * **x** has shape [11] if (not *b1*) and *b2*.
             * **x** has shape [12] if not (*b1* and *b2*).
+            * **x** has shape [13] if *b1* is *None*.
+            * **x** has shape [14] if (*b1* is *None*) or *b2*.
+            * **x** has shape [15] if (*b1* is *None*) and *b2*.
+            * **x** has shape [16] if *b1* or (*b2* is *None*).
+            * **x** has shape [17] if *b1* and (*b2* is *None*).
+            * **x** has shape [18] if not (*b1* is *None*).
+            * **x** has shape [19] if *b1* is not *None*.
             * **x** has shape [1] if *b1*.
+            * **x** has shape [20] if (*b1* is not *None*) or *b2*.
+            * **x** has shape [21] if (*b1* is not *None*) and *b2*.
+            * **x** has shape [22] if *b1* or (*b2* is not *None*).
+            * **x** has shape [23] if *b1* and (*b2* is not *None*).
+            * **x** has shape [24] if not (*b1* is not *None*).
             * **x** has shape [2] if *b1* or *b2*.
             * **x** has shape [3] if *b1* and *b2*.
             * **x** has shape [4] if not *b1*.
@@ -626,7 +730,75 @@ _TEST_DATA = [
         None,
     ),
     TestData(
-        "partial_docstring",
+        "empty_docstring",
+        (
+            "a: [d1, d2]",
+            "b: [d1, d3]",
+            "return: [d2, d3]",
+        ),
+        ParsedFunctionSpec(
+            (
+                make_arg_spec(
+                    make_argument_ref("a"),
+                    make_shape_spec("d1", "d2"),
+                ),
+                make_arg_spec(
+                    make_argument_ref("b"),
+                    make_shape_spec("d1", "d3"),
+                ),
+                make_arg_spec(
+                    make_argument_ref("return"),
+                    make_shape_spec("d2", "d3"),
+                ),
+            ),
+            (),
+        ),
+        "",
+        """:param a:
+    * **a** has shape [*d1*, *d2*].
+:param b:
+    * **b** has shape [*d1*, *d3*].
+:returns:
+    * **return** has shape [*d2*, *d3*].
+""",
+    ),
+    TestData(
+        "no_params_doc",
+        (
+            "a: [d1, d2]",
+            "b: [d1, d3]",
+            "return: [d2, d3]",
+        ),
+        ParsedFunctionSpec(
+            (
+                make_arg_spec(
+                    make_argument_ref("a"),
+                    make_shape_spec("d1", "d2"),
+                ),
+                make_arg_spec(
+                    make_argument_ref("b"),
+                    make_shape_spec("d1", "d3"),
+                ),
+                make_arg_spec(
+                    make_argument_ref("return"),
+                    make_shape_spec("d2", "d3"),
+                ),
+            ),
+            (),
+        ),
+        """Some docstring.""",
+        """Some docstring.
+
+:param a:
+    * **a** has shape [*d1*, *d2*].
+:param b:
+    * **b** has shape [*d1*, *d3*].
+:returns:
+    * **return** has shape [*d2*, *d3*].
+""",
+    ),
+    TestData(
+        "partial_params_doc",
         (
             "a: [d1, d2]",
             "b: [d1, d3]",
@@ -657,6 +829,10 @@ _TEST_DATA = [
             * **b** has shape [*d1*, *d3*].
 
             Parameter b.
+        :param a:
+            * **a** has shape [*d1*, *d2*].
+        :returns:
+            * **return** has shape [*d2*, *d3*].
         """,
     ),
     TestData(
@@ -687,7 +863,12 @@ _TEST_DATA = [
         """:param b:
     * **b** has shape [*d1*, *d3*].
 
-    Parameter b.""",
+    Parameter b.
+:param a:
+    * **a** has shape [*d1*, *d2*].
+:returns:
+    * **return** has shape [*d2*, *d3*].
+""",
     ),
     TestData(
         "other_info_fields",
@@ -733,6 +914,42 @@ _TEST_DATA = [
 
             Some description of the return type.
         :rtype: TensorType
+        """,
+    ),
+    TestData(
+        "only_other_info_fields",
+        (
+            "a: [batch..., n_features]",
+            "return: [batch..., 1]",
+        ),
+        ParsedFunctionSpec(
+            (
+                make_arg_spec(
+                    make_argument_ref("a"),
+                    make_shape_spec(varrank("batch"), "n_features"),
+                ),
+                make_arg_spec(
+                    make_argument_ref("return"),
+                    make_shape_spec(varrank("batch"), 1),
+                ),
+            ),
+            (),
+        ),
+        """
+        :meta: Blah blah.
+        :type a: TensorType
+        :meta: More chaff.
+        :rtype: TensorType
+        """,
+        """
+        :meta: Blah blah.
+        :type a: TensorType
+        :meta: More chaff.
+        :rtype: TensorType
+        :param a:
+            * **a** has shape [*batch*..., *n_features*].
+        :returns:
+            * **return** has shape [*batch*..., 1].
         """,
     ),
     TestData(
@@ -983,7 +1200,8 @@ _TEST_DATA = [
         * **return[0]** has shape [*test_batch*..., *n_labels*].
         * **return[1]** has shape [*test_batch*..., *n_labels*].
 
-        Model mean and variance prediction.""",
+        Model mean and variance prediction.
+""",
     ),
     TestData(
         "funny_formatting_4",
@@ -1052,7 +1270,8 @@ And some more comment.
 * **return[0]** has shape [*test_batch*..., *n_labels*].
 * **return[1]** has shape [*test_batch*..., *n_labels*].
 
-Model mean and variance prediction.""",
+Model mean and variance prediction.
+""",
     ),
 ]
 
@@ -1172,18 +1391,6 @@ Unable to parse shape specification.
                        "None"
                        "]"
                        "*"
-""",
-        ),
-        (
-            "a: [x, broadcast y..., z]",
-            """
-Unable to parse shape specification.
-  check_shapes called at: __check_shapes_path_and_line__
-    Argument number (0-indexed): 0
-      Line:    "a: [x, broadcast y..., z]"
-                                 ^
-      Variable y
-      Broadcasting not supported for non-leading variable-rank variables.
 """,
         ),
         (

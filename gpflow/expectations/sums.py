@@ -20,6 +20,7 @@ import tensorflow as tf
 
 from .. import kernels
 from .. import mean_functions as mfn
+from ..experimental.check_shapes import check_shapes
 from ..inducing_variables import InducingPoints
 from ..probability_distributions import DiagonalGaussian, Gaussian, MarkovGaussian
 from . import dispatch
@@ -29,6 +30,10 @@ NoneType: Type[None] = type(None)
 
 
 @dispatch.expectation.register(Gaussian, kernels.Sum, NoneType, NoneType, NoneType)
+@check_shapes(
+    "p: [N, D]",
+    "return: [N]",
+)
 def _expectation_gaussian_sum(
     p: Gaussian, kernel: kernels.Sum, _: None, __: None, ___: None, nghp: None = None
 ) -> tf.Tensor:
@@ -44,6 +49,11 @@ def _expectation_gaussian_sum(
 
 
 @dispatch.expectation.register(Gaussian, kernels.Sum, InducingPoints, NoneType, NoneType)
+@check_shapes(
+    "p: [N, D]",
+    "inducing_variable: [M, D, P]",
+    "return: [N, M]",
+)
 def _expectation_gaussian_sum_inducingpoints(
     p: Gaussian,
     kernel: kernels.Sum,
@@ -66,6 +76,11 @@ def _expectation_gaussian_sum_inducingpoints(
 @dispatch.expectation.register(
     Gaussian, (mfn.Linear, mfn.Identity, mfn.Constant), NoneType, kernels.Sum, InducingPoints
 )
+@check_shapes(
+    "p: [N, D]",
+    "inducing_variable: [M, D, P]",
+    "return: [N, Q, M]",
+)
 def _expectation_gaussian_linear__sum_inducingpoints(
     p: Gaussian,
     mean: Union[mfn.Linear, mfn.Identity, mfn.Constant],
@@ -86,6 +101,11 @@ def _expectation_gaussian_linear__sum_inducingpoints(
 
 
 @dispatch.expectation.register(MarkovGaussian, mfn.Identity, NoneType, kernels.Sum, InducingPoints)
+@check_shapes(
+    "p: [N, D]",
+    "inducing_variable: [M, D, P]",
+    "return: [N, D, M]",
+)
 def _expectation_markov__sum_inducingpoints(
     p: MarkovGaussian,
     mean: mfn.Identity,
@@ -107,6 +127,12 @@ def _expectation_markov__sum_inducingpoints(
 
 @dispatch.expectation.register(
     (Gaussian, DiagonalGaussian), kernels.Sum, InducingPoints, kernels.Sum, InducingPoints
+)
+@check_shapes(
+    "p: [N, D]",
+    "feat1: [M1, D, P]",
+    "feat2: [M2, D, P]",
+    "return: [N, M1, M2]",
 )
 def _expectation_gaussian_sum_inducingpoints__sum_inducingpoints(
     p: Union[Gaussian, DiagonalGaussian],

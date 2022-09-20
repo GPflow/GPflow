@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, Union
 
-from gpflow.experimental.check_shapes import Dimension, Shape, get_shape
+from gpflow.experimental.check_shapes import Dimension, Shape, register_get_shape
 from gpflow.experimental.check_shapes.argument_ref import (
     AllElementsRef,
     ArgumentRef,
@@ -30,6 +30,7 @@ from gpflow.experimental.check_shapes.argument_ref import (
     ValuesRef,
 )
 from gpflow.experimental.check_shapes.bool_specs import (
+    BoolTest,
     ParsedAndBoolSpec,
     ParsedArgumentRefBoolSpec,
     ParsedBoolSpec,
@@ -61,7 +62,7 @@ class TestShaped:
     test_shape: Shape
 
 
-@get_shape.register(TestShaped)
+@register_get_shape(TestShaped)
 def get_test_shaped_shape(shaped: TestShaped, context: ErrorContext) -> Shape:
     return shaped.test_shape
 
@@ -110,8 +111,10 @@ def make_argument_ref(
     return result
 
 
-def barg(name: str) -> ParsedBoolSpec:
-    return ParsedArgumentRefBoolSpec(RootArgumentRef(name))
+def barg(name: str, bool_test: Union[BoolTest, str] = BoolTest.BOOL) -> ParsedBoolSpec:
+    if isinstance(bool_test, str):
+        bool_test = BoolTest[bool_test]
+    return ParsedArgumentRefBoolSpec(RootArgumentRef(name), bool_test)
 
 
 def bor(left: ParsedBoolSpec, right: ParsedBoolSpec) -> ParsedBoolSpec:

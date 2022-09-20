@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.4.0
+#       jupytext_version: 1.13.8
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -27,7 +27,7 @@ import tensorflow_probability as tfp
 from tensorflow_probability import distributions as tfd
 
 import gpflow
-from gpflow.ci_utils import ci_niter
+from gpflow.ci_utils import reduce_in_tests
 from gpflow import set_trainable
 from multiclass_classification import plot_from_samples, colors
 
@@ -72,7 +72,7 @@ tf.random.set_seed(123)
 # %%
 rng = np.random.RandomState(42)
 
-N = 30
+N = 15
 
 
 def synthetic_data(num: int, rng: np.random.RandomState):
@@ -131,8 +131,8 @@ gpflow.utilities.print_summary(model)
 # We now sample from the posterior using HMC.
 
 # %%
-num_burnin_steps = ci_niter(300)
-num_samples = ci_niter(500)
+num_burnin_steps = reduce_in_tests(300)
+num_samples = reduce_in_tests(1000)
 
 # Note that here we need model.trainable_parameters, not trainable_variables - only parameters can have priors!
 hmc_helper = gpflow.optimizers.SamplingHelper(
@@ -272,6 +272,9 @@ plt.title("Posterior GP samples")
 plt.show()
 
 # %% [markdown]
+# This example demonstrates the multi-modality of the true posterior over hyperparameters: the data could be explained both by long lengthscale, small signal variance, and high noise variance, as well as by shorter lengthscale, higher signal variance, and low noise variance.
+
+# %% [markdown]
 # ## Example 2: Sparse MC for multiclass classification
 
 # %% [markdown]
@@ -294,10 +297,10 @@ kernel = gpflow.kernels.SquaredExponential(lengthscales=0.1)
 K = kernel.K(X) + np.eye(N) * 1e-6
 
 f = rng.multivariate_normal(mean=np.zeros(N), cov=K, size=(C)).T
-Y = np.argmax(f, 1).flatten().astype(int)
+Y = np.argmax(f, 1)[:, None].astype(int)
 # One-hot encoding
 Y_hot = np.zeros((N, C), dtype=bool)
-Y_hot[np.arange(N), Y] = 1
+Y_hot[np.arange(N), Y.squeeze(-1)] = 1
 
 data = (X, Y)
 
@@ -351,8 +354,8 @@ print(f"log posterior density at optimum: {model.log_posterior_density()}")
 # Sampling starts with a 'burn in' period.
 
 # %%
-num_burnin_steps = ci_niter(100)
-num_samples = ci_niter(500)
+num_burnin_steps = reduce_in_tests(100)
+num_samples = reduce_in_tests(500)
 
 # Note that here we need model.trainable_parameters, not trainable_variables - only parameters can have priors!
 hmc_helper = gpflow.optimizers.SamplingHelper(
@@ -482,7 +485,7 @@ gpflow.utilities.print_summary(model)
 
 # %%
 optimizer = gpflow.optimizers.Scipy()
-maxiter = ci_niter(3000)
+maxiter = reduce_in_tests(3000)
 _ = optimizer.minimize(
     model.training_loss, model.trainable_variables, options=dict(maxiter=maxiter)
 )
@@ -492,8 +495,8 @@ _ = optimizer.minimize(
 # We then run the sampler,
 
 # %%
-num_burnin_steps = ci_niter(600)
-num_samples = ci_niter(1000)
+num_burnin_steps = reduce_in_tests(600)
+num_samples = reduce_in_tests(1000)
 
 # Note that here we need model.trainable_parameters, not trainable_variables - only parameters can have priors!
 hmc_helper = gpflow.optimizers.SamplingHelper(
@@ -643,8 +646,8 @@ model.kernel.lengthscales.prior_on
 # Let's run HMC and plot chain traces:
 
 # %%
-num_burnin_steps = ci_niter(300)
-num_samples = ci_niter(500)
+num_burnin_steps = reduce_in_tests(300)
+num_samples = reduce_in_tests(500)
 
 hmc_helper = gpflow.optimizers.SamplingHelper(
     model.log_posterior_density, model.trainable_parameters

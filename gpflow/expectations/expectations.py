@@ -16,6 +16,7 @@ from typing import Optional, Tuple, Union, cast
 import tensorflow as tf
 
 from ..base import TensorType
+from ..experimental.check_shapes import check_shapes
 from ..inducing_variables import InducingVariables
 from ..kernels import Kernel
 from ..mean_functions import MeanFunction
@@ -78,7 +79,7 @@ def expectation(
     p, obj1, feat1, obj2, feat2 = _init_expectation(p, obj1, obj2)
     try:
         return dispatch.expectation(p, obj1, feat1, obj2, feat2, nghp=nghp)
-    except NotImplementedError as error:
+    except NotImplementedError:
         return dispatch.quadrature_expectation(p, obj1, feat1, obj2, feat2, nghp=nghp)
 
 
@@ -104,6 +105,11 @@ def quadrature_expectation(
     return dispatch.quadrature_expectation(p, obj1, feat1, obj2, feat2, nghp=nghp)
 
 
+@check_shapes(
+    "return[0]: [N, D]",
+    "return[2]: [M1, D, P]",
+    "return[4]: [M2, D, P]",
+)
 def _init_expectation(
     p: ProbabilityDistributionLike, obj1: PackedExpectationObject, obj2: PackedExpectationObject
 ) -> Tuple[
@@ -116,13 +122,13 @@ def _init_expectation(
     if isinstance(p, tuple):
         mu, cov = p
         classes = [DiagonalGaussian, Gaussian, MarkovGaussian]
-        p = classes[cov.ndim - 2](*p)
+        p = classes[cov.ndim - 2](*p)  # type: ignore[abstract]
 
     obj1, feat1 = obj1 if isinstance(obj1, tuple) else (obj1, None)
     obj2, feat2 = obj2 if isinstance(obj2, tuple) else (obj2, None)
     return (
         # type-ignore instead of cast, because it dependes on versions whether a cast is necessary.
-        p,  # type: ignore
+        p,  # type: ignore[return-value]
         cast(ExpectationObject, obj1),
         cast(Optional[InducingVariables], feat1),
         cast(ExpectationObject, obj2),

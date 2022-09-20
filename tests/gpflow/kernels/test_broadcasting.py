@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Type
+from typing import Any, Callable, List, Sequence, Tuple, cast
 
 import numpy as np
 import pytest
@@ -22,116 +22,256 @@ from numpy.testing import assert_allclose
 import gpflow
 import gpflow.ci_utils
 from gpflow import kernels
-from gpflow.base import TensorType
-
-KERNEL_CLASSES = [
-    # Static kernels:
-    kernels.White,
-    kernels.Constant,
-    # Stationary kernels:
-    kernels.SquaredExponential,
-    kernels.RationalQuadratic,
-    kernels.Exponential,
-    kernels.Matern12,
-    kernels.Matern32,
-    kernels.Matern52,
-    # other kernels:
-    kernels.Cosine,
-    kernels.Linear,
-    kernels.Polynomial,
-    # sum and product kernels:
-    lambda: kernels.White() + kernels.Matern12(),
-    lambda: kernels.White() * kernels.Matern12(),
-    # Following kernels do not broadcast: see https://github.com/GPflow/GPflow/issues/1339
-    pytest.param(kernels.ArcCosine, marks=pytest.mark.xfail),  # broadcasting not implemented
-    pytest.param(kernels.Coregion, marks=pytest.mark.xfail),  # broadcasting not implemented
-    pytest.param(kernels.ChangePoints, marks=pytest.mark.xfail),  # broadcasting not implemented
-    pytest.param(kernels.Convolutional, marks=pytest.mark.xfail),  # broadcasting not implemented
-]
+from gpflow.base import AnyNDArray, TensorType
+from gpflow.experimental.check_shapes import check_shape as cs
+from gpflow.experimental.check_shapes import check_shapes
 
 
-def check_broadcasting(kernel: kernels.Kernel) -> None:
-    S, N, M, D = 5, 4, 3, 2
-    X1 = np.random.randn(S, N, D)
-    X2 = np.random.randn(M, D)
-
-    compare_vs_map(X1, X2, kernel)
-
-
-@pytest.mark.parametrize("kernel_class", gpflow.ci_utils.subclasses(kernels.Kernel))
-def test_no_kernels_missed(kernel_class: Type[kernels.Kernel]) -> None:
-    tested_kernel_classes = KERNEL_CLASSES + [kernels.Sum, kernels.Product]
-    skipped_kernel_classes = [
-        p.values[0] for p in KERNEL_CLASSES if isinstance(p, type(pytest.param()))
+def create_kernels() -> Sequence[kernels.Kernel]:
+    result: List[kernels.Kernel] = [
+        # Static kernels:
+        kernels.White(),
+        kernels.Constant(),
+        # Stationary kernels:
+        kernels.SquaredExponential(),
+        kernels.RationalQuadratic(),
+        kernels.Exponential(),
+        kernels.Matern12(),
+        kernels.Matern32(),
+        kernels.Matern52(),
+        # sum and product kernels:
+        kernels.White() + kernels.Matern12(),
+        kernels.White() * kernels.Matern12(),
+        # slicing:
+        kernels.Matern32(active_dims=slice(None, None, 2)),
+        kernels.Matern32(active_dims=[1, 2]),
+        # other kernels:
+        kernels.Cosine(),
+        kernels.Linear(),
+        kernels.Polynomial(),
+        kernels.Periodic(kernels.Matern32()),
+        kernels.ChangePoints(
+            [kernels.Matern32(), kernels.Matern32()],
+            [0.5],
+        ),
+        kernels.ArcCosine(),
+        kernels.Coregion(output_dim=5, rank=2),
+        kernels.Convolutional(kernels.Matern32(), [4, 4], [2, 2]),
+        # multioutput:
+        kernels.SharedIndependent(kernels.Matern32(), output_dim=5),
+        kernels.SeparateIndependent([kernels.Matern32() for _ in range(5)]),
+        kernels.LinearCoregionalization([kernels.Matern32() for _ in range(3)], np.ones((5, 3))),
     ]
-    abstract_base_classes = [
-        kernels.Kernel,
-        kernels.Combination,
-        gpflow.kernels.base.ReducingCombination,
-        kernels.Static,
-        kernels.Stationary,
-        kernels.IsotropicStationary,
-        kernels.AnisotropicStationary,
-    ]
-    needs_constructor_parameters = [kernels.Periodic]
-    if kernel_class in tested_kernel_classes:
-        return  # tested by test_broadcast_no_active_dims
-    if kernel_class in skipped_kernel_classes:
-        return  # not tested but currently expected to fail
-    if kernel_class in abstract_base_classes:
-        return  # cannot test abstract base classes
-    if kernel_class in needs_constructor_parameters:
-        return  # this has a separate test, see test_broadcast_no_active_dims_periodic
-    if issubclass(kernel_class, kernels.MultioutputKernel):
-        return  # TODO: cannot currently test MultioutputKernels - see https://github.com/GPflow/GPflow/issues/1339
-    assert False, f"no broadcasting test for kernel class {kernel_class}"
+    return result
 
 
-@pytest.mark.parametrize("kernel_class", KERNEL_CLASSES)
-def test_broadcast_no_active_dims(kernel_class: Type[kernels.Kernel]) -> None:
-    check_broadcasting(kernel_class())
+def make_id(value: Any) -> str:
+    if isinstance(value, tuple):
+        return f"[{','.join(repr(x) for x in value)}]"
+    assert isinstance(value, kernels.Kernel)
+    return value.__class__.__name__
 
 
+def test_no_kernels_missed() -> None:
+    tested_kernel_classes = {
+        parent
+        for kernel in create_kernels()
+        for parent in kernel.__class__.__mro__
+        if (parent != kernels.Kernel) and issubclass(parent, kernels.Kernel)
+    }
+    all_kernel_classes = set(gpflow.ci_utils.subclasses(kernels.Kernel))
+    assert tested_kernel_classes == all_kernel_classes
+
+
+@pytest.mark.parametrize("kernel", create_kernels(), ids=make_id)
 @pytest.mark.parametrize(
-    "base_class",
-    [kernel for kernel in gpflow.ci_utils.subclasses(kernels.IsotropicStationary)],
+    "batch_shape",
+    [
+        (3,),
+        (2, 3),
+        (1, 2, 3),
+    ],
+    ids=make_id,
 )
-def test_broadcast_no_active_dims_periodic(base_class: Type[kernels.IsotropicStationary]) -> None:
-    kernel = gpflow.kernels.Periodic(base_class())
-    check_broadcasting(kernel)
+@pytest.mark.parametrize(
+    "batch2_shape",
+    [
+        (4,),
+        (2, 4),
+        (1, 2, 4),
+    ],
+    ids=make_id,
+)
+@check_shapes()
+def test_broadcasting(
+    kernel: kernels.Kernel,
+    batch_shape: Tuple[int, ...],
+    batch2_shape: Tuple[int, ...],
+    rng: np.random.Generator,
+) -> None:
+    if isinstance(kernel, kernels.Coregion):
+        D = 1
+        X: AnyNDArray = rng.choice(kernel.rank, batch_shape + (D,))
+        X2: AnyNDArray = rng.choice(kernel.rank, batch2_shape + (D,))
+    else:
+        if isinstance(kernel, kernels.ChangePoints):
+            D = 1
+        elif isinstance(kernel, kernels.Convolutional):
+            D = int(np.prod(kernel.image_shape))
+        else:
+            D = 4
+
+        X = rng.random(batch_shape + (D,))
+        X2 = rng.random(batch2_shape + (D,))
+
+    rank = len(batch_shape) - 1
+    rank2 = len(batch2_shape) - 1
+
+    if isinstance(kernel, kernels.MultioutputKernel):
+        mo_kernel = cast(kernels.MultioutputKernel, kernel)
+
+        loop = cs(
+            unroll_batches(
+                lambda x: unroll_batches(
+                    lambda x2: mo_kernel(x, x2, full_cov=True, full_output_cov=True), X2, 2
+                ),
+                X,
+                2,
+            ),
+            "[batch..., batch2..., N, P, N2, P]",
+        )
+        loop = cs(
+            tf.transpose(
+                loop,
+                tf.concat(
+                    [
+                        np.arange(rank),
+                        [rank + rank2, rank + rank2 + 1],
+                        np.arange(rank2) + rank,
+                        [rank + rank2 + 2, rank + rank2 + 3],
+                    ],
+                    0,
+                ),
+            ),
+            "[batch..., N, P, batch2..., N2, P]",
+        )
+        native = cs(
+            mo_kernel(X, X2, full_cov=True, full_output_cov=True),
+            "[batch..., N, P, batch2..., N2, P]",
+        )
+        assert_allclose(loop.numpy(), native.numpy())
+
+        loop = cs(
+            unroll_batches(
+                lambda x: unroll_batches(
+                    lambda x2: mo_kernel(x, x2, full_cov=True, full_output_cov=False), X2, 2
+                ),
+                X,
+                2,
+            ),
+            "[batch..., batch2..., P, N, N2]",
+        )
+        loop = cs(
+            tf.transpose(
+                loop,
+                tf.concat(
+                    [
+                        [rank + rank2],
+                        np.arange(rank),
+                        [rank + rank2 + 1],
+                        np.arange(rank2) + rank,
+                        [rank + rank2 + 2],
+                    ],
+                    0,
+                ),
+            ),
+            "[P, batch..., N, batch2..., N2]",
+        )
+        native = cs(
+            mo_kernel(X, X2, full_cov=True, full_output_cov=False),
+            "[P, batch..., N, batch2..., N2]",
+        )
+        assert_allclose(loop.numpy(), native.numpy())
+
+        loop = cs(
+            unroll_batches(lambda x: mo_kernel(x, full_cov=True, full_output_cov=True), X, 2),
+            "[batch..., N, P, N, P]",
+        )
+        native = cs(mo_kernel(X, full_cov=True, full_output_cov=True), "[batch..., N, P, N, P]")
+        assert_allclose(loop.numpy(), native.numpy())
+
+        loop = cs(
+            unroll_batches(lambda x: mo_kernel(x, full_cov=True, full_output_cov=False), X, 2),
+            "[batch..., P, N, N]",
+        )
+        loop = cs(
+            tf.transpose(
+                loop,
+                tf.concat(
+                    [
+                        [rank],
+                        np.arange(rank),
+                        [rank + 1, rank + 2],
+                    ],
+                    0,
+                ),
+            ),
+            "[P, batch..., N, N]",
+        )
+        native = cs(mo_kernel(X, full_cov=True, full_output_cov=False), "[P, batch..., N, N]")
+        assert_allclose(loop.numpy(), native.numpy())
+
+        loop = cs(
+            unroll_batches(lambda x: mo_kernel(x, full_cov=False, full_output_cov=True), X, 2),
+            "[batch..., N, P, P]",
+        )
+        native = cs(mo_kernel(X, full_cov=False, full_output_cov=True), "[batch..., N, P, P]")
+        assert_allclose(loop.numpy(), native.numpy())
+
+        loop = cs(
+            unroll_batches(lambda x: mo_kernel(x, full_cov=False, full_output_cov=False), X, 2),
+            "[batch..., N, P]",
+        )
+        native = cs(mo_kernel(X, full_cov=False, full_output_cov=False), "[batch..., N, P]")
+        assert_allclose(loop.numpy(), native.numpy())
+
+    else:  # Single-output kernel:
+        loop = cs(
+            unroll_batches(
+                lambda x: unroll_batches(lambda x2: kernel(x, x2, full_cov=True), X2, 2), X, 2
+            ),
+            "[batch..., batch2..., N, N2]",
+        )
+        loop = cs(
+            tf.transpose(
+                loop,
+                tf.concat(
+                    [np.arange(rank), [rank + rank2], np.arange(rank2) + rank, [rank + rank2 + 1]],
+                    0,
+                ),
+            ),
+            "[batch..., N, batch2..., N2]",
+        )
+        native = cs(kernel(X, X2, full_cov=True), "[batch..., N, batch2..., N2]")
+        assert_allclose(loop.numpy(), native.numpy())
+
+        loop = cs(unroll_batches(lambda x: kernel(x, full_cov=True), X, 2), "[batch..., N, N]")
+        native = cs(kernel(X, full_cov=True), "[batch..., N, N]")
+        assert_allclose(loop.numpy(), native.numpy())
+
+        loop = cs(unroll_batches(lambda x: kernel(x, full_cov=False), X, 2), "[batch..., N]")
+        native = cs(kernel(X, full_cov=False), "[batch..., N]")
+        assert_allclose(loop.numpy(), native.numpy())
 
 
-@pytest.mark.parametrize("kernel_class", [kernels.SquaredExponential])
-def test_broadcast_slice_active_dims(kernel_class: Type[kernels.SquaredExponential]) -> None:
-    S, N, M, D = 5, 4, 3, 4
-    d = 2
-    X1 = np.random.randn(S, N, D)
-    X2 = np.random.randn(M, D)
-    kernel = kernel_class(active_dims=slice(1, 1 + d))
+@check_shapes(
+    "x: [batch..., value_shape...]",
+    "return: [batch..., result_shape...]",
+)
+def unroll_batches(
+    f: Callable[[TensorType], TensorType], x: TensorType, value_rank: int
+) -> tf.Tensor:
+    if len(x.shape) == value_rank:
+        return f(x)
 
-    compare_vs_map(X1, X2, kernel)
-
-
-@pytest.mark.parametrize("kernel_class", [kernels.SquaredExponential])
-def test_broadcast_indices_active_dims(kernel_class: Type[kernels.SquaredExponential]) -> None:
-    S, N, M, D = 5, 4, 3, 4
-
-    X1 = np.random.randn(S, N, D)
-    X2 = np.random.randn(M, D)
-    kernel = kernel_class(active_dims=[1, 3])
-
-    compare_vs_map(X1, X2, kernel)
-
-
-def compare_vs_map(X1: TensorType, X2: TensorType, kernel: kernels.Kernel) -> None:
-    K12_loop = tf.stack([kernel(x, X2) for x in X1])  # [S, N, M]
-    K12_native = kernel(X1, X2)  # [S, N, M]
-    assert_allclose(K12_loop.numpy(), K12_native.numpy())
-
-    K11_loop = tf.stack([kernel(x) for x in X1])
-    K11_native = kernel(X1)
-    assert_allclose(K11_loop.numpy(), K11_native.numpy())
-
-    K1_loop = tf.stack([kernel(x, full_cov=False) for x in X1])
-    K1_native = kernel(X1, full_cov=False)
-    assert_allclose(K1_loop.numpy(), K1_native.numpy())
+    return tf.stack([unroll_batches(f, row, value_rank) for row in x])

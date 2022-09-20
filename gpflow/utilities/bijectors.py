@@ -18,6 +18,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 from .. import config
+from ..experimental.check_shapes import check_shapes
 from .misc import to_default_float
 
 __all__ = ["positive", "triangular", "triangular_size"]
@@ -46,11 +47,15 @@ def positive(lower: Optional[float] = None, base: Optional[str] = None) -> tfp.b
 
 def triangular() -> tfp.bijectors.Bijector:
     """
-    Returns instance of a triangular bijector.
+    Returns instance of a (lower) triangular bijector.
     """
     return tfp.bijectors.FillTriangular()
 
 
+@check_shapes(
+    "n: []",
+    "return: []",
+)
 def triangular_size(n: tf.Tensor) -> tf.Tensor:
     """
     Returns the number of non-zero elements in an `n` by `n` triangular matrix.

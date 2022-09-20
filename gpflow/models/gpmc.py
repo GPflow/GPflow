@@ -21,16 +21,21 @@ import tensorflow_probability as tfp
 from ..base import InputData, MeanAndVariance, Parameter, RegressionData
 from ..conditionals import conditional
 from ..config import default_float, default_jitter
+from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
-from ..utilities import to_default_float
+from ..utilities import assert_params_false, to_default_float
 from .model import GPModel
 from .training_mixins import InternalDataTrainingLossMixin
 from .util import data_input_to_tensor
 
 
 class GPMC(GPModel, InternalDataTrainingLossMixin):
+    @check_shapes(
+        "data[0]: [N, D]",
+        "data[1]: [N, P]",
+    )
     def __init__(
         self,
         data: RegressionData,
@@ -66,17 +71,23 @@ class GPMC(GPModel, InternalDataTrainingLossMixin):
         )
 
     # type-ignore is because of changed method signature:
-    def log_posterior_density(self) -> tf.Tensor:  # type: ignore
+    @inherit_check_shapes
+    def log_posterior_density(self) -> tf.Tensor:  # type: ignore[override]
         return self.log_likelihood() + self.log_prior_density()
 
     # type-ignore is because of changed method signature:
-    def _training_loss(self) -> tf.Tensor:  # type: ignore
+    @inherit_check_shapes
+    def _training_loss(self) -> tf.Tensor:  # type: ignore[override]
         return -self.log_posterior_density()
 
     # type-ignore is because of changed method signature:
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore
+    @inherit_check_shapes
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore[override]
         return self.log_likelihood()
 
+    @check_shapes(
+        "return: []",
+    )
     def log_likelihood(self) -> tf.Tensor:
         r"""
         Construct a tf function to compute the likelihood of a general GP
@@ -92,8 +103,9 @@ class GPMC(GPModel, InternalDataTrainingLossMixin):
         )
         F = tf.linalg.matmul(L, self.V) + self.mean_function(X_data)
 
-        return tf.reduce_sum(self.likelihood.log_prob(F, Y_data))
+        return tf.reduce_sum(self.likelihood.log_prob(X_data, F, Y_data))
 
+    @inherit_check_shapes
     def predict_f(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
@@ -107,6 +119,8 @@ class GPMC(GPModel, InternalDataTrainingLossMixin):
         where F* are points on the GP at Xnew, F=LV are points on the GP at X.
 
         """
+        assert_params_false(self.predict_f, full_output_cov=full_output_cov)
+
         X_data, _Y_data = self.data
         mu, var = conditional(
             Xnew, X_data, self.kernel, self.V, full_cov=full_cov, q_sqrt=None, white=True

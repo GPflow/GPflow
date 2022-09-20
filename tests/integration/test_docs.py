@@ -31,8 +31,7 @@ def test_docs(tmp_path: Path) -> None:
                 str(BUILD_DOCS_PATH),
                 "develop",
                 str(build_path),
-                "--max-notebooks",
-                "0",
+                "--limit-notebooks",
                 "--fail-on-warning",
             ]
         ).check_returncode()

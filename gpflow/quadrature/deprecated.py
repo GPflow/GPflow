@@ -22,17 +22,26 @@ import tensorflow as tf
 
 from ..base import AnyNDArray, TensorType
 from ..config import default_float
+from ..experimental.check_shapes import check_shapes
 from ..utilities import to_default_float
 from .gauss_hermite import NDiagGHQuadrature
 
 
+@check_shapes(
+    "return[0]: [n_quad_points]",
+    "return[1]: [n_quad_points]",
+)
 def hermgauss(n: int) -> Tuple[AnyNDArray, AnyNDArray]:
     # Type-ignore is because for some versions mypy can't find np.polynomial.hermite
-    x, w = np.polynomial.hermite.hermgauss(n)  # type: ignore
+    x, w = np.polynomial.hermite.hermgauss(n)
     x, w = x.astype(default_float()), w.astype(default_float())
     return x, w
 
 
+@check_shapes(
+    "return[0]: [n_quad_points, D]",
+    "return[1]: [n_quad_points]",
+)
 def mvhermgauss(H: int, D: int) -> Tuple[AnyNDArray, AnyNDArray]:
     """
     Return the evaluation locations 'xn', and weights 'wn' for a multivariate
@@ -48,9 +57,14 @@ def mvhermgauss(H: int, D: int) -> Tuple[AnyNDArray, AnyNDArray]:
     gh_x, gh_w = hermgauss(H)
     x: AnyNDArray = np.array(list(itertools.product(*(gh_x,) * D)))  # H**DxD
     w = np.prod(np.array(list(itertools.product(*(gh_w,) * D))), 1)  # H**D
-    return x, w  # type: ignore
+    return x, w
 
 
+@check_shapes(
+    "means: [N, Din]",
+    "covs: [N, Din, Din]",
+    "return: [N, Dout...]",
+)
 def mvnquad(
     func: Callable[[tf.Tensor], tf.Tensor],
     means: TensorType,
@@ -62,14 +76,13 @@ def mvnquad(
     """
     Computes N Gaussian expectation integrals of a single function 'f'
     using Gauss-Hermite quadrature.
+
     :param f: integrand function. Takes one input of shape ?xD.
-    :param means: NxD
-    :param covs: NxDxD
     :param H: Number of Gauss-Hermite evaluation points.
     :param Din: Number of input dimensions. Needs to be known at call-time.
     :param Dout: Number of output dimensions. Defaults to (). Dout is assumed
-    to leave out the item index, i.e. f actually maps (?xD)->(?x*Dout).
-    :return: quadratures (N,*Dout)
+        to leave out the item index, i.e. f actually maps (?xD)->(?x*Dout).
+    :return: quadratures
     """
     # Figure out input shape information
     if Din is None:
@@ -116,6 +129,12 @@ def mvnquad(
     return tf.reduce_sum(fX * wr, 0)
 
 
+@check_shapes(
+    "Fmu: [broadcast Din, N...]",
+    "Fvar: [broadcast Din, N...]",
+    "Ys.values(): [N...]",
+    "return: [broadcast Dout, N...]",
+)
 def ndiagquad(
     funcs: Union[Callable[..., tf.Tensor], Iterable[Callable[..., tf.Tensor]]],
     H: int,
@@ -196,6 +215,12 @@ def ndiagquad(
     return result
 
 
+@check_shapes(
+    "Fmu: [N, Din]",
+    "Fvar: [N, Din]",
+    "Ys.values(): [broadcast N, .]",
+    "return: [broadcast n_funs, N, P]",
+)
 def ndiag_mc(
     funcs: Union[Callable[..., tf.Tensor], Iterable[Callable[..., tf.Tensor]]],
     S: int,

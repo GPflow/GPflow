@@ -16,10 +16,10 @@ Code for setting type hints, depending on library versions.
 """
 import sys
 
-import numpy as np
+from numpy import __version__ as np_version
 from packaging.version import Version
 
-NP_VERSION = Version(np.__version__)  # type: ignore
+NP_VERSION = Version(np_version)
 
 NP_TYPE_CHECKING = False
 """
@@ -33,7 +33,24 @@ Whether to use generic numpy arrays. This is not applied at all, if type checkin
 `NP_TYPE_CHECKING`.
 """
 
-MYPY_FLAGS = {
-    "NP_TYPE_CHECKING": True,
-    "GENERIC_NP_ARRAYS": NP_VERSION >= Version("1.21.0"),
-}
+
+def compute_mypy_flags() -> str:  # pragma: no cover
+    from mypy.version import __version__ as mypy_version
+
+    MYPY_VERSION = Version(mypy_version)
+
+    flags = []
+
+    def set_always(variable: str, value: bool) -> None:
+        if value:
+            flags.append("--always-true")
+        else:
+            flags.append("--always-false")
+        flags.append(variable)
+
+    set_always("NP_TYPE_CHECKING", True)
+    set_always("GENERIC_NP_ARRAYS", NP_VERSION >= Version("1.21.0"))
+    if MYPY_VERSION >= Version("0.940"):
+        flags.extend(["--enable-error-code", "ignore-without-code"])
+
+    return " ".join(flags)

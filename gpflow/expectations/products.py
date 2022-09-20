@@ -18,6 +18,7 @@ from typing import Type
 import tensorflow as tf
 
 from .. import kernels
+from ..experimental.check_shapes import check_shapes
 from ..inducing_variables import InducingPoints
 from ..probability_distributions import DiagonalGaussian
 from . import dispatch
@@ -27,6 +28,10 @@ NoneType: Type[None] = type(None)
 
 
 @dispatch.expectation.register(DiagonalGaussian, kernels.Product, NoneType, NoneType, NoneType)
+@check_shapes(
+    "p: [N, D]",
+    "return: [N]",
+)
 def _expectation_diagonal_product(
     p: DiagonalGaussian, kernel: kernels.Product, _: None, __: None, ___: None, nghp: None = None
 ) -> tf.Tensor:
@@ -49,6 +54,11 @@ def _expectation_diagonal_product(
 
 @dispatch.expectation.register(
     DiagonalGaussian, kernels.Product, InducingPoints, NoneType, NoneType
+)
+@check_shapes(
+    "p: [N, D]",
+    "inducing_variable: [M, D, P]",
+    "return: [N, M]",
 )
 def _expectation_diagonal_product_inducingpoints(
     p: DiagonalGaussian,
@@ -77,6 +87,12 @@ def _expectation_diagonal_product_inducingpoints(
 
 @dispatch.expectation.register(
     DiagonalGaussian, kernels.Product, InducingPoints, kernels.Product, InducingPoints
+)
+@check_shapes(
+    "p: [N, D]",
+    "feat1: [M, D, P]",
+    "feat2: [M, D, P]",
+    "return: [N, M, M]",
 )
 def _expectation_diagonal_product_inducingpoints__product_inducingpoints(
     p: DiagonalGaussian,

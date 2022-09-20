@@ -32,7 +32,8 @@ from gpflow.base import TensorLike
 from gpflow.utilities import to_default_float
 from gpflow import covariances as cov
 from gpflow import kullback_leiblers as kl
-from gpflow.ci_utils import ci_niter
+from gpflow.ci_utils import reduce_in_tests
+from gpflow.experimental.check_shapes import Shape
 
 # %%
 # VFF give structured covariance matrices that are computationally efficient.
@@ -59,13 +60,21 @@ class FourierFeatures1D(InducingVariables):
         # [a, b] defining the interval of the Fourier representation:
         self.a = gpflow.Parameter(a, dtype=gpflow.default_float())
         self.b = gpflow.Parameter(b, dtype=gpflow.default_float())
+        self.M = M
         # integer array defining the frequencies, ω_m = 2π (b - a)/m:
         self.ms = np.arange(M)
 
     @property
     def num_inducing(self):
         """ number of inducing variables (defines dimensionality of q(u)) """
-        return 2 * tf.shape(self.ms)[0] - 1  # `M` cosine and `M-1` sine components
+        return 2 * self.M - 1  # `M` cosine and `M-1` sine components
+
+    @property
+    def shape(self) -> Shape:
+        M = 2 * self.M - 1
+        D = 1  # Input size.
+        P = 1  # Output size.
+        return (M, D, P)
 
 
 # %% [markdown]
@@ -303,7 +312,9 @@ class VFFPosterior(gpflow.posteriors.BasePosterior):
             else:
                 # fvar = fvar + tf.reduce_sum(tf.square(LTA), 1)  # K x N
                 fvar = fvar + tf.reduce_sum(tf.square(ATL), 2)  # K x N
-        fvar = tf.transpose(fvar)  # N x K or N x N x K
+
+        if not full_cov:
+            fvar = tf.transpose(fvar)  # N x K
 
         return fmean, fvar
 
@@ -353,7 +364,7 @@ class VFFPosterior(gpflow.posteriors.BasePosterior):
         else:
             KufT_Qinv_Kuf_diag = tf.reduce_sum(Kuf * Qinv_Kuf, axis=-2)
             fvar = self.kernel(Xnew, full_cov=False) - KufT_Qinv_Kuf_diag
-        fvar = tf.transpose(fvar)
+            fvar = tf.transpose(fvar)
 
         return fmean, fvar
 
@@ -449,7 +460,7 @@ opt = gpflow.optimizers.Scipy()
 opt.minimize(
     m.training_loss_closure(data),
     m.trainable_variables,
-    options=dict(maxiter=ci_niter(5000)),
+    options=dict(maxiter=reduce_in_tests(5000)),
 )
 
 gpflow.utilities.print_summary(m, fmt="notebook")
@@ -474,7 +485,7 @@ opt = gpflow.optimizers.Scipy()
 opt.minimize(
     m_ip.training_loss_closure(data),
     m_ip.trainable_variables,
-    options=dict(maxiter=ci_niter(5000)),
+    options=dict(maxiter=reduce_in_tests(5000)),
 )
 
 gpflow.utilities.print_summary(m_ip, fmt="notebook")

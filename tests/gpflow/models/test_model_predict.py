@@ -79,7 +79,7 @@ model_setups = [
     ModelSetup(model_class=gpflow.models.SVGP, whiten=True, q_diag=True),
     ModelSetup(model_class=gpflow.models.SVGP, whiten=False, q_diag=False),
     ModelSetup(
-        model_class=gpflow.models.SGPR,  # type: ignore  # mypy thinks SPGR is abstract.
+        model_class=gpflow.models.SGPR,  # type: ignore[misc]  # mypy thinks SPGR is abstract.
         requires_data=True,
         requires_likelihood=False,
     ),

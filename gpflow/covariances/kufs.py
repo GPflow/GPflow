@@ -16,12 +16,18 @@ import numpy as np  # pylint: disable=unused-import  # Used by Sphinx to generat
 import tensorflow as tf
 
 from ..base import TensorLike, TensorType
+from ..experimental.check_shapes import check_shapes
 from ..inducing_variables import InducingPatches, InducingPoints, Multiscale
 from ..kernels import Convolutional, Kernel, SquaredExponential
 from .dispatch import Kuf
 
 
 @Kuf.register(InducingPoints, Kernel, TensorLike)
+@check_shapes(
+    "inducing_variable: [M, D, 1]",
+    "Xnew: [batch..., N, D]",
+    "return: [M, batch..., N]",
+)
 def Kuf_kernel_inducingpoints(
     inducing_variable: InducingPoints, kernel: Kernel, Xnew: TensorType
 ) -> tf.Tensor:
@@ -29,19 +35,29 @@ def Kuf_kernel_inducingpoints(
 
 
 @Kuf.register(Multiscale, SquaredExponential, TensorLike)
+@check_shapes(
+    "inducing_variable: [M, D, 1]",
+    "Xnew: [batch..., N, D]",
+    "return: [M, batch..., N]",
+)
 def Kuf_sqexp_multiscale(
     inducing_variable: Multiscale, kernel: SquaredExponential, Xnew: TensorType
 ) -> tf.Tensor:
     Xnew, _ = kernel.slice(Xnew, None)
     Zmu, Zlen = kernel.slice(inducing_variable.Z, inducing_variable.scales)
     idlengthscales = kernel.lengthscales + Zlen
-    d = inducing_variable._cust_square_dist(Xnew, Zmu, idlengthscales)
+    d = inducing_variable._cust_square_dist(Xnew, Zmu, idlengthscales[None, :, :])
     lengthscales = tf.reduce_prod(kernel.lengthscales / idlengthscales, 1)
     lengthscales = tf.reshape(lengthscales, (1, -1))
     return tf.transpose(kernel.variance * tf.exp(-0.5 * d) * lengthscales)
 
 
 @Kuf.register(InducingPatches, Convolutional, object)
+@check_shapes(
+    "inducing_variable: [M, D, 1]",
+    "Xnew: [batch..., N, D2]",
+    "return: [M, batch..., N]",
+)
 def Kuf_conv_patch(
     inducing_variable: InducingPatches, kernel: Convolutional, Xnew: TensorType
 ) -> tf.Tensor:

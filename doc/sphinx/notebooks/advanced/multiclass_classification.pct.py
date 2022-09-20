@@ -36,7 +36,7 @@
 # Another convenient one is the robust max:
 # \begin{equation}
 # \pi_c(\mathbf{f}) = \begin{cases} 1 - \epsilon, & \mbox{if } c = \arg \max_c f_c \\
-#  \epsilon /(C-1), & \mbox{ otherwise} \end{cases}
+# \epsilon /(C-1), & \mbox{ otherwise} \end{cases}
 # \end{equation}
 #
 #
@@ -58,7 +58,7 @@ import matplotlib.pyplot as plt
 import gpflow
 
 from gpflow.utilities import print_summary, set_trainable
-from gpflow.ci_utils import ci_niter
+from gpflow.ci_utils import reduce_in_tests
 
 from multiclass_classification import plot_posterior_predictions, colors
 
@@ -173,7 +173,9 @@ print_summary(m, fmt="notebook")
 opt = gpflow.optimizers.Scipy()
 
 opt_logs = opt.minimize(
-    m.training_loss_closure(data), m.trainable_variables, options=dict(maxiter=ci_niter(1000))
+    m.training_loss_closure(data),
+    m.trainable_variables,
+    options=dict(maxiter=reduce_in_tests(1000)),
 )
 print_summary(m, fmt="notebook")
 

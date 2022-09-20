@@ -95,7 +95,7 @@ class _Values(enum.Enum):
     JITTER = 1e-6
 
     @property
-    def name(self) -> str:  # type: ignore  # name is generated and has weird typing.
+    def name(self) -> str:  # type: ignore[override]  # name is generated and has weird typing.
         return f"GPFLOW_{super().name}"
 
 

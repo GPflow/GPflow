@@ -17,6 +17,7 @@ import re
 from functools import lru_cache
 from typing import Any, Callable, Dict, Mapping, Optional, Pattern, Tuple, Type, TypeVar, Union
 
+import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 from packaging.version import Version
@@ -110,12 +111,12 @@ def tabulate_module_summary(module: tf.Module, tablefmt: Optional[str] = None) -
         if hasattr(var, "transform") and var.transform is not None:
             if isinstance(var.transform, tfp.bijectors.Chain):
                 return " + ".join(b.__class__.__name__ for b in var.transform.bijectors[::-1])
-            return var.transform.__class__.__name__  # type: ignore
+            return var.transform.__class__.__name__  # type: ignore[no-any-return]
         return None
 
     def get_prior(path: Path, var: LeafComponent) -> Optional[str]:
         if hasattr(var, "prior") and var.prior is not None:
-            return var.prior.name  # type: ignore
+            return var.prior.name  # type: ignore[no-any-return]
         return None
 
     # list of (column_name: str, column_getter: Callable[[tf.Variable], str]) tuples:
@@ -138,7 +139,7 @@ def tabulate_module_summary(module: tf.Module, tablefmt: Optional[str] = None) -
         for path, variable in merged_leaf_components.items()
     ]
     # mypy claims it's wrong to pass a `None` tablefmt below. I think `tabulate` has bad type hints.
-    return tabulate(column_values, headers=column_names, tablefmt=tablefmt)  # type: ignore
+    return tabulate(column_values, headers=column_names, tablefmt=tablefmt)  # type: ignore[arg-type]
 
 
 def leaf_components(input: tf.Module) -> Mapping[Path, LeafVariable]:
@@ -260,7 +261,7 @@ def deepcopy(input_module: M, memo: Optional[Dict[int, Any]] = None) -> M:
         (see https://docs.python.org/3/library/copy.html).
     :return: Returns a deepcopy of an input object.
     """
-    return copy.deepcopy(reset_cache_bijectors(input_module), memo)  # type: ignore
+    return copy.deepcopy(reset_cache_bijectors(input_module), memo)  # type: ignore[no-any-return]
 
 
 def freeze(input_module: M) -> M:
@@ -330,7 +331,7 @@ def _first_three_elements_regexp() -> Pattern[str]:
 
 
 def _str_tensor_value(value: AnyNDArray) -> str:
-    value_str = str(value)
+    value_str = str(np.around(value, 5))
     if value.size <= 3:
         return value_str
 

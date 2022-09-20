@@ -95,14 +95,14 @@ import gpflow as gpf
 import tensorflow as tf
 
 from gpflow.utilities import print_summary
-from gpflow.ci_utils import ci_niter
+from gpflow.ci_utils import reduce_in_tests
 
 gpf.config.set_default_float(np.float64)
 gpf.config.set_default_summary_fmt("notebook")
 np.random.seed(0)
 # %matplotlib inline
 
-MAXITER = ci_niter(2000)
+MAXITER = reduce_in_tests(2000)
 
 # %% [markdown]
 # ## Generate synthetic data
@@ -191,7 +191,7 @@ def optimize_model_with_scipy(model):
         model.training_loss_closure(data),
         variables=model.trainable_variables,
         method="l-bfgs-b",
-        options={"disp": True, "maxiter": MAXITER},
+        options={"disp": 50, "maxiter": MAXITER},
     )
 
 
@@ -373,17 +373,17 @@ plot_model(m)
 # ### Implemented combinations
 # Multiple dispatch is applied to both `Kuu()`, `Kuf()`, and `conditional()`. The return values of the covariances can therefore be tailored to a specific implementation of `conditional()`. The following table lists combinations which are currently available in GPflow. Thanks to the multiple dispatch code, implementing your own outside of GPflow should require only a small amount of code!
 #
-# | Inducing variable class                                      | Kernel                  | Kuu           | Kuf           | conditional                         | note                                                                                                                                                                                                                                                                                           |
-# |----------------------------------------------|-------------------------|---------------|---------------|-------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-# | `InducingPoints`                               | `MultioutputKernel`       | `[M, P, M, P]` | `[M, P, N, P]` | `inducing_point_conditional()`, which calls `fully_correlated_conditional()`       | Works for all kernels, but might be very inefficient. In this case `q_mu` and `q_sqrt` should have shapes of `[1, MP]` and `[1, MP, MP]`  |
-# | `SharedIndependentInducingVariables`           | `SharedIndependent`       | `[M, M]`         | `[M, N]`         | `shared_independent_conditional()`, which calls `base_conditional()`                    | The combination of these two classes is in a sense redundant, because we can achieve the same behavior by using the single output Kernel and InducingVariable classes. They are added for illustrative purposes. Thanks to the conditional dispatch, the most efficient code path is used. |
-# | `SeparateIndependentInducingVariables`         | `SharedIndependent`       | `[P, M, M]`     | `[P, M, N]`     | `separate_independent_conditional()`, which calls `base_conditional()` P times               | We loop P times over the `base_conditional()`         |
-# | `SeparateIndependentInducingVariable`         | `SeparateIndependent`     | `[P, M, M]`     | `[P, M, N]`     |  `separate_independent_conditional()`, which calls `base_conditional()` P times                | We loop P times over the `base_conditional()`           |
-# | `SharedIndependentInducingVariables`           | `SeparateIndependent`     | `[P, M, M]`     | `[P, M, N]`     | `separate_independent_conditional()`, which calls `base_conditional()` P times                | We loop P times over the `base_conditional()`        |
-# | `FallbackSharedIndependentInducingVariables`   | `IndependentLatent`       | `[L, M, M]`     | `[M, L, N, P]` | `fallback_independent_latent_conditional()`, which calls `independent_interdomain_conditional()` | Implementation which only requires custom `Kuu()` and `Kuf()` |
-# | `FallbackSeparateIndependentInducingVariable` | `IndependentLatent`       | `[L, M, M]`     | `[M, L, N, P]` | `fallback_independent_latent_conditional()`, which calls `independent_interdomain_conditional()` | Implementation which only requires custom `Kuu()` and `Kuf()`  |
-# | `SharedIndependentInducingVariables`           | `LinearCoregionalization` | `[L, M, M]`     | `[L, M, N]`     | `coregionalization_conditional()`, which calls `base_conditional()`                    | This is the most efficient implementation for linear coregionalization. The inducing outputs live in g-space. Here we use the output of the base conditional and project the mean and covariance with the mixing matrix W.                                                                    |
-# | `SeparateIndependentInducingVariables`         | `LinearCoregionalization` | `[L, M, M]`     | `[L, M, N]`     | base_conditional                    | This is the most efficient implementation for linear coregionalization. The inducing outputs live in g-space. Here we use the output of the base conditional and project the mean and covariance with the mixing matrix W.                                                                    |
+# |  Inducing variable class  |  Kernel  |  Kuu  |  Kuf  |  conditional  |  note  |
+# |  -----------------------  |  ------  |  ---  |  ---  |  -----------  |  ----  |
+# |  `InducingPoints`                                |  `MultioutputKernel`        |  `[M, P, M, P]`  |  `[M, P, N, P]`  |  `inducing_point_conditional()`, which calls `fully_correlated_conditional()`  |  Works for all kernels, but might be very inefficient. In this case `q_mu` and `q_sqrt` should have shapes of `[1, MP]` and `[1, MP, MP]`  |
+# |  `SharedIndependentInducingVariables`            |  `SharedIndependent`        |  `[M, M]`        |  `[M, N]`        |  `shared_independent_conditional()`, which calls `base_conditional()`  |  The combination of these two classes is in a sense redundant, because we can achieve the same behavior by using the single output Kernel and InducingVariable classes. They are added for illustrative purposes. Thanks to the conditional dispatch, the most efficient code path is used.  |
+# |  `SeparateIndependentInducingVariables`          |  `SharedIndependent`        |  `[P, M, M]`     |  `[P, M, N]`     |  `separate_independent_conditional()`, which calls `base_conditional()` P times  |  We loop P times over the `base_conditional()`  |
+# |  `SeparateIndependentInducingVariable`           |  `SeparateIndependent`      |  `[P, M, M]`     |  `[P, M, N]`     |   `separate_independent_conditional()`, which calls `base_conditional()` P times  |  We loop P times over the `base_conditional()`  |
+# |  `SharedIndependentInducingVariables`            |  `SeparateIndependent`      |  `[P, M, M]`     |  `[P, M, N]`     |  `separate_independent_conditional()`, which calls `base_conditional()` P times  |  We loop P times over the `base_conditional()`  |
+# |  `FallbackSharedIndependentInducingVariables`    |  `IndependentLatent`        |  `[L, M, M]`     |  `[M, L, N, P]`  |  `fallback_independent_latent_conditional()`, which calls `independent_interdomain_conditional()`  |  Implementation which only requires custom `Kuu()` and `Kuf()`  |
+# |  `FallbackSeparateIndependentInducingVariable`   |  `IndependentLatent`        |  `[L, M, M]`     |  `[M, L, N, P]`  |  `fallback_independent_latent_conditional()`, which calls `independent_interdomain_conditional()`  |  Implementation which only requires custom `Kuu()` and `Kuf()`  |
+# |  `SharedIndependentInducingVariables`            |  `LinearCoregionalization`  |  `[L, M, M]`     |  `[L, M, N]`     |  `coregionalization_conditional()`, which calls `base_conditional()`  |  This is the most efficient implementation for linear coregionalization. The inducing outputs live in g-space. Here we use the output of the base conditional and project the mean and covariance with the mixing matrix W.  |
+# |  `SeparateIndependentInducingVariables`          |  `LinearCoregionalization`  |  `[L, M, M]`      |  `[L, M, N]`      |  `base_conditional()`  |  This is the most efficient implementation for linear coregionalization. The inducing outputs live in g-space. Here we use the output of the base conditional and project the mean and covariance with the mixing matrix W.  |
 
 # %% [markdown]
 # ## Debugging: introspect

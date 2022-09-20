@@ -19,23 +19,26 @@ import tensorflow as tf
 import gpflow
 from gpflow.base import AnyNDArray
 from gpflow.config import default_float
+from gpflow.experimental.check_shapes import ShapeChecker
 
 rng = np.random.RandomState(0)
 
 
 class Datum:
+    cs = ShapeChecker().check_shape
+
     n_inputs = 1
     n_outputs = 2
     n_outputs_c = 1
 
-    X: AnyNDArray = rng.rand(20, n_inputs) * 10
-    Y = np.sin(X) + 0.9 * np.cos(X * 1.6) + rng.randn(*X.shape) * 0.8
-    Y = np.tile(Y, n_outputs)  # identical columns
-    Xtest: AnyNDArray = rng.rand(10, n_outputs) * 10
+    X: AnyNDArray = cs(rng.rand(20, n_inputs) * 10, "[N, n_inputs]")
+    Y = cs(np.sin(X) + 0.9 * np.cos(X * 1.6) + rng.randn(*X.shape) * 0.8, "[N, n_outputs_c]")
+    Y = cs(np.tile(Y, n_outputs), "[N, n_outputs]")  # identical columns
+    Xtest: AnyNDArray = cs(rng.rand(10, n_inputs) * 10, "[N_new, n_inputs]")
     data = (X, Y)
 
     # for classification:
-    Yc = Y[:, :n_outputs_c]
+    Yc = cs(Y[:, :n_outputs_c], "[N, n_outputs_c]")
     cdata = (X, Yc)
 
 
@@ -88,8 +91,12 @@ def test_svgp(whiten: bool, q_diag: bool) -> None:
 
     # test with explicitly unknown shapes:
     tensor_spec = tf.TensorSpec(shape=None, dtype=default_float())
+
+    # lambda because: https://github.com/GPflow/GPflow/issues/1929
+    elbo_lambda = lambda data: model.elbo(data)
+
     elbo = tf.function(
-        model.elbo,
+        elbo_lambda,
         input_signature=[(tensor_spec, tensor_spec)],
     )
 
@@ -154,10 +161,13 @@ def test_svgp_multiclass() -> None:
     )
     gpflow.set_trainable(model.inducing_variable, False)
 
+    # lambda because: https://github.com/GPflow/GPflow/issues/1929
+    elbo_lambda = lambda data: model.elbo(data)
+
     # test with explicitly unknown shapes:
     tensor_spec = tf.TensorSpec(shape=None, dtype=default_float())
     elbo = tf.function(
-        model.elbo,
+        elbo_lambda,
         input_signature=[(tensor_spec, tensor_spec)],
     )
 

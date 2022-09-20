@@ -62,15 +62,15 @@
 #
 # We cache two separate values: $\alpha$ and $Q^{-1}$. These correspond to the parts of the mean and covariance functions respectively which do not depend upon the test points. In the case of the GPR these are the same value:
 # \begin{equation*}
-#     \alpha = Q^{-1} = [K_{mm} + \sigma^2I]^{-1}
+# \alpha = Q^{-1} = [K_{mm} + \sigma^2I]^{-1}
 # \end{equation*}
 # in the case of the VGP and SVGP model these are:
 # \begin{equation*}
-#     \alpha = K_{uu}^{-1}\mathbf{u}\\ Q^{-1} = K_{uu}^{-1}
+# \alpha = K_{uu}^{-1}\mathbf{u}\\ Q^{-1} = K_{uu}^{-1}
 # \end{equation*}
 # and in the case of the SGPR model these are:
 # \begin{equation*}
-#     \alpha = L^{-T}L_B^{-T}\mathbf{c}\\ Q^{-1} = L^{-T}(I - B^{-1})L^{-1}
+# \alpha = L^{-T}L_B^{-T}\mathbf{c}\\ Q^{-1} = L^{-T}(I - B^{-1})L^{-1}
 # \end{equation*}
 #
 #
@@ -79,11 +79,14 @@
 # +
 import gpflow
 import numpy as np
+from gpflow.ci_utils import reduce_in_tests
 
 # Create some data
-X = np.linspace(-1.1, 1.1, 1000)[:, None]
+n_data = reduce_in_tests(1000)
+X = np.linspace(-1.1, 1.1, n_data)[:, None]
 Y = np.sin(X)
-Xnew = np.linspace(-1.1, 1.1, 1000)[:, None]
+Xnew = np.linspace(-1.1, 1.1, n_data)[:, None]
+inducing_points = Xnew
 
 # + [markdown] id="FzCgor4nKUcW"
 #
@@ -117,7 +120,7 @@ posterior.predict_f(Xnew)
 model = gpflow.models.SVGP(
     gpflow.kernels.SquaredExponential(),
     gpflow.likelihoods.Gaussian(),
-    np.linspace(-1.1, 1.1, 1000)[:, None],
+    inducing_points,
 )
 # -
 
@@ -137,9 +140,7 @@ posterior.predict_f(Xnew)
 #
 # And finally, we follow the same approach this time for the SGPR case.
 
-model = gpflow.models.SGPR(
-    (X, Y), gpflow.kernels.SquaredExponential(), np.linspace(-1.1, 1.1, 1000)[:, None]
-)
+model = gpflow.models.SGPR((X, Y), gpflow.kernels.SquaredExponential(), inducing_points)
 
 # The predict_f method on the instance performs no caching.
 

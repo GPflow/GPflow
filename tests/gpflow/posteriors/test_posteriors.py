@@ -22,8 +22,10 @@ import gpflow
 import gpflow.ci_utils
 from gpflow.base import TensorType
 from gpflow.conditionals import conditional
+from gpflow.experimental.check_shapes import check_shapes
 from gpflow.inducing_variables import InducingPoints, InducingVariables
 from gpflow.kernels import Kernel
+from gpflow.likelihoods import Gaussian
 from gpflow.mean_functions import Zero
 from gpflow.models.util import inducingpoint_wrapper
 from gpflow.posteriors import (
@@ -114,6 +116,11 @@ def _output_dims_fixture(request: SubRequest) -> int:
 ConditionalClosure = Callable[..., tf.Tensor]
 
 
+@check_shapes(
+    "inducing_variable: [M, D, broadcast P]",
+    "q_mu: [MxP, R]",
+    "q_sqrt: [MxP_or_MxP_N_N...]",
+)
 def create_conditional(
     *,
     kernel: Kernel,
@@ -122,6 +129,14 @@ def create_conditional(
     q_sqrt: TensorType,
     whiten: bool,
 ) -> ConditionalClosure:
+    @check_shapes(
+        "Xnew: [batch..., N, D]",
+        "return[0]: [batch..., N, R]",
+        "return[1]: [batch..., N, R] if (not full_cov) and (not full_output_cov)",
+        "return[1]: [batch..., R, N, N] if full_cov and (not full_output_cov)",
+        "return[1]: [batch..., N, R, R] if (not full_cov) and full_output_cov",
+        "return[1]: [batch..., N, R, N, R] if full_cov and full_output_cov",
+    )
     def conditional_closure(
         Xnew: TensorType, *, full_cov: bool, full_output_cov: bool
     ) -> tf.Tensor:
@@ -642,7 +657,7 @@ def test_gpr_posterior_update_cache_with_variables_no_precompute(
     posterior = GPRPosterior(
         kernel=kernel,
         data=(X, Y),
-        likelihood_variance=gpflow.Parameter(0.1),
+        likelihood=Gaussian(0.1),
         precompute_cache=precompute_cache_type,
         mean_function=Zero(),
     )
@@ -650,8 +665,9 @@ def test_gpr_posterior_update_cache_with_variables_no_precompute(
     register_posterior_test(posterior, GPRPosterior)
 
     assert posterior.cache
-    (Kmm_plus_s_inv,) = posterior.cache
-    assert isinstance(Kmm_plus_s_inv, tf.Variable)
+    err, Lm = posterior.cache
+    assert isinstance(err, tf.Variable)
+    assert isinstance(Lm, tf.Variable)
 
 
 @pytest.mark.parametrize(
@@ -672,7 +688,7 @@ def test_sgpr_posterior_update_cache_with_variables_no_precompute(
         kernel=kernel,
         data=(X, Y),
         inducing_variable=InducingPoints(Z),
-        likelihood_variance=gpflow.Parameter(0.1),
+        likelihood=Gaussian(0.1),
         num_latent_gps=1,
         precompute_cache=precompute_cache_type,
         mean_function=Zero(),
@@ -681,9 +697,10 @@ def test_sgpr_posterior_update_cache_with_variables_no_precompute(
     register_posterior_test(posterior, SGPRPosterior)
 
     assert posterior.cache
-    alpha, Qinv = posterior.cache
-    assert isinstance(alpha, tf.Variable)
-    assert isinstance(Qinv, tf.Variable)
+    L, LB, c = posterior.cache
+    assert isinstance(L, tf.Variable)
+    assert isinstance(LB, tf.Variable)
+    assert isinstance(c, tf.Variable)
 
 
 @pytest.mark.parametrize(

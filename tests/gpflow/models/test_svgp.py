@@ -32,7 +32,7 @@ class DatumSVGP:
     X: AnyNDArray = rng.randn(20, 1)
     Y: AnyNDArray = rng.randn(20, 2) ** 2
     Z: AnyNDArray = rng.randn(3, 1)
-    qsqrt: AnyNDArray = (rng.randn(3, 2) ** 2) * 0.01  # type: ignore
+    qsqrt: AnyNDArray = (rng.randn(3, 2) ** 2) * 0.01
     qmean: AnyNDArray = rng.randn(3, 2)
     lik = gpflow.likelihoods.Exponential()
     data = (X, Y)

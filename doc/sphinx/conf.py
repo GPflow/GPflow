@@ -24,7 +24,7 @@ copyright = "2022, The GPflow Contributors"
 author = "The GPflow Contributors"
 
 # The full version, including alpha/beta/rc tags
-release = "2.5.2"
+release = "2.6.0"
 
 
 # -- General configuration ---------------------------------------------------

@@ -19,6 +19,7 @@ import tensorflow as tf
 
 from ..base import AnyNDArray
 from ..config import default_float
+from ..experimental.check_shapes import check_shapes
 from ..inducing_variables import InducingPoints, InducingVariables
 from .model import BayesianModel
 from .training_mixins import Data, ExternalDataTrainingLossMixin
@@ -47,16 +48,25 @@ def _assert_equal_data(
             tf.debugging.assert_equal(v1, v2)
 
 
+@check_shapes(
+    "data[0]: [N, D]",
+    "data[1]: [N, P]",
+)
 def training_loss_closure(
     model: BayesianModel, data: Data, **closure_kwargs: Any
 ) -> Callable[[], tf.Tensor]:
     if isinstance(model, ExternalDataTrainingLossMixin):
-        return model.training_loss_closure(data, **closure_kwargs)  # type: ignore
+        return model.training_loss_closure(data, **closure_kwargs)  # type: ignore[no-any-return]
     else:
         _assert_equal_data(model.data, data)
-        return model.training_loss_closure(**closure_kwargs)  # type: ignore
+        return model.training_loss_closure(**closure_kwargs)  # type: ignore[no-any-return]
 
 
+@check_shapes(
+    "data[0]: [N, D]",
+    "data[1]: [N, P]",
+    "return: []",
+)
 def training_loss(model: BayesianModel, data: Data) -> tf.Tensor:
     if isinstance(model, ExternalDataTrainingLossMixin):
         return model.training_loss(data)
@@ -65,6 +75,11 @@ def training_loss(model: BayesianModel, data: Data) -> tf.Tensor:
         return model.training_loss()
 
 
+@check_shapes(
+    "data[0]: [N, D]",
+    "data[1]: [N, P]",
+    "return: []",
+)
 def maximum_log_likelihood_objective(model: BayesianModel, data: Data) -> tf.Tensor:
     if isinstance(model, ExternalDataTrainingLossMixin):
         return model.maximum_log_likelihood_objective(data)

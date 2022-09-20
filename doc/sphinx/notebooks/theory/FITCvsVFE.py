@@ -1,9 +1,9 @@
 import gpflow
-from gpflow.ci_utils import ci_niter
+from gpflow.ci_utils import reduce_in_tests
 import tensorflow as tf
 import numpy as np
 
-nRepeats = ci_niter(50)
+nRepeats = reduce_in_tests(50)
 
 predict_limits = [-4.0, 4.0]
 inducing_points_limits = [-1.0, 9]
@@ -94,7 +94,7 @@ def repeatMinimization(model, Xtest, Ytest):
             model.trainable_variables,
             method="L-BFGS-B",
             tol=1e-11,
-            options=dict(disp=False, maxiter=ci_niter(2000)),
+            options=dict(disp=False, maxiter=reduce_in_tests(2000)),
             step_callback=callback,
             compile=True,
         )
@@ -189,7 +189,7 @@ def snelsonDemo():
     # run exact inference on training data.
     exact_model = getRegressionModel(Xtrain, Ytrain)
     opt = gpflow.train.ScipyOptimizer()
-    opt.minimize(exact_model, maxiter=ci_niter(2000000))
+    opt.minimize(exact_model, maxiter=reduce_in_tests(2000000))
 
     figA, axes = plt.subplots(1, 1)
     inds = np.argsort(Xtrain.flatten())

@@ -19,11 +19,13 @@ import tensorflow as tf
 import gpflow
 
 from .. import posteriors
-from ..base import InputData, MeanAndVariance, RegressionData
+from ..base import InputData, MeanAndVariance, RegressionData, TensorData
+from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..kernels import Kernel
+from ..likelihoods import Gaussian
 from ..logdensities import multivariate_normal
 from ..mean_functions import MeanFunction
-from ..utilities.model_utils import add_noise_cov
+from ..utilities import add_likelihood_noise_cov, assert_params_false
 from .model import GPModel
 from .training_mixins import InternalDataTrainingLossMixin
 from .util import data_input_to_tensor
@@ -52,29 +54,38 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
             \mathcal N(Y \,|\, 0, \mathbf{K} + \sigma_n^2 \mathbf{I})
     """
 
+    @check_shapes(
+        "data[0]: [N, D]",
+        "data[1]: [N, P]",
+        "noise_variance: []",
+    )
     def __init__(
         self,
         data: RegressionData,
         kernel: Kernel,
         mean_function: Optional[MeanFunction] = None,
-        noise_variance: float = 1.0,
+        noise_variance: Optional[TensorData] = None,
+        likelihood: Optional[Gaussian] = None,
     ):
-        likelihood = gpflow.likelihoods.Gaussian(noise_variance)
+        assert (noise_variance is None) or (
+            likelihood is None
+        ), "Cannot set both `noise_variance` and `likelihood`."
+        if likelihood is None:
+            if noise_variance is None:
+                noise_variance = 1.0
+            likelihood = gpflow.likelihoods.Gaussian(noise_variance)
         _, Y_data = data
         super().__init__(kernel, likelihood, mean_function, num_latent_gps=Y_data.shape[-1])
         self.data = data_input_to_tensor(data)
 
     # type-ignore is because of changed method signature:
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore
+    @inherit_check_shapes
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore[override]
         return self.log_marginal_likelihood()
 
-    def _add_noise_cov(self, K: tf.Tensor) -> tf.Tensor:
-        """
-        Returns K + σ² I, where σ² is the likelihood noise variance (scalar),
-        and I is the corresponding identity matrix.
-        """
-        return add_noise_cov(K, self.likelihood.variance)
-
+    @check_shapes(
+        "return: []",
+    )
     def log_marginal_likelihood(self) -> tf.Tensor:
         r"""
         Computes the log marginal likelihood.
@@ -85,7 +96,7 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
         """
         X, Y = self.data
         K = self.kernel(X)
-        ks = self._add_noise_cov(K)
+        ks = add_likelihood_noise_cov(K, self.likelihood, X)
         L = tf.linalg.cholesky(ks)
         m = self.mean_function(X)
 
@@ -93,6 +104,7 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
         log_prob = multivariate_normal(Y, m, L)
         return tf.reduce_sum(log_prob)
 
+    @inherit_check_shapes
     def predict_f(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
@@ -105,13 +117,15 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
         where F* are points on the GP at new data points, Y are noisy observations at training data
         points.
         """
+        assert_params_false(self.predict_f, full_output_cov=full_output_cov)
+
         X, Y = self.data
         err = Y - self.mean_function(X)
 
         kmm = self.kernel(X)
         knn = self.kernel(Xnew, full_cov=full_cov)
         kmn = self.kernel(X, Xnew)
-        kmm_plus_s = self._add_noise_cov(kmm)
+        kmm_plus_s = add_likelihood_noise_cov(kmm, self.likelihood, X)
 
         conditional = gpflow.conditionals.base_conditional
         f_mean_zero, f_var = conditional(
@@ -153,11 +167,12 @@ class GPR_with_posterior(GPR_deprecated):
         return posteriors.GPRPosterior(
             kernel=self.kernel,
             data=self.data,
-            likelihood_variance=self.likelihood.variance,
+            likelihood=self.likelihood,
             mean_function=self.mean_function,
             precompute_cache=precompute_cache,
         )
 
+    @inherit_check_shapes
     def predict_f(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:

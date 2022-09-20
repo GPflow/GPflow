@@ -79,4 +79,4 @@ def test_notebook(notebook_path: Path) -> None:
 
 
 def test_has_notebooks() -> None:
-    assert len(get_notebooks()) >= 35, "there are probably some notebooks that were not discovered"
+    assert len(get_notebooks()) >= 30, "there are probably some notebooks that were not discovered"

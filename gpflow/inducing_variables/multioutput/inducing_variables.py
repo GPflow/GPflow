@@ -15,6 +15,7 @@ from typing import Sequence, Tuple
 
 import tensorflow as tf
 
+from ...experimental.check_shapes import Shape, check_shapes
 from ..inducing_variables import InducingVariables
 
 
@@ -67,17 +68,31 @@ class FallbackSharedIndependentInducingVariables(MultioutputInducingVariables):
     processes.
     """
 
+    @check_shapes(
+        "inducing_variable: [M, D, 1]",
+    )
     def __init__(self, inducing_variable: InducingVariables):
         super().__init__()
         self.inducing_variable = inducing_variable
 
-    @property
+    @property  # type: ignore[misc]  # mypy doesn't like decorated properties.
+    @check_shapes(
+        "return: []",
+    )
     def num_inducing(self) -> tf.Tensor:
         return self.inducing_variable.num_inducing
 
     @property
     def inducing_variables(self) -> Tuple[InducingVariables]:
         return (self.inducing_variable,)
+
+    @property
+    def shape(self) -> Shape:
+        inner = self.inducing_variable.shape
+        if inner is None:
+            return inner
+        assert inner[2] == 1
+        return inner[:2] + (None,)
 
 
 class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables):
@@ -113,18 +128,31 @@ class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables)
     Note: each object should have the same number of inducing variables, M.
     """
 
+    @check_shapes(
+        "inducing_variable_list[all]: [M, D, 1]",
+    )
     def __init__(self, inducing_variable_list: Sequence[InducingVariables]):
         super().__init__()
         self.inducing_variable_list = inducing_variable_list
 
-    @property
+    @property  # type: ignore[misc]  # mypy doesn't like decorated properties.
+    @check_shapes(
+        "return: []",
+    )
     def num_inducing(self) -> tf.Tensor:
-        # TODO(st--) we should check that they all have the same length...
         return self.inducing_variable_list[0].num_inducing
 
     @property
     def inducing_variables(self) -> Tuple[InducingVariables, ...]:
         return tuple(self.inducing_variable_list)
+
+    @property
+    def shape(self) -> Shape:
+        inner = self.inducing_variable_list[0].shape
+        if inner is None:
+            return inner
+        assert inner[2] == 1
+        return inner[:2] + (len(self.inducing_variable_list),)
 
 
 class SharedIndependentInducingVariables(FallbackSharedIndependentInducingVariables):
@@ -135,8 +163,6 @@ class SharedIndependentInducingVariables(FallbackSharedIndependentInducingVariab
     the most efficient implementation.
     """
 
-    pass
-
 
 class SeparateIndependentInducingVariables(FallbackSeparateIndependentInducingVariables):
     """
@@ -145,5 +171,3 @@ class SeparateIndependentInducingVariables(FallbackSeparateIndependentInducingVa
     `Kuu()` and `Kuf()` return. This allows a custom `conditional()` to provide
     the most efficient implementation.
     """
-
-    pass

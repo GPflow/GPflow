@@ -18,6 +18,7 @@ import numpy as np
 import tensorflow as tf
 
 from ..base import Parameter, TensorType
+from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..utilities import positive
 from ..utilities.ops import difference_matrix, square_distance
 from .base import ActiveDims, Kernel
@@ -34,6 +35,10 @@ class Stationary(Kernel):
     dimension, otherwise the kernel is isotropic (has a single lengthscale).
     """
 
+    @check_shapes(
+        "variance: []",
+        "lengthscales: [broadcast n_active_dims]",
+    )
     def __init__(
         self, variance: TensorType = 1.0, lengthscales: TensorType = 1.0, **kwargs: Any
     ) -> None:
@@ -65,10 +70,15 @@ class Stationary(Kernel):
         ndims: int = self.lengthscales.shape.ndims
         return ndims > 0
 
+    @check_shapes(
+        "X: [broadcast any...]",
+        "return: [any...]",
+    )
     def scale(self, X: TensorType) -> TensorType:
         X_scaled = X / self.lengthscales if X is not None else X
         return X_scaled
 
+    @inherit_check_shapes
     def K_diag(self, X: TensorType) -> tf.Tensor:
         return tf.fill(tf.shape(X)[:-1], tf.squeeze(self.variance))
 
@@ -89,10 +99,15 @@ class IsotropicStationary(Stationary):
         Euclidean distance. Should operate element-wise on r.
     """
 
+    @inherit_check_shapes
     def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
         r2 = self.scaled_squared_euclid_dist(X, X2)
         return self.K_r2(r2)
 
+    @check_shapes(
+        "r2: [batch..., N]",
+        "return: [batch..., N]",
+    )
     def K_r2(self, r2: TensorType) -> tf.Tensor:
         if hasattr(self, "K_r"):
             # Clipping around the (single) float precision which is ~1e-45.
@@ -100,6 +115,12 @@ class IsotropicStationary(Stationary):
             return self.K_r(r)  # pylint: disable=no-member
         raise NotImplementedError
 
+    @check_shapes(
+        "X: [batch..., N, D]",
+        "X2: [batch2..., N2, D]",
+        "return: [batch..., N, batch2..., N2] if X2 is not None",
+        "return: [batch..., N, N] if X2 is None",
+    )
     def scaled_squared_euclid_dist(
         self, X: TensorType, X2: Optional[TensorType] = None
     ) -> tf.Tensor:
@@ -122,6 +143,10 @@ class AnisotropicStationary(Stationary):
     input dimension.
     """
 
+    @check_shapes(
+        "variance: []",
+        "lengthscales: [broadcast n_active_dims]",
+    )
     def __init__(
         self, variance: TensorType = 1.0, lengthscales: TensorType = 1.0, **kwargs: Any
     ) -> None:
@@ -142,9 +167,16 @@ class AnisotropicStationary(Stationary):
         if self.ard:
             self.lengthscales = Parameter(self.lengthscales.numpy())
 
+    @inherit_check_shapes
     def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
         return self.K_d(self.scaled_difference_matrix(X, X2))
 
+    @check_shapes(
+        "X: [batch..., N, D]",
+        "X2: [batch2..., N2, D]",
+        "return: [batch..., N, batch2..., N2, D] if X2 is not None",
+        "return: [batch..., N, N, D] if X2 is None",
+    )
     def scaled_difference_matrix(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
         """
         Returns [(X - X2ᵀ) / ℓ]. If X has shape [..., N, D] and
@@ -152,6 +184,10 @@ class AnisotropicStationary(Stationary):
         """
         return difference_matrix(self.scale(X), self.scale(X2))
 
+    @check_shapes(
+        "d: [batch..., N, D]",
+        "return: [batch..., N]",
+    )
     def K_d(self, d: TensorType) -> tf.Tensor:
         raise NotImplementedError
 
@@ -169,6 +205,7 @@ class SquaredExponential(IsotropicStationary):
     Functions drawn from a GP with this kernel are infinitely differentiable!
     """
 
+    @inherit_check_shapes
     def K_r2(self, r2: TensorType) -> tf.Tensor:
         return self.variance * tf.exp(-0.5 * r2)
 
@@ -196,6 +233,7 @@ class RationalQuadratic(IsotropicStationary):
         super().__init__(variance=variance, lengthscales=lengthscales, active_dims=active_dims)
         self.alpha = Parameter(alpha, transform=positive())
 
+    @inherit_check_shapes
     def K_r2(self, r2: TensorType) -> tf.Tensor:
         return self.variance * (1 + 0.5 * r2 / self.alpha) ** (-self.alpha)
 
@@ -205,6 +243,10 @@ class Exponential(IsotropicStationary):
     The Exponential kernel. It is equivalent to a Matern12 kernel with doubled lengthscales.
     """
 
+    @check_shapes(
+        "r: [batch..., N]",
+        "return: [batch..., N]",
+    )
     def K_r(self, r: TensorType) -> tf.Tensor:
         return self.variance * tf.exp(-0.5 * r)
 
@@ -221,6 +263,10 @@ class Matern12(IsotropicStationary):
     σ² is the variance parameter
     """
 
+    @check_shapes(
+        "r: [batch..., N]",
+        "return: [batch..., N]",
+    )
     def K_r(self, r: TensorType) -> tf.Tensor:
         return self.variance * tf.exp(-r)
 
@@ -237,6 +283,10 @@ class Matern32(IsotropicStationary):
     σ² is the variance parameter.
     """
 
+    @check_shapes(
+        "r: [batch..., N]",
+        "return: [batch..., N]",
+    )
     def K_r(self, r: TensorType) -> tf.Tensor:
         sqrt3 = np.sqrt(3.0)
         return self.variance * (1.0 + sqrt3 * r) * tf.exp(-sqrt3 * r)
@@ -254,6 +304,10 @@ class Matern52(IsotropicStationary):
     σ² is the variance parameter.
     """
 
+    @check_shapes(
+        "r: [batch..., N]",
+        "return: [batch..., N]",
+    )
     def K_r(self, r: TensorType) -> tf.Tensor:
         sqrt5 = np.sqrt(5.0)
         return self.variance * (1.0 + sqrt5 * r + 5.0 / 3.0 * tf.square(r)) * tf.exp(-sqrt5 * r)
@@ -272,6 +326,7 @@ class Cosine(AnisotropicStationary):
     σ² is the variance parameter.
     """
 
+    @inherit_check_shapes
     def K_d(self, d: TensorType) -> tf.Tensor:
         d = tf.reduce_sum(d, axis=-1)
         return self.variance * tf.cos(2 * np.pi * d)

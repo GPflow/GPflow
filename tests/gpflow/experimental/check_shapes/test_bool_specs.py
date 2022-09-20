@@ -15,7 +15,7 @@
 Unit test for code for specifying and evaluating boolean expressions.
 """
 from dataclasses import dataclass
-from typing import Any, Mapping, Tuple
+from typing import Any, List, Mapping, Tuple
 
 import pytest
 
@@ -41,6 +41,10 @@ class BoolSpecTest:
 
     def __str__(self) -> str:
         return repr(self.spec).replace(" ", "_")
+
+
+_NON_EMPTY_LIST = [3]
+_EMPTY_LIST: List[int] = []
 
 
 TESTS = [
@@ -88,22 +92,22 @@ TESTS = [
                 ),
             ),
             (
-                {"foo": [3]},
+                {"foo": _NON_EMPTY_LIST},
                 (
                     True,
                     StackContext(
                         ArgumentContext("foo"),
-                        ObjectValueContext([3]),
+                        ObjectValueContext(_NON_EMPTY_LIST),
                     ),
                 ),
             ),
             (
-                {"foo": []},
+                {"foo": _EMPTY_LIST},
                 (
                     False,
                     StackContext(
                         ArgumentContext("foo"),
-                        ObjectValueContext([]),
+                        ObjectValueContext(_EMPTY_LIST),
                     ),
                 ),
             ),
@@ -119,6 +123,158 @@ TESTS = [
             ),
         ),
         expected_repr="foo",
+    ),
+    BoolSpecTest(
+        spec=barg("foo", "IS_NONE"),
+        expected_get=(
+            (
+                {"foo": True},
+                (
+                    False,
+                    StackContext(
+                        ArgumentContext("foo"),
+                        ObjectValueContext(True),
+                    ),
+                ),
+            ),
+            (
+                {"foo": False},
+                (
+                    False,
+                    StackContext(
+                        ArgumentContext("foo"),
+                        ObjectValueContext(False),
+                    ),
+                ),
+            ),
+            (
+                {"foo": 7},
+                (
+                    False,
+                    StackContext(
+                        ArgumentContext("foo"),
+                        ObjectValueContext(7),
+                    ),
+                ),
+            ),
+            (
+                {"foo": 0},
+                (
+                    False,
+                    StackContext(
+                        ArgumentContext("foo"),
+                        ObjectValueContext(0),
+                    ),
+                ),
+            ),
+            (
+                {"foo": _NON_EMPTY_LIST},
+                (
+                    False,
+                    StackContext(
+                        ArgumentContext("foo"),
+                        ObjectValueContext(_NON_EMPTY_LIST),
+                    ),
+                ),
+            ),
+            (
+                {"foo": _EMPTY_LIST},
+                (
+                    False,
+                    StackContext(
+                        ArgumentContext("foo"),
+                        ObjectValueContext(_EMPTY_LIST),
+                    ),
+                ),
+            ),
+            (
+                {"foo": None},
+                (
+                    True,
+                    StackContext(
+                        ArgumentContext("foo"),
+                        ObjectValueContext(None),
+                    ),
+                ),
+            ),
+        ),
+        expected_repr="foo is None",
+    ),
+    BoolSpecTest(
+        spec=barg("foo", "IS_NOT_NONE"),
+        expected_get=(
+            (
+                {"foo": True},
+                (
+                    True,
+                    StackContext(
+                        ArgumentContext("foo"),
+                        ObjectValueContext(True),
+                    ),
+                ),
+            ),
+            (
+                {"foo": False},
+                (
+                    True,
+                    StackContext(
+                        ArgumentContext("foo"),
+                        ObjectValueContext(False),
+                    ),
+                ),
+            ),
+            (
+                {"foo": 7},
+                (
+                    True,
+                    StackContext(
+                        ArgumentContext("foo"),
+                        ObjectValueContext(7),
+                    ),
+                ),
+            ),
+            (
+                {"foo": 0},
+                (
+                    True,
+                    StackContext(
+                        ArgumentContext("foo"),
+                        ObjectValueContext(0),
+                    ),
+                ),
+            ),
+            (
+                {"foo": _NON_EMPTY_LIST},
+                (
+                    True,
+                    StackContext(
+                        ArgumentContext("foo"),
+                        ObjectValueContext(_NON_EMPTY_LIST),
+                    ),
+                ),
+            ),
+            (
+                {"foo": _EMPTY_LIST},
+                (
+                    True,
+                    StackContext(
+                        ArgumentContext("foo"),
+                        ObjectValueContext(_EMPTY_LIST),
+                    ),
+                ),
+            ),
+            (
+                {"foo": None},
+                (
+                    False,
+                    StackContext(
+                        ArgumentContext("foo"),
+                        ObjectValueContext(None),
+                    ),
+                ),
+            ),
+        ),
+        expected_repr="foo is not None",
     ),
     BoolSpecTest(
         spec=bor(barg("left"), barg("right")),
@@ -175,6 +331,60 @@ TESTS = [
         expected_repr="left or right",
     ),
     BoolSpecTest(
+        spec=bor(barg("left", "IS_NONE"), barg("right", "IS_NOT_NONE")),
+        expected_get=(
+            (
+                {"left": 1, "right": 1},
+                (
+                    True,
+                    ParallelContext(
+                        (
+                            StackContext(ArgumentContext("left"), ObjectValueContext(1)),
+                            StackContext(ArgumentContext("right"), ObjectValueContext(1)),
+                        )
+                    ),
+                ),
+            ),
+            (
+                {"left": 1, "right": None},
+                (
+                    False,
+                    ParallelContext(
+                        (
+                            StackContext(ArgumentContext("left"), ObjectValueContext(1)),
+                            StackContext(ArgumentContext("right"), ObjectValueContext(None)),
+                        )
+                    ),
+                ),
+            ),
+            (
+                {"left": None, "right": 1},
+                (
+                    True,
+                    ParallelContext(
+                        (
+                            StackContext(ArgumentContext("left"), ObjectValueContext(None)),
+                            StackContext(ArgumentContext("right"), ObjectValueContext(1)),
+                        )
+                    ),
+                ),
+            ),
+            (
+                {"left": None, "right": None},
+                (
+                    True,
+                    ParallelContext(
+                        (
+                            StackContext(ArgumentContext("left"), ObjectValueContext(None)),
+                            StackContext(ArgumentContext("right"), ObjectValueContext(None)),
+                        )
+                    ),
+                ),
+            ),
+        ),
+        expected_repr="(left is None) or (right is not None)",
+    ),
+    BoolSpecTest(
         spec=band(barg("left"), barg("right")),
         expected_get=(
             (
@@ -229,6 +439,60 @@ TESTS = [
         expected_repr="left and right",
     ),
     BoolSpecTest(
+        spec=band(barg("left", "IS_NOT_NONE"), barg("right", "IS_NONE")),
+        expected_get=(
+            (
+                {"left": 1, "right": 1},
+                (
+                    False,
+                    ParallelContext(
+                        (
+                            StackContext(ArgumentContext("left"), ObjectValueContext(1)),
+                            StackContext(ArgumentContext("right"), ObjectValueContext(1)),
+                        )
+                    ),
+                ),
+            ),
+            (
+                {"left": 1, "right": None},
+                (
+                    True,
+                    ParallelContext(
+                        (
+                            StackContext(ArgumentContext("left"), ObjectValueContext(1)),
+                            StackContext(ArgumentContext("right"), ObjectValueContext(None)),
+                        )
+                    ),
+                ),
+            ),
+            (
+                {"left": None, "right": 1},
+                (
+                    False,
+                    ParallelContext(
+                        (
+                            StackContext(ArgumentContext("left"), ObjectValueContext(None)),
+                            StackContext(ArgumentContext("right"), ObjectValueContext(1)),
+                        )
+                    ),
+                ),
+            ),
+            (
+                {"left": None, "right": None},
+                (
+                    False,
+                    ParallelContext(
+                        (
+                            StackContext(ArgumentContext("left"), ObjectValueContext(None)),
+                            StackContext(ArgumentContext("right"), ObjectValueContext(None)),
+                        )
+                    ),
+                ),
+            ),
+        ),
+        expected_repr="(left is not None) and (right is None)",
+    ),
+    BoolSpecTest(
         spec=bnot(barg("right")),
         expected_get=(
             (
@@ -241,6 +505,34 @@ TESTS = [
             ),
         ),
         expected_repr="not right",
+    ),
+    BoolSpecTest(
+        spec=bnot(barg("right", "IS_NONE")),
+        expected_get=(
+            (
+                {"right": 1},
+                (True, StackContext(ArgumentContext("right"), ObjectValueContext(1))),
+            ),
+            (
+                {"right": None},
+                (False, StackContext(ArgumentContext("right"), ObjectValueContext(None))),
+            ),
+        ),
+        expected_repr="not (right is None)",
+    ),
+    BoolSpecTest(
+        spec=bnot(barg("right", "IS_NOT_NONE")),
+        expected_get=(
+            (
+                {"right": 1},
+                (False, StackContext(ArgumentContext("right"), ObjectValueContext(1))),
+            ),
+            (
+                {"right": None},
+                (True, StackContext(ArgumentContext("right"), ObjectValueContext(None))),
+            ),
+        ),
+        expected_repr="not (right is not None)",
     ),
     BoolSpecTest(
         spec=bor(bnot(barg("left")), bnot(barg("right"))),

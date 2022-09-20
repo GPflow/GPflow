@@ -15,12 +15,17 @@
 import tensorflow as tf
 
 from ..config import default_float
+from ..experimental.check_shapes import check_shapes
 from ..inducing_variables import InducingPatches, InducingPoints, Multiscale
 from ..kernels import Convolutional, Kernel, SquaredExponential
 from .dispatch import Kuu
 
 
 @Kuu.register(InducingPoints, Kernel)
+@check_shapes(
+    "inducing_variable: [M, D, 1]",
+    "return: [M, M]",
+)
 def Kuu_kernel_inducingpoints(
     inducing_variable: InducingPoints, kernel: Kernel, *, jitter: float = 0.0
 ) -> tf.Tensor:
@@ -30,6 +35,10 @@ def Kuu_kernel_inducingpoints(
 
 
 @Kuu.register(Multiscale, SquaredExponential)
+@check_shapes(
+    "inducing_variable: [M, D, 1]",
+    "return: [M, M]",
+)
 def Kuu_sqexp_multiscale(
     inducing_variable: Multiscale, kernel: SquaredExponential, *, jitter: float = 0.0
 ) -> tf.Tensor:
@@ -45,6 +54,10 @@ def Kuu_sqexp_multiscale(
 
 
 @Kuu.register(InducingPatches, Convolutional)
+@check_shapes(
+    "inducing_variable: [M, D, 1]",
+    "return: [M, M]",
+)
 def Kuu_conv_patch(
     inducing_variable: InducingPatches, kernel: Convolutional, jitter: float = 0.0
 ) -> tf.Tensor:

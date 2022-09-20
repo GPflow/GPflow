@@ -34,6 +34,7 @@ from .argument_ref import (
     ValuesRef,
 )
 from .bool_specs import (
+    BoolTest,
     ParsedAndBoolSpec,
     ParsedArgumentRefBoolSpec,
     ParsedBoolSpec,
@@ -47,7 +48,6 @@ from .error_contexts import (
     LarkUnexpectedInputContext,
     MultipleElementBoolContext,
     StackContext,
-    TrailingBroadcastVarrankContext,
 )
 from .exceptions import CheckShapesError, DocstringParseError, SpecificationParseError
 from .specs import (
@@ -126,9 +126,17 @@ class _ParseSpec(_TreeVisitor):
         (right,) = _tree_children(tree)
         return ParsedNotBoolSpec(self.visit(right))
 
+    def bool_spec_argument_ref_is_none(self, tree: Tree[Token]) -> ParsedBoolSpec:
+        (argument_ref,) = _tree_children(tree)
+        return ParsedArgumentRefBoolSpec(self.visit(argument_ref, True), BoolTest.IS_NONE)
+
+    def bool_spec_argument_ref_is_not_none(self, tree: Tree[Token]) -> ParsedBoolSpec:
+        (argument_ref,) = _tree_children(tree)
+        return ParsedArgumentRefBoolSpec(self.visit(argument_ref, True), BoolTest.IS_NOT_NONE)
+
     def bool_spec_argument_ref(self, tree: Tree[Token]) -> ParsedBoolSpec:
         (argument_ref,) = _tree_children(tree)
-        return ParsedArgumentRefBoolSpec(self.visit(argument_ref, True))
+        return ParsedArgumentRefBoolSpec(self.visit(argument_ref, True), BoolTest.BOOL)
 
     def argument_ref_root(self, tree: Tree[Token], is_for_bool_spec: bool) -> ArgumentRef:
         (token,) = _token_children(tree)
@@ -191,13 +199,6 @@ class _ParseSpec(_TreeVisitor):
         (dimension_spec,) = _tree_children(tree)
         child = self.visit(dimension_spec, i)
         assert isinstance(child, ParsedDimensionSpec)
-        if i > 0 and child.variable_rank:
-            meta = dimension_spec.meta
-            raise SpecificationParseError(
-                TrailingBroadcastVarrankContext(
-                    self._source, meta.line, meta.column, child.variable_name
-                )
-            )
         return replace(child, broadcastable=True)
 
     def dimension_spec_constant(self, tree: Tree[Token], i: int) -> ParsedDimensionSpec:
@@ -298,7 +299,14 @@ class _RewritedocString(_TreeVisitor):
             result = "not " + self._bool_spec_to_sphinx(bool_spec.right, True)
         else:
             assert isinstance(bool_spec, ParsedArgumentRefBoolSpec)
-            return f"*{bool_spec.argument_ref!r}*"
+            if bool_spec.bool_test == BoolTest.BOOL:
+                paren_wrap = False  # Never wrap a stand-alone argument.
+                result = f"*{bool_spec.argument_ref!r}*"
+            elif bool_spec.bool_test == BoolTest.IS_NONE:
+                result = f"*{bool_spec.argument_ref!r}* is *None*"
+            else:
+                assert bool_spec.bool_test == BoolTest.IS_NOT_NONE
+                result = f"*{bool_spec.argument_ref!r}* is not *None*"
 
         if paren_wrap:
             result = f"({result})"
@@ -376,6 +384,48 @@ class _RewritedocString(_TreeVisitor):
         out.append(trailing_str)
         return docs.meta.end_pos
 
+    def _insert_param_info_fields(
+        self,
+        is_first_info_field: bool,
+        spec_lines: Mapping[str, Sequence[str]],
+        out: List[str],
+        pos: int,
+    ) -> int:
+        leading_str = self._source[pos:].rstrip()
+        out.append(leading_str)
+        pos += len(leading_str)
+
+        if not self._source:
+            # Case where nothing preceeds these fields. Just write them.
+            needed_newlines = 0
+        elif is_first_info_field:
+            # Free-form documentation preceeds these fields. Have 2 newlines to separate them.
+            needed_newlines = 2
+        else:
+            # Another info-field preceeds these fields.
+            needed_newlines = 1
+
+        indent = self._indent or 0
+        indent_str = indent * " "
+        indent_one_str = 4 * " "
+
+        for arg_name, arg_lines in spec_lines.items():
+            out.append(needed_newlines * "\n")
+            needed_newlines = 1
+
+            out.append(indent_str)
+            if arg_name == RESULT_TOKEN:
+                out.append(":returns:")
+            else:
+                out.append(f":param {arg_name}:")
+            for arg_line in arg_lines:
+                out.append("\n")
+                out.append(indent_str)
+                out.append(indent_one_str)
+                out.append(arg_line)
+
+        return pos
+
     def docstring(self, tree: Tree[Token]) -> str:
         # The strategy here is:
         # * `out` contains a list of strings that will be concatenated and form the final result.
@@ -388,39 +438,62 @@ class _RewritedocString(_TreeVisitor):
         pos = 0
 
         if self._notes:
-            out.append(self._source[pos : docs.meta.end_pos])
-            pos = docs.meta.end_pos
+            if not docs.meta.empty:
+                out.append(self._source[pos : docs.meta.end_pos])
+                pos = docs.meta.end_pos
             indent = self._indent or 0
-            indent_str = "\n\n" + indent * " "
+            indent_str = indent * " "
             for note in self._notes:
+                if out:
+                    out.append("\n\n")
                 out.append(indent_str)
                 out.append(note)
 
         pos = self.visit(info_fields, out, pos)
         out.append(self._source[pos:])
+
         return "".join(out)
 
     def info_fields(self, tree: Tree[Token], out: List[str], pos: int) -> int:
+        spec_lines = dict(self._spec_lines)
+        is_first_info_field = True
         for child in _tree_children(tree):
-            pos = self.visit(child, out, pos)
+            # This will remove the self._spec_lines corresponding to found `:param:`'s.
+            pos = self.visit(child, spec_lines, out, pos)
+            is_first_info_field = False
+
+        # Add any remaining `:param:`s:
+        pos = self._insert_param_info_fields(is_first_info_field, spec_lines, out, pos)
+
+        # Make sure info fields are terminated by a new-line:
+        if self._spec_lines:
+            if (pos >= len(self._source)) or (self._source[pos] != "\n"):
+                out.append("\n")
+
         return pos
 
-    def info_field_param(self, tree: Tree[Token], out: List[str], pos: int) -> int:
+    def info_field_param(
+        self, tree: Tree[Token], spec_lines: Dict[str, Sequence[str]], out: List[str], pos: int
+    ) -> int:
         info_field_args, docs = _tree_children(tree)
         arg_name = self.visit(info_field_args)
-        spec_lines = self._spec_lines.get(arg_name, None)
-        if spec_lines:
-            pos = self._insert_spec_lines(out, pos, spec_lines, docs)
+        arg_lines = spec_lines.pop(arg_name, None)
+        if arg_lines:
+            pos = self._insert_spec_lines(out, pos, arg_lines, docs)
         return pos
 
-    def info_field_returns(self, tree: Tree[Token], out: List[str], pos: int) -> int:
+    def info_field_returns(
+        self, tree: Tree[Token], spec_lines: Dict[str, Sequence[str]], out: List[str], pos: int
+    ) -> int:
         (docs,) = _tree_children(tree)
-        spec_lines = self._spec_lines.get(RESULT_TOKEN, None)
-        if spec_lines:
-            pos = self._insert_spec_lines(out, pos, spec_lines, docs)
+        return_lines = spec_lines.pop(RESULT_TOKEN, None)
+        if return_lines:
+            pos = self._insert_spec_lines(out, pos, return_lines, docs)
         return pos
 
-    def info_field_other(self, tree: Tree[Token], out: List[str], pos: int) -> int:
+    def info_field_other(
+        self, tree: Tree[Token], spec_lines: Dict[str, Sequence[str]], out: List[str], pos: int
+    ) -> int:
         return pos
 
     def info_field_args(self, tree: Tree[Token]) -> str:

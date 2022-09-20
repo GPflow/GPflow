@@ -19,6 +19,7 @@ from gpflow.conditionals.util import (
     sample_mvn,
 )
 from gpflow.config import default_float, default_jitter
+from gpflow.experimental.check_shapes import ShapeChecker, check_shapes
 from gpflow.inducing_variables import InducingPoints
 from gpflow.kernels import SquaredExponential
 from gpflow.likelihoods import Gaussian
@@ -32,6 +33,14 @@ rng = np.random.RandomState(99201)
 # ------------------------------------------
 
 
+@check_shapes(
+    "Xnew: [N, D]",
+    "return[0]: [n_models, N, P]",
+    "return[1]: [n_models, N, P, N, P] if full_cov and full_output_cov",
+    "return[1]: [n_models, N, P, P] if (not full_cov) and full_output_cov",
+    "return[1]: [n_models, P, N, N] if full_cov and (not full_output_cov)",
+    "return[1]: [n_models, N, P] if (not full_cov) and (not full_output_cov)",
+)
 def predict_all(
     models: Sequence[SVGP], Xnew: tf.Tensor, full_cov: bool, full_output_cov: bool
 ) -> Tuple[List[tf.Tensor], List[tf.Tensor]]:
@@ -46,6 +55,9 @@ def predict_all(
     return ms, vs
 
 
+@check_shapes(
+    "arr[all]: [batch...]",
+)
 def assert_all_array_elements_almost_equal(arr: Sequence[tf.Tensor]) -> None:
     """
     Check if consecutive elements of `arr` are almost equal.
@@ -54,6 +66,10 @@ def assert_all_array_elements_almost_equal(arr: Sequence[tf.Tensor]) -> None:
         np.testing.assert_allclose(arr[i], arr[i + 1], atol=1e-5)
 
 
+@check_shapes(
+    "data[0]: [N, D]",
+    "data[1]: [N, R]",
+)
 def check_equality_predictions(
     data: RegressionData, models: Sequence[SVGP], decimal: int = 3
 ) -> None:
@@ -115,11 +131,16 @@ def check_equality_predictions(
     )
 
 
+@check_shapes(
+    "q_sqrt: [L, M, M]",
+    "W: [L, L]",
+    "return: [1, LM, LM]",
+)
 def expand_cov(q_sqrt: tf.Tensor, W: tf.Tensor) -> tf.Tensor:
     """
-    :param G: cholesky of covariance matrices, L x M x M
-    :param W: mixing matrix (square),  L x L
-    :return: cholesky of 1 x LM x LM covariance matrix
+    :param q_sqrt: cholesky of covariance matrices
+    :param W: mixing matrix
+    :return: cholesky of the expanded covariance matrix
     """
     q_cov = np.matmul(q_sqrt, q_sqrt.transpose([0, 2, 1]))  # [L, M, M]
     q_cov_expanded = scipy.linalg.block_diag(*q_cov)  # [LM, LM]
@@ -127,8 +148,11 @@ def expand_cov(q_sqrt: tf.Tensor, W: tf.Tensor) -> tf.Tensor:
     return q_sqrt_expanded[None, ...]
 
 
+@check_shapes(
+    "return: [L, M, M]",
+)
 def create_q_sqrt(M: int, L: int) -> AnyNDArray:
-    """ returns an array of L lower triangular matrices of size M x M """
+    """ returns an array of lower triangular matrices """
     return np.array([np.tril(rng.randn(M, M)) for _ in range(L)])  # [L, M, M]
 
 
@@ -138,66 +162,75 @@ def create_q_sqrt(M: int, L: int) -> AnyNDArray:
 
 
 class Data:
+    cs = ShapeChecker().check_shape
+
     N, Ntest = 20, 5
     D = 1  # input dimension
     M = 3  # inducing points
     L = 2  # latent gps
     P = 3  # output dimension
     MAXITER = int(15e2)
-    X = tf.random.normal((N,), dtype=tf.float64)[:, None] * 10 - 5
-    G: AnyNDArray = np.hstack((0.5 * np.sin(3 * X) + X, 3.0 * np.cos(X) - X))
-    Ptrue: AnyNDArray = np.array([[0.5, -0.3, 1.5], [-0.4, 0.43, 0.0]])  # [L, P]
 
-    Y = tf.convert_to_tensor(G @ Ptrue)
-    G = tf.convert_to_tensor(np.hstack((0.5 * np.sin(3 * X) + X, 3.0 * np.cos(X) - X)))
-    Ptrue = tf.convert_to_tensor(np.array([[0.5, -0.3, 1.5], [-0.4, 0.43, 0.0]]))  # [L, P]
-    Y += tf.random.normal(Y.shape, dtype=tf.float64) * [0.2, 0.2, 0.2]
-    Xs = tf.convert_to_tensor(np.linspace(-6, 6, Ntest)[:, None])
+    X = cs(tf.random.normal((N,), dtype=tf.float64)[:, None] * 10 - 5, "[N, 1]")
+    G = cs(tf.concat([0.5 * tf.sin(3 * X) + X, 3.0 * tf.cos(X) - X], axis=1), "[N, L]")
+    Ptrue = cs(tf.constant([[0.5, -0.3, 1.5], [-0.4, 0.43, 0.0]], dtype=tf.float64), "[L, P]")
+    Y = cs(G @ Ptrue, "[N, P]")
+    Y += cs(tf.random.normal(Y.shape, dtype=tf.float64) * [0.2, 0.2, 0.2], "[N, P]")
+    Xs = cs(tf.linspace(-6, 6, Ntest)[:, None], "[Ntest, 1]")
     data = (X, Y)
 
 
 class DataMixedKernelWithEye(Data):
     """ Note in this class L == P """
 
+    cs = ShapeChecker().check_shape
+
     M, L = 4, 3
-    W = np.eye(L)
+    W = cs(tf.eye(L, dtype=tf.float64), "[L, L]")
 
-    G: AnyNDArray = np.hstack(
-        [0.5 * np.sin(3 * Data.X) + Data.X, 3.0 * np.cos(Data.X) - Data.X, 1.0 + Data.X]
-    )  # [N, P]
+    G = cs(
+        tf.concat(
+            [0.5 * tf.sin(3 * Data.X) + Data.X, 3.0 * tf.cos(Data.X) - Data.X, 1.0 + Data.X], axis=1
+        ),
+        "[N, P]",
+    )
 
-    mu_data = tf.random.uniform((M, L), dtype=tf.float64)  # [M, L]
-    sqrt_data = create_q_sqrt(M, L)  # [L, M, M]
+    mu_data = cs(tf.random.uniform((M, L), dtype=tf.float64), "[M, L]")
+    sqrt_data = cs(tf.convert_to_tensor(create_q_sqrt(M, L)), "[L, M, M]")
 
-    mu_data_full = tf.reshape(mu_data @ W, [-1, 1])  # [L, 1]
-    sqrt_data_full = expand_cov(sqrt_data, W)  # [1, LM, LM]
+    mu_data_full = cs(tf.reshape(mu_data @ W, [-1, 1]), "[LM, 1]")
+    sqrt_data_full = cs(
+        tf.convert_to_tensor(expand_cov(sqrt_data.numpy(), W.numpy())), "[1, LM, LM]"
+    )
 
-    Y = tf.convert_to_tensor(G @ W)
-    G = tf.convert_to_tensor(G)
-    W = tf.convert_to_tensor(W)
-    sqrt_data = tf.convert_to_tensor(sqrt_data)
-    sqrt_data_full = tf.convert_to_tensor(sqrt_data_full)
-    Y += tf.random.normal(Y.shape, dtype=tf.float64) * tf.ones((L,), dtype=tf.float64) * 0.2
+    Y = cs(G @ W, "[N, L]")
+    Y += cs(
+        tf.random.normal(Y.shape, dtype=tf.float64) * tf.ones((L,), dtype=tf.float64) * 0.2,
+        "[N, L]",
+    )
     data = (Data.X, Y)
 
 
 class DataMixedKernel(Data):
+    cs = ShapeChecker().check_shape
+
     M = 5
     L = 2
     P = 3
-    W = rng.randn(P, L)
-    G: AnyNDArray = np.hstack(
-        [0.5 * np.sin(3 * Data.X) + Data.X, 3.0 * np.cos(Data.X) - Data.X]
-    )  # [N, L]
+    W = cs(tf.convert_to_tensor(rng.randn(P, L)), "[P, L]")
+    G = cs(
+        tf.concat([0.5 * tf.sin(3 * Data.X) + Data.X, 3.0 * tf.cos(Data.X) - Data.X], axis=1),
+        "[N, L]",
+    )
 
-    mu_data = tf.random.normal((M, L), dtype=tf.float64)  # [M, L]
-    sqrt_data = create_q_sqrt(M, L)  # [L, M, M]
+    mu_data = cs(tf.random.normal((M, L), dtype=tf.float64), "[M, L]")
+    sqrt_data = cs(create_q_sqrt(M, L), "[L, M, M]")
 
-    Y = tf.convert_to_tensor(G @ W.T)
-    G = tf.convert_to_tensor(G)
-    W = tf.convert_to_tensor(W)
-    sqrt_data = tf.convert_to_tensor(sqrt_data)
-    Y += tf.random.normal(Y.shape, dtype=tf.float64) * tf.ones((P,), dtype=tf.float64) * 0.1
+    Y = cs(G @ tf.transpose(W), "[N, P]")
+    Y += cs(
+        tf.random.normal(Y.shape, dtype=tf.float64) * tf.ones((P,), dtype=tf.float64) * 0.1,
+        "[N, P]",
+    )
     data = (Data.X, Y)
 
 
@@ -845,7 +878,7 @@ def test_separate_independent_conditional_with_q_sqrt_none() -> None:
     inducing_variable_list = [InducingPoints(data.X[: data.M, ...]) for _ in range(data.L)]
     inducing_variable = mf.SeparateIndependentInducingVariables(inducing_variable_list)
 
-    mu_1, var_1 = gpflow.conditionals.conditional(
+    gpflow.conditionals.conditional(
         data.X,
         inducing_variable,
         kernel,
@@ -862,6 +895,8 @@ def test_independent_interdomain_conditional_bug_regression() -> None:
     Regression test for https://github.com/GPflow/GPflow/issues/818
     Not an exhaustive test
     """
+    cs = ShapeChecker().check_shape
+
     M = 31
     N = 11
     D_lat = 5
@@ -869,31 +904,31 @@ def test_independent_interdomain_conditional_bug_regression() -> None:
     L = 2
     P = 3
 
-    X = np.random.randn(N, D_inp)
-    Zs = [np.random.randn(M, D_lat) for _ in range(L)]
+    X = cs(np.random.randn(N, D_inp), "[N, D_inp]")
+    Zs = cs([np.random.randn(M, D_lat) for _ in range(L)], "[L, M, D_lat]")
     k = gpflow.kernels.SquaredExponential(lengthscales=np.ones(D_lat))
 
+    @check_shapes(
+        "Z: [M, D_lat]",
+        "X: [N, D_inp]",
+        "return: [P, M, N]",
+    )
     def compute_Kmn(Z: tf.Tensor, X: tf.Tensor) -> tf.Tensor:
         return tf.stack([k(Z, X[:, i * D_lat : (i + 1) * D_lat]) for i in range(P)])
 
+    @check_shapes(
+        "X: [N, D_inp]",
+        "return: [P, N]",
+    )
     def compute_Knn(X: tf.Tensor) -> tf.Tensor:
         return tf.stack([k(X[:, i * D_lat : (i + 1) * D_lat], full_cov=False) for i in range(P)])
 
-    Kmm = tf.stack([k(Z) for Z in Zs])  # L x M x M
-    Kmn = tf.stack([compute_Kmn(Z, X) for Z in Zs])  # L x P x M x N
-    Kmn = tf.transpose(Kmn, [2, 0, 3, 1])  # -> M x L x N x P
-    Knn = tf.transpose(compute_Knn(X))  # N x P
-    q_mu = tf.convert_to_tensor(np.zeros((M, L)))
-    q_sqrt = tf.convert_to_tensor(np.stack([np.eye(M) for _ in range(L)]))
-    tf.debugging.assert_shapes(
-        [
-            (Kmm, ["L", "M", "M"]),
-            (Kmn, ["M", "L", "N", "P"]),
-            (Knn, ["N", "P"]),
-            (q_mu, ["M", "L"]),
-            (q_sqrt, ["L", "M", "M"]),
-        ]
-    )
+    Kmm = cs(tf.stack([k(Z) for Z in Zs]), "[L, M, M]")
+    Kmn = cs(tf.stack([compute_Kmn(Z, X) for Z in Zs]), "[L, P, M, N]")
+    Kmn = cs(tf.transpose(Kmn, [2, 0, 3, 1]), "[M, L, N, P]")
+    Knn = cs(tf.transpose(compute_Knn(X)), "[N, P]")
+    q_mu = cs(tf.convert_to_tensor(np.zeros((M, L))), "[M, L]")
+    q_sqrt = cs(tf.convert_to_tensor(np.stack([np.eye(M) for _ in range(L)])), "[L, M, M]")
 
     _, _ = independent_interdomain_conditional(
         Kmn, Kmm, Knn, q_mu, q_sqrt=q_sqrt, full_cov=False, full_output_cov=False

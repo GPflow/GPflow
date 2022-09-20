@@ -20,10 +20,11 @@ import tensorflow_probability as tfp
 from deprecated import deprecated
 
 from ..base import Module, Parameter, TensorData, TensorType
+from ..experimental.check_shapes import ErrorContext, Shape, check_shapes, register_get_shape
 from ..utilities import positive
 
 
-class InducingVariables(Module):
+class InducingVariables(Module, abc.ABC):
     """
     Abstract base class for inducing variables.
     """
@@ -44,20 +45,52 @@ class InducingVariables(Module):
     def __len__(self) -> tf.Tensor:
         return self.num_inducing
 
+    @property
+    @abc.abstractmethod
+    def shape(self) -> Shape:
+        """
+        Return the shape of these inducing variables.
+
+        Shape should be some variation of ``[M, D, P]``, where:
+
+        * ``M`` is the number of inducing variables.
+        * ``D`` is the number of input dimensions.
+        * ``P`` is the number of output dimensions (1 if this is not a multi-output inducing
+          variable).
+        """
+
+
+@register_get_shape(InducingVariables)
+def get_scalar_shape(shaped: InducingVariables, context: ErrorContext) -> Shape:
+    return shaped.shape
+
 
 class InducingPointsBase(InducingVariables):
+    @check_shapes(
+        "Z: [M, D]",
+    )
     def __init__(self, Z: TensorData, name: Optional[str] = None):
         """
-        :param Z: the initial positions of the inducing points, size [M, D]
+        :param Z: The initial positions of the inducing points.
         """
         super().__init__(name=name)
         if not isinstance(Z, (tf.Variable, tfp.util.TransformedVariable)):
             Z = Parameter(Z)
         self.Z = Z
 
-    @property
+    @property  # type: ignore[misc]  # mypy doesn't like decorated properties.
+    @check_shapes(
+        "return: []",
+    )
     def num_inducing(self) -> Optional[tf.Tensor]:
         return tf.shape(self.Z)[0]
+
+    @property
+    def shape(self) -> Shape:
+        shape = self.Z.shape
+        if not shape:
+            return None
+        return tuple(shape) + (1,)
 
 
 class InducingPoints(InducingPointsBase):
@@ -73,19 +106,25 @@ class Multiscale(InducingPointsBase):
     Originally proposed in :cite:t:`NIPS2009_3876`.
     """
 
+    @check_shapes(
+        "Z: [M, D]",
+        "scales: [M, D]",
+    )
     def __init__(self, Z: TensorData, scales: TensorData):
         super().__init__(Z)
         # Multi-scale inducing_variable widths (std. dev. of Gaussian)
         self.scales = Parameter(scales, transform=positive())
-        if self.Z.shape != self.scales.shape:
-            raise ValueError(
-                "Input locations `Z` and `scales` must have the same shape."
-            )  # pragma: no cover
 
     @staticmethod
+    @check_shapes(
+        "A: [N, D]",
+        "B: [M, D]",
+        "sc: [broadcast N, broadcast M, D]",
+        "return: [N, M]",
+    )
     def _cust_square_dist(A: TensorType, B: TensorType, sc: TensorType) -> tf.Tensor:
         """
         Custom version of _square_dist that allows sc to provide per-datapoint length
-        scales. sc: [N, M, D].
+        scales.
         """
         return tf.reduce_sum(tf.square((tf.expand_dims(A, 1) - tf.expand_dims(B, 0)) / sc), 2)

@@ -150,6 +150,63 @@ TESTS = [
         True,
     ),
     ShapeCheckerTest(
+        "var_rank_multi_1",
+        [
+            (t(1, 3, 6, 7, 5), "[d1, ds2..., d3, ds4..., d5]"),
+            (t(), "[ds2...]"),
+            (t(6, 7), "[ds4...]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "var_rank_multi_2",
+        [
+            (t(1, 3, 6, 7, 5), "[d1, ds2..., d3, ds4..., d5]"),
+            (t(6, 7), "[ds4...]"),
+            (t(), "[ds2...]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "var_rank_multi_3",
+        [
+            (t(), "[ds2...]"),
+            (t(1, 3, 6, 7, 5), "[d1, ds2..., d3, ds4..., d5]"),
+            (t(6, 7), "[ds4...]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "var_rank_multi_4",
+        [
+            (t(), "[ds2...]"),
+            (t(6, 7), "[ds4...]"),
+            (t(1, 3, 6, 7, 5), "[d1, ds2..., d3, ds4..., d5]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "var_rank_multi_5",
+        [
+            (t(1, 2, 1, 2), "[ds..., ds...]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "var_rank_multi_6",
+        [
+            (t(1, 2, 3, 4, 5, 6), "[1, ..., 3, ..., 6]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "var_rank_multi_broadcast",
+        [
+            (t(2, 1, 1, 2, 3), "[broadcast ds..., ds...]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
         "var_rank_unknown_dim_1",
         [
             (t(None, 6), "[ds...]"),
@@ -240,6 +297,51 @@ TESTS = [
         ],
         False,
     ),
+    ShapeCheckerTest(
+        "var_rank_bad_6",
+        [
+            (t(1, 4, 3), "[ds1..., ds2...]"),
+            (t(1, 2), "[ds1...]"),
+            (t(3), "[ds2...]"),
+        ],
+        False,
+    ),
+    ShapeCheckerTest(
+        "var_rank_bad_7",
+        [
+            (t(1, 2, 1, 2, 3), "[ds..., ds...]"),
+        ],
+        False,
+    ),
+    ShapeCheckerTest(
+        "var_rank_bad_8",
+        [
+            (t(1, 2, 1, 3), "[ds..., ds...]"),
+        ],
+        False,
+    ),
+    ShapeCheckerTest(
+        "var_rank_bad_9",
+        [
+            (t(7, 2, 3, 4, 5, 6), "[1, ..., 3, ..., 6]"),
+        ],
+        False,
+    ),
+    ShapeCheckerTest(
+        "var_rank_bad_10",
+        [
+            (t(1, 2, 3, 4, 7), "[1, ..., 3, ..., 5]"),
+        ],
+        False,
+    ),
+    ShapeCheckerTest(
+        "var_rank_bad_11",
+        [
+            (t(2, 1, 1, 2, 3), "[broadcast ds..., ds...]"),
+            (t(1, 1, 2, 3), "[ds...]"),
+        ],
+        False,
+    ),
     ShapeCheckerTest("anonymous_dot", [(t(2, 3), "[., 3]")], True),
     ShapeCheckerTest("anonymous_None", [(t(2, 3), "[2, None]")], True),
     ShapeCheckerTest("anonymous_ellipsis", [(t(2, 3), "[..., 3]")], True),
@@ -271,6 +373,20 @@ TESTS = [
         "broadcast_constant",
         [
             (t(1, 3), "[broadcast 2, broadcast 3]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "broadcast_constant_short_1",
+        [
+            (t(3), "[broadcast 2, broadcast 3]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "broadcast_constant_short_2",
+        [
+            (t(), "[broadcast 2, broadcast 3]"),
         ],
         True,
     ),
@@ -398,6 +514,79 @@ TESTS = [
         [
             (t(2, 3), "[a...]"),
             (t(1, 2, 3), "[broadcast a...]"),
+        ],
+        False,
+    ),
+    ShapeCheckerTest(
+        "broadcast_variable_rank_double",
+        [
+            (t(3, 4), "[broadcast a..., broadcast a...]"),
+            (t(2, 3, 4), "[broadcast a..., broadcast a...]"),
+            (t(4, 2, 3, 4), "[broadcast a..., broadcast a...]"),
+            (t(3, 4, 2, 3, 4), "[broadcast a..., broadcast a...]"),
+            (t(2, 3, 4, 2, 3, 4), "[broadcast a..., broadcast a...]"),
+            (t(2, 3, 4), "[a...]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "broadcast_variable_rank_double_bad",
+        [
+            (t(3, 4), "[broadcast a..., broadcast a...]"),
+            (t(2, 3, 4), "[broadcast a..., broadcast a...]"),
+            (t(4, 2, 3, 4), "[broadcast a..., broadcast a...]"),
+            (t(3, 4, 2, 3, 4), "[broadcast a..., broadcast a...]"),
+            (t(2, 3, 4, 2, 3, 4), "[broadcast a..., broadcast a...]"),
+            (t(2, 4, 4), "[a...]"),
+        ],
+        False,
+    ),
+    ShapeCheckerTest(
+        "broadcast_variable_rank_trailing_1",
+        [
+            (t(2, 3, 4, 1, 3, 1), "[a..., broadcast a...]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "broadcast_variable_rank_trailing_1_bad",
+        [
+            (t(2, 3, 4, 3, 4), "[a..., broadcast a...]"),
+        ],
+        False,
+    ),
+    ShapeCheckerTest(
+        "broadcast_variable_rank_trailing_2",
+        [
+            (t(2, 3, 4), "[a, broadcast b...]"),
+            (t(3, 4), "[b...]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "broadcast_variable_rank_trailing_2_bad",
+        [
+            (t(2, 3, 4), "[a, broadcast b...]"),
+            (t(2, 3, 4), "[b...]"),
+        ],
+        False,
+    ),
+    ShapeCheckerTest(
+        "broadcast_variable_rank_trailing_3",
+        [
+            (t(2, 3, 4, 5, 6, 7), "[broadcast a, broadcast b..., c, d...]"),
+            (t(6, 7), "[d...]"),
+            (t(3, 4), "[b...]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "broadcast_variable_rank_trailing_3_bad",
+        [
+            (t(2, 3, 4, 5, 6, 7), "[broadcast a, broadcast b..., c, d...]"),
+            (t(3), "[a]"),
+            (t(6, 7), "[d...]"),
+            (t(3, 4), "[b...]"),
         ],
         False,
     ),

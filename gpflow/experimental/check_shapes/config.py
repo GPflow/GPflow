@@ -18,7 +18,44 @@ from contextlib import contextmanager
 from enum import Enum
 from typing import Iterator, Union
 
-_enabled = True
+import tensorflow as tf
+
+
+class ShapeCheckingState(Enum):
+    """
+    Different states of whether to actually check shapes.
+    """
+
+    ENABLED = "enabled"
+    """
+    Always check shapes.
+    """
+
+    EAGER_MODE_ONLY = "eager_mode_only"
+    """
+    Only check shapes if `tf.inside_function()` is `False`.
+    """
+
+    DISABLED = "disabled"
+    """
+    Never check shapes.
+    """
+
+    def __bool__(self) -> bool:
+        """
+        Return whether we currently should check shapes.
+        """
+        if self is ShapeCheckingState.ENABLED:
+            return True
+        elif self is ShapeCheckingState.EAGER_MODE_ONLY:
+            # pylint: disable=no-member
+            return not tf.inside_function()
+        else:
+            assert self is ShapeCheckingState.DISABLED, self
+            return False
+
+
+_enabled = ShapeCheckingState.EAGER_MODE_ONLY
 
 
 class DocstringFormat(Enum):
@@ -39,8 +76,10 @@ class DocstringFormat(Enum):
 
 _docstring_format = DocstringFormat.SPHINX
 
+_function_call_precompute_enabled = False
 
-def set_enable_check_shapes(enabled: bool) -> None:
+
+def set_enable_check_shapes(enabled: Union[ShapeCheckingState, str, bool]) -> None:
     """
     Set whether to enable :mod:`check_shapes`.
 
@@ -57,10 +96,18 @@ def set_enable_check_shapes(enabled: bool) -> None:
     See also :func:`disable_check_shapes`.
     """
     global _enabled
-    _enabled = enabled
+    if enabled == True:  # pylint: disable=singleton-comparison
+        _enabled = ShapeCheckingState.ENABLED
+    elif enabled == False:  # pylint: disable=singleton-comparison
+        _enabled = ShapeCheckingState.DISABLED
+    elif isinstance(enabled, str):
+        _enabled = ShapeCheckingState(enabled)
+    else:
+        assert isinstance(enabled, ShapeCheckingState), type(ShapeCheckingState)
+        _enabled = enabled
 
 
-def get_enable_check_shapes() -> bool:
+def get_enable_check_shapes() -> ShapeCheckingState:
     """
     Get whether to enable :mod:`check_shapes`.
     """
@@ -80,7 +127,7 @@ def disable_check_shapes() -> Iterator[None]:
        :dedent:
     """
     old_value = get_enable_check_shapes()
-    set_enable_check_shapes(False)
+    set_enable_check_shapes(ShapeCheckingState.DISABLED)
     try:
         yield
     finally:
@@ -108,3 +155,28 @@ def get_rewrite_docstrings() -> DocstringFormat:
     Get how :mod:`check_shapes` should rewrite docstrings.
     """
     return _docstring_format
+
+
+def set_enable_function_call_precompute(enabled: bool) -> None:
+    """
+    Set whether to precompute function call path and line numbers for debugging.
+
+    This is disabled by default, because it is (relatively) slow. Enabling this can give better
+    error messages.
+
+    Example:
+
+    .. literalinclude:: /examples/test_check_shapes_examples.py
+       :start-after: [disable_function_call_precompute]
+       :end-before: [disable_function_call_precompute]
+       :dedent:
+    """
+    global _function_call_precompute_enabled
+    _function_call_precompute_enabled = enabled
+
+
+def get_enable_function_call_precompute() -> bool:
+    """
+    Get whether to precompute function call path and line numbers for debugging.
+    """
+    return _function_call_precompute_enabled

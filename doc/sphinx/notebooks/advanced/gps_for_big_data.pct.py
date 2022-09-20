@@ -27,7 +27,7 @@ import time
 import gpflow
 import tensorflow as tf
 import matplotlib.pyplot as plt
-from gpflow.ci_utils import ci_niter
+from gpflow.ci_utils import reduce_in_tests
 
 plt.style.use("ggplot")
 
@@ -217,7 +217,7 @@ def run_adam(model, iterations):
 # Now we run the optimization loop for 20,000 iterations.
 
 # %%
-maxiter = ci_niter(20000)
+maxiter = reduce_in_tests(20000)
 
 logf = run_adam(m, maxiter)
 plt.plot(np.arange(maxiter)[::10], logf)

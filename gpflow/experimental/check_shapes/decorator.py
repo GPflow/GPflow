@@ -51,7 +51,7 @@ def null_check_shapes(func: C) -> C:
 
 
 @experimental
-def check_shapes(*specs: str) -> Callable[[C], C]:
+def check_shapes(*specs: str, tf_decorator: bool = False) -> Callable[[C], C]:
     """
     Decorator that checks the shapes of tensor arguments.
 
@@ -63,6 +63,10 @@ def check_shapes(*specs: str) -> Callable[[C], C]:
        :dedent:
 
     :param specs: Specification of arguments to check. See: `Check specification`_.
+    :param tf_decorator: Whether to wrap the shape check with
+        ``tf.compat.v1.flags.tf_decorator.make_decorator``.
+        Setting this `True` seems to solve some problems, particularly related to Keras models,
+        but create some other problems, particularly related to branching on tensors.
     """
     if not get_enable_check_shapes():
         return null_check_shapes
@@ -89,7 +93,15 @@ def check_shapes(*specs: str) -> Callable[[C], C]:
                 # TypeError is raised if *args and **kwargs don't actually match the arguments of
                 # `func`. In that case we just call `func` normally, which will also result in an
                 # error, but an error with the error message the user is used to.
-                func(*args, **kwargs)
+                try:
+                    func(*args, **kwargs)
+                except TypeError as e2:
+                    raise TypeError(
+                        "Error calling wrapped function (see above error)."
+                        " If you believe your parameters actually are correct, the error can"
+                        " sometimes be fixed by setting `tf_decorator=True` on your `@check_shapes`"
+                        " decorator."
+                    ) from e2
                 raise AssertionError(
                     "The above line should fail so this line should never be reached."
                 ) from e
@@ -146,7 +158,8 @@ def check_shapes(*specs: str) -> Callable[[C], C]:
             return result
 
         # Make TensorFlow understand our decoration:
-        tf.compat.v1.flags.tf_decorator.make_decorator(func, wrapped)
+        if tf_decorator:
+            tf.compat.v1.flags.tf_decorator.make_decorator(func, wrapped)
 
         update_wrapper(wrapped, func)
         set_check_shapes(wrapped, _check_shapes)
