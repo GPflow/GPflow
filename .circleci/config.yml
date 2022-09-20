@@ -6,7 +6,10 @@ parameters:
     default: "3.7"
   max_py_ver:
     type: string
-    default: "3.10"
+    # Using the specific Python version due to poor interactions between some versions of Python,
+    # NumPy, and MyPy. You should be able to set this to just "3.10", after MyPy "0.980" has been
+    # released. See: https://github.com/python/mypy/issues/13627
+    default: "3.10.6"
   min_tf_ver:
     type: string
     default: "2.4.0"
@@ -122,6 +125,7 @@ jobs:
           command: |
             # Log installed dependencies, to make various debugging easier.
             source /tmp/<<parameters.venv_dir>>/bin/activate
+            python --version
             pip freeze
       - persist_to_workspace:
           root: /tmp/
