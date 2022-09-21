@@ -4,31 +4,31 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
     <title>Parameters and Their Optimisation &#8212; GPflow 2.5.2 documentation</title>
-<script>
-  document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
-  document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
-</script>
-
+  <script>
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../_static/styles/theme.css?digest=92025949c220c2e29695" rel="stylesheet">
-<link href="../../_static/styles/pydata-sphinx-theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+  <link href="../../_static/styles/theme.css?digest=9b1a4fa89bdd0e95b23b" rel="stylesheet">
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=9b1a4fa89bdd0e95b23b" rel="stylesheet">
 
-
+  
   <link rel="stylesheet"
-    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+    href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css">
   <link rel="preload" as="font" type="font/woff2" crossorigin
-    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+    href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2">
   <link rel="preload" as="font" type="font/woff2" crossorigin
-    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+    href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2">
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css" />
-
+  
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=9b1a4fa89bdd0e95b23b">
 
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
@@ -38,24 +38,48 @@
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'notebooks/getting_started/parameters_and_their_optimisation';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://gpflow.github.io/GPflow/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'develop';
+        </script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Large Data" href="large_data.html" />
     <link rel="prev" title="Mean Functions" href="mean_functions.html" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="docsearch:language" content="en">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="docsearch:language" content="en">
   </head>
   
   
   <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
-    <div class="bd-header-announcement container-fluid" id="banner">
+
+  
+  <input type="checkbox" class="sidebar-toggle" name="__primary" id="__primary">
+  <label class="overlay overlay-primary" for="__primary"></label>
+
+  
+  <input type="checkbox" class="sidebar-toggle" name="__secondary" id="__secondary">
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
       
-
+<form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
     </div>
+  </div>
 
-    
-    <nav class="bd-header navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="bd-header__inner container-xl">
-
+  
+  <nav class="bd-header navbar navbar-expand-lg bd-navbar" id="navbar-main"><div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+      <span class="fas fa-bars"></span>
+  </label>
   <div id="navbar-start">
     
     
@@ -63,9 +87,15 @@
 
 
 <a class="navbar-brand logo" href="../../index.html">
+
   
   
   
+  
+  
+  
+  
+
   
     <img src="../../_static/gpflow_logo.svg" class="logo__image only-light" alt="Logo image">
     <img src="../../_static/gpflow_logo.svg" class="logo__image only-dark" alt="Logo image">
@@ -75,153 +105,184 @@
     
   </div>
 
-  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
-    <span class="fas fa-bars"></span>
-  </button>
-
   
-  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+  <div class="col-lg-9 navbar-header-items">
     <div id="navbar-center" class="mr-auto">
       
       <div class="navbar-center-item">
-        <ul id="navbar-main-elements" class="navbar-nav">
-    <li class="toctree-l1 current active nav-item">
- <a class="reference internal nav-link" href="../../getting_started.html">
-  Getting Started
- </a>
-</li>
+        <nav class="navbar-nav">
+    <p class="sidebar-header-items__title" role="heading" aria-level="1" aria-label="Site Navigation">
+        Site Navigation
+    </p>
+    <ul id="navbar-main-elements" class="navbar-nav">
+        
+                <li class="nav-item current active">
+                    <a class="nav-link" href="../../getting_started.html">
+                        Getting Started
+                    </a>
+                </li>
+                
 
-<li class="toctree-l1 nav-item">
- <a class="reference internal nav-link" href="../../user_guide.html">
-  User Guide
- </a>
-</li>
+                <li class="nav-item">
+                    <a class="nav-link" href="../../user_guide.html">
+                        User Guide
+                    </a>
+                </li>
+                
 
-<li class="toctree-l1 nav-item">
- <a class="reference internal nav-link" href="../../api/gpflow/index.html">
-  API reference
- </a>
-</li>
+                <li class="nav-item">
+                    <a class="nav-link" href="../../api/gpflow/index.html">
+                        gpflow
+                    </a>
+                </li>
+                
 
-<li class="toctree-l1 nav-item">
- <a class="reference internal nav-link" href="../../benchmarks.html">
-  Benchmarks
- </a>
-</li>
+                <li class="nav-item">
+                    <a class="nav-link" href="../../benchmarks.html">
+                        Benchmarks
+                    </a>
+                </li>
+                
 
-<li class="toctree-l1 nav-item">
- <a class="reference internal nav-link" href="../../bibliography.html">
-  Bibliography
- </a>
-</li>
-
-    
-</ul>
+                <li class="nav-item">
+                    <a class="nav-link" href="../../bibliography.html">
+                        Bibliography
+                    </a>
+                </li>
+                
+    </ul>
+</nav>
       </div>
       
     </div>
 
     <div id="navbar-end">
+      <div class="navbar-end-item navbar-end__search-button-container">
+        
+<button class="btn btn-sm navbar-btn search-button search-button__button" title="Search">
+  <i class="fas fa-search"></i>
+</button>
+      </div>
       
       <div class="navbar-end-item">
-        <div class="dropdown" id="version_switcher">
-    <button type="button" class="btn btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+        <div class="version-switcher__container dropdown">
+    <button type="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-toggle="dropdown">
         develop  <!-- this text may get changed later by javascript -->
         <span class="caret"></span>
     </button>
-    <div id="version_switcher_menu" class="dropdown-menu list-group-flush py-0" aria-labelledby="version_switcher_button">
+    <div class="version-switcher__menu dropdown-menu list-group-flush py-0">
     <!-- dropdown will be populated by javascript on page load -->
     </div>
 </div>
-
-<!-- NOTE: this JS must live here (not in our global JS file) because it relies
-     on being processed by Jinja before it is run (specifically for replacing
-     variables notebooks/getting_started/parameters_and_their_optimisation and {'json_url': 'https://gpflow.github.io/GPflow/versions.json', 'version_match': 'develop'}.
--->
-
-<script type="text/javascript">
-// Check if corresponding page path exists in other version of docs
-// and, if so, go there instead of the homepage of the other docs version
-function checkPageExistsAndRedirect(event) {
-    const currentFilePath = "notebooks/getting_started/parameters_and_their_optimisation.html",
-          tryUrl = event.target.getAttribute("href");
-    let otherDocsHomepage = tryUrl.replace(currentFilePath, "");
-    $.ajax({
-        type: 'HEAD',
-        url: tryUrl,
-        // if the page exists, go there
-        success: function() {
-            location.href = tryUrl;
-        }
-    }).fail(function() {
-        location.href = otherDocsHomepage;
-    });
-    // this prevents the browser from following the href of the clicked node
-    // (which is fine because this function takes care of redirecting)
-    return false;
-}
-
-// Populate the version switcher from the JSON config file
-(function () {
-    $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
-        const currentFilePath = "notebooks/getting_started/parameters_and_their_optimisation.html";
-        let btn = document.getElementById("version_switcher_button");
-        // Set empty strings by default so that these attributes exist and can be used in CSS selectors
-        btn.dataset["activeVersionName"] = "";
-        btn.dataset["activeVersion"] = "";
-        // create links to the corresponding page in the other docs versions
-        $.each(data, function(index, entry) {
-            // if no custom name specified (e.g., "latest"), use version string
-            if (!("name" in entry)) {
-                entry.name = entry.version;
-            }
-            // create the node
-            const node = document.createElement("a");
-            node.setAttribute("class", "list-group-item list-group-item-action py-1");
-            node.textContent = `${entry.name}`;
-            node.setAttribute("href", `${entry.url}${currentFilePath}`);
-            // on click, AJAX calls will check if the linked page exists before
-            // trying to redirect, and if not, will redirect to the homepage
-            // for that version of the docs.
-            node.onclick = checkPageExistsAndRedirect;
-            // Add dataset values for the version and name in case people want
-            // to apply CSS styling based on this information.
-            node.dataset["versionName"] = entry.name;
-            node.dataset["version"] = entry.version;
-
-            $("#version_switcher_menu").append(node);
-            // replace dropdown button text with the preferred display name of
-            // this version, rather than using sphinx's  variable.
-            // also highlight the dropdown entry for the currently-viewed
-            // version's entry
-            if (entry.version == "develop") {
-                node.classList.add("active");
-                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
-                btn.dataset["activeVersion"] = entry.version;
-            }
-        });
-    });
-})();
-</script>
       </div>
       
     </div>
   </div>
+
+
+  
+  <div class="search-button-container--mobile">
+<button class="btn btn-sm navbar-btn search-button search-button__button" title="Search">
+  <i class="fas fa-search"></i>
+</button>
+  </div>
+
+  
+  <label class="sidebar-toggle secondary-toggle" for="__secondary">
+      <span class="fas fa-outdent"></span>
+  </label>
+  
+
 </div>
-    </nav>
+  </nav>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+      
+      <div class="navbar-center-item">
+        <nav class="navbar-nav">
+    <p class="sidebar-header-items__title" role="heading" aria-level="1" aria-label="Site Navigation">
+        Site Navigation
+    </p>
+    <ul id="navbar-main-elements" class="navbar-nav">
+        
+                <li class="nav-item current active">
+                    <a class="nav-link" href="../../getting_started.html">
+                        Getting Started
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../user_guide.html">
+                        User Guide
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../api/gpflow/index.html">
+                        gpflow
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../benchmarks.html">
+                        Benchmarks
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../bibliography.html">
+                        Bibliography
+                    </a>
+                </li>
+                
+    </ul>
+</nav>
+      </div>
+      
+      </div>
     
 
-    <div class="bd-container container-xl">
-      <div class="bd-container__inner row">
-          
+    
+    
+    <div class="sidebar-header-items__end">
+      
+      <div class="navbar-end-item">
+        <div class="version-switcher__container dropdown">
+    <button type="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-toggle="dropdown">
+        develop  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div class="version-switcher__menu dropdown-menu list-group-flush py-0">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+      </div>
+      
+    </div>
+    
+  </div>
 
-<!-- Only show if we have sidebars configured, else just a small margin  -->
-<div class="bd-sidebar-primary col-12 col-md-3 bd-sidebar">
-  <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
-  <i class="icon fas fa-search"></i>
-  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
-</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
-  <div class="bd-toc-item active">
+  
+  <div class="sidebar-start-items sidebar-primary__section">
+    <div class="sidebar-start-items__item"><nav class="bd-links" id="bd-docs-nav" aria-label="Section navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">
+    Section Navigation
+  </p>
+  <div class="bd-toc-item navbar-nav">
     <ul class="current nav bd-sidenav">
  <li class="toctree-l1">
   <a class="reference internal" href="../../installation.html">
@@ -254,13 +315,8 @@ function checkPageExistsAndRedirect(event) {
   </a>
  </li>
  <li class="toctree-l1">
-  <a class="reference internal" href="classification.html">
-   Classification
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="other_distributions.html">
-   Other distributions
+  <a class="reference internal" href="classification_and_other_data_distributions.html">
+   Classification and other data distributions
   </a>
  </li>
  <li class="toctree-l1">
@@ -287,120 +343,30 @@ function checkPageExistsAndRedirect(event) {
 
   </div>
 </nav>
-  </div>
-  <div class="sidebar-end-items">
-  </div>
-</div>
-
-
-          
-
-
-<div class="bd-sidebar-secondary d-none d-xl-block col-xl-2 bd-toc">
-  
-    
-    <div class="toc-item">
-      
-<div class="tocsection onthispage mt-5 pt-1 pb-3">
-    <i class="fas fa-list"></i> On this page
-</div>
-
-<nav id="bd-toc-nav">
-    <ul class="visible nav section-nav flex-column">
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#The-Module-and-Parameter-classes">
-   The Module and Parameter classes
-  </a>
-  <ul class="nav section-nav flex-column">
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#Inspecting-parameters">
-     Inspecting parameters
-    </a>
-   </li>
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#Setting-parameters">
-     Setting parameters
-    </a>
-   </li>
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#Optimisation">
-     Optimisation
-    </a>
-   </li>
-  </ul>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#What-to-do-if-you-models-fails-to-fit">
-   What to do if you models fails to fit
-  </a>
-  <ul class="nav section-nav flex-column">
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#Dataset:-CO_2-levels">
-     Dataset:
-     <span class="math notranslate nohighlight">
-      \(CO_2\)
-     </span>
-     levels
-    </a>
-   </li>
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#Setting-the-initial-value">
-     Setting the initial value
-    </a>
-   </li>
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#Priors">
-     Priors
-    </a>
-   </li>
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#Transforms">
-     Transforms
-    </a>
-   </li>
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#Trainable-parameters">
-     Trainable parameters
-    </a>
-   </li>
-  </ul>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#Advanced-training">
-   Advanced training
-  </a>
-  <ul class="nav section-nav flex-column">
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#Multi-stage-training">
-     Multi-stage training
-    </a>
-   </li>
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#The-Keras-optimisers">
-     The Keras optimisers
-    </a>
-   </li>
-  </ul>
- </li>
-</ul>
-
-</nav>
     </div>
-    
-    <div class="toc-item">
-      
-    </div>
-    
+  </div>
   
-</div>
 
+  
+  <div class="sidebar-end-items sidebar-primary__section">
+    <div class="sidebar-end-items__item">
+    </div>
+  </div>
 
-          
-          
-          <div class="bd-content col-12 col-md-9 col-xl-7">
-              
-              <article class="bd-article" role="main">
+      </div>
+      <main class="bd-main">
+        
+        
+        <div class="bd-content">
+          <div class="bd-article-container">
+            
+            <div class="bd-header-article">
                 
+            </div>
+            
+            
+            <article class="bd-article" role="main">
+              
   
 <style>
 /* CSS for nbsphinx extension */
@@ -662,7 +628,7 @@ div.rendered_html tbody tr:hover {
 <p>In this chapter we will talk about what happens when you train your model, and what you can do if the optimisation process fails to find a good fit.</p>
 <p>As usual we start with some imports:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
@@ -684,7 +650,7 @@ div.rendered_html tbody tr:hover {
 <p>The two fundamental classes of GPflow are <a class="reference external" href="../../api/gpflow/index.html#gpflow-module">gpflow.Module</a> and <a class="reference external" href="../../api/gpflow/index.html#gpflow-parameter">gpflow.Parameter</a>. Parameters are leaf nodes holding numerical values, that can be tuned / trained to make the model fit the data. Modules recursively composes other modules and parameters to create models. All the GPflow models, kernels, mean functions, etc. are modules.</p>
 <p>As an example, let’s build a simple linear model:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">LinearModel</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -695,6 +661,7 @@ div.rendered_html tbody tr:hover {
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">slope</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">TensorData</span><span class="p">,</span> <span class="n">bias</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">TensorData</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">slope</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">slope</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bias</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">bias</span><span class="p">)</span>
 
@@ -712,7 +679,7 @@ div.rendered_html tbody tr:hover {
 <h3>Inspecting parameters<a class="headerlink" href="#Inspecting-parameters" title="Permalink to this heading">#</a></h3>
 <p>Let’s first create an instance of our <code class="docutils literal notranslate"><span class="pre">LinearModel</span></code>:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">2.0</span><span class="p">]],</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">])</span>
@@ -721,7 +688,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>We can use the GPflow utility functions <code class="docutils literal notranslate"><span class="pre">print_summary</span></code> to see a summary of anything extending the GPflow <code class="docutils literal notranslate"><span class="pre">Module</span></code>:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
@@ -747,7 +714,7 @@ div.rendered_html tbody tr:hover {
 <p>We generally recommend printing your parameter values after model traning, to sanity check them, and to develop a feel for what parameters are a good fit for your data.</p>
 <p><code class="docutils literal notranslate"><span class="pre">print_summary</span></code> has nice integration with Jupyter Notebooks:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;notebook&quot;</span><span class="p">)</span>
@@ -771,7 +738,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>And we can configure GPflow to use the <code class="docutils literal notranslate"><span class="pre">notebook</span></code> format by default:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set_default_summary_fmt</span><span class="p">(</span><span class="s2">&quot;notebook&quot;</span><span class="p">)</span>
@@ -796,7 +763,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>Alternatively <code class="docutils literal notranslate"><span class="pre">Module</span></code>s know how to print themselves nicely in a notebook:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span>
@@ -804,11 +771,10 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
-</pre></div>
+<div class="prompt empty docutils container">
 </div>
 <div class="output_area rendered_html docutils container">
-&lt;__main__.LinearModel object at 0x7f4ec8cd6d40&gt;
+&lt;__main__.LinearModel object at 0x7efeb7b35640&gt;
 <table>
 <thead>
 <tr><th>name             </th><th>class    </th><th>transform  </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th>value  </th></tr>
@@ -822,7 +788,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>Finally, a <code class="docutils literal notranslate"><span class="pre">Module</span></code> has two properties that allows easy access to its leaf parameters:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span>
@@ -830,8 +796,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
-</pre></div>
+<div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
@@ -842,7 +807,7 @@ div.rendered_html tbody tr:hover {
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span>
@@ -850,8 +815,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
-</pre></div>
+<div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
@@ -861,14 +825,14 @@ div.rendered_html tbody tr:hover {
         [2.]])&gt;)
 </pre></div></div>
 </div>
-<p>The difference between trainable and non-trainable parameters will be explained further below. For now you may notice that both our parameters are marke “trainable” in the <code class="docutils literal notranslate"><span class="pre">print_summary</span></code> output, and both of them are returned by <code class="docutils literal notranslate"><span class="pre">.trainable_parameters</span></code>.</p>
+<p>The difference between trainable and non-trainable parameters will be explained further below. For now you may notice that both our parameters are marked “trainable” in the <code class="docutils literal notranslate"><span class="pre">print_summary</span></code> output, and both of them are returned by <code class="docutils literal notranslate"><span class="pre">.trainable_parameters</span></code>.</p>
 <p>Generally you should use <code class="docutils literal notranslate"><span class="pre">print_summary</span></code> to manually inspect your models, and <code class="docutils literal notranslate"><span class="pre">.parameters</span></code> and <code class="docutils literal notranslate"><span class="pre">.trainable_parameters</span></code> if you need programmatic access.</p>
 </section>
 <section id="Setting-parameters">
 <h3>Setting parameters<a class="headerlink" href="#Setting-parameters" title="Permalink to this heading">#</a></h3>
 <p>Parameters have a <code class="docutils literal notranslate"><span class="pre">.assign</span></code> method you can use to set them:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">bias</span><span class="o">.</span><span class="n">assign</span><span class="p">([</span><span class="mf">5.0</span><span class="p">])</span>
@@ -898,7 +862,7 @@ div.rendered_html tbody tr:hover {
 <p>Let’s us try to optimise our <code class="docutils literal notranslate"><span class="pre">LinearModel</span></code>.</p>
 <p>First we need some data. This data is computed manually, given <span class="math notranslate nohighlight">\(y_i = 2x_{i0} + 3x_{i1} + 1\)</span>.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">X_train</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">]])</span>
@@ -908,7 +872,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>Next we need our loss function. A common choice is the mean squared error:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">loss</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
@@ -921,7 +885,7 @@ div.rendered_html tbody tr:hover {
 <p>Be aware that GPflow models come with a loss-function built in. Use <code class="docutils literal notranslate"><span class="pre">model.training_loss</span></code>. See our chapter on <a class="reference external" href="data_management.html">Data Management</a> for more details.</p>
 <p>Now we can plug this into the default GPflow optimiser:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
@@ -955,13 +919,12 @@ div.rendered_html tbody tr:hover {
 <h3>Dataset: <span class="math notranslate nohighlight">\(CO_2\)</span> levels<a class="headerlink" href="#Dataset:-CO_2-levels" title="Permalink to this heading">#</a></h3>
 <p>As an example we will use a dataset of atmospheric <span class="math notranslate nohighlight">\(CO_2\)</span> levels, as measured at the <a class="reference external" href="https://gml.noaa.gov/obop/mlo/">Mauna Loa observatory</a> in Hawaii:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">co2_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
     <span class="s2">&quot;https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.csv&quot;</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;#&quot;</span>
 <span class="p">)</span>
-<span class="c1"># co2_data = co2_data[co2_data[&quot;decimal date&quot;] &gt; 1990]</span>
 <span class="n">Xco2</span> <span class="o">=</span> <span class="n">co2_data</span><span class="p">[</span><span class="s2">&quot;decimal date&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
 <span class="n">Yco2</span> <span class="o">=</span> <span class="n">co2_data</span><span class="p">[</span><span class="s2">&quot;average&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
 </pre></div>
@@ -969,7 +932,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>And we will define some helper functions to train and plot a model with the data:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_co2_model_prediction</span><span class="p">(</span>
@@ -978,16 +941,16 @@ div.rendered_html tbody tr:hover {
     <span class="n">Xplot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="mi">200</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>
     <span class="n">idx_plot</span> <span class="o">=</span> <span class="p">(</span><span class="n">start</span> <span class="o">&lt;</span> <span class="n">Xco2</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">Xco2</span> <span class="o">&lt;</span> <span class="n">stop</span><span class="p">)</span>
 
-    <span class="n">f_mean</span><span class="p">,</span> <span class="n">f_var</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_f</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">f_lower</span> <span class="o">=</span> <span class="n">f_mean</span> <span class="o">-</span> <span class="mf">1.96</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">f_var</span><span class="p">)</span>
-    <span class="n">f_upper</span> <span class="o">=</span> <span class="n">f_mean</span> <span class="o">+</span> <span class="mf">1.96</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">f_var</span><span class="p">)</span>
+    <span class="n">y_mean</span><span class="p">,</span> <span class="n">y_var</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_y</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">y_lower</span> <span class="o">=</span> <span class="n">y_mean</span> <span class="o">-</span> <span class="mf">1.96</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">y_var</span><span class="p">)</span>
+    <span class="n">y_upper</span> <span class="o">=</span> <span class="n">y_mean</span> <span class="o">+</span> <span class="mf">1.96</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">y_var</span><span class="p">)</span>
 
     <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xco2</span><span class="p">[</span><span class="n">idx_plot</span><span class="p">],</span> <span class="n">Yco2</span><span class="p">[</span><span class="n">idx_plot</span><span class="p">],</span> <span class="s2">&quot;kx&quot;</span><span class="p">,</span> <span class="n">mew</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-    <span class="p">(</span><span class="n">mean_line</span><span class="p">,)</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">f_mean</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">mean_line</span><span class="p">,)</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">y_mean</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span>
     <span class="n">color</span> <span class="o">=</span> <span class="n">mean_line</span><span class="o">.</span><span class="n">get_color</span><span class="p">()</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">,</span> <span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">f_upper</span><span class="p">,</span> <span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">Xplot</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">f_lower</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">f_upper</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">y_lower</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">y_upper</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">Xplot</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">y_lower</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">y_upper</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">plot_co2_kernel</span><span class="p">(</span>
@@ -1013,7 +976,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>Let us start by trying to fit our favourite kernel: the squared exponential:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_co2_kernel</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">())</span>
@@ -1045,7 +1008,7 @@ div.rendered_html tbody tr:hover {
 <p>We are off to a good start. From the left plot it is clear that the kernel has captured the long-term trend of the data. However, on the zoomed-in plot on the right it is also clear that the data has some kind of yearly cycle that our model has failed to capture.</p>
 <p>Let us try adding a periodic kernel to capture the yearly cycle:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_co2_kernel</span><span class="p">(</span>
@@ -1092,7 +1055,7 @@ div.rendered_html tbody tr:hover {
 </ul>
 <p>Let us try simply setting the parameters of our long-term-trend kernel to approximately those learned when it was trained individually, and the period to 1:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_co2_kernel</span><span class="p">(</span>
@@ -1134,7 +1097,7 @@ div.rendered_html tbody tr:hover {
 account. We use the <a class="reference external" href="https://www.tensorflow.org/probability/api_docs/python/tfp/distributions/Distribution">TensorFlow Probability Distribution</a> class to represent priors.</p>
 <p>There are two ways to apply a prior to your parameters. First, you can create the parameter with the prior:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">prior</span><span class="o">=</span><span class="n">tfp</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">10.0</span><span class="p">))</span>
@@ -1143,7 +1106,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 </div>
 <p>Or you can create the parameter first, and then set the prior:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
@@ -1153,7 +1116,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 </div>
 <p>Let us try using priors on our <span class="math notranslate nohighlight">\(CO_2\)</span> model:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">long_term_kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">()</span>
@@ -1202,10 +1165,10 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 </section>
 <section id="Transforms">
 <h3>Transforms<a class="headerlink" href="#Transforms" title="Permalink to this heading">#</a></h3>
-<p>As mentioned above, some parameters have constraints on what values are valid. GPflow uses “transforms” to enforce this. The parameter stores a raw value that can be anything. When you read the parameter that value is sent through a function, the “transform” that maps the entire real line to the set of valid values. We use the <a class="reference external" href="https://www.tensorflow.org/probability/api_docs/python/tfp/bijectors/Bijector">TensorFlow Probability Bijector</a> class for the transform.</p>
+<p>As mentioned above, some parameters have constraints on what values are valid. GPflow uses “transforms” to enforce this. The parameter stores a raw value that can be anything. When you read the parameter that value is sent through a function, the “transform”, that maps the entire real line to the set of valid values. We use the <a class="reference external" href="https://www.tensorflow.org/probability/api_docs/python/tfp/bijectors/Bijector">TensorFlow Probability Bijector</a> class for the transform.</p>
 <p>You can only set the transform of a parameter when you create it. For example:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Exp</span><span class="p">())</span>
@@ -1215,7 +1178,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <p>In this example we used the exponential function as a transform. Since the exponential functions maps the entire real line to positive values this transform will ensure that the parameter always take positive values.</p>
 <p>We can access the untransformed value of the parameter:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span><span class="o">.</span><span class="n">unconstrained_variable</span>
@@ -1223,8 +1186,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
-</pre></div>
+<div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
@@ -1232,7 +1194,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span><span class="o">.</span><span class="n">unconstrained_variable</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">)</span>
@@ -1240,8 +1202,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
-</pre></div>
+<div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
@@ -1250,7 +1211,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 </div>
 <p>When we read the parameter we will read the transformed value, which is positive, even though we just set the untransformed value to a negative number:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span>
@@ -1258,8 +1219,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
-</pre></div>
+<div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
@@ -1268,7 +1228,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 </div>
 <p>Let us try and use transforms on our <span class="math notranslate nohighlight">\(CO_2\)</span> problem:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">long_term_kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">()</span>
@@ -1331,7 +1291,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <p>In this section we have been going from setting initial parameter values, which are a very soft hint, over priors to transforms, which are more forceful ways of constraining the training process. The last step is to completely prevent the optimiser from changing a value. We can do that by setting the parameter to not be “trainable”.</p>
 <p>You can set the trainability of a parameter either when you create it, or using the <code class="docutils literal notranslate"><span class="pre">gpflow.set_trainable</span></code> function:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">trainable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -1339,7 +1299,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
@@ -1350,7 +1310,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <p>The <code class="docutils literal notranslate"><span class="pre">gpflow.set_trainable</span></code> function can both be applied directly to parameters, or to modules, in which case all parameters held in the module are affected.</p>
 <p>Let us try setting the trainability on our <span class="math notranslate nohighlight">\(CO_2\)</span> model:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">long_term_kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(</span><span class="n">variance</span><span class="o">=</span><span class="mi">280_000</span><span class="p">,</span> <span class="n">lengthscales</span><span class="o">=</span><span class="mi">140</span><span class="p">)</span>
@@ -1397,7 +1357,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <h3>Multi-stage training<a class="headerlink" href="#Multi-stage-training" title="Permalink to this heading">#</a></h3>
 <p>Remember how we first trained a model with only a <code class="docutils literal notranslate"><span class="pre">SquaredExponential</span></code> kernel, and in the above subsections we have been using parameters learned from that experiment for the initial values in a more complicated kernel? Well, it is possible to run optimisation multiple times, so instead of “copy and pasting” values, we can learn them anew every time. This is mostly useful if your data might change, and you are trying to write solid reusable code:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">long_term_kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">()</span>
@@ -1417,6 +1377,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
     <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">10_000</span><span class="p">)</span>
 <span class="p">)</span>
 
+<span class="c1"># Prevent `plot_co2_kernel` from changing the kernel.</span>
 <span class="n">gpflow</span><span class="o">.</span><span class="n">set_trainable</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 <span class="n">plot_co2_kernel</span><span class="p">(</span><span class="n">kernel</span><span class="p">)</span>
 </pre></div>
@@ -1452,7 +1413,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <h3>The Keras optimisers<a class="headerlink" href="#The-Keras-optimisers" title="Permalink to this heading">#</a></h3>
 <p>So far we have been using the optimiser from GPflow. However, GPflow is built on TensorFlow variables and automatic differentiation, and you can use any other optimiser built on those as well. Here is an example of using a Keras optimiser with a TensorFlow model:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">(</span>
@@ -1475,6 +1436,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
         <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
 
 <span class="n">kernel</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">kernel</span>
+<span class="c1"># Prevent `plot_co2_kernel` from changing the kernel.</span>
 <span class="n">gpflow</span><span class="o">.</span><span class="n">set_trainable</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 <span class="n">plot_co2_kernel</span><span class="p">(</span><span class="n">kernel</span><span class="p">)</span>
 </pre></div>
@@ -1537,35 +1499,151 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 </section>
 
 
-              </article>
-              
-
-              
+            </article>
+            
+            
+            
           </div>
           
-      </div>
+          
+          
+            <div class="bd-sidebar-secondary bd-toc">
+              
+<div class="toc-item">
+  
+<div class="tocsection onthispage">
+    <i class="fas fa-list"></i> On this page
+</div>
+<nav id="bd-toc-nav" class="page-toc">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#The-Module-and-Parameter-classes">
+   The Module and Parameter classes
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#Inspecting-parameters">
+     Inspecting parameters
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#Setting-parameters">
+     Setting parameters
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#Optimisation">
+     Optimisation
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#What-to-do-if-you-models-fails-to-fit">
+   What to do if you models fails to fit
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#Dataset:-CO_2-levels">
+     Dataset:
+     <span class="math notranslate nohighlight">
+      \(CO_2\)
+     </span>
+     levels
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#Setting-the-initial-value">
+     Setting the initial value
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#Priors">
+     Priors
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#Transforms">
+     Transforms
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#Trainable-parameters">
+     Trainable parameters
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Advanced-training">
+   Advanced training
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#Multi-stage-training">
+     Multi-stage training
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#The-Keras-optimisers">
+     The Keras optimisers
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+</nav>
+</div>
+
+<div class="toc-item">
+  
+</div>
+
+<div class="toc-item">
+  
+</div>
+
+            </div>
+          
+          
+        </div>
+        <footer class="bd-footer-content">
+          <div class="bd-footer-content__inner">
+            
+          </div>
+        </footer>
+        
+      </main>
     </div>
+  </div>
 
   
-  
+    
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695"></script>
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=9b1a4fa89bdd0e95b23b"></script>
 
-<footer class="bd-footer"><div class="bd-footer__inner container">
+  <footer class="bd-footer"><div class="bd-footer__inner container">
   
   <div class="footer-item">
-    <p class="copyright">
+    
+<p class="copyright">
+
     &copy; Copyright 2022, The GPflow Contributors.<br>
+
 </p>
+
   </div>
   
   <div class="footer-item">
-    <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.2.<br>
+    
+<p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.1.1.<br>
 </p>
+
   </div>
   
 </div>
-</footer>
+  </footer>
   </body>
 </html>
