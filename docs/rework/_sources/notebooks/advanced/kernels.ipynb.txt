@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "5263aeab",
+   "id": "5a439dfe",
    "metadata": {},
    "source": [
     "# Manipulating kernels\n",
@@ -13,14 +13,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "cd642670",
+   "execution_count": 1,
+   "id": "70c0c7c0",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:03:32.576137Z",
-     "iopub.status.busy": "2022-09-21T10:03:32.574902Z",
-     "iopub.status.idle": "2022-09-21T10:03:35.272301Z",
-     "shell.execute_reply": "2022-09-21T10:03:35.271771Z"
+     "iopub.execute_input": "2022-09-22T11:41:08.248286Z",
+     "iopub.status.busy": "2022-09-22T11:41:08.247260Z",
+     "iopub.status.idle": "2022-09-22T11:41:10.988534Z",
+     "shell.execute_reply": "2022-09-22T11:41:10.987957Z"
     }
    },
    "outputs": [
@@ -28,18 +28,18 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-09-21 11:03:32.652525: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA\n",
+      "2022-09-22 12:41:08.613435: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n",
-      "2022-09-21 11:03:32.763990: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n"
+      "2022-09-22 12:41:08.728534: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-09-21 11:03:33.259239: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory\n",
-      "2022-09-21 11:03:33.259320: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory\n",
-      "2022-09-21 11:03:33.259326: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.\n"
+      "2022-09-22 12:41:09.191680: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory\n",
+      "2022-09-22 12:41:09.191760: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory\n",
+      "2022-09-22 12:41:09.191766: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.\n"
      ]
     },
     {
@@ -54,9 +54,10 @@
     }
    ],
    "source": [
-    "import gpflow\n",
-    "import numpy as np\n",
     "import matplotlib.pyplot as plt\n",
+    "import numpy as np\n",
+    "\n",
+    "import gpflow\n",
     "\n",
     "plt.style.use(\"ggplot\")\n",
     "import tensorflow as tf\n",
@@ -68,7 +69,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a016011f",
+   "id": "a78c1b1d",
    "metadata": {},
    "source": [
     "## Standard kernels in GPflow\n",
@@ -114,14 +115,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "d01fbc63",
+   "execution_count": 2,
+   "id": "c5c6791c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:03:35.274773Z",
-     "iopub.status.busy": "2022-09-21T10:03:35.274475Z",
-     "iopub.status.idle": "2022-09-21T10:03:36.156560Z",
-     "shell.execute_reply": "2022-09-21T10:03:36.156026Z"
+     "iopub.execute_input": "2022-09-22T11:41:10.990989Z",
+     "iopub.status.busy": "2022-09-22T11:41:10.990695Z",
+     "iopub.status.idle": "2022-09-22T11:41:11.777031Z",
+     "shell.execute_reply": "2022-09-22T11:41:11.776575Z"
     }
    },
    "outputs": [
@@ -131,11 +132,11 @@
      "text": [
       "/home/jesper/src/GPflow/gpflow/experimental/utils.py:42: UserWarning: You're calling gpflow.experimental.check_shapes.checker.ShapeChecker.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.\n",
       "  warn(\n",
-      "2022-09-21 11:03:35.375778: I tensorflow/stream_executor/cuda/cuda_gpu_executor.cc:980] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero\n",
-      "2022-09-21 11:03:35.378990: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcusolver.so.11'; dlerror: libcusolver.so.11: cannot open shared object file: No such file or directory\n",
-      "2022-09-21 11:03:35.379472: W tensorflow/core/common_runtime/gpu/gpu_device.cc:1934] Cannot dlopen some GPU libraries. Please make sure the missing libraries mentioned above are installed properly if you would like to use GPU. Follow the guide at https://www.tensorflow.org/install/gpu for how to download and setup the required libraries for your platform.\n",
+      "2022-09-22 12:41:11.091031: I tensorflow/stream_executor/cuda/cuda_gpu_executor.cc:980] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero\n",
+      "2022-09-22 12:41:11.094214: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcusolver.so.11'; dlerror: libcusolver.so.11: cannot open shared object file: No such file or directory\n",
+      "2022-09-22 12:41:11.094722: W tensorflow/core/common_runtime/gpu/gpu_device.cc:1934] Cannot dlopen some GPU libraries. Please make sure the missing libraries mentioned above are installed properly if you would like to use GPU. Follow the guide at https://www.tensorflow.org/install/gpu for how to download and setup the required libraries for your platform.\n",
       "Skipping registering GPU devices...\n",
-      "2022-09-21 11:03:35.379979: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA\n",
+      "2022-09-22 12:41:11.095320: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     },
@@ -168,13 +169,15 @@
     "plotkernelsample(gpflow.kernels.Constant(), axes[1, 0])\n",
     "plotkernelsample(gpflow.kernels.Linear(), axes[1, 1])\n",
     "plotkernelsample(gpflow.kernels.Cosine(), axes[1, 2])\n",
-    "plotkernelsample(gpflow.kernels.Periodic(gpflow.kernels.SquaredExponential()), axes[1, 3])\n",
+    "plotkernelsample(\n",
+    "    gpflow.kernels.Periodic(gpflow.kernels.SquaredExponential()), axes[1, 3]\n",
+    ")\n",
     "axes[0, 0].set_ylim(-3, 3)"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "c3dfeddf",
+   "id": "146c88b3",
    "metadata": {},
    "source": [
     "## First example: create a Matern 3/2 covariance kernel\n",
@@ -184,14 +187,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "05a204b3",
+   "execution_count": 3,
+   "id": "a1e0fe71",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:03:36.158664Z",
-     "iopub.status.busy": "2022-09-21T10:03:36.158437Z",
-     "iopub.status.idle": "2022-09-21T10:03:36.166798Z",
-     "shell.execute_reply": "2022-09-21T10:03:36.166292Z"
+     "iopub.execute_input": "2022-09-22T11:41:11.779120Z",
+     "iopub.status.busy": "2022-09-22T11:41:11.778930Z",
+     "iopub.status.idle": "2022-09-22T11:41:11.787722Z",
+     "shell.execute_reply": "2022-09-22T11:41:11.787220Z"
     }
    },
    "outputs": [],
@@ -201,7 +204,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "177f0ed4",
+   "id": "8222a8b8",
    "metadata": {},
    "source": [
     "**NOTE:** The values specified for the `variance` and `lengthscales` parameters are **floats**.\n",
@@ -211,14 +214,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "94899122",
+   "execution_count": 4,
+   "id": "02253fe3",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:03:36.183515Z",
-     "iopub.status.busy": "2022-09-21T10:03:36.183304Z",
-     "iopub.status.idle": "2022-09-21T10:03:36.194268Z",
-     "shell.execute_reply": "2022-09-21T10:03:36.193762Z"
+     "iopub.execute_input": "2022-09-22T11:41:11.803666Z",
+     "iopub.status.busy": "2022-09-22T11:41:11.803434Z",
+     "iopub.status.idle": "2022-09-22T11:41:11.814348Z",
+     "shell.execute_reply": "2022-09-22T11:41:11.813839Z"
     }
    },
    "outputs": [
@@ -288,7 +291,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ed066e83",
+   "id": "a7881dba",
    "metadata": {},
    "source": [
     "You can access the parameter values and assign new values with the same syntax as for models:"
@@ -296,14 +299,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "ae7a5258",
+   "execution_count": 5,
+   "id": "745d58f0",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:03:36.196377Z",
-     "iopub.status.busy": "2022-09-21T10:03:36.196171Z",
-     "iopub.status.idle": "2022-09-21T10:03:36.202640Z",
-     "shell.execute_reply": "2022-09-21T10:03:36.202109Z"
+     "iopub.execute_input": "2022-09-22T11:41:11.816410Z",
+     "iopub.status.busy": "2022-09-22T11:41:11.816251Z",
+     "iopub.status.idle": "2022-09-22T11:41:11.822934Z",
+     "shell.execute_reply": "2022-09-22T11:41:11.822325Z"
     }
    },
    "outputs": [
@@ -324,7 +327,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "c82b9d4d",
+   "id": "445d9616",
    "metadata": {},
    "source": [
     "Finally, you can *call* the kernel object to compute covariance matrices:"
@@ -332,14 +335,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "b3d19fee",
+   "execution_count": 6,
+   "id": "a73449e8",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:03:36.204678Z",
-     "iopub.status.busy": "2022-09-21T10:03:36.204480Z",
-     "iopub.status.idle": "2022-09-21T10:03:36.319006Z",
-     "shell.execute_reply": "2022-09-21T10:03:36.318411Z"
+     "iopub.execute_input": "2022-09-22T11:41:11.824909Z",
+     "iopub.status.busy": "2022-09-22T11:41:11.824752Z",
+     "iopub.status.idle": "2022-09-22T11:41:12.029960Z",
+     "shell.execute_reply": "2022-09-22T11:41:12.029500Z"
     }
    },
    "outputs": [
@@ -359,7 +362,9 @@
     "X2 = np.linspace(-2, 2, 101).reshape(-1, 1)\n",
     "\n",
     "K21 = k(X2, X1)  # cov(f(X2), f(X1)): matrix with shape [101, 1]\n",
-    "K22 = k(X2)  # equivalent to k(X2, X2) (but more efficient): matrix with shape [101, 101]\n",
+    "K22 = k(\n",
+    "    X2\n",
+    ")  # equivalent to k(X2, X2) (but more efficient): matrix with shape [101, 101]\n",
     "\n",
     "# plotting\n",
     "plt.figure()\n",
@@ -368,7 +373,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "6e9e1298",
+   "id": "add370a7",
    "metadata": {},
    "source": [
     "## Combine kernels\n",
@@ -378,14 +383,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "07cbd0c1",
+   "execution_count": 7,
+   "id": "c1b7a961",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:03:36.321151Z",
-     "iopub.status.busy": "2022-09-21T10:03:36.320965Z",
-     "iopub.status.idle": "2022-09-21T10:03:36.779201Z",
-     "shell.execute_reply": "2022-09-21T10:03:36.778656Z"
+     "iopub.execute_input": "2022-09-22T11:41:12.032084Z",
+     "iopub.status.busy": "2022-09-22T11:41:12.031910Z",
+     "iopub.status.idle": "2022-09-22T11:41:12.489098Z",
+     "shell.execute_reply": "2022-09-22T11:41:12.488585Z"
     }
    },
    "outputs": [
@@ -469,7 +474,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d778cc77",
+   "id": "be799e80",
    "metadata": {},
    "source": [
     "## Kernels for higher-dimensional input spaces\n",
@@ -479,7 +484,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7d882952",
+   "id": "4f46690a",
    "metadata": {},
    "source": [
     "You can also initialize the lengthscales when the object is created:"
@@ -487,14 +492,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "a48bbc3e",
+   "execution_count": 8,
+   "id": "5e722592",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:03:36.781194Z",
-     "iopub.status.busy": "2022-09-21T10:03:36.780998Z",
-     "iopub.status.idle": "2022-09-21T10:03:36.793613Z",
-     "shell.execute_reply": "2022-09-21T10:03:36.793243Z"
+     "iopub.execute_input": "2022-09-22T11:41:12.491219Z",
+     "iopub.status.busy": "2022-09-22T11:41:12.491049Z",
+     "iopub.status.idle": "2022-09-22T11:41:12.504345Z",
+     "shell.execute_reply": "2022-09-22T11:41:12.503830Z"
     }
    },
    "outputs": [
@@ -526,7 +531,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "268ace9e",
+   "id": "a1eb590e",
    "metadata": {},
    "source": [
     "## Specify active dimensions\n",
@@ -538,14 +543,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "a85f9fa0",
+   "execution_count": 9,
+   "id": "6bbb8ced",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:03:36.795573Z",
-     "iopub.status.busy": "2022-09-21T10:03:36.795375Z",
-     "iopub.status.idle": "2022-09-21T10:03:36.806292Z",
-     "shell.execute_reply": "2022-09-21T10:03:36.805782Z"
+     "iopub.execute_input": "2022-09-22T11:41:12.506327Z",
+     "iopub.status.busy": "2022-09-22T11:41:12.506146Z",
+     "iopub.status.idle": "2022-09-22T11:41:12.517462Z",
+     "shell.execute_reply": "2022-09-22T11:41:12.516950Z"
     }
    },
    "outputs": [],
@@ -557,7 +562,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "5e23ff3b",
+   "id": "4a785105",
    "metadata": {},
    "source": [
     "`active_dims` makes it easy to create additive models. Here we build an additive Matern 5/2 kernel:"
@@ -565,26 +570,26 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "b9a65431",
+   "execution_count": 10,
+   "id": "3e6a8b99",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:03:36.808340Z",
-     "iopub.status.busy": "2022-09-21T10:03:36.808147Z",
-     "iopub.status.idle": "2022-09-21T10:03:36.820778Z",
-     "shell.execute_reply": "2022-09-21T10:03:36.820267Z"
+     "iopub.execute_input": "2022-09-22T11:41:12.519587Z",
+     "iopub.status.busy": "2022-09-22T11:41:12.519428Z",
+     "iopub.status.idle": "2022-09-22T11:41:12.532351Z",
+     "shell.execute_reply": "2022-09-22T11:41:12.531770Z"
     }
    },
    "outputs": [],
    "source": [
-    "k = gpflow.kernels.Matern52(active_dims=[0], lengthscales=2) + gpflow.kernels.Matern52(\n",
-    "    active_dims=[1], lengthscales=2\n",
-    ")"
+    "k = gpflow.kernels.Matern52(\n",
+    "    active_dims=[0], lengthscales=2\n",
+    ") + gpflow.kernels.Matern52(active_dims=[1], lengthscales=2)"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "f9dee772",
+   "id": "f8d90991",
    "metadata": {},
    "source": [
     "Let's plot this kernel and sample from it:"
@@ -592,14 +597,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "8ce63514",
+   "execution_count": 11,
+   "id": "55f81c99",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:03:36.822804Z",
-     "iopub.status.busy": "2022-09-21T10:03:36.822606Z",
-     "iopub.status.idle": "2022-09-21T10:03:37.283644Z",
-     "shell.execute_reply": "2022-09-21T10:03:37.283137Z"
+     "iopub.execute_input": "2022-09-22T11:41:12.534542Z",
+     "iopub.status.busy": "2022-09-22T11:41:12.534382Z",
+     "iopub.status.idle": "2022-09-22T11:41:12.999490Z",
+     "shell.execute_reply": "2022-09-22T11:41:12.998936Z"
     }
    },
    "outputs": [
@@ -639,7 +644,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e28a829b",
+   "id": "f2acd837",
    "metadata": {},
    "source": [
     "## Define new covariance functions\n",

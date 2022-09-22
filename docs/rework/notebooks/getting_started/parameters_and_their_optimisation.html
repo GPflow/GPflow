@@ -320,16 +320,6 @@
   </a>
  </li>
  <li class="toctree-l1">
-  <a class="reference internal" href="data_management.html">
-   Data Management
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="custom_models.html">
-   Creating Custom Models
-  </a>
- </li>
- <li class="toctree-l1">
   <a class="reference internal" href="monitoring.html">
    Monitoring
   </a>
@@ -628,7 +618,7 @@ div.rendered_html tbody tr:hover {
 <p>In this chapter we will talk about what happens when you train your model, and what you can do if the optimisation process fails to find a good fit.</p>
 <p>As usual we start with some imports:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
@@ -650,7 +640,7 @@ div.rendered_html tbody tr:hover {
 <p>The two fundamental classes of GPflow are <a class="reference external" href="../../api/gpflow/index.html#gpflow-module">gpflow.Module</a> and <a class="reference external" href="../../api/gpflow/index.html#gpflow-parameter">gpflow.Parameter</a>. Parameters are leaf nodes holding numerical values, that can be tuned / trained to make the model fit the data. Modules recursively composes other modules and parameters to create models. All the GPflow models, kernels, mean functions, etc. are modules.</p>
 <p>As an example, let’s build a simple linear model:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">LinearModel</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -679,7 +669,7 @@ div.rendered_html tbody tr:hover {
 <h3>Inspecting parameters<a class="headerlink" href="#Inspecting-parameters" title="Permalink to this heading">#</a></h3>
 <p>Let’s first create an instance of our <code class="docutils literal notranslate"><span class="pre">LinearModel</span></code>:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">2.0</span><span class="p">]],</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">])</span>
@@ -688,7 +678,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>We can use the GPflow utility functions <code class="docutils literal notranslate"><span class="pre">print_summary</span></code> to see a summary of anything extending the GPflow <code class="docutils literal notranslate"><span class="pre">Module</span></code>:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
@@ -714,7 +704,7 @@ div.rendered_html tbody tr:hover {
 <p>We generally recommend printing your parameter values after model traning, to sanity check them, and to develop a feel for what parameters are a good fit for your data.</p>
 <p><code class="docutils literal notranslate"><span class="pre">print_summary</span></code> has nice integration with Jupyter Notebooks:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;notebook&quot;</span><span class="p">)</span>
@@ -738,7 +728,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>And we can configure GPflow to use the <code class="docutils literal notranslate"><span class="pre">notebook</span></code> format by default:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set_default_summary_fmt</span><span class="p">(</span><span class="s2">&quot;notebook&quot;</span><span class="p">)</span>
@@ -763,7 +753,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>Alternatively <code class="docutils literal notranslate"><span class="pre">Module</span></code>s know how to print themselves nicely in a notebook:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span>
@@ -771,10 +761,11 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
-&lt;__main__.LinearModel object at 0x7efeb7b35640&gt;
+&lt;__main__.LinearModel object at 0x7f074bfe4790&gt;
 <table>
 <thead>
 <tr><th>name             </th><th>class    </th><th>transform  </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th>value  </th></tr>
@@ -788,7 +779,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>Finally, a <code class="docutils literal notranslate"><span class="pre">Module</span></code> has two properties that allows easy access to its leaf parameters:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span>
@@ -796,7 +787,8 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
@@ -807,7 +799,7 @@ div.rendered_html tbody tr:hover {
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span>
@@ -815,7 +807,8 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
@@ -832,7 +825,7 @@ div.rendered_html tbody tr:hover {
 <h3>Setting parameters<a class="headerlink" href="#Setting-parameters" title="Permalink to this heading">#</a></h3>
 <p>Parameters have a <code class="docutils literal notranslate"><span class="pre">.assign</span></code> method you can use to set them:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">bias</span><span class="o">.</span><span class="n">assign</span><span class="p">([</span><span class="mf">5.0</span><span class="p">])</span>
@@ -862,7 +855,7 @@ div.rendered_html tbody tr:hover {
 <p>Let’s us try to optimise our <code class="docutils literal notranslate"><span class="pre">LinearModel</span></code>.</p>
 <p>First we need some data. This data is computed manually, given <span class="math notranslate nohighlight">\(y_i = 2x_{i0} + 3x_{i1} + 1\)</span>.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">X_train</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">]])</span>
@@ -872,7 +865,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>Next we need our loss function. A common choice is the mean squared error:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">loss</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
@@ -882,10 +875,10 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 </div>
-<p>Be aware that GPflow models come with a loss-function built in. Use <code class="docutils literal notranslate"><span class="pre">model.training_loss</span></code>. See our chapter on <a class="reference external" href="data_management.html">Data Management</a> for more details.</p>
+<p>Be aware that GPflow models come with a loss-function built in — use <code class="docutils literal notranslate"><span class="pre">model.training_loss</span></code>.</p>
 <p>Now we can plug this into the default GPflow optimiser:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
@@ -919,7 +912,7 @@ div.rendered_html tbody tr:hover {
 <h3>Dataset: <span class="math notranslate nohighlight">\(CO_2\)</span> levels<a class="headerlink" href="#Dataset:-CO_2-levels" title="Permalink to this heading">#</a></h3>
 <p>As an example we will use a dataset of atmospheric <span class="math notranslate nohighlight">\(CO_2\)</span> levels, as measured at the <a class="reference external" href="https://gml.noaa.gov/obop/mlo/">Mauna Loa observatory</a> in Hawaii:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">co2_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
@@ -932,7 +925,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>And we will define some helper functions to train and plot a model with the data:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_co2_model_prediction</span><span class="p">(</span>
@@ -950,7 +943,9 @@ div.rendered_html tbody tr:hover {
     <span class="n">color</span> <span class="o">=</span> <span class="n">mean_line</span><span class="o">.</span><span class="n">get_color</span><span class="p">()</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">y_lower</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">y_upper</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">Xplot</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">y_lower</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">y_upper</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span>
+        <span class="n">Xplot</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">y_lower</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">y_upper</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span>
+    <span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">plot_co2_kernel</span><span class="p">(</span>
@@ -964,11 +959,13 @@ div.rendered_html tbody tr:hover {
     <span class="p">)</span>
     <span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
     <span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">10_000</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span>
+        <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">10_000</span><span class="p">),</span>
     <span class="p">)</span>
     <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;notebook&quot;</span><span class="p">)</span>
 
-    <span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">_</span><span class="p">,</span> <span class="p">(</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
     <span class="n">plot_co2_model_prediction</span><span class="p">(</span><span class="n">ax1</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="mi">1950</span><span class="p">,</span> <span class="mi">2050</span><span class="p">)</span>
     <span class="n">plot_co2_model_prediction</span><span class="p">(</span><span class="n">ax2</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="mi">2015</span><span class="p">,</span> <span class="mi">2030</span><span class="p">)</span>
 </pre></div>
@@ -976,7 +973,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>Let us start by trying to fit our favourite kernel: the squared exponential:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_co2_kernel</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">())</span>
@@ -1008,7 +1005,7 @@ div.rendered_html tbody tr:hover {
 <p>We are off to a good start. From the left plot it is clear that the kernel has captured the long-term trend of the data. However, on the zoomed-in plot on the right it is also clear that the data has some kind of yearly cycle that our model has failed to capture.</p>
 <p>Let us try adding a periodic kernel to capture the yearly cycle:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_co2_kernel</span><span class="p">(</span>
@@ -1055,7 +1052,7 @@ div.rendered_html tbody tr:hover {
 </ul>
 <p>Let us try simply setting the parameters of our long-term-trend kernel to approximately those learned when it was trained individually, and the period to 1:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_co2_kernel</span><span class="p">(</span>
@@ -1097,7 +1094,7 @@ div.rendered_html tbody tr:hover {
 account. We use the <a class="reference external" href="https://www.tensorflow.org/probability/api_docs/python/tfp/distributions/Distribution">TensorFlow Probability Distribution</a> class to represent priors.</p>
 <p>There are two ways to apply a prior to your parameters. First, you can create the parameter with the prior:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">prior</span><span class="o">=</span><span class="n">tfp</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">10.0</span><span class="p">))</span>
@@ -1106,7 +1103,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 </div>
 <p>Or you can create the parameter first, and then set the prior:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
@@ -1116,7 +1113,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 </div>
 <p>Let us try using priors on our <span class="math notranslate nohighlight">\(CO_2\)</span> model:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">long_term_kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">()</span>
@@ -1168,7 +1165,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <p>As mentioned above, some parameters have constraints on what values are valid. GPflow uses “transforms” to enforce this. The parameter stores a raw value that can be anything. When you read the parameter that value is sent through a function, the “transform”, that maps the entire real line to the set of valid values. We use the <a class="reference external" href="https://www.tensorflow.org/probability/api_docs/python/tfp/bijectors/Bijector">TensorFlow Probability Bijector</a> class for the transform.</p>
 <p>You can only set the transform of a parameter when you create it. For example:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Exp</span><span class="p">())</span>
@@ -1178,7 +1175,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <p>In this example we used the exponential function as a transform. Since the exponential functions maps the entire real line to positive values this transform will ensure that the parameter always take positive values.</p>
 <p>We can access the untransformed value of the parameter:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span><span class="o">.</span><span class="n">unconstrained_variable</span>
@@ -1186,7 +1183,8 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
@@ -1194,7 +1192,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span><span class="o">.</span><span class="n">unconstrained_variable</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">)</span>
@@ -1202,7 +1200,8 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
@@ -1211,7 +1210,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 </div>
 <p>When we read the parameter we will read the transformed value, which is positive, even though we just set the untransformed value to a negative number:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span>
@@ -1219,7 +1218,8 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
@@ -1228,7 +1228,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 </div>
 <p>Let us try and use transforms on our <span class="math notranslate nohighlight">\(CO_2\)</span> problem:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">long_term_kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">()</span>
@@ -1242,7 +1242,8 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <span class="n">long_term_kernel</span><span class="o">.</span><span class="n">lengthscales</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span>
     <span class="mi">140</span><span class="p">,</span>
     <span class="n">transform</span><span class="o">=</span><span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">SoftClip</span><span class="p">(</span>
-        <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">to_default_float</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">to_default_float</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span>
+        <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">to_default_float</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span>
+        <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">to_default_float</span><span class="p">(</span><span class="mi">200</span><span class="p">),</span>
     <span class="p">),</span>
 <span class="p">)</span>
 
@@ -1250,7 +1251,8 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <span class="n">periodic_kernel</span><span class="o">.</span><span class="n">period</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span>
     <span class="mf">1.0</span><span class="p">,</span>
     <span class="n">transform</span><span class="o">=</span><span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">SoftClip</span><span class="p">(</span>
-        <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">to_default_float</span><span class="p">(</span><span class="mf">0.9</span><span class="p">),</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">to_default_float</span><span class="p">(</span><span class="mf">1.1</span><span class="p">)</span>
+        <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">to_default_float</span><span class="p">(</span><span class="mf">0.9</span><span class="p">),</span>
+        <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">to_default_float</span><span class="p">(</span><span class="mf">1.1</span><span class="p">),</span>
     <span class="p">),</span>
 <span class="p">)</span>
 
@@ -1291,7 +1293,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <p>In this section we have been going from setting initial parameter values, which are a very soft hint, over priors to transforms, which are more forceful ways of constraining the training process. The last step is to completely prevent the optimiser from changing a value. We can do that by setting the parameter to not be “trainable”.</p>
 <p>You can set the trainability of a parameter either when you create it, or using the <code class="docutils literal notranslate"><span class="pre">gpflow.set_trainable</span></code> function:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">trainable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -1299,7 +1301,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
@@ -1310,10 +1312,12 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <p>The <code class="docutils literal notranslate"><span class="pre">gpflow.set_trainable</span></code> function can both be applied directly to parameters, or to modules, in which case all parameters held in the module are affected.</p>
 <p>Let us try setting the trainability on our <span class="math notranslate nohighlight">\(CO_2\)</span> model:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">long_term_kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(</span><span class="n">variance</span><span class="o">=</span><span class="mi">280_000</span><span class="p">,</span> <span class="n">lengthscales</span><span class="o">=</span><span class="mi">140</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">long_term_kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(</span>
+    <span class="n">variance</span><span class="o">=</span><span class="mi">280_000</span><span class="p">,</span> <span class="n">lengthscales</span><span class="o">=</span><span class="mi">140</span>
+<span class="p">)</span>
 <span class="n">gpflow</span><span class="o">.</span><span class="n">set_trainable</span><span class="p">(</span><span class="n">long_term_kernel</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 
 <span class="n">periodic_kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Periodic</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">())</span>
@@ -1357,7 +1361,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <h3>Multi-stage training<a class="headerlink" href="#Multi-stage-training" title="Permalink to this heading">#</a></h3>
 <p>Remember how we first trained a model with only a <code class="docutils literal notranslate"><span class="pre">SquaredExponential</span></code> kernel, and in the above subsections we have been using parameters learned from that experiment for the initial values in a more complicated kernel? Well, it is possible to run optimisation multiple times, so instead of “copy and pasting” values, we can learn them anew every time. This is mostly useful if your data might change, and you are trying to write solid reusable code:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">long_term_kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">()</span>
@@ -1413,12 +1417,14 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <h3>The Keras optimisers<a class="headerlink" href="#The-Keras-optimisers" title="Permalink to this heading">#</a></h3>
 <p>So far we have been using the optimiser from GPflow. However, GPflow is built on TensorFlow variables and automatic differentiation, and you can use any other optimiser built on those as well. Here is an example of using a Keras optimiser with a TensorFlow model:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">(</span>
     <span class="p">(</span><span class="n">Xco2</span><span class="p">,</span> <span class="n">Yco2</span><span class="p">),</span>
-    <span class="n">kernel</span><span class="o">=</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(</span><span class="n">variance</span><span class="o">=</span><span class="mi">280_000</span><span class="p">,</span> <span class="n">lengthscales</span><span class="o">=</span><span class="mf">140.0</span><span class="p">)</span>
+    <span class="n">kernel</span><span class="o">=</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(</span>
+        <span class="n">variance</span><span class="o">=</span><span class="mi">280_000</span><span class="p">,</span> <span class="n">lengthscales</span><span class="o">=</span><span class="mf">140.0</span>
+    <span class="p">)</span>
     <span class="o">+</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Periodic</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(),</span> <span class="n">period</span><span class="o">=</span><span class="mf">1.0</span><span class="p">),</span>
 <span class="p">)</span>
 

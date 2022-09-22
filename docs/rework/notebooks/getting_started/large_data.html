@@ -320,16 +320,6 @@
   </a>
  </li>
  <li class="toctree-l1">
-  <a class="reference internal" href="data_management.html">
-   Data Management
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="custom_models.html">
-   Creating Custom Models
-  </a>
- </li>
- <li class="toctree-l1">
   <a class="reference internal" href="monitoring.html">
    Monitoring
   </a>
@@ -629,7 +619,7 @@ div.rendered_html tbody tr:hover {
 <p>Note: For large datasets the “SVGP” model may also be relevant. See our section on <a class="reference external" href="classification_and_other_data_distributions.html">Classification and other data distributions</a>.</p>
 <p>As usual we will start with our imports:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
@@ -643,39 +633,19 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>Although the sparse models are meant for large datasets, smaller datasets can be easier to understand, so we will reuse the same data we used in our <a class="reference external" href="basic_usage.html">Basic Usage</a> chapter:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
     <span class="p">[</span>
-        <span class="p">[</span><span class="mf">0.865</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.666</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.804</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.771</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.147</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.866</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.007</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.026</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.171</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.889</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.243</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.028</span><span class="p">],</span>
+        <span class="p">[</span><span class="mf">0.865</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.666</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.804</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.771</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.147</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.866</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.007</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.026</span><span class="p">],</span>
+        <span class="p">[</span><span class="mf">0.171</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.889</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.243</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.028</span><span class="p">],</span>
     <span class="p">]</span>
 <span class="p">)</span>
 <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
     <span class="p">[</span>
-        <span class="p">[</span><span class="mf">1.57</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">3.48</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">3.12</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">3.91</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">3.07</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">1.35</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">3.80</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">3.82</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">3.49</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">1.30</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">4.00</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">3.82</span><span class="p">],</span>
+        <span class="p">[</span><span class="mf">1.57</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.48</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.12</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.91</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.07</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.35</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.80</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.82</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.49</span><span class="p">],</span>
+        <span class="p">[</span><span class="mf">1.30</span><span class="p">],</span> <span class="p">[</span><span class="mf">4.00</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.82</span><span class="p">],</span>
     <span class="p">]</span>
 <span class="p">)</span>
 
@@ -692,14 +662,16 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>And a helper function for training and plotting our models:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_model</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPModel</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">data</span>
     <span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
     <span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">10_000</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span>
+        <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">10_000</span><span class="p">),</span>
     <span class="p">)</span>
     <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;notebook&quot;</span><span class="p">)</span>
 
@@ -709,13 +681,15 @@ div.rendered_html tbody tr:hover {
     <span class="n">y_lower</span> <span class="o">=</span> <span class="n">y_mean</span> <span class="o">-</span> <span class="mf">1.96</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">y_var</span><span class="p">)</span>
     <span class="n">y_upper</span> <span class="o">=</span> <span class="n">y_mean</span> <span class="o">+</span> <span class="mf">1.96</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">y_var</span><span class="p">)</span>
 
-    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">&quot;kx&quot;</span><span class="p">,</span> <span class="n">mew</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
     <span class="p">(</span><span class="n">mean_line</span><span class="p">,)</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">y_mean</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span>
     <span class="n">color</span> <span class="o">=</span> <span class="n">mean_line</span><span class="o">.</span><span class="n">get_color</span><span class="p">()</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">y_lower</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">y_upper</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">Xplot</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">y_lower</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">y_upper</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span>
+        <span class="n">Xplot</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">y_lower</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">y_upper</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span>
+    <span class="p">)</span>
 
     <span class="c1"># Also plot the inducing variables if possible:</span>
     <span class="n">iv</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;inducing_variable&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -726,7 +700,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>As a reference, let us try fitting our usual GPR. Notice that this works because our dataset here still is of a quite managable size. In practice you should only use an SGPR when your dataset is too large for a GPR:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">(</span>
@@ -761,7 +735,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>Let us try fitting an SGPR. As mentioned above the SGPR is based on “inducing points” / “inducing variables”. The SGPR gains a speed-up by only capturing the shape of <span class="math notranslate nohighlight">\(f\)</span> at a small(ish) number of inducing points. We need tell the model where to put these. In this example we will use four inducing points, initially spaced evenly:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">inducing_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.125</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.375</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.625</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.875</span><span class="p">]])</span>
@@ -802,7 +776,7 @@ div.rendered_html tbody tr:hover {
 <p>You may notice that even though we initialised our inducing variables to be evenly spaced, they are spaced irregularly when plotting the model. The inducing variables are represent by a GPflow Parameter, and is optimised during model training, along with the other parameters.</p>
 <p>For illustrative purposes, let us see what happens if we don’t use enough inducing points:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">inducing_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.25</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.75</span><span class="p">]])</span>
@@ -845,78 +819,36 @@ div.rendered_html tbody tr:hover {
 <p>When you use a sparse model you will need to pick initial inducing points, and choosing these correctly can have a large impact on performance. Above we used a simple grid. This often works well when your data is 1D, but we do not recommend using a grid for higher-dimensional data. In this section we discuss some alternatives.</p>
 <p>First, let us declare some 2D data:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
     <span class="p">[</span>
-        <span class="p">[</span><span class="mf">0.70</span><span class="p">,</span> <span class="mf">0.70</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.53</span><span class="p">,</span> <span class="mf">0.81</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.78</span><span class="p">,</span> <span class="mf">0.36</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.83</span><span class="p">,</span> <span class="mf">0.09</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.71</span><span class="p">,</span> <span class="mf">0.55</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.66</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.87</span><span class="p">,</span> <span class="mf">0.50</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.63</span><span class="p">,</span> <span class="mf">0.65</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.37</span><span class="p">,</span> <span class="mf">0.90</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.82</span><span class="p">,</span> <span class="mf">0.11</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.58</span><span class="p">,</span> <span class="mf">0.61</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.93</span><span class="p">,</span> <span class="mf">0.21</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.98</span><span class="p">,</span> <span class="mf">0.18</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.85</span><span class="p">,</span> <span class="mf">0.27</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.64</span><span class="p">,</span> <span class="mf">0.77</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.49</span><span class="p">,</span> <span class="mf">0.73</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.13</span><span class="p">,</span> <span class="mf">0.82</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.93</span><span class="p">,</span> <span class="mf">0.08</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.65</span><span class="p">,</span> <span class="mf">0.71</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.54</span><span class="p">,</span> <span class="mf">0.83</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.85</span><span class="p">,</span> <span class="mf">0.20</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.90</span><span class="p">,</span> <span class="mf">0.07</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.00</span><span class="p">,</span> <span class="mf">0.84</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.64</span><span class="p">,</span> <span class="mf">0.81</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.62</span><span class="p">,</span> <span class="mf">0.70</span><span class="p">],</span>
+        <span class="p">[</span><span class="mf">0.70</span><span class="p">,</span> <span class="mf">0.70</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.53</span><span class="p">,</span> <span class="mf">0.81</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.78</span><span class="p">,</span> <span class="mf">0.36</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.83</span><span class="p">,</span> <span class="mf">0.09</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.71</span><span class="p">,</span> <span class="mf">0.55</span><span class="p">],</span>
+        <span class="p">[</span><span class="mf">0.66</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.87</span><span class="p">,</span> <span class="mf">0.50</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.63</span><span class="p">,</span> <span class="mf">0.65</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.37</span><span class="p">,</span> <span class="mf">0.90</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.82</span><span class="p">,</span> <span class="mf">0.11</span><span class="p">],</span>
+        <span class="p">[</span><span class="mf">0.58</span><span class="p">,</span> <span class="mf">0.61</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.93</span><span class="p">,</span> <span class="mf">0.21</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.98</span><span class="p">,</span> <span class="mf">0.18</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.85</span><span class="p">,</span> <span class="mf">0.27</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.64</span><span class="p">,</span> <span class="mf">0.77</span><span class="p">],</span>
+        <span class="p">[</span><span class="mf">0.49</span><span class="p">,</span> <span class="mf">0.73</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.13</span><span class="p">,</span> <span class="mf">0.82</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.93</span><span class="p">,</span> <span class="mf">0.08</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.65</span><span class="p">,</span> <span class="mf">0.71</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.54</span><span class="p">,</span> <span class="mf">0.83</span><span class="p">],</span>
+        <span class="p">[</span><span class="mf">0.85</span><span class="p">,</span> <span class="mf">0.20</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.90</span><span class="p">,</span> <span class="mf">0.07</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.00</span><span class="p">,</span> <span class="mf">0.84</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.64</span><span class="p">,</span> <span class="mf">0.81</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.62</span><span class="p">,</span> <span class="mf">0.70</span><span class="p">],</span>
     <span class="p">]</span>
 <span class="p">)</span>
 <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
     <span class="p">[</span>
-        <span class="p">[</span><span class="mf">0.83</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.82</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.60</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.31</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.73</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.85</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.70</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.77</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.77</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.34</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.73</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.45</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.39</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.51</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.85</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.76</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.46</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.27</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.82</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.85</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.44</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.26</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.28</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.87</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.81</span><span class="p">],</span>
+        <span class="p">[</span><span class="mf">0.83</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.82</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.60</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.31</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.73</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.85</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.70</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.77</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.77</span><span class="p">],</span>
+        <span class="p">[</span><span class="mf">0.34</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.73</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.45</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.39</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.51</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.85</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.76</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.46</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.27</span><span class="p">],</span>
+        <span class="p">[</span><span class="mf">0.82</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.85</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.44</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.26</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.28</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.87</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.81</span><span class="p">],</span>
     <span class="p">]</span>
 <span class="p">)</span>
-</pre></div>
+<br/></pre></div>
 </div>
 </div>
 <p>And write a helper-function to plot a model:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_2d_model</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPModel</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="n">n_grid</span> <span class="o">=</span> <span class="mi">50</span>
-    <span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">ax_mean</span><span class="p">,</span> <span class="n">ax_std</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+    <span class="n">_</span><span class="p">,</span> <span class="p">(</span><span class="n">ax_mean</span><span class="p">,</span> <span class="n">ax_std</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
     <span class="n">Xplots</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">n_grid</span><span class="p">)</span>
     <span class="n">Xplot1</span><span class="p">,</span> <span class="n">Xplot2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">Xplots</span><span class="p">,</span> <span class="n">Xplots</span><span class="p">)</span>
     <span class="n">Xplot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">Xplot1</span><span class="p">,</span> <span class="n">Xplot2</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
@@ -947,7 +879,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>Let us first make a plot of a dense model, for comparison:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">(</span>
@@ -969,7 +901,7 @@ div.rendered_html tbody tr:hover {
 <h3>Random data samples<a class="headerlink" href="#Random-data-samples" title="Permalink to this heading">#</a></h3>
 <p>A simple approach to selecting inducing points, is to randomly select a subset of your data:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">1234</span><span class="p">)</span>
@@ -997,7 +929,7 @@ div.rendered_html tbody tr:hover {
 <h3>k-means<a class="headerlink" href="#k-means" title="Permalink to this heading">#</a></h3>
 <p>Another good approach is to use the <a class="reference external" href="https://en.wikipedia.org/wiki/K-means_clustering">k-means algoritm</a>, which tries to find <span class="math notranslate nohighlight">\(k\)</span> centers of your data:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.cluster.vq</span> <span class="kn">import</span> <span class="n">kmeans</span>
@@ -1026,12 +958,14 @@ div.rendered_html tbody tr:hover {
 <h3>Uncorrelated samples<a class="headerlink" href="#Uncorrelated-samples" title="Permalink to this heading">#</a></h3>
 <p>It is a good idea to pick inducing points that are close to your data, which the above two algoritms does well. However they can struggle with some corner cases, such as if you do not (yet) have access to your data, or if you need to pick more inducing points than you have data. An approach that does not select points close to your data, but that can be more robust in some circumstances, is to use a <a class="reference external" href="https://en.wikipedia.org/wiki/Low-discrepancy_sequence">low-discrepancy sequence</a>:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">n_dim</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 <span class="n">n_inducing</span> <span class="o">=</span> <span class="mi">4</span>
-<span class="n">inducing_variable</span> <span class="o">=</span> <span class="n">tfp</span><span class="o">.</span><span class="n">mcmc</span><span class="o">.</span><span class="n">sample_halton_sequence</span><span class="p">(</span><span class="n">n_dim</span><span class="p">,</span> <span class="n">n_inducing</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">1234</span><span class="p">)</span>
+<span class="n">inducing_variable</span> <span class="o">=</span> <span class="n">tfp</span><span class="o">.</span><span class="n">mcmc</span><span class="o">.</span><span class="n">sample_halton_sequence</span><span class="p">(</span>
+    <span class="n">n_dim</span><span class="p">,</span> <span class="n">n_inducing</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">1234</span>
+<span class="p">)</span>
 
 <span class="n">model</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">SGPR</span><span class="p">(</span>
     <span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">),</span>

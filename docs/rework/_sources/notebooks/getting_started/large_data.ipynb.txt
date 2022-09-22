@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "d5a9ea73",
+   "id": "b32ae9c4",
    "metadata": {},
    "source": [
     "# Large Data\n",
@@ -14,7 +14,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "c925c608",
+   "id": "ff26b9da",
    "metadata": {},
    "source": [
     "As usual we will start with our imports:"
@@ -22,14 +22,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "24886ead",
+   "execution_count": 1,
+   "id": "050c16af",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:04:43.201512Z",
-     "iopub.status.busy": "2022-09-21T10:04:43.200522Z",
-     "iopub.status.idle": "2022-09-21T10:04:45.897484Z",
-     "shell.execute_reply": "2022-09-21T10:04:45.896952Z"
+     "iopub.execute_input": "2022-09-22T11:42:15.434528Z",
+     "iopub.status.busy": "2022-09-22T11:42:15.433809Z",
+     "iopub.status.idle": "2022-09-22T11:42:18.150341Z",
+     "shell.execute_reply": "2022-09-22T11:42:18.149759Z"
     }
    },
    "outputs": [],
@@ -44,7 +44,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d2585875",
+   "id": "a8b4706d",
    "metadata": {},
    "source": [
     "Although the sparse models are meant for large datasets, smaller datasets can be easier to understand, so we will reuse the same data we used in our [Basic Usage](basic_usage.html) chapter:"
@@ -52,14 +52,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "5dd738a2",
+   "execution_count": 2,
+   "id": "d0dad263",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:04:45.899972Z",
-     "iopub.status.busy": "2022-09-21T10:04:45.899675Z",
-     "iopub.status.idle": "2022-09-21T10:04:45.994406Z",
-     "shell.execute_reply": "2022-09-21T10:04:45.994027Z"
+     "iopub.execute_input": "2022-09-22T11:42:18.152731Z",
+     "iopub.status.busy": "2022-09-22T11:42:18.152437Z",
+     "iopub.status.idle": "2022-09-22T11:42:18.248139Z",
+     "shell.execute_reply": "2022-09-22T11:42:18.247601Z"
     }
    },
    "outputs": [
@@ -77,34 +77,14 @@
    "source": [
     "X = np.array(\n",
     "    [\n",
-    "        [0.865],\n",
-    "        [0.666],\n",
-    "        [0.804],\n",
-    "        [0.771],\n",
-    "        [0.147],\n",
-    "        [0.866],\n",
-    "        [0.007],\n",
-    "        [0.026],\n",
-    "        [0.171],\n",
-    "        [0.889],\n",
-    "        [0.243],\n",
-    "        [0.028],\n",
+    "        [0.865], [0.666], [0.804], [0.771], [0.147], [0.866], [0.007], [0.026],\n",
+    "        [0.171], [0.889], [0.243], [0.028],\n",
     "    ]\n",
     ")\n",
     "Y = np.array(\n",
     "    [\n",
-    "        [1.57],\n",
-    "        [3.48],\n",
-    "        [3.12],\n",
-    "        [3.91],\n",
-    "        [3.07],\n",
-    "        [1.35],\n",
-    "        [3.80],\n",
-    "        [3.82],\n",
-    "        [3.49],\n",
-    "        [1.30],\n",
-    "        [4.00],\n",
-    "        [3.82],\n",
+    "        [1.57], [3.48], [3.12], [3.91], [3.07], [1.35], [3.80], [3.82], [3.49],\n",
+    "        [1.30], [4.00], [3.82],\n",
     "    ]\n",
     ")\n",
     "\n",
@@ -113,7 +93,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ce953e01",
+   "id": "f96ad575",
    "metadata": {},
    "source": [
     "And a helper function for training and plotting our models:"
@@ -121,14 +101,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "0a0a7bb4",
+   "execution_count": 3,
+   "id": "93aa1968",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:04:45.996397Z",
-     "iopub.status.busy": "2022-09-21T10:04:45.996204Z",
-     "iopub.status.idle": "2022-09-21T10:04:46.001315Z",
-     "shell.execute_reply": "2022-09-21T10:04:46.000962Z"
+     "iopub.execute_input": "2022-09-22T11:42:18.271639Z",
+     "iopub.status.busy": "2022-09-22T11:42:18.271451Z",
+     "iopub.status.idle": "2022-09-22T11:42:18.276814Z",
+     "shell.execute_reply": "2022-09-22T11:42:18.276396Z"
     }
    },
    "outputs": [],
@@ -137,7 +117,9 @@
     "    X, Y = model.data\n",
     "    opt = gpflow.optimizers.Scipy()\n",
     "    opt.minimize(\n",
-    "        model.training_loss, model.trainable_variables, options=dict(maxiter=10_000)\n",
+    "        model.training_loss,\n",
+    "        model.trainable_variables,\n",
+    "        options=dict(maxiter=10_000),\n",
     "    )\n",
     "    gpflow.utilities.print_summary(model, \"notebook\")\n",
     "\n",
@@ -147,13 +129,15 @@
     "    y_lower = y_mean - 1.96 * np.sqrt(y_var)\n",
     "    y_upper = y_mean + 1.96 * np.sqrt(y_var)\n",
     "\n",
-    "    fig, ax = plt.subplots(nrows=1, ncols=1)\n",
+    "    _, ax = plt.subplots(nrows=1, ncols=1)\n",
     "    ax.plot(X, Y, \"kx\", mew=2)\n",
     "    (mean_line,) = ax.plot(Xplot, y_mean, \"-\")\n",
     "    color = mean_line.get_color()\n",
     "    ax.plot(Xplot, y_lower, lw=0.1, color=color)\n",
     "    ax.plot(Xplot, y_upper, lw=0.1, color=color)\n",
-    "    ax.fill_between(Xplot[:, 0], y_lower[:, 0], y_upper[:, 0], color=color, alpha=0.1)\n",
+    "    ax.fill_between(\n",
+    "        Xplot[:, 0], y_lower[:, 0], y_upper[:, 0], color=color, alpha=0.1\n",
+    "    )\n",
     "\n",
     "    # Also plot the inducing variables if possible:\n",
     "    iv = getattr(model, \"inducing_variable\", None)\n",
@@ -163,7 +147,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e0eb70e5",
+   "id": "343af198",
    "metadata": {},
    "source": [
     "As a reference, let us try fitting our usual GPR. Notice that this works because our dataset here still is of a quite managable size. In practice you should only use an SGPR when your dataset is too large for a GPR:"
@@ -171,14 +155,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "33d799df",
+   "execution_count": 4,
+   "id": "3e556030",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:04:46.015624Z",
-     "iopub.status.busy": "2022-09-21T10:04:46.015400Z",
-     "iopub.status.idle": "2022-09-21T10:04:47.604002Z",
-     "shell.execute_reply": "2022-09-21T10:04:47.603548Z"
+     "iopub.execute_input": "2022-09-22T11:42:18.278718Z",
+     "iopub.status.busy": "2022-09-22T11:42:18.278531Z",
+     "iopub.status.idle": "2022-09-22T11:42:19.889341Z",
+     "shell.execute_reply": "2022-09-22T11:42:19.888866Z"
     }
    },
    "outputs": [
@@ -224,7 +208,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "aae39485",
+   "id": "a0e9bc8d",
    "metadata": {},
    "source": [
     "Let us try fitting an SGPR. As mentioned above the SGPR is based on \"inducing points\" / \"inducing variables\". The SGPR gains a speed-up by only capturing the shape of $f$ at a small(ish) number of inducing points. We need tell the model where to put these. In this example we will use four inducing points, initially spaced evenly:"
@@ -232,14 +216,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "8289ae17",
+   "execution_count": 5,
+   "id": "b8b8ee25",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:04:47.606078Z",
-     "iopub.status.busy": "2022-09-21T10:04:47.605893Z",
-     "iopub.status.idle": "2022-09-21T10:04:48.816774Z",
-     "shell.execute_reply": "2022-09-21T10:04:48.816263Z"
+     "iopub.execute_input": "2022-09-22T11:42:19.891459Z",
+     "iopub.status.busy": "2022-09-22T11:42:19.891272Z",
+     "iopub.status.idle": "2022-09-22T11:42:21.122017Z",
+     "shell.execute_reply": "2022-09-22T11:42:21.121537Z"
     }
    },
    "outputs": [
@@ -288,7 +272,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7e5cc344",
+   "id": "b758ce96",
    "metadata": {},
    "source": [
     "Here we get an excellent fit, even though the original data has 12 points, and we are approximating it with only four inducing points.\n",
@@ -300,7 +284,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "03e93f91",
+   "id": "fbda2624",
    "metadata": {},
    "source": [
     "For illustrative purposes, let us see what happens if we don't use enough inducing points:"
@@ -308,14 +292,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "cd0892bb",
+   "execution_count": 6,
+   "id": "c4ad8ade",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:04:48.818898Z",
-     "iopub.status.busy": "2022-09-21T10:04:48.818702Z",
-     "iopub.status.idle": "2022-09-21T10:04:49.531035Z",
-     "shell.execute_reply": "2022-09-21T10:04:49.530506Z"
+     "iopub.execute_input": "2022-09-22T11:42:21.124184Z",
+     "iopub.status.busy": "2022-09-22T11:42:21.123994Z",
+     "iopub.status.idle": "2022-09-22T11:42:21.834664Z",
+     "shell.execute_reply": "2022-09-22T11:42:21.834064Z"
     }
    },
    "outputs": [
@@ -365,7 +349,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "323efd1b",
+   "id": "0b82674a",
    "metadata": {},
    "source": [
     "The two inducing points above are not enough to capture the data well, so we get an overly simplistic $f$, and the model compensates with an overly high variance."
@@ -373,7 +357,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "37ee3ae1",
+   "id": "ad127fec",
    "metadata": {},
    "source": [
     "## Picking initial inducing points\n",
@@ -385,81 +369,39 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "7259342f",
+   "execution_count": 7,
+   "id": "fe3cde7d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:04:49.533170Z",
-     "iopub.status.busy": "2022-09-21T10:04:49.532977Z",
-     "iopub.status.idle": "2022-09-21T10:04:49.538013Z",
-     "shell.execute_reply": "2022-09-21T10:04:49.537533Z"
+     "iopub.execute_input": "2022-09-22T11:42:21.836894Z",
+     "iopub.status.busy": "2022-09-22T11:42:21.836728Z",
+     "iopub.status.idle": "2022-09-22T11:42:21.841437Z",
+     "shell.execute_reply": "2022-09-22T11:42:21.841065Z"
     }
    },
    "outputs": [],
    "source": [
     "X = np.array(\n",
     "    [\n",
-    "        [0.70, 0.70],\n",
-    "        [0.53, 0.81],\n",
-    "        [0.78, 0.36],\n",
-    "        [0.83, 0.09],\n",
-    "        [0.71, 0.55],\n",
-    "        [0.66, 0.75],\n",
-    "        [0.87, 0.50],\n",
-    "        [0.63, 0.65],\n",
-    "        [0.37, 0.90],\n",
-    "        [0.82, 0.11],\n",
-    "        [0.58, 0.61],\n",
-    "        [0.93, 0.21],\n",
-    "        [0.98, 0.18],\n",
-    "        [0.85, 0.27],\n",
-    "        [0.64, 0.77],\n",
-    "        [0.49, 0.73],\n",
-    "        [0.13, 0.82],\n",
-    "        [0.93, 0.08],\n",
-    "        [0.65, 0.71],\n",
-    "        [0.54, 0.83],\n",
-    "        [0.85, 0.20],\n",
-    "        [0.90, 0.07],\n",
-    "        [0.00, 0.84],\n",
-    "        [0.64, 0.81],\n",
-    "        [0.62, 0.70],\n",
+    "        [0.70, 0.70], [0.53, 0.81], [0.78, 0.36], [0.83, 0.09], [0.71, 0.55],\n",
+    "        [0.66, 0.75], [0.87, 0.50], [0.63, 0.65], [0.37, 0.90], [0.82, 0.11],\n",
+    "        [0.58, 0.61], [0.93, 0.21], [0.98, 0.18], [0.85, 0.27], [0.64, 0.77],\n",
+    "        [0.49, 0.73], [0.13, 0.82], [0.93, 0.08], [0.65, 0.71], [0.54, 0.83],\n",
+    "        [0.85, 0.20], [0.90, 0.07], [0.00, 0.84], [0.64, 0.81], [0.62, 0.70],\n",
     "    ]\n",
     ")\n",
     "Y = np.array(\n",
     "    [\n",
-    "        [0.83],\n",
-    "        [0.82],\n",
-    "        [0.60],\n",
-    "        [0.31],\n",
-    "        [0.73],\n",
-    "        [0.85],\n",
-    "        [0.70],\n",
-    "        [0.77],\n",
-    "        [0.77],\n",
-    "        [0.34],\n",
-    "        [0.73],\n",
-    "        [0.45],\n",
-    "        [0.39],\n",
-    "        [0.51],\n",
-    "        [0.85],\n",
-    "        [0.76],\n",
-    "        [0.46],\n",
-    "        [0.27],\n",
-    "        [0.82],\n",
-    "        [0.85],\n",
-    "        [0.44],\n",
-    "        [0.26],\n",
-    "        [0.28],\n",
-    "        [0.87],\n",
-    "        [0.81],\n",
+    "        [0.83], [0.82], [0.60], [0.31], [0.73], [0.85], [0.70], [0.77], [0.77],\n",
+    "        [0.34], [0.73], [0.45], [0.39], [0.51], [0.85], [0.76], [0.46], [0.27],\n",
+    "        [0.82], [0.85], [0.44], [0.26], [0.28], [0.87], [0.81],\n",
     "    ]\n",
-    ")"
+    ")\n"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "b79291d9",
+   "id": "96debca8",
    "metadata": {},
    "source": [
     "And write a helper-function to plot a model:"
@@ -467,21 +409,21 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "2b6487b3",
+   "execution_count": 8,
+   "id": "d3c646fc",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:04:49.539965Z",
-     "iopub.status.busy": "2022-09-21T10:04:49.539786Z",
-     "iopub.status.idle": "2022-09-21T10:04:49.545256Z",
-     "shell.execute_reply": "2022-09-21T10:04:49.544767Z"
+     "iopub.execute_input": "2022-09-22T11:42:21.843440Z",
+     "iopub.status.busy": "2022-09-22T11:42:21.843250Z",
+     "iopub.status.idle": "2022-09-22T11:42:21.848594Z",
+     "shell.execute_reply": "2022-09-22T11:42:21.848121Z"
     }
    },
    "outputs": [],
    "source": [
     "def plot_2d_model(model: gpflow.models.GPModel) -> None:\n",
     "    n_grid = 50\n",
-    "    fig, (ax_mean, ax_std) = plt.subplots(nrows=1, ncols=2, figsize=(11, 5))\n",
+    "    _, (ax_mean, ax_std) = plt.subplots(nrows=1, ncols=2, figsize=(11, 5))\n",
     "    Xplots = np.linspace(0.0, 1.0, n_grid)\n",
     "    Xplot1, Xplot2 = np.meshgrid(Xplots, Xplots)\n",
     "    Xplot = np.stack([Xplot1, Xplot2], axis=-1)\n",
@@ -511,7 +453,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "85d1c165",
+   "id": "21ce8a17",
    "metadata": {},
    "source": [
     "Let us first make a plot of a dense model, for comparison:"
@@ -519,14 +461,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "20227caa",
+   "execution_count": 9,
+   "id": "19715882",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:04:49.547106Z",
-     "iopub.status.busy": "2022-09-21T10:04:49.546956Z",
-     "iopub.status.idle": "2022-09-21T10:04:50.006310Z",
-     "shell.execute_reply": "2022-09-21T10:04:50.005663Z"
+     "iopub.execute_input": "2022-09-22T11:42:21.850571Z",
+     "iopub.status.busy": "2022-09-22T11:42:21.850390Z",
+     "iopub.status.idle": "2022-09-22T11:42:22.316560Z",
+     "shell.execute_reply": "2022-09-22T11:42:22.316137Z"
     }
    },
    "outputs": [
@@ -551,7 +493,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "9c1a633a",
+   "id": "dad8bfcb",
    "metadata": {},
    "source": [
     "### Random data samples\n",
@@ -561,14 +503,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "ba0dffe8",
+   "execution_count": 10,
+   "id": "4372ae95",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:04:50.008499Z",
-     "iopub.status.busy": "2022-09-21T10:04:50.008342Z",
-     "iopub.status.idle": "2022-09-21T10:04:50.704382Z",
-     "shell.execute_reply": "2022-09-21T10:04:50.703886Z"
+     "iopub.execute_input": "2022-09-22T11:42:22.318684Z",
+     "iopub.status.busy": "2022-09-22T11:42:22.318491Z",
+     "iopub.status.idle": "2022-09-22T11:42:23.011238Z",
+     "shell.execute_reply": "2022-09-22T11:42:23.010771Z"
     }
    },
    "outputs": [
@@ -598,7 +540,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "807a659f",
+   "id": "b5788286",
    "metadata": {},
    "source": [
     "### k-means\n",
@@ -608,14 +550,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "382e459f",
+   "execution_count": 11,
+   "id": "e4689535",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:04:50.706486Z",
-     "iopub.status.busy": "2022-09-21T10:04:50.706282Z",
-     "iopub.status.idle": "2022-09-21T10:04:51.388843Z",
-     "shell.execute_reply": "2022-09-21T10:04:51.388383Z"
+     "iopub.execute_input": "2022-09-22T11:42:23.013283Z",
+     "iopub.status.busy": "2022-09-22T11:42:23.013094Z",
+     "iopub.status.idle": "2022-09-22T11:42:23.721309Z",
+     "shell.execute_reply": "2022-09-22T11:42:23.720851Z"
     }
    },
    "outputs": [
@@ -646,7 +588,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7e0acb6d",
+   "id": "7ff4d2f3",
    "metadata": {},
    "source": [
     "### Uncorrelated samples\n",
@@ -656,14 +598,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "c42e30d8",
+   "execution_count": 12,
+   "id": "c341fa17",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:04:51.390913Z",
-     "iopub.status.busy": "2022-09-21T10:04:51.390714Z",
-     "iopub.status.idle": "2022-09-21T10:04:52.096739Z",
-     "shell.execute_reply": "2022-09-21T10:04:52.096233Z"
+     "iopub.execute_input": "2022-09-22T11:42:23.723460Z",
+     "iopub.status.busy": "2022-09-22T11:42:23.723272Z",
+     "iopub.status.idle": "2022-09-22T11:42:24.442998Z",
+     "shell.execute_reply": "2022-09-22T11:42:24.442456Z"
     }
    },
    "outputs": [
@@ -681,7 +623,9 @@
    "source": [
     "n_dim = X.shape[-1]\n",
     "n_inducing = 4\n",
-    "inducing_variable = tfp.mcmc.sample_halton_sequence(n_dim, n_inducing, seed=1234)\n",
+    "inducing_variable = tfp.mcmc.sample_halton_sequence(\n",
+    "    n_dim, n_inducing, seed=1234\n",
+    ")\n",
     "\n",
     "model = gpflow.models.SGPR(\n",
     "    (X, Y),\n",
@@ -693,7 +637,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "31340a8b",
+   "id": "76e5a248",
    "metadata": {},
    "source": [
     "### Advanced initialisation\n",

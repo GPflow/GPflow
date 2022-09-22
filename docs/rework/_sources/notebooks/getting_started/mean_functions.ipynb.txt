@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "4dd2ff5b",
+   "id": "c18fb526",
    "metadata": {},
    "source": [
     "# Mean Functions\n",
@@ -12,7 +12,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d6826b4d",
+   "id": "a05d7bdd",
    "metadata": {},
    "source": [
     "As usual we will start with some necessary imports:"
@@ -20,14 +20,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "4e31ed49",
+   "execution_count": 1,
+   "id": "83308497",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:04:56.903505Z",
-     "iopub.status.busy": "2022-09-21T10:04:56.903337Z",
-     "iopub.status.idle": "2022-09-21T10:04:59.577480Z",
-     "shell.execute_reply": "2022-09-21T10:04:59.576906Z"
+     "iopub.execute_input": "2022-09-22T11:42:29.185600Z",
+     "iopub.status.busy": "2022-09-22T11:42:29.185441Z",
+     "iopub.status.idle": "2022-09-22T11:42:31.881889Z",
+     "shell.execute_reply": "2022-09-22T11:42:31.881289Z"
     }
    },
    "outputs": [],
@@ -42,7 +42,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7e622c5a",
+   "id": "78776989",
    "metadata": {},
    "source": [
     "And a helper function to visualise our models:"
@@ -50,27 +50,33 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "6811a1d8",
+   "execution_count": 2,
+   "id": "50be7a3a",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:04:59.579941Z",
-     "iopub.status.busy": "2022-09-21T10:04:59.579653Z",
-     "iopub.status.idle": "2022-09-21T10:04:59.584670Z",
-     "shell.execute_reply": "2022-09-21T10:04:59.584302Z"
+     "iopub.execute_input": "2022-09-22T11:42:31.884191Z",
+     "iopub.status.busy": "2022-09-22T11:42:31.883936Z",
+     "iopub.status.idle": "2022-09-22T11:42:31.889283Z",
+     "shell.execute_reply": "2022-09-22T11:42:31.888915Z"
     }
    },
    "outputs": [],
    "source": [
     "def plot_model(\n",
-    "    model: gpflow.models.GPModel, *, min_x: float, max_x: float, optimise: bool = True\n",
+    "    model: gpflow.models.GPModel,\n",
+    "    *,\n",
+    "    min_x: float,\n",
+    "    max_x: float,\n",
+    "    optimise: bool = True,\n",
     ") -> None:\n",
-    "    fig, ax = plt.subplots(nrows=1, ncols=1)\n",
+    "    _, ax = plt.subplots(nrows=1, ncols=1)\n",
     "\n",
     "    if optimise:\n",
     "        opt = gpflow.optimizers.Scipy()\n",
     "        opt.minimize(\n",
-    "            model.training_loss, model.trainable_variables, options=dict(maxiter=1000)\n",
+    "            model.training_loss,\n",
+    "            model.trainable_variables,\n",
+    "            options=dict(maxiter=1000),\n",
     "        )\n",
     "\n",
     "    Xplot = np.linspace(min_x, max_x, 300)[:, None]\n",
@@ -85,12 +91,14 @@
     "    color = mean_line.get_color()\n",
     "    ax.plot(Xplot, f_lower, lw=0.1, color=color)\n",
     "    ax.plot(Xplot, f_upper, lw=0.1, color=color)\n",
-    "    ax.fill_between(Xplot[:, 0], f_lower[:, 0], f_upper[:, 0], color=color, alpha=0.1)"
+    "    ax.fill_between(\n",
+    "        Xplot[:, 0], f_lower[:, 0], f_upper[:, 0], color=color, alpha=0.1\n",
+    "    )"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "0dfcaea9",
+   "id": "14b1ad91",
    "metadata": {},
    "source": [
     "## Mean reversion\n",
@@ -100,14 +108,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "3867fb54",
+   "execution_count": 3,
+   "id": "581f189d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:04:59.586525Z",
-     "iopub.status.busy": "2022-09-21T10:04:59.586348Z",
-     "iopub.status.idle": "2022-09-21T10:05:01.213045Z",
-     "shell.execute_reply": "2022-09-21T10:05:01.212441Z"
+     "iopub.execute_input": "2022-09-22T11:42:31.907578Z",
+     "iopub.status.busy": "2022-09-22T11:42:31.907413Z",
+     "iopub.status.idle": "2022-09-22T11:42:33.559863Z",
+     "shell.execute_reply": "2022-09-22T11:42:33.559367Z"
     }
    },
    "outputs": [
@@ -131,7 +139,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "2a9787e4",
+   "id": "ab5c5e6c",
    "metadata": {},
    "source": [
     "As we move away from the data our predictions converge towards 0. Basically, as we move away from the data, the model does not know what to predict, and will revert towards the mean function. This is called [\"mean reversion\"](https://en.wikipedia.org/wiki/Regression_toward_the_mean), and this is the primary use case where having a reasonable mean function can help. In the areas where we have plenty of data, we don't need a mean function."
@@ -139,7 +147,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "fa3877ab",
+   "id": "280cf8fd",
    "metadata": {},
    "source": [
     "## Setting a mean function\n",
@@ -151,14 +159,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "94a03293",
+   "execution_count": 4,
+   "id": "00d7d5d0",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:05:01.215594Z",
-     "iopub.status.busy": "2022-09-21T10:05:01.215423Z",
-     "iopub.status.idle": "2022-09-21T10:05:01.739571Z",
-     "shell.execute_reply": "2022-09-21T10:05:01.739044Z"
+     "iopub.execute_input": "2022-09-22T11:42:33.562047Z",
+     "iopub.status.busy": "2022-09-22T11:42:33.561845Z",
+     "iopub.status.idle": "2022-09-22T11:42:34.081651Z",
+     "shell.execute_reply": "2022-09-22T11:42:34.081118Z"
     }
    },
    "outputs": [
@@ -184,7 +192,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d0377c51",
+   "id": "9108d92b",
    "metadata": {},
    "source": [
     "Our model now fits our mean function to the data without any noise, and happily extrapolates the quadtratic function."
@@ -192,7 +200,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e7cb12e7",
+   "id": "4c87f03f",
    "metadata": {},
    "source": [
     "## Interactions with the kernel\n",
@@ -204,14 +212,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "2456a7b5",
+   "execution_count": 5,
+   "id": "f82c90da",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:05:01.741658Z",
-     "iopub.status.busy": "2022-09-21T10:05:01.741500Z",
-     "iopub.status.idle": "2022-09-21T10:05:02.158564Z",
-     "shell.execute_reply": "2022-09-21T10:05:02.158039Z"
+     "iopub.execute_input": "2022-09-22T11:42:34.083843Z",
+     "iopub.status.busy": "2022-09-22T11:42:34.083655Z",
+     "iopub.status.idle": "2022-09-22T11:42:34.508069Z",
+     "shell.execute_reply": "2022-09-22T11:42:34.507614Z"
     }
    },
    "outputs": [
@@ -241,7 +249,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "1736f150",
+   "id": "b3c421a7",
    "metadata": {},
    "source": [
     "And a periodic kernel:"
@@ -249,14 +257,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "85ff9637",
+   "execution_count": 6,
+   "id": "db9c690f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:05:02.175515Z",
-     "iopub.status.busy": "2022-09-21T10:05:02.175348Z",
-     "iopub.status.idle": "2022-09-21T10:05:02.816521Z",
-     "shell.execute_reply": "2022-09-21T10:05:02.816003Z"
+     "iopub.execute_input": "2022-09-22T11:42:34.510072Z",
+     "iopub.status.busy": "2022-09-22T11:42:34.509906Z",
+     "iopub.status.idle": "2022-09-22T11:42:35.171257Z",
+     "shell.execute_reply": "2022-09-22T11:42:35.169314Z"
     }
    },
    "outputs": [
@@ -283,7 +291,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "02d97055",
+   "id": "76740ead",
    "metadata": {},
    "source": [
     "And combine them, we get a period around a line:"
@@ -291,14 +299,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "e2f31eb6",
+   "execution_count": 7,
+   "id": "75fea5ff",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:05:02.819038Z",
-     "iopub.status.busy": "2022-09-21T10:05:02.818877Z",
-     "iopub.status.idle": "2022-09-21T10:05:03.269887Z",
-     "shell.execute_reply": "2022-09-21T10:05:03.269395Z"
+     "iopub.execute_input": "2022-09-22T11:42:35.181134Z",
+     "iopub.status.busy": "2022-09-22T11:42:35.180727Z",
+     "iopub.status.idle": "2022-09-22T11:42:35.635464Z",
+     "shell.execute_reply": "2022-09-22T11:42:35.634978Z"
     }
    },
    "outputs": [
@@ -325,7 +333,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "4bb25771",
+   "id": "8d2510a1",
    "metadata": {},
    "source": [
     "## Custom mean functions\n",
@@ -335,14 +343,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "69356be1",
+   "execution_count": 8,
+   "id": "a430ce95",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:05:03.271907Z",
-     "iopub.status.busy": "2022-09-21T10:05:03.271717Z",
-     "iopub.status.idle": "2022-09-21T10:05:03.654557Z",
-     "shell.execute_reply": "2022-09-21T10:05:03.654158Z"
+     "iopub.execute_input": "2022-09-22T11:42:35.637476Z",
+     "iopub.status.busy": "2022-09-22T11:42:35.637287Z",
+     "iopub.status.idle": "2022-09-22T11:42:36.035325Z",
+     "shell.execute_reply": "2022-09-22T11:42:36.034772Z"
     }
    },
    "outputs": [
@@ -376,7 +384,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e3e5f147",
+   "id": "bcaa496a",
    "metadata": {},
    "source": [
     "The above mean function does not have any trainable parameters. It is common for a mean function to have parameters that will be set during model training. To learn more about parameters see our section on [Parameters and Their Optimisation](parameters_and_their_optimisation.html)."
@@ -384,7 +392,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "54592ac9",
+   "id": "7da045b4",
    "metadata": {},
    "source": [
     "## Composition\n",
@@ -394,7 +402,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "dbba6734",
+   "id": "bbb9a52b",
    "metadata": {},
    "source": [
     "For example we can add a linear to our sine wave above:"
@@ -402,14 +410,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "fc457f4b",
+   "execution_count": 9,
+   "id": "f2063c51",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:05:03.656649Z",
-     "iopub.status.busy": "2022-09-21T10:05:03.656480Z",
-     "iopub.status.idle": "2022-09-21T10:05:04.059002Z",
-     "shell.execute_reply": "2022-09-21T10:05:04.058476Z"
+     "iopub.execute_input": "2022-09-22T11:42:36.037733Z",
+     "iopub.status.busy": "2022-09-22T11:42:36.037547Z",
+     "iopub.status.idle": "2022-09-22T11:42:36.447963Z",
+     "shell.execute_reply": "2022-09-22T11:42:36.447365Z"
     }
    },
    "outputs": [
@@ -435,7 +443,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "221d54e1",
+   "id": "0069b421",
    "metadata": {},
    "source": [
     "Or we can multiply the sine by a linear:"
@@ -443,14 +451,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "1c32534a",
+   "execution_count": 10,
+   "id": "756582cb",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:05:04.061098Z",
-     "iopub.status.busy": "2022-09-21T10:05:04.060911Z",
-     "iopub.status.idle": "2022-09-21T10:05:04.461268Z",
-     "shell.execute_reply": "2022-09-21T10:05:04.460870Z"
+     "iopub.execute_input": "2022-09-22T11:42:36.450376Z",
+     "iopub.status.busy": "2022-09-22T11:42:36.450159Z",
+     "iopub.status.idle": "2022-09-22T11:42:36.857823Z",
+     "shell.execute_reply": "2022-09-22T11:42:36.857323Z"
     }
    },
    "outputs": [

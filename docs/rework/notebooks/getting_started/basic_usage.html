@@ -320,16 +320,6 @@
   </a>
  </li>
  <li class="toctree-l1">
-  <a class="reference internal" href="data_management.html">
-   Data Management
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="custom_models.html">
-   Creating Custom Models
-  </a>
- </li>
- <li class="toctree-l1">
   <a class="reference internal" href="monitoring.html">
    Monitoring
   </a>
@@ -625,11 +615,13 @@ div.rendered_html tbody tr:hover {
 </style>
 <section id="Basic-Usage">
 <h1>Basic Usage<a class="headerlink" href="#Basic-Usage" title="Permalink to this heading">#</a></h1>
+<p>In this chapter we will go over the most basic concepts you will need to understand to use GPflow. We will train a simple model on some simple data; and demonstrate how to use the model to make predictions, and how to plot the results.</p>
+<p>If your use-case is sufficiently simple, this chapter may be all you need to use</p>
 <section id="Imports">
 <h2>Imports<a class="headerlink" href="#Imports" title="Permalink to this heading">#</a></h2>
 <p>These are the imports we’ll be assuming below:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
@@ -659,39 +651,19 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 <h2>Minimal model<a class="headerlink" href="#Minimal-model" title="Permalink to this heading">#</a></h2>
 <p>Let’s model some data. Below we have some variables <code class="docutils literal notranslate"><span class="pre">X</span></code> and <code class="docutils literal notranslate"><span class="pre">Y</span></code>, both of which are NumPy arrays, with shapes <span class="math notranslate nohighlight">\(N \times D\)</span> and <span class="math notranslate nohighlight">\(N \times P\)</span> respectively. <span class="math notranslate nohighlight">\(N\)</span> is the number of rows of data. <span class="math notranslate nohighlight">\(D\)</span> is the number of input dimensions, and <span class="math notranslate nohighlight">\(P\)</span> is the number of output dimensions. We set both <span class="math notranslate nohighlight">\(D=1\)</span> and <span class="math notranslate nohighlight">\(P=1\)</span> to keep things simple.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
     <span class="p">[</span>
-        <span class="p">[</span><span class="mf">0.865</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.666</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.804</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.771</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.147</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.866</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.007</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.026</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.171</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.889</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.243</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">0.028</span><span class="p">],</span>
+        <span class="p">[</span><span class="mf">0.865</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.666</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.804</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.771</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.147</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.866</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.007</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.026</span><span class="p">],</span>
+        <span class="p">[</span><span class="mf">0.171</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.889</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.243</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.028</span><span class="p">],</span>
     <span class="p">]</span>
 <span class="p">)</span>
 <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
     <span class="p">[</span>
-        <span class="p">[</span><span class="mf">1.57</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">3.48</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">3.12</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">3.91</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">3.07</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">1.35</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">3.80</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">3.82</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">3.49</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">1.30</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">4.00</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">3.82</span><span class="p">],</span>
+        <span class="p">[</span><span class="mf">1.57</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.48</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.12</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.91</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.07</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.35</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.80</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.82</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.49</span><span class="p">],</span>
+        <span class="p">[</span><span class="mf">1.30</span><span class="p">],</span> <span class="p">[</span><span class="mf">4.00</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.82</span><span class="p">],</span>
     <span class="p">]</span>
 <span class="p">)</span>
 
@@ -708,7 +680,7 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 </div>
 <p>To model this in GPflow, we first have to create a model:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">(</span>
@@ -721,13 +693,11 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 <p>Here we use a <code class="docutils literal notranslate"><span class="pre">GPR</span></code> model with an <code class="docutils literal notranslate"><span class="pre">SquaredExponential</span></code> kernel. We’ll go into more details about what that means in other chapters, but these are sensible defaults for small, simple problems.</p>
 <p>Next we need to train the model:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
-<span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
-    <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-<span class="p">)</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -735,7 +705,7 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 <p>The main methods for making predictions are <code class="docutils literal notranslate"><span class="pre">model.predict_f</span></code> and <code class="docutils literal notranslate"><span class="pre">model.predict_y</span></code>. <code class="docutils literal notranslate"><span class="pre">model.predict_f</span></code> returns the mean and variance (uncertainty) the function <span class="math notranslate nohighlight">\(f\)</span>, while <code class="docutils literal notranslate"><span class="pre">model.predict_y</span></code> returns the mean and variance (uncertainty) of <span class="math notranslate nohighlight">\(Y\)</span> — that is <span class="math notranslate nohighlight">\(f\)</span> plus the noise.</p>
 <p>So, if we want to know what the model thinks <span class="math notranslate nohighlight">\(f\)</span> might be at <code class="docutils literal notranslate"><span class="pre">0.5</span></code> we do:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Xnew</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.5</span><span class="p">]])</span>
@@ -744,7 +714,8 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
@@ -754,7 +725,7 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 </div>
 <p>And if we want to predict <span class="math notranslate nohighlight">\(Y\)</span>:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">predict_y</span><span class="p">(</span><span class="n">Xnew</span><span class="p">)</span>
@@ -762,7 +733,8 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
@@ -777,7 +749,7 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 <p>Now, lets predict <span class="math notranslate nohighlight">\(f\)</span> and <span class="math notranslate nohighlight">\(Y\)</span> for a range of <span class="math notranslate nohighlight">\(X\)</span>s and make a pretty plot of it.</p>
 <p>First we generate some test points for the prediction:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Xplot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">,</span> <span class="mi">100</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>
@@ -786,7 +758,7 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 </div>
 <p>Then we predict the <span class="math notranslate nohighlight">\(f\)</span> and <span class="math notranslate nohighlight">\(Y\)</span> values:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f_mean</span><span class="p">,</span> <span class="n">f_var</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_f</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -796,7 +768,7 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 </div>
 <p>We compute the 95% confidence interval of <span class="math notranslate nohighlight">\(f\)</span> and <span class="math notranslate nohighlight">\(Y\)</span>. This math is based on the distribution of <span class="math notranslate nohighlight">\(f\)</span> and <span class="math notranslate nohighlight">\(Y\)</span> being gaussian:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f_lower</span> <span class="o">=</span> <span class="n">f_mean</span> <span class="o">-</span> <span class="mf">1.96</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">f_var</span><span class="p">)</span>
@@ -808,17 +780,21 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 </div>
 <p>Finally we actually plot our values:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">&quot;kx&quot;</span><span class="p">,</span> <span class="n">mew</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;input data&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">f_mean</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C0&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">,</span> <span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C0&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;f 95</span><span class="si">% c</span><span class="s2">onfidence&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">f_upper</span><span class="p">,</span> <span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C0&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">Xplot</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">f_lower</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">f_upper</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C0&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span>
+    <span class="n">Xplot</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">f_lower</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">f_upper</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C0&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span>
+<span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">y_lower</span><span class="p">,</span> <span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C0&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Y 95</span><span class="si">% c</span><span class="s2">onfidence&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">y_upper</span><span class="p">,</span> <span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C0&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">Xplot</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">y_lower</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">y_upper</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C0&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span>
+    <span class="n">Xplot</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">y_lower</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">y_upper</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C0&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span>
+<span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -838,7 +814,7 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 <p>If we call <code class="docutils literal notranslate"><span class="pre">predict_f(...,</span> <span class="pre">full_cov=False)</span></code> like we did above, when we plotted the model, <code class="docutils literal notranslate"><span class="pre">predict_f</span></code> will return a <span class="math notranslate nohighlight">\(N \times P\)</span> mean vector and a <span class="math notranslate nohighlight">\(N \times P\)</span> marginal variance vector. The marginal variance vector only tells us about our uncertainty at each point individually, and does not tell us anything about how the points relate to each other. Often the marginal variance vector is all you need, and it is faster to compute than the full covariance. <code class="docutils literal notranslate"><span class="pre">False</span></code> is the default
 value for <code class="docutils literal notranslate"><span class="pre">full_cov</span></code>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Xnew</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.3</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.7</span><span class="p">]])</span>
@@ -847,7 +823,8 @@ value for <code class="docutils literal notranslate"><span class="pre">full_cov<
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
@@ -863,7 +840,7 @@ value for <code class="docutils literal notranslate"><span class="pre">full_cov<
 </div>
 <p>If we call <code class="docutils literal notranslate"><span class="pre">predict_f(...,</span> <span class="pre">full_cov=True)</span></code> we will still get a <span class="math notranslate nohighlight">\(N \times P\)</span> mean vector, but instead of the marginal variance we will get a full <span class="math notranslate nohighlight">\(P \times N \times N\)</span> covariance matrix, which tells us the relationship between different values of <span class="math notranslate nohighlight">\(x\)</span>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">predict_f</span><span class="p">(</span><span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -871,7 +848,8 @@ value for <code class="docutils literal notranslate"><span class="pre">full_cov<
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>

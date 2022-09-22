@@ -2,15 +2,19 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "e67fae92",
+   "id": "25d27470",
    "metadata": {},
    "source": [
-    "# Basic Usage"
+    "# Basic Usage\n",
+    "\n",
+    "In this chapter we will go over the most basic concepts you will need to understand to use GPflow. We will train a simple model on some simple data; and demonstrate how to use the model to make predictions, and how to plot the results.\n",
+    "\n",
+    "If your use-case is sufficiently simple, this chapter may be all you need to use"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "ef5e8504",
+   "id": "3a08f0e3",
    "metadata": {},
    "source": [
     "## Imports\n",
@@ -20,14 +24,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "139b4732",
+   "execution_count": 1,
+   "id": "73ee6f67",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:03:54.027215Z",
-     "iopub.status.busy": "2022-09-21T10:03:54.026162Z",
-     "iopub.status.idle": "2022-09-21T10:03:56.673803Z",
-     "shell.execute_reply": "2022-09-21T10:03:56.673232Z"
+     "iopub.execute_input": "2022-09-22T11:41:30.745718Z",
+     "iopub.status.busy": "2022-09-22T11:41:30.745561Z",
+     "iopub.status.idle": "2022-09-22T11:41:33.435043Z",
+     "shell.execute_reply": "2022-09-22T11:41:33.434479Z"
     }
    },
    "outputs": [],
@@ -40,7 +44,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "acf15dc3",
+   "id": "9c65fa10",
    "metadata": {},
    "source": [
     "## Meet $f$ and $Y$\n",
@@ -65,7 +69,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "b96ff141",
+   "id": "78e8cd7e",
    "metadata": {},
    "source": [
     "## Minimal model\n",
@@ -75,14 +79,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "23809771",
+   "execution_count": 2,
+   "id": "c3b3d69d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:03:56.676282Z",
-     "iopub.status.busy": "2022-09-21T10:03:56.675983Z",
-     "iopub.status.idle": "2022-09-21T10:03:56.773007Z",
-     "shell.execute_reply": "2022-09-21T10:03:56.772511Z"
+     "iopub.execute_input": "2022-09-22T11:41:33.437487Z",
+     "iopub.status.busy": "2022-09-22T11:41:33.437229Z",
+     "iopub.status.idle": "2022-09-22T11:41:33.536566Z",
+     "shell.execute_reply": "2022-09-22T11:41:33.536069Z"
     }
    },
    "outputs": [
@@ -100,34 +104,14 @@
    "source": [
     "X = np.array(\n",
     "    [\n",
-    "        [0.865],\n",
-    "        [0.666],\n",
-    "        [0.804],\n",
-    "        [0.771],\n",
-    "        [0.147],\n",
-    "        [0.866],\n",
-    "        [0.007],\n",
-    "        [0.026],\n",
-    "        [0.171],\n",
-    "        [0.889],\n",
-    "        [0.243],\n",
-    "        [0.028],\n",
+    "        [0.865], [0.666], [0.804], [0.771], [0.147], [0.866], [0.007], [0.026],\n",
+    "        [0.171], [0.889], [0.243], [0.028],\n",
     "    ]\n",
     ")\n",
     "Y = np.array(\n",
     "    [\n",
-    "        [1.57],\n",
-    "        [3.48],\n",
-    "        [3.12],\n",
-    "        [3.91],\n",
-    "        [3.07],\n",
-    "        [1.35],\n",
-    "        [3.80],\n",
-    "        [3.82],\n",
-    "        [3.49],\n",
-    "        [1.30],\n",
-    "        [4.00],\n",
-    "        [3.82],\n",
+    "        [1.57], [3.48], [3.12], [3.91], [3.07], [1.35], [3.80], [3.82], [3.49],\n",
+    "        [1.30], [4.00], [3.82],\n",
     "    ]\n",
     ")\n",
     "\n",
@@ -136,7 +120,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "1c335725",
+   "id": "b4d60f58",
    "metadata": {},
    "source": [
     "To model this in GPflow, we first have to create a model:"
@@ -144,14 +128,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "8c281133",
+   "execution_count": 3,
+   "id": "45baa03f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:03:56.787520Z",
-     "iopub.status.busy": "2022-09-21T10:03:56.787293Z",
-     "iopub.status.idle": "2022-09-21T10:03:56.864412Z",
-     "shell.execute_reply": "2022-09-21T10:03:56.863826Z"
+     "iopub.execute_input": "2022-09-22T11:41:33.538603Z",
+     "iopub.status.busy": "2022-09-22T11:41:33.538433Z",
+     "iopub.status.idle": "2022-09-22T11:41:33.612488Z",
+     "shell.execute_reply": "2022-09-22T11:41:33.612012Z"
     }
    },
    "outputs": [],
@@ -164,7 +148,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a2ebe740",
+   "id": "0cd7b77c",
    "metadata": {},
    "source": [
     "Here we use a `GPR` model with an `SquaredExponential` kernel. We'll go into more details about what that means in other chapters, but these are sensible defaults for small, simple problems."
@@ -172,7 +156,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "fbee8b86",
+   "id": "189c43e8",
    "metadata": {},
    "source": [
     "Next we need to train the model:"
@@ -180,27 +164,25 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "cf36df02",
+   "execution_count": 4,
+   "id": "3a7934df",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:03:56.866717Z",
-     "iopub.status.busy": "2022-09-21T10:03:56.866512Z",
-     "iopub.status.idle": "2022-09-21T10:03:58.243146Z",
-     "shell.execute_reply": "2022-09-21T10:03:58.242545Z"
+     "iopub.execute_input": "2022-09-22T11:41:33.614948Z",
+     "iopub.status.busy": "2022-09-22T11:41:33.614752Z",
+     "iopub.status.idle": "2022-09-22T11:41:34.976036Z",
+     "shell.execute_reply": "2022-09-22T11:41:34.975580Z"
     }
    },
    "outputs": [],
    "source": [
     "opt = gpflow.optimizers.Scipy()\n",
-    "opt.minimize(\n",
-    "    model.training_loss, model.trainable_variables, options=dict(maxiter=100)\n",
-    ")"
+    "opt.minimize(model.training_loss, model.trainable_variables)"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "b51fa166",
+   "id": "28237e4e",
    "metadata": {},
    "source": [
     "Now we can use the model to predict values of $f$ and $Y$ at new values of $X$.\n",
@@ -210,7 +192,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "1ebc505b",
+   "id": "76a2367a",
    "metadata": {},
    "source": [
     "So, if we want to know what the model thinks $f$ might be at `0.5` we do:"
@@ -218,14 +200,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "2dff64e1",
+   "execution_count": 5,
+   "id": "1fcd20ac",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:03:58.245437Z",
-     "iopub.status.busy": "2022-09-21T10:03:58.245236Z",
-     "iopub.status.idle": "2022-09-21T10:03:58.282147Z",
-     "shell.execute_reply": "2022-09-21T10:03:58.281644Z"
+     "iopub.execute_input": "2022-09-22T11:41:34.991556Z",
+     "iopub.status.busy": "2022-09-22T11:41:34.991389Z",
+     "iopub.status.idle": "2022-09-22T11:41:35.028721Z",
+     "shell.execute_reply": "2022-09-22T11:41:35.028275Z"
     }
    },
    "outputs": [
@@ -236,7 +218,7 @@
        " <tf.Tensor: shape=(1, 1), dtype=float64, numpy=array([[0.30584767]])>)"
       ]
      },
-     "execution_count": 5,
+     "execution_count": 6,
      "metadata": {},
      "output_type": "execute_result"
     }
@@ -248,7 +230,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "fe59c95f",
+   "id": "a5cb6ef5",
    "metadata": {},
    "source": [
     "And if we want to predict $Y$:"
@@ -256,14 +238,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "dba343a9",
+   "execution_count": 6,
+   "id": "a43e470d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:03:58.284225Z",
-     "iopub.status.busy": "2022-09-21T10:03:58.284011Z",
-     "iopub.status.idle": "2022-09-21T10:03:58.306019Z",
-     "shell.execute_reply": "2022-09-21T10:03:58.305503Z"
+     "iopub.execute_input": "2022-09-22T11:41:35.030904Z",
+     "iopub.status.busy": "2022-09-22T11:41:35.030738Z",
+     "iopub.status.idle": "2022-09-22T11:41:35.053398Z",
+     "shell.execute_reply": "2022-09-22T11:41:35.052889Z"
     }
    },
    "outputs": [
@@ -274,7 +256,7 @@
        " <tf.Tensor: shape=(1, 1), dtype=float64, numpy=array([[0.54585965]])>)"
       ]
      },
-     "execution_count": 6,
+     "execution_count": 7,
      "metadata": {},
      "output_type": "execute_result"
     }
@@ -285,7 +267,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "da996ac4",
+   "id": "9591ceb8",
    "metadata": {},
    "source": [
     "Notice how the predicted $f$ and $Y$ have the same mean, but $Y$ has a larger variance. This is because the variance of $f$ is only the uncertainty of $f$, while the variance of $Y$ is both the uncertainty of $f$ and the extra noise."
@@ -293,7 +275,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "83342132",
+   "id": "e13d1917",
    "metadata": {},
    "source": [
     "## Plotting the model\n",
@@ -305,14 +287,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "b35d2d1d",
+   "execution_count": 7,
+   "id": "f4c3897d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:03:58.308093Z",
-     "iopub.status.busy": "2022-09-21T10:03:58.307889Z",
-     "iopub.status.idle": "2022-09-21T10:03:58.310644Z",
-     "shell.execute_reply": "2022-09-21T10:03:58.310219Z"
+     "iopub.execute_input": "2022-09-22T11:41:35.055551Z",
+     "iopub.status.busy": "2022-09-22T11:41:35.055378Z",
+     "iopub.status.idle": "2022-09-22T11:41:35.058114Z",
+     "shell.execute_reply": "2022-09-22T11:41:35.057626Z"
     }
    },
    "outputs": [],
@@ -322,7 +304,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "45cf4d28",
+   "id": "0f5d7c29",
    "metadata": {},
    "source": [
     "Then we predict the $f$ and $Y$ values:"
@@ -330,14 +312,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "c61c146e",
+   "execution_count": 8,
+   "id": "abbb4e8a",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:03:58.312440Z",
-     "iopub.status.busy": "2022-09-21T10:03:58.312256Z",
-     "iopub.status.idle": "2022-09-21T10:03:58.348383Z",
-     "shell.execute_reply": "2022-09-21T10:03:58.347821Z"
+     "iopub.execute_input": "2022-09-22T11:41:35.060094Z",
+     "iopub.status.busy": "2022-09-22T11:41:35.059932Z",
+     "iopub.status.idle": "2022-09-22T11:41:35.096959Z",
+     "shell.execute_reply": "2022-09-22T11:41:35.096374Z"
     }
    },
    "outputs": [],
@@ -348,7 +330,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d39ce155",
+   "id": "811d4174",
    "metadata": {},
    "source": [
     "We compute the 95% confidence interval of $f$ and $Y$. This math is based on the distribution of $f$ and $Y$ being gaussian:"
@@ -356,14 +338,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "06fba314",
+   "execution_count": 9,
+   "id": "a6e85466",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:03:58.350602Z",
-     "iopub.status.busy": "2022-09-21T10:03:58.350409Z",
-     "iopub.status.idle": "2022-09-21T10:03:58.354522Z",
-     "shell.execute_reply": "2022-09-21T10:03:58.354152Z"
+     "iopub.execute_input": "2022-09-22T11:41:35.099167Z",
+     "iopub.status.busy": "2022-09-22T11:41:35.098992Z",
+     "iopub.status.idle": "2022-09-22T11:41:35.103266Z",
+     "shell.execute_reply": "2022-09-22T11:41:35.102883Z"
     }
    },
    "outputs": [],
@@ -376,7 +358,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "723f9868",
+   "id": "47e923ca",
    "metadata": {},
    "source": [
     "Finally we actually plot our values:"
@@ -384,14 +366,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "ba240db7",
+   "execution_count": 10,
+   "id": "a5b9029f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:03:58.356467Z",
-     "iopub.status.busy": "2022-09-21T10:03:58.356277Z",
-     "iopub.status.idle": "2022-09-21T10:03:58.520747Z",
-     "shell.execute_reply": "2022-09-21T10:03:58.520232Z"
+     "iopub.execute_input": "2022-09-22T11:41:35.105134Z",
+     "iopub.status.busy": "2022-09-22T11:41:35.104982Z",
+     "iopub.status.idle": "2022-09-22T11:41:35.274039Z",
+     "shell.execute_reply": "2022-09-22T11:41:35.272801Z"
     }
    },
    "outputs": [
@@ -411,16 +393,20 @@
     "plt.plot(Xplot, f_mean, \"-\", color=\"C0\", label=\"mean\")\n",
     "plt.plot(Xplot, f_lower, \"--\", color=\"C0\", label=\"f 95% confidence\")\n",
     "plt.plot(Xplot, f_upper, \"--\", color=\"C0\")\n",
-    "plt.fill_between(Xplot[:, 0], f_lower[:, 0], f_upper[:, 0], color=\"C0\", alpha=0.1)\n",
+    "plt.fill_between(\n",
+    "    Xplot[:, 0], f_lower[:, 0], f_upper[:, 0], color=\"C0\", alpha=0.1\n",
+    ")\n",
     "plt.plot(Xplot, y_lower, \".\", color=\"C0\", label=\"Y 95% confidence\")\n",
     "plt.plot(Xplot, y_upper, \".\", color=\"C0\")\n",
-    "plt.fill_between(Xplot[:, 0], y_lower[:, 0], y_upper[:, 0], color=\"C0\", alpha=0.1)\n",
+    "plt.fill_between(\n",
+    "    Xplot[:, 0], y_lower[:, 0], y_upper[:, 0], color=\"C0\", alpha=0.1\n",
+    ")\n",
     "plt.legend()"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "d7c37cc0",
+   "id": "84bd1b89",
    "metadata": {},
    "source": [
     "Notice how the confidence of $f$ is greater when you're further away from our data, and smaller near the data. Notice also how we're more certain about $f$ than about $Y$; sometimes we're even certain that $f$ lies away from a data point."
@@ -428,7 +414,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "9dad1405",
+   "id": "d7ee8c28",
    "metadata": {},
    "source": [
     "## Marginal variance vs full covariance\n",
@@ -438,7 +424,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "3c066219",
+   "id": "7b524b95",
    "metadata": {},
    "source": [
     "If we call `predict_f(..., full_cov=False)` like we did above, when we plotted the model, `predict_f` will return a $N \\times P$ mean vector and a $N \\times P$ marginal variance vector. The marginal variance vector only tells us about our uncertainty at each point individually, and does not tell us anything about how the points relate to each other. Often the marginal variance vector is all you need, and it is faster to compute than the full covariance. `False` is the default value for `full_cov`."
@@ -446,14 +432,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "dfb98bf0",
+   "execution_count": 11,
+   "id": "15c5601b",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:03:58.522867Z",
-     "iopub.status.busy": "2022-09-21T10:03:58.522671Z",
-     "iopub.status.idle": "2022-09-21T10:03:58.543007Z",
-     "shell.execute_reply": "2022-09-21T10:03:58.542492Z"
+     "iopub.execute_input": "2022-09-22T11:41:35.278477Z",
+     "iopub.status.busy": "2022-09-22T11:41:35.278283Z",
+     "iopub.status.idle": "2022-09-22T11:41:35.299392Z",
+     "shell.execute_reply": "2022-09-22T11:41:35.298827Z"
     }
    },
    "outputs": [
@@ -470,7 +456,7 @@
        "        [0.11372553]])>)"
       ]
      },
-     "execution_count": 11,
+     "execution_count": 12,
      "metadata": {},
      "output_type": "execute_result"
     }
@@ -482,7 +468,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e3d7f597",
+   "id": "f45f3904",
    "metadata": {},
    "source": [
     "If we call `predict_f(..., full_cov=True)` we will still get a $N \\times P$ mean vector, but instead of the marginal variance we will get a full $P \\times N \\times N$ covariance matrix, which tells us the relationship between different values of $x$."
@@ -490,14 +476,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "993cc3b3",
+   "execution_count": 12,
+   "id": "6d077174",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-21T10:03:58.544986Z",
-     "iopub.status.busy": "2022-09-21T10:03:58.544794Z",
-     "iopub.status.idle": "2022-09-21T10:03:58.566399Z",
-     "shell.execute_reply": "2022-09-21T10:03:58.565875Z"
+     "iopub.execute_input": "2022-09-22T11:41:35.301493Z",
+     "iopub.status.busy": "2022-09-22T11:41:35.301333Z",
+     "iopub.status.idle": "2022-09-22T11:41:35.323673Z",
+     "shell.execute_reply": "2022-09-22T11:41:35.323098Z"
     }
    },
    "outputs": [
@@ -514,7 +500,7 @@
        "         [0.04013752, 0.12780391, 0.11372553]]])>)"
       ]
      },
-     "execution_count": 12,
+     "execution_count": 13,
      "metadata": {},
      "output_type": "execute_result"
     }
@@ -525,7 +511,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e93a64a2",
+   "id": "99317c05",
    "metadata": {},
    "source": [
     "Technically the marginal variance vector we get with `predict_f(..., full_cov=False)` is just the diagonal of the full covariance matrix we get with `predict_f(..., full_cov=True)`, but the former is faster to compute, so prefer that when possible."
@@ -533,7 +519,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "0c0e5707",
+   "id": "b4f96b88",
    "metadata": {},
    "source": [
     "## What's next?\n",
