@@ -27,9 +27,10 @@
 # where $\sigma(x, y) = \sigma(x)\cdot\sigma(y)$ and $\bar{\sigma}(x, y) = (1 - \sigma(x))\cdot(1 - \sigma(y))$. The sigmoid ($\sigma$) is parameterized by a location ($l$) and a width ($w$).
 
 # %%
-import gpflow
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+
+import gpflow
 
 np.random.seed(123)  # for reproducibility of this notebook
 
@@ -64,7 +65,9 @@ np.random.seed(3)
 
 base_k1 = gpflow.kernels.Matern32(lengthscales=0.3)
 base_k2 = gpflow.kernels.Constant()
-k = gpflow.kernels.ChangePoints([base_k1, base_k2, base_k1], locations=[-1, 1], steepness=10.0)
+k = gpflow.kernels.ChangePoints(
+    [base_k1, base_k2, base_k1], locations=[-1, 1], steepness=10.0
+)
 
 f, ax = plt.subplots(1, 1, figsize=(10, 3))
 plotkernelsample(k, ax)

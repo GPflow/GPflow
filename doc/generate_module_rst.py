@@ -18,7 +18,7 @@ import inspect
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Deque, Dict, List, Mapping, Optional, Set, TextIO, Type, Union
+from typing import Any, Callable, Deque, Dict, List, Mapping, Set, TextIO, Type, Union
 
 from gpflow.utilities import Dispatcher
 

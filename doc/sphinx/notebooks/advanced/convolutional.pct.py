@@ -27,13 +27,13 @@
 
 # %%
 import time
-import numpy as np
-import matplotlib.pyplot as plt
 
-import gpflow
+import matplotlib.pyplot as plt
+import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
+import gpflow
 from gpflow import set_trainable
 from gpflow.ci_utils import is_continuous_integration
 
@@ -56,8 +56,12 @@ IMAGE_SHAPE = [H, W]
 
 # %%
 def affine_scalar_bijector(shift=None, scale=None):
-    scale_bijector = tfp.bijectors.Scale(scale) if scale else tfp.bijectors.Identity()
-    shift_bijector = tfp.bijectors.Shift(shift) if shift else tfp.bijectors.Identity()
+    scale_bijector = (
+        tfp.bijectors.Scale(scale) if scale else tfp.bijectors.Identity()
+    )
+    shift_bijector = (
+        tfp.bijectors.Shift(shift) if shift else tfp.bijectors.Identity()
+    )
     return shift_bijector(scale_bijector)
 
 
@@ -142,15 +146,23 @@ print("RBF elbo after training: %.4e" % rbf_elbo())
 
 # %%
 f64 = lambda x: np.array(x, dtype=np.float64)
-positive_with_min = lambda: affine_scalar_bijector(shift=f64(1e-4))(tfp.bijectors.Softplus())
+positive_with_min = lambda: affine_scalar_bijector(shift=f64(1e-4))(
+    tfp.bijectors.Softplus()
+)
 constrained = lambda: affine_scalar_bijector(shift=f64(1e-4), scale=f64(100.0))(
     tfp.bijectors.Sigmoid()
 )
-max_abs_1 = lambda: affine_scalar_bijector(shift=f64(-2.0), scale=f64(4.0))(tfp.bijectors.Sigmoid())
+max_abs_1 = lambda: affine_scalar_bijector(shift=f64(-2.0), scale=f64(4.0))(
+    tfp.bijectors.Sigmoid()
+)
 
 patch_shape = [3, 3]
-conv_k = gpflow.kernels.Convolutional(gpflow.kernels.SquaredExponential(), IMAGE_SHAPE, patch_shape)
-conv_k.base_kernel.lengthscales = gpflow.Parameter(1.0, transform=positive_with_min())
+conv_k = gpflow.kernels.Convolutional(
+    gpflow.kernels.SquaredExponential(), IMAGE_SHAPE, patch_shape
+)
+conv_k.base_kernel.lengthscales = gpflow.Parameter(
+    1.0, transform=positive_with_min()
+)
 # Weight scale and variance are non-identifiable. We also need to prevent variance from shooting off crazily.
 conv_k.base_kernel.variance = gpflow.Parameter(1.0, transform=constrained())
 conv_k.weights = gpflow.Parameter(conv_k.weights.numpy(), transform=max_abs_1())
@@ -190,7 +202,9 @@ res = gpflow.optimizers.Scipy().minimize(
     options={"disp": True, "maxiter": MAXITER},
 )
 train_acc = np.mean((conv_m.predict_y(X)[0] > 0.5).numpy().astype("float") == Y)
-test_acc = np.mean((conv_m.predict_y(Xt)[0] > 0.5).numpy().astype("float") == Yt)
+test_acc = np.mean(
+    (conv_m.predict_y(Xt)[0] > 0.5).numpy().astype("float") == Yt
+)
 print(f"Train acc: {train_acc * 100}%\nTest acc : {test_acc*100}%")
 print("conv elbo after training: %.4e" % conv_elbo())
 
@@ -202,7 +216,9 @@ res = gpflow.optimizers.Scipy().minimize(
     options={"disp": True, "maxiter": MAXITER},
 )
 train_acc = np.mean((conv_m.predict_y(X)[0] > 0.5).numpy().astype("float") == Y)
-test_acc = np.mean((conv_m.predict_y(Xt)[0] > 0.5).numpy().astype("float") == Yt)
+test_acc = np.mean(
+    (conv_m.predict_y(Xt)[0] > 0.5).numpy().astype("float") == Yt
+)
 print(f"Train acc: {train_acc * 100}%\nTest acc : {test_acc*100}%")
 print("conv elbo after training: %.4e" % conv_elbo())
 
@@ -215,7 +231,9 @@ res = gpflow.optimizers.Scipy().minimize(
     options={"disp": True, "maxiter": MAXITER},
 )
 train_acc = np.mean((conv_m.predict_y(X)[0] > 0.5).numpy().astype("float") == Y)
-test_acc = np.mean((conv_m.predict_y(Xt)[0] > 0.5).numpy().astype("float") == Yt)
+test_acc = np.mean(
+    (conv_m.predict_y(Xt)[0] > 0.5).numpy().astype("float") == Yt
+)
 print(f"Train acc: {train_acc * 100}%\nTest acc : {test_acc*100}%")
 print("conv elbo after training: %.4e" % conv_elbo())
 

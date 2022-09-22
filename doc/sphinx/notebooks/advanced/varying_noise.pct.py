@@ -90,7 +90,9 @@ def plot_distribution(
         mean_plot = mean_plot.squeeze(axis=-1)
         var_plot = var_plot.squeeze(axis=-1)
         lower_plot, upper_plot = get_confidence_bounds(mean_plot, var_plot)
-        plt.fill_between(X_plot, lower_plot, upper_plot, color="silver", alpha=0.25)
+        plt.fill_between(
+            X_plot, lower_plot, upper_plot, color="silver", alpha=0.25
+        )
         plt.plot(X_plot, lower_plot, color="silver")
         plt.plot(X_plot, upper_plot, color="silver")
         plt.plot(X_plot, mean_plot, color="black")
@@ -275,7 +277,9 @@ n_data = reduce_in_tests(20)
 n_repeats = reduce_in_tests(10)
 
 
-def generate_empiricial_noise_data() -> Tuple[gf.base.AnyNDArray, gf.base.AnyNDArray]:
+def generate_empiricial_noise_data() -> Tuple[
+    gf.base.AnyNDArray, gf.base.AnyNDArray
+]:
     rng = np.random.default_rng(42)  # for reproducibility
     X = rng.uniform(0.0, 1.0, (n_data, 1))
     signal = np.sin(6 * X)

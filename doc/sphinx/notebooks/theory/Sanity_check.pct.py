@@ -35,15 +35,18 @@
 # In all cases the parameters are estimated by the method of maximum likelihood (or approximate maximum likelihood, as appropriate). The parameter estimates should all be the same.
 
 # %%
-import gpflow
+import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
-import matplotlib.pyplot as plt
 
+import gpflow
 from gpflow import set_trainable
-from gpflow.models import maximum_log_likelihood_objective, training_loss_closure
-from gpflow.config import default_float
 from gpflow.ci_utils import reduce_in_tests
+from gpflow.config import default_float
+from gpflow.models import (
+    maximum_log_likelihood_objective,
+    training_loss_closure,
+)
 
 # %matplotlib inline
 plt.rcParams["figure.figsize"] = (12, 6)
@@ -64,7 +67,9 @@ inducing_variable = tf.convert_to_tensor(X, dtype=default_float())
 
 m1 = gpflow.models.GPR(data, kernel=gpflow.kernels.SquaredExponential())
 m2 = gpflow.models.VGP(
-    data, kernel=gpflow.kernels.SquaredExponential(), likelihood=gpflow.likelihoods.Gaussian()
+    data,
+    kernel=gpflow.kernels.SquaredExponential(),
+    likelihood=gpflow.likelihoods.Gaussian(),
 )
 m3 = gpflow.models.SVGP(
     gpflow.kernels.SquaredExponential(),
@@ -84,12 +89,16 @@ m4 = gpflow.models.SVGP(
 set_trainable(m4.inducing_variable, False)
 
 m5 = gpflow.models.SGPR(
-    data, kernel=gpflow.kernels.SquaredExponential(), inducing_variable=inducing_variable
+    data,
+    kernel=gpflow.kernels.SquaredExponential(),
+    inducing_variable=inducing_variable,
 )
 set_trainable(m5.inducing_variable, False)
 
 m6 = gpflow.models.GPRFITC(
-    data, kernel=gpflow.kernels.SquaredExponential(), inducing_variable=inducing_variable
+    data,
+    kernel=gpflow.kernels.SquaredExponential(),
+    inducing_variable=inducing_variable,
 )
 set_trainable(m6.inducing_variable, False)
 
@@ -158,4 +167,6 @@ for m in models:
 
 # %%
 for m in models:
-    print(f"{m.__class__.__name__:30}  {maximum_log_likelihood_objective(m, data)}")
+    print(
+        f"{m.__class__.__name__:30}  {maximum_log_likelihood_objective(m, data)}"
+    )
