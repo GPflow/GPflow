@@ -615,7 +615,7 @@ div.rendered_html tbody tr:hover {
 </style>
 <section id="Mean-Functions">
 <h1>Mean Functions<a class="headerlink" href="#Mean-Functions" title="Permalink to this heading">#</a></h1>
-<p>In the previous chapter we talked about <a class="reference external" href="kernels.html">kernels</a>. If you go back and look at the plots, you may notice that even in the plots without any data, where we just look at <span class="math notranslate nohighlight">\(f\)</span> samples, the <span class="math notranslate nohighlight">\(f\)</span> samples are kind of close to 0. Why is that? The kernels define what kinds of shape <span class="math notranslate nohighlight">\(f\)</span> can take, but not where the function is; a mean function defines where. In the section on kernels we didn’t specify a mean function, and the default mean function is constant 0, which
+<p>In the previous chapter we talked about <a class="reference internal" href="kernels.html"><span class="doc">kernels</span></a>. If you go back and look at the plots, you may notice that even in the plots without any data, where we just look at <span class="math notranslate nohighlight">\(f\)</span> samples, the <span class="math notranslate nohighlight">\(f\)</span> samples are kind of close to 0. Why is that? The kernels define what kinds of shape <span class="math notranslate nohighlight">\(f\)</span> can take, but not where the function is; a mean function defines where. In the section on kernels we didn’t specify a mean function, and the default mean function is constant 0, which
 explains why, by default, <span class="math notranslate nohighlight">\(f\)</span> samples will be close to 0.</p>
 <p>As usual we will start with some necessary imports:</p>
 <div class="nbinput nblast docutils container">
@@ -647,11 +647,7 @@ explains why, by default, <span class="math notranslate nohighlight">\(f\)</span
 
     <span class="k">if</span> <span class="n">optimise</span><span class="p">:</span>
         <span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
-        <span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
-            <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span>
-            <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span>
-            <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">1000</span><span class="p">),</span>
-        <span class="p">)</span>
+        <span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">)</span>
 
     <span class="n">Xplot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">min_x</span><span class="p">,</span> <span class="n">max_x</span><span class="p">,</span> <span class="mi">300</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>
 
@@ -696,7 +692,7 @@ explains why, by default, <span class="math notranslate nohighlight">\(f\)</span
 </section>
 <section id="Setting-a-mean-function">
 <h2>Setting a mean function<a class="headerlink" href="#Setting-a-mean-function" title="Permalink to this heading">#</a></h2>
-<p>Our models generally take a <code class="docutils literal notranslate"><span class="pre">mean_function</span></code> parameter that you can set to any instance of <a class="reference external" href="../../api/gpflow/functions/index.html#gpflow.functions.MeanFunction">gpflow.functions.MeanFunction</a>. See our <a class="reference external" href="../../api/gpflow/functions/index.html">API documentation</a> for a full list of built-in mean functions.</p>
+<p>Our models generally take a <code class="docutils literal notranslate"><span class="pre">mean_function</span></code> parameter that you can set to any instance of <a class="reference internal" href="../../api/gpflow/functions/index.html#gpflow.functions.MeanFunction"><span class="std std-ref">gpflow.functions.MeanFunction</span></a>. See our <a class="reference internal" href="../../api/gpflow/functions/index.html"><span class="doc">API documentation</span></a> for a full list of built-in mean functions.</p>
 <p>In the above example I happen to know that our data is a quadratic function, so let us try setting our mean function to a 2nd degree polynomial:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
@@ -795,7 +791,7 @@ explains why, by default, <span class="math notranslate nohighlight">\(f\)</span
 </section>
 <section id="Custom-mean-functions">
 <h2>Custom mean functions<a class="headerlink" href="#Custom-mean-functions" title="Permalink to this heading">#</a></h2>
-<p>It is easy enough to create a custom mean function. You must extend the <a class="reference external" href="../../api/gpflow/functions/index.html#gpflow.functions.MeanFunction">gpflow.functions.MeanFunction</a> class, which only requires you to implement a <code class="docutils literal notranslate"><span class="pre">__call__</span></code> method. For example:</p>
+<p>It is easy enough to create a custom mean function. You must extend the <a class="reference internal" href="../../api/gpflow/functions/index.html#gpflow.functions.MeanFunction"><span class="std std-ref">gpflow.functions.MeanFunction</span></a> class, which only requires you to implement a <code class="docutils literal notranslate"><span class="pre">__call__</span></code> method. For example:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
@@ -824,7 +820,7 @@ explains why, by default, <span class="math notranslate nohighlight">\(f\)</span
 <img alt="../../_images/notebooks_getting_started_mean_functions_18_0.png" src="../../_images/notebooks_getting_started_mean_functions_18_0.png" />
 </div>
 </div>
-<p>The above mean function does not have any trainable parameters. It is common for a mean function to have parameters that will be set during model training. To learn more about parameters see our section on <a class="reference external" href="parameters_and_their_optimisation.html">Parameters and Their Optimisation</a>.</p>
+<p>The above mean function does not have any trainable parameters. It is common for a mean function to have parameters that will be set during model training. To learn more about parameters see our section on <a class="reference internal" href="parameters_and_their_optimisation.html"><span class="doc">Parameters and Their Optimisation</span></a>.</p>
 </section>
 <section id="Composition">
 <h2>Composition<a class="headerlink" href="#Composition" title="Permalink to this heading">#</a></h2>

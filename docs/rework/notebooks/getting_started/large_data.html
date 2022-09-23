@@ -616,7 +616,7 @@ div.rendered_html tbody tr:hover {
 <section id="Large-Data">
 <h1>Large Data<a class="headerlink" href="#Large-Data" title="Permalink to this heading">#</a></h1>
 <p>Making predictions with Gaussian Processes is <span class="math notranslate nohighlight">\(O(N^3)\)</span>, which can be prohibitive for large <span class="math notranslate nohighlight">\(N\)</span>. In this chapter we introduce the Sparse Gaussian Process Regression (SGPR), which tries to solve this problem. The SGPR tries to approximate the <span class="math notranslate nohighlight">\(N\)</span> actual data points with <span class="math notranslate nohighlight">\(M\)</span> “inducing variables”. With inducing variables the SGPR can make predicitions in <span class="math notranslate nohighlight">\(O(NM^2)\)</span>, which can make a big difference if <span class="math notranslate nohighlight">\(M &lt;&lt; N\)</span>.</p>
-<p>Note: For large datasets the “SVGP” model may also be relevant. See our section on <a class="reference external" href="classification_and_other_data_distributions.html">Classification and other data distributions</a>.</p>
+<p>Note: For large datasets the “SVGP” model may also be relevant. See our section on <a class="reference internal" href="classification_and_other_data_distributions.html"><span class="doc">Classification and other data distributions</span></a>.</p>
 <p>As usual we will start with our imports:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -631,7 +631,7 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 </div>
-<p>Although the sparse models are meant for large datasets, smaller datasets can be easier to understand, so we will reuse the same data we used in our <a class="reference external" href="basic_usage.html">Basic Usage</a> chapter:</p>
+<p>Although the sparse models are meant for large datasets, smaller datasets can be easier to understand, so we will reuse the same data we used in our <a class="reference internal" href="basic_usage.html"><span class="doc">Basic Usage</span></a> chapter:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
@@ -668,11 +668,7 @@ div.rendered_html tbody tr:hover {
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_model</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPModel</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">data</span>
     <span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
-    <span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span>
-        <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">10_000</span><span class="p">),</span>
-    <span class="p">)</span>
+    <span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">)</span>
     <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;notebook&quot;</span><span class="p">)</span>
 
     <span class="n">Xplot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">200</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>

@@ -637,7 +637,7 @@ div.rendered_html tbody tr:hover {
 Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^2).
 \end{equation}</span></p>
 <p>In this chapter we will no longer assume this — instead we will allow any stochastic function of <span class="math notranslate nohighlight">\(f\)</span>.</p>
-<p>We will be using the Variational Gaussian Process (VGP) model in this chapter. The VGP uses a <a class="reference external" href="../../api/gpflow/likelihoods/index.html#gpflow-likelihoods-likelihood">Likelihood</a> object to define the connection between <span class="math notranslate nohighlight">\(f\)</span> and <span class="math notranslate nohighlight">\(Y\)</span>. The models we have seen so far, the GPR and SGPR, requires the likelihood to be gaussian, but the VGP allows us to configure the likelihood.</p>
+<p>We will be using the Variational Gaussian Process (VGP) model in this chapter. The VGP uses a <a class="reference internal" href="../../api/gpflow/likelihoods/index.html#gpflow-likelihoods-likelihood"><span class="std std-ref">Likelihood</span></a> object to define the connection between <span class="math notranslate nohighlight">\(f\)</span> and <span class="math notranslate nohighlight">\(Y\)</span>. The models we have seen so far, the GPR and SGPR, requires the likelihood to be gaussian, but the VGP allows us to configure the likelihood.</p>
 <section id="Non-gaussian-regression">
 <h3>Non-gaussian regression<a class="headerlink" href="#Non-gaussian-regression" title="Permalink to this heading">#</a></h3>
 <p>Let us first define a helper function, for plotting a model:</p>
@@ -648,11 +648,7 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_model</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPModel</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">data</span>
     <span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
-    <span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span>
-        <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">10_000</span><span class="p">),</span>
-    <span class="p">)</span>
+    <span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">)</span>
     <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;notebook&quot;</span><span class="p">)</span>
 
     <span class="n">Xplot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">200</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>
@@ -782,7 +778,7 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 <h3>Classification<a class="headerlink" href="#Classification" title="Permalink to this heading">#</a></h3>
 <p>Variational models and custom likelihoods allow you to have arbitrary connections beween the data you are modelling and the real-valued function <span class="math notranslate nohighlight">\(f\)</span>. For example, we can use it for a classification problem where we are not trying to predict a real value (regression), but trying to predict an object label instead.</p>
 <p>To do classification we start with our unknown function <span class="math notranslate nohighlight">\(f\)</span>. <span class="math notranslate nohighlight">\(f\)</span> can have any (real) value, but we want to use it for probabilities, so we need to map it to the interval <span class="math notranslate nohighlight">\([0; 1]\)</span>. We will use the cumulative density function of a standard normal for this. Other functions can be used for this “squishing”, but the cumulative density function has nice analytical properties that simplifies some maths. We then use the mapped value as the probability in a <a class="reference external" href="https://en.wikipedia.org/wiki/Bernoulli_trial">Bernoulli
-trial</a> to determine the output class (<span class="math notranslate nohighlight">\(Y\)</span>). All of this is encapsulated in the GPflow <a class="reference external" href="../../api/gpflow/likelihoods/index.html#gpflow-likelihoods-bernoulli">Bernoulli</a> class.</p>
+trial</a> to determine the output class (<span class="math notranslate nohighlight">\(Y\)</span>). All of this is encapsulated in the GPflow <a class="reference internal" href="../../api/gpflow/likelihoods/index.html#gpflow-likelihoods-bernoulli"><span class="std std-ref">Bernoulli</span></a> class.</p>
 <p>Let us define a small dataset:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
@@ -884,13 +880,13 @@ trial</a> to determine the output class (<span class="math notranslate nohighlig
 <img alt="../../_images/notebooks_getting_started_classification_and_other_data_distributions_21_0.png" src="../../_images/notebooks_getting_started_classification_and_other_data_distributions_21_0.png" />
 </div>
 </div>
-<p>You may also be interested in our advanced <a class="reference external" href="../advanced/multiclass_classification.html">tutorial on multiclass classification</a>.</p>
+<p>You may also be interested in our advanced <a class="reference internal" href="../advanced/multiclass_classification.html"><span class="doc">tutorial on multiclass classification</span></a>.</p>
 </section>
 </section>
 <section id="The-Sparse-Variational-Gaussian-Process">
 <h2>The Sparse Variational Gaussian Process<a class="headerlink" href="#The-Sparse-Variational-Gaussian-Process" title="Permalink to this heading">#</a></h2>
-<p>The Sparse Variational Gaussian Process (SVGP) combines the sparsity we studied in the previous chapter, with the generic likelihoods we have seen in this chapter. It gets a separate section, because its API is slightly different from what we’ve seen before. All the other models we have seen uses the <a class="reference external" href="../../api/gpflow/models/index.html#gpflow.models.InternalDataTrainingLossMixin">InternalDataTrainingLossMixin</a> and internally stores their data. The SVGP uses the
-<a class="reference external" href="../../api/gpflow/models/index.html#gpflow-models-externaldatatraininglossmixin">ExternalDataTrainingLossMixin</a>. This means it does not take its data in the constructor, and instead takes the data as parameters when training the model.</p>
+<p>The Sparse Variational Gaussian Process (SVGP) combines the sparsity we studied in the previous chapter, with the generic likelihoods we have seen in this chapter. It gets a separate section, because its API is slightly different from what we’ve seen before. All the other models we have seen uses the <a class="reference internal" href="../../api/gpflow/models/index.html#gpflow.models.InternalDataTrainingLossMixin"><span class="std std-ref">InternalDataTrainingLossMixin</span></a> and internally stores their data. The SVGP uses the
+<a class="reference internal" href="../../api/gpflow/models/index.html#gpflow-models-externaldatatraininglossmixin"><span class="std std-ref">ExternalDataTrainingLossMixin</span></a>. This means it does not take its data in the constructor, and instead takes the data as parameters when training the model.</p>
 <p>Let us try fitting a SVGP to our classification data:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
@@ -945,10 +941,10 @@ trial</a> to determine the output class (<span class="math notranslate nohighlig
 <img alt="../../_images/notebooks_getting_started_classification_and_other_data_distributions_26_0.png" src="../../_images/notebooks_getting_started_classification_and_other_data_distributions_26_0.png" />
 </div>
 </div>
-<p>The combination of external training data and inducing points allow the SVGP to be trained on truly huge datasets. For details, see our <a class="reference external" href="../advanced/gps_for_big_data.html">advanced tutorial on scalability</a>.</p>
+<p>The combination of external training data and inducing points allow the SVGP to be trained on truly huge datasets. For details, see our <a class="reference internal" href="../advanced/gps_for_big_data.html"><span class="doc">advanced tutorial on scalability</span></a>.</p>
 <section id="Writing-code-that-handles-both-internal-and-external-data-models">
 <h3>Writing code that handles both internal and external data models<a class="headerlink" href="#Writing-code-that-handles-both-internal-and-external-data-models" title="Permalink to this heading">#</a></h3>
-<p>Having some models store training data internally, while others take it as a parameter when training, can be frustrating if you are trying to write code that works with a generic model. The <code class="docutils literal notranslate"><span class="pre">gpflow.models</span></code> module contains [some functions that can help you write generic code]((../../api/gpflow/models/index.html#functions).</p>
+<p>Having some models store training data internally, while others take it as a parameter when training, can be frustrating if you are trying to write code that works with a generic model. The <code class="docutils literal notranslate"><span class="pre">gpflow.models</span></code> module contains [some functions that can help you write generic code]((../../api/gpflow/models/index.rst#functions).</p>
 <p>Here is an example of how one might write a generic model training function:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:

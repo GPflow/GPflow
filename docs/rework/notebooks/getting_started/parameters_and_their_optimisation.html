@@ -637,7 +637,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <section id="The-Module-and-Parameter-classes">
 <h2>The Module and Parameter classes<a class="headerlink" href="#The-Module-and-Parameter-classes" title="Permalink to this heading">#</a></h2>
-<p>The two fundamental classes of GPflow are <a class="reference external" href="../../api/gpflow/index.html#gpflow-module">gpflow.Module</a> and <a class="reference external" href="../../api/gpflow/index.html#gpflow-parameter">gpflow.Parameter</a>. Parameters are leaf nodes holding numerical values, that can be tuned / trained to make the model fit the data. Modules recursively composes other modules and parameters to create models. All the GPflow models, kernels, mean functions, etc. are modules.</p>
+<p>The two fundamental classes of GPflow are <a class="reference internal" href="../../api/gpflow/index.html#gpflow-module"><span class="std std-ref">gpflow.Module</span></a> and <a class="reference internal" href="../../api/gpflow/index.html#gpflow-parameter"><span class="std std-ref">gpflow.Parameter</span></a>. Parameters are leaf nodes holding numerical values, that can be tuned / trained to make the model fit the data. Modules recursively composes other modules and parameters to create models. All the GPflow models, kernels, mean functions, etc. are modules.</p>
 <p>As an example, let’s build a simple linear model:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -765,7 +765,7 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
-&lt;__main__.LinearModel object at 0x7f074bfe4790&gt;
+&lt;__main__.LinearModel object at 0x7f241192af70&gt;
 <table>
 <thead>
 <tr><th>name             </th><th>class    </th><th>transform  </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th>value  </th></tr>
@@ -948,6 +948,9 @@ div.rendered_html tbody tr:hover {
     <span class="p">)</span>
 
 
+<span class="n">opt_options</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+
+
 <span class="k">def</span> <span class="nf">plot_co2_kernel</span><span class="p">(</span>
     <span class="n">kernel</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Kernel</span><span class="p">,</span>
     <span class="n">mean_function</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">gpflow</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">MeanFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -959,9 +962,7 @@ div.rendered_html tbody tr:hover {
     <span class="p">)</span>
     <span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
     <span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span>
-        <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">10_000</span><span class="p">),</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">opt_options</span>
     <span class="p">)</span>
     <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;notebook&quot;</span><span class="p">)</span>
 
@@ -1369,7 +1370,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <span class="n">model</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">((</span><span class="n">Xco2</span><span class="p">,</span> <span class="n">Yco2</span><span class="p">),</span> <span class="n">kernel</span><span class="o">=</span><span class="n">long_term_kernel</span><span class="p">)</span>
 <span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
 <span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
-    <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">10_000</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">opt_options</span>
 <span class="p">)</span>
 
 <span class="n">periodic_kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Periodic</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">())</span>
@@ -1378,7 +1379,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <span class="n">model</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">((</span><span class="n">Xco2</span><span class="p">,</span> <span class="n">Yco2</span><span class="p">),</span> <span class="n">kernel</span><span class="o">=</span><span class="n">long_term_kernel</span><span class="p">)</span>
 <span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
 <span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
-    <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">10_000</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">opt_options</span>
 <span class="p">)</span>
 
 <span class="c1"># Prevent `plot_co2_kernel` from changing the kernel.</span>
@@ -1436,7 +1437,8 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
     <span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">)</span>
 
 
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2_000</span><span class="p">):</span>
+<span class="n">maxiter</span> <span class="o">=</span> <span class="mi">2_000</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">maxiter</span><span class="p">):</span>
     <span class="n">step</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>

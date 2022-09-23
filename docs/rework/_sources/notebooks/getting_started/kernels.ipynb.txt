@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "ceff3602",
+   "id": "4830ad42",
    "metadata": {},
    "source": [
     "# Kernels"
@@ -10,7 +10,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "159042b4",
+   "id": "5022d1ba",
    "metadata": {},
    "source": [
     "In this chapter we will be explaining what kernels are, how they affect your models, and how you can create them.\n",
@@ -21,13 +21,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "607dd671",
+   "id": "5adce269",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-22T11:41:55.291082Z",
-     "iopub.status.busy": "2022-09-22T11:41:55.290550Z",
-     "iopub.status.idle": "2022-09-22T11:41:57.990407Z",
-     "shell.execute_reply": "2022-09-22T11:41:57.989840Z"
+     "iopub.execute_input": "2022-09-23T13:54:16.328354Z",
+     "iopub.status.busy": "2022-09-23T13:54:16.328171Z",
+     "iopub.status.idle": "2022-09-23T13:54:18.986863Z",
+     "shell.execute_reply": "2022-09-23T13:54:18.986288Z"
     }
    },
    "outputs": [],
@@ -45,7 +45,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "016ff673",
+   "id": "4f4c7730",
    "metadata": {},
    "source": [
     "## What is a kernel?\n",
@@ -56,19 +56,19 @@
     "Y_i = f(X_i) + \\varepsilon_i \\,, \\quad \\varepsilon_i \\sim \\mathcal{N}(0, \\sigma^2).\n",
     "\\end{equation}\n",
     "\n",
-    "And in [Basic Usage](basic_usage.html) we defined our model as:"
+    "And in [Basic Usage](basic_usage.ipynb) we defined our model as:"
    ]
   },
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "ad7dd0e8",
+   "id": "49770cd2",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-22T11:41:57.992806Z",
-     "iopub.status.busy": "2022-09-22T11:41:57.992551Z",
-     "iopub.status.idle": "2022-09-22T11:41:58.068463Z",
-     "shell.execute_reply": "2022-09-22T11:41:58.067888Z"
+     "iopub.execute_input": "2022-09-23T13:54:18.989152Z",
+     "iopub.status.busy": "2022-09-23T13:54:18.988861Z",
+     "iopub.status.idle": "2022-09-23T13:54:19.061833Z",
+     "shell.execute_reply": "2022-09-23T13:54:19.061303Z"
     }
    },
    "outputs": [],
@@ -81,7 +81,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "c8f0a749",
+   "id": "f80d84fa",
    "metadata": {},
    "source": [
     "The `kernel` defines what kind of shapes $f$ can take, and it is one of the primary ways you fit your model to your data.\n",
@@ -93,15 +93,15 @@
   },
   {
    "cell_type": "markdown",
-   "id": "2ef09206",
+   "id": "d82268ee",
    "metadata": {},
    "source": [
-    "Below we will introduce the most important kernels, and how they can be composed to create new kernels that fit any structure in your data. To see the full list of kernels implemented in GPflow vist our [kernel list](all_kernels.html)."
+    "Below we will introduce the most important kernels, and how they can be composed to create new kernels that fit any structure in your data. To see the full list of kernels implemented in GPflow vist our [API documentation](../../api/gpflow/kernels/index.rst)."
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "ed07c620",
+   "id": "228eb662",
    "metadata": {},
    "source": [
     "## Visualising a kernel\n",
@@ -112,13 +112,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "bc0d8b4e",
+   "id": "a27562af",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-22T11:41:58.088056Z",
-     "iopub.status.busy": "2022-09-22T11:41:58.087846Z",
-     "iopub.status.idle": "2022-09-22T11:41:58.095756Z",
-     "shell.execute_reply": "2022-09-22T11:41:58.095338Z"
+     "iopub.execute_input": "2022-09-23T13:54:19.077874Z",
+     "iopub.status.busy": "2022-09-23T13:54:19.077706Z",
+     "iopub.status.idle": "2022-09-23T13:54:19.085541Z",
+     "shell.execute_reply": "2022-09-23T13:54:19.085097Z"
     }
    },
    "outputs": [],
@@ -149,11 +149,7 @@
     "    if optimise:\n",
     "        gpflow.set_trainable(model.likelihood, False)\n",
     "        opt = gpflow.optimizers.Scipy()\n",
-    "        opt.minimize(\n",
-    "            model.training_loss,\n",
-    "            model.trainable_variables,\n",
-    "            options=dict(maxiter=1000),\n",
-    "        )\n",
+    "        opt.minimize(model.training_loss, model.trainable_variables)\n",
     "\n",
     "    Xplot = np.linspace(-0.6, 0.6, 100)[:, None]\n",
     "\n",
@@ -183,14 +179,14 @@
   },
   {
    "cell_type": "markdown",
-   "id": "5093d9b1",
+   "id": "0cd0f6c3",
    "metadata": {},
    "source": [
     "## The Mat\u00e9rn family\n",
     "\n",
     "The [Mat\u00e9rn family of kernels](https://en.wikipedia.org/wiki/Mat%C3%A9rn_covariance_function) covers the most popular and widely used kernels.\n",
     "\n",
-    "A Mat\u00e9rn kernel has a parameter called $\\nu$, which determines the smoothness of $f$ - the higher the $\\nu$, the smoother $f$. The maths of the kernels simplifies significantly when $\\nu$ is one of $\\frac{1}{2}$, $\\frac{3}{2}$, $\\frac{5}{2}$, etc., so those are the ones usually used in practice. As $\\nu$ diverges towards $\\infty$, we recover the squared exponential kernel we used in [Basic Usage](basic_usage.html).\n",
+    "A Mat\u00e9rn kernel has a parameter called $\\nu$, which determines the smoothness of $f$ - the higher the $\\nu$, the smoother $f$. The maths of the kernels simplifies significantly when $\\nu$ is one of $\\frac{1}{2}$, $\\frac{3}{2}$, $\\frac{5}{2}$, etc., so those are the ones usually used in practice. As $\\nu$ diverges towards $\\infty$, we recover the squared exponential kernel we used in [Basic Usage](basic_usage.ipynb).\n",
     "\n",
     "GPflow implements the following kernels from the Mat\u00e9rn family:\n",
     "\n",
@@ -210,13 +206,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "79af7343",
+   "id": "9ea9192d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-22T11:41:58.097713Z",
-     "iopub.status.busy": "2022-09-22T11:41:58.097560Z",
-     "iopub.status.idle": "2022-09-22T11:41:59.927207Z",
-     "shell.execute_reply": "2022-09-22T11:41:59.926538Z"
+     "iopub.execute_input": "2022-09-23T13:54:19.087426Z",
+     "iopub.status.busy": "2022-09-23T13:54:19.087243Z",
+     "iopub.status.idle": "2022-09-23T13:54:20.871498Z",
+     "shell.execute_reply": "2022-09-23T13:54:20.871038Z"
     }
    },
    "outputs": [
@@ -238,13 +234,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "caad5b35",
+   "id": "5bd0c2ee",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-22T11:41:59.929673Z",
-     "iopub.status.busy": "2022-09-22T11:41:59.929482Z",
-     "iopub.status.idle": "2022-09-22T11:42:00.508951Z",
-     "shell.execute_reply": "2022-09-22T11:42:00.508435Z"
+     "iopub.execute_input": "2022-09-23T13:54:20.873996Z",
+     "iopub.status.busy": "2022-09-23T13:54:20.873805Z",
+     "iopub.status.idle": "2022-09-23T13:54:21.446786Z",
+     "shell.execute_reply": "2022-09-23T13:54:21.446269Z"
     }
    },
    "outputs": [
@@ -266,13 +262,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "9513ce7d",
+   "id": "36edf3bd",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-22T11:42:00.510990Z",
-     "iopub.status.busy": "2022-09-22T11:42:00.510808Z",
-     "iopub.status.idle": "2022-09-22T11:42:01.093480Z",
-     "shell.execute_reply": "2022-09-22T11:42:01.093056Z"
+     "iopub.execute_input": "2022-09-23T13:54:21.448615Z",
+     "iopub.status.busy": "2022-09-23T13:54:21.448438Z",
+     "iopub.status.idle": "2022-09-23T13:54:22.025946Z",
+     "shell.execute_reply": "2022-09-23T13:54:22.025401Z"
     }
    },
    "outputs": [
@@ -294,13 +290,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "66c794bf",
+   "id": "7bf81dc7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-22T11:42:01.095434Z",
-     "iopub.status.busy": "2022-09-22T11:42:01.095234Z",
-     "iopub.status.idle": "2022-09-22T11:42:01.756456Z",
-     "shell.execute_reply": "2022-09-22T11:42:01.755903Z"
+     "iopub.execute_input": "2022-09-23T13:54:22.027911Z",
+     "iopub.status.busy": "2022-09-23T13:54:22.027716Z",
+     "iopub.status.idle": "2022-09-23T13:54:22.683826Z",
+     "shell.execute_reply": "2022-09-23T13:54:22.683322Z"
     }
    },
    "outputs": [
@@ -321,7 +317,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "c885d75e",
+   "id": "bbd5bde0",
    "metadata": {},
    "source": [
     "And all of them together:"
@@ -330,13 +326,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "e8634ebf",
+   "id": "d9e6ec91",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-22T11:42:01.758485Z",
-     "iopub.status.busy": "2022-09-22T11:42:01.758296Z",
-     "iopub.status.idle": "2022-09-22T11:42:02.960777Z",
-     "shell.execute_reply": "2022-09-22T11:42:02.960383Z"
+     "iopub.execute_input": "2022-09-23T13:54:22.685904Z",
+     "iopub.status.busy": "2022-09-23T13:54:22.685717Z",
+     "iopub.status.idle": "2022-09-23T13:54:23.876962Z",
+     "shell.execute_reply": "2022-09-23T13:54:23.876466Z"
     }
    },
    "outputs": [
@@ -362,7 +358,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ad8c2351",
+   "id": "32424fd5",
    "metadata": {},
    "source": [
     "## Kernel parameters\n",
@@ -380,13 +376,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "189de77f",
+   "id": "c80d736b",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-22T11:42:02.963735Z",
-     "iopub.status.busy": "2022-09-22T11:42:02.963549Z",
-     "iopub.status.idle": "2022-09-22T11:42:03.297865Z",
-     "shell.execute_reply": "2022-09-22T11:42:03.297418Z"
+     "iopub.execute_input": "2022-09-23T13:54:23.879914Z",
+     "iopub.status.busy": "2022-09-23T13:54:23.879714Z",
+     "iopub.status.idle": "2022-09-23T13:54:24.215531Z",
+     "shell.execute_reply": "2022-09-23T13:54:24.215030Z"
     }
    },
    "outputs": [
@@ -411,13 +407,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "64eb1076",
+   "id": "3891d4cd",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-22T11:42:03.299898Z",
-     "iopub.status.busy": "2022-09-22T11:42:03.299697Z",
-     "iopub.status.idle": "2022-09-22T11:42:03.637029Z",
-     "shell.execute_reply": "2022-09-22T11:42:03.636523Z"
+     "iopub.execute_input": "2022-09-23T13:54:24.217440Z",
+     "iopub.status.busy": "2022-09-23T13:54:24.217278Z",
+     "iopub.status.idle": "2022-09-23T13:54:24.553886Z",
+     "shell.execute_reply": "2022-09-23T13:54:24.553376Z"
     }
    },
    "outputs": [
@@ -442,13 +438,13 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "7500f915",
+   "id": "c1f6192b",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-22T11:42:03.639014Z",
-     "iopub.status.busy": "2022-09-22T11:42:03.638816Z",
-     "iopub.status.idle": "2022-09-22T11:42:03.969179Z",
-     "shell.execute_reply": "2022-09-22T11:42:03.968666Z"
+     "iopub.execute_input": "2022-09-23T13:54:24.555757Z",
+     "iopub.status.busy": "2022-09-23T13:54:24.555595Z",
+     "iopub.status.idle": "2022-09-23T13:54:24.888270Z",
+     "shell.execute_reply": "2022-09-23T13:54:24.887772Z"
     }
    },
    "outputs": [
@@ -472,17 +468,17 @@
   },
   {
    "cell_type": "markdown",
-   "id": "fa29abb1",
+   "id": "597434c4",
    "metadata": {},
    "source": [
-    "These parameters are usually set automatically during model training, and ideally you don't need to worry too much about them. In the above examples we did not optimise the model, to demonstrate how model parameters impact predictions. For more about parameters and their training see our section on [Parameters and Their Optimisation](parameters_and_their_optimisation.html).\n",
+    "These parameters are usually set automatically during model training, and ideally you don't need to worry too much about them. In the above examples we did not optimise the model, to demonstrate how model parameters impact predictions. For more about parameters and their training see our section on [Parameters and Their Optimisation](parameters_and_their_optimisation.ipynb).\n",
     "\n",
-    "To see which parameters each kernel takes, look up their [API documentation](../../api/gpflow/kernels/index.html)."
+    "To see which parameters each kernel takes, look up their [API documentation](../../api/gpflow/kernels/index.rst)."
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "c4d1c62c",
+   "id": "620758ac",
    "metadata": {},
    "source": [
     "## Kernel composition\n",
@@ -491,14 +487,14 @@
     "\n",
     "However, if you need more performance from your model, and if your data has interesting structure, you can create a new kernel tailored specifically for your problem.\n",
     "\n",
-    "You can create a new kernel from the bottom up by extending the [`gpflow.kernels.Kernel` class](../../api/gpflow/kernels/index.html#gpflow-kernels-kernel), but that is advanced usage, and we are not going to demonstrate that here.\n",
+    "You can create a new kernel from the bottom up by extending the [`gpflow.kernels.Kernel` class](../../api/gpflow/kernels/index.rst#gpflow-kernels-kernel), but that is advanced usage, and we are not going to demonstrate that here.\n",
     "\n",
     "A much easier way to get a tailored kernel is to combine existing ones, and we demonstrate how to do that below."
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "ea4efe30",
+   "id": "c48c98f3",
    "metadata": {},
    "source": [
     "### Periodic\n",
@@ -509,13 +505,13 @@
   {
    "cell_type": "code",
    "execution_count": 12,
-   "id": "d326e2fb",
+   "id": "ff2b3b22",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-22T11:42:03.971454Z",
-     "iopub.status.busy": "2022-09-22T11:42:03.971258Z",
-     "iopub.status.idle": "2022-09-22T11:42:04.647481Z",
-     "shell.execute_reply": "2022-09-22T11:42:04.646971Z"
+     "iopub.execute_input": "2022-09-23T13:54:24.890417Z",
+     "iopub.status.busy": "2022-09-23T13:54:24.890243Z",
+     "iopub.status.idle": "2022-09-23T13:54:25.561938Z",
+     "shell.execute_reply": "2022-09-23T13:54:25.561418Z"
     }
    },
    "outputs": [
@@ -538,7 +534,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "aad8d49f",
+   "id": "cce1c84c",
    "metadata": {},
    "source": [
     "### Change-points\n",
@@ -549,13 +545,13 @@
   {
    "cell_type": "code",
    "execution_count": 13,
-   "id": "c83d59ef",
+   "id": "de19bb15",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-22T11:42:04.649542Z",
-     "iopub.status.busy": "2022-09-22T11:42:04.649333Z",
-     "iopub.status.idle": "2022-09-22T11:42:05.083640Z",
-     "shell.execute_reply": "2022-09-22T11:42:05.083177Z"
+     "iopub.execute_input": "2022-09-23T13:54:25.564083Z",
+     "iopub.status.busy": "2022-09-23T13:54:25.563866Z",
+     "iopub.status.idle": "2022-09-23T13:54:25.998170Z",
+     "shell.execute_reply": "2022-09-23T13:54:25.997670Z"
     }
    },
    "outputs": [
@@ -587,7 +583,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "35020d99",
+   "id": "49cd0ddc",
    "metadata": {},
    "source": [
     "### Some other simple kernels\n",
@@ -597,7 +593,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "46cb1a73",
+   "id": "0a7340f6",
    "metadata": {},
    "source": [
     "We have the `Constant` kernel, which makes $f$ a constant value:"
@@ -606,13 +602,13 @@
   {
    "cell_type": "code",
    "execution_count": 14,
-   "id": "7ff569be",
+   "id": "f65b411e",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-22T11:42:05.085751Z",
-     "iopub.status.busy": "2022-09-22T11:42:05.085560Z",
-     "iopub.status.idle": "2022-09-22T11:42:05.598767Z",
-     "shell.execute_reply": "2022-09-22T11:42:05.598290Z"
+     "iopub.execute_input": "2022-09-23T13:54:26.000351Z",
+     "iopub.status.busy": "2022-09-23T13:54:26.000166Z",
+     "iopub.status.idle": "2022-09-23T13:54:26.521268Z",
+     "shell.execute_reply": "2022-09-23T13:54:26.520773Z"
     }
    },
    "outputs": [
@@ -633,7 +629,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "5f7b92e7",
+   "id": "bde258f8",
    "metadata": {},
    "source": [
     "And we have the `Linear` kernel, which creates a stright line through $(0, 0)$:"
@@ -642,13 +638,13 @@
   {
    "cell_type": "code",
    "execution_count": 15,
-   "id": "dcb155f8",
+   "id": "0fa7c4dd",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-22T11:42:05.600876Z",
-     "iopub.status.busy": "2022-09-22T11:42:05.600690Z",
-     "iopub.status.idle": "2022-09-22T11:42:06.090718Z",
-     "shell.execute_reply": "2022-09-22T11:42:06.090238Z"
+     "iopub.execute_input": "2022-09-23T13:54:26.523317Z",
+     "iopub.status.busy": "2022-09-23T13:54:26.523157Z",
+     "iopub.status.idle": "2022-09-23T13:54:27.017873Z",
+     "shell.execute_reply": "2022-09-23T13:54:27.017346Z"
     }
    },
    "outputs": [
@@ -669,7 +665,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "4d0a5731",
+   "id": "bd28cf3f",
    "metadata": {},
    "source": [
     "### Addition and multiplication\n",
@@ -679,7 +675,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "2d7bdd9a",
+   "id": "a781076c",
    "metadata": {},
    "source": [
     "For example you can add a constant and a linear to get a $f$ that is a straight line that does not pass through $(0, 0)$:"
@@ -688,13 +684,13 @@
   {
    "cell_type": "code",
    "execution_count": 16,
-   "id": "d1a218d6",
+   "id": "d5eb4401",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-22T11:42:06.092776Z",
-     "iopub.status.busy": "2022-09-22T11:42:06.092614Z",
-     "iopub.status.idle": "2022-09-22T11:42:06.626368Z",
-     "shell.execute_reply": "2022-09-22T11:42:06.625901Z"
+     "iopub.execute_input": "2022-09-23T13:54:27.020176Z",
+     "iopub.status.busy": "2022-09-23T13:54:27.019976Z",
+     "iopub.status.idle": "2022-09-23T13:54:27.549516Z",
+     "shell.execute_reply": "2022-09-23T13:54:27.548913Z"
     }
    },
    "outputs": [
@@ -715,7 +711,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "b9c2621b",
+   "id": "aecb04e3",
    "metadata": {},
    "source": [
     "Or you can add a linear and a periodic kernel to get repeating pattern with a linear trend:"
@@ -724,13 +720,13 @@
   {
    "cell_type": "code",
    "execution_count": 17,
-   "id": "328578b2",
+   "id": "d6548b24",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-22T11:42:06.628426Z",
-     "iopub.status.busy": "2022-09-22T11:42:06.628239Z",
-     "iopub.status.idle": "2022-09-22T11:42:07.368148Z",
-     "shell.execute_reply": "2022-09-22T11:42:07.367654Z"
+     "iopub.execute_input": "2022-09-23T13:54:27.551547Z",
+     "iopub.status.busy": "2022-09-23T13:54:27.551386Z",
+     "iopub.status.idle": "2022-09-23T13:54:28.298197Z",
+     "shell.execute_reply": "2022-09-23T13:54:28.297692Z"
     }
    },
    "outputs": [
@@ -754,22 +750,22 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a7e140b1",
+   "id": "5dea1585",
    "metadata": {},
    "source": [
-    "You can multiply two linear kernels to get a quadratic (though please use [`gpflow.kernels.Polynomial`](../../api/gpflow/kernels/index.html#gpflow-kernels-polynomial) if you actually want a quadratic function):"
+    "You can multiply two linear kernels to get a quadratic (though please use [`gpflow.kernels.Polynomial`](../../api/gpflow/kernels/index.rst#gpflow-kernels-polynomial) if you actually want a quadratic function):"
    ]
   },
   {
    "cell_type": "code",
    "execution_count": 18,
-   "id": "f7698f60",
+   "id": "983f6563",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-22T11:42:07.370169Z",
-     "iopub.status.busy": "2022-09-22T11:42:07.370009Z",
-     "iopub.status.idle": "2022-09-22T11:42:07.873442Z",
-     "shell.execute_reply": "2022-09-22T11:42:07.872985Z"
+     "iopub.execute_input": "2022-09-23T13:54:28.300180Z",
+     "iopub.status.busy": "2022-09-23T13:54:28.299992Z",
+     "iopub.status.idle": "2022-09-23T13:54:28.797812Z",
+     "shell.execute_reply": "2022-09-23T13:54:28.797313Z"
     }
    },
    "outputs": [
@@ -790,7 +786,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "4dabf114",
+   "id": "476316ed",
    "metadata": {},
    "source": [
     "Or you can scale a periodic by a linear:"
@@ -799,13 +795,13 @@
   {
    "cell_type": "code",
    "execution_count": 19,
-   "id": "62ecc7f3",
+   "id": "de89f342",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-22T11:42:07.875523Z",
-     "iopub.status.busy": "2022-09-22T11:42:07.875333Z",
-     "iopub.status.idle": "2022-09-22T11:42:08.495657Z",
-     "shell.execute_reply": "2022-09-22T11:42:08.495153Z"
+     "iopub.execute_input": "2022-09-23T13:54:28.799838Z",
+     "iopub.status.busy": "2022-09-23T13:54:28.799674Z",
+     "iopub.status.idle": "2022-09-23T13:54:29.428913Z",
+     "shell.execute_reply": "2022-09-23T13:54:29.428395Z"
     }
    },
    "outputs": [
@@ -829,7 +825,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "1a0cba04",
+   "id": "26c41aa7",
    "metadata": {},
    "source": [
     "## Multiple-dimensional data\n",
@@ -840,12 +836,12 @@
     "\n",
     "GPflow has great support for multiple input dimensions. When you have multiple input dimensions it is interesting how $f$ behaves along every one of those dimensions, and hence it is interesting how your kernel handles each dimension.\n",
     "\n",
-    "Working with multiple output dimensions is more complicated. We have a [guide on how to do this in a principled way](../advanced/multioutput.html), but be aware that this is an advanced topic.\n"
+    "Working with multiple output dimensions is more complicated. We have a [guide on how to do this in a principled way](../advanced/multioutput.ipynb), but be aware that this is an advanced topic.\n"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "32ec1e18",
+   "id": "1c7297c5",
    "metadata": {},
    "source": [
     "Let us define a function to plot a kernel with 2D input:"
@@ -854,13 +850,13 @@
   {
    "cell_type": "code",
    "execution_count": 20,
-   "id": "3b33800c",
+   "id": "5d695d4c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-22T11:42:08.498283Z",
-     "iopub.status.busy": "2022-09-22T11:42:08.498073Z",
-     "iopub.status.idle": "2022-09-22T11:42:08.506198Z",
-     "shell.execute_reply": "2022-09-22T11:42:08.505685Z"
+     "iopub.execute_input": "2022-09-23T13:54:29.431385Z",
+     "iopub.status.busy": "2022-09-23T13:54:29.431195Z",
+     "iopub.status.idle": "2022-09-23T13:54:29.439256Z",
+     "shell.execute_reply": "2022-09-23T13:54:29.438890Z"
     }
    },
    "outputs": [],
@@ -903,11 +899,7 @@
     "    )\n",
     "    gpflow.set_trainable(model.likelihood, False)\n",
     "    opt = gpflow.optimizers.Scipy()\n",
-    "    opt.minimize(\n",
-    "        model.training_loss,\n",
-    "        model.trainable_variables,\n",
-    "        options=dict(maxiter=1000),\n",
-    "    )\n",
+    "    opt.minimize(model.training_loss, model.trainable_variables)\n",
     "\n",
     "    Xplots = np.linspace(-0.6, 0.6, n_grid)\n",
     "    Xplot1, Xplot2 = np.meshgrid(Xplots, Xplots)\n",
@@ -931,7 +923,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e59ad001",
+   "id": "da5759dc",
    "metadata": {},
    "source": [
     "Now, if we just use a kernel with default parameters, like we did above, with multi-dimensional input data it will work:"
@@ -940,13 +932,13 @@
   {
    "cell_type": "code",
    "execution_count": 21,
-   "id": "e905ce07",
+   "id": "f5cc97f2",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-22T11:42:08.508500Z",
-     "iopub.status.busy": "2022-09-22T11:42:08.508248Z",
-     "iopub.status.idle": "2022-09-22T11:42:09.182774Z",
-     "shell.execute_reply": "2022-09-22T11:42:09.182259Z"
+     "iopub.execute_input": "2022-09-23T13:54:29.441143Z",
+     "iopub.status.busy": "2022-09-23T13:54:29.440965Z",
+     "iopub.status.idle": "2022-09-23T13:54:30.107885Z",
+     "shell.execute_reply": "2022-09-23T13:54:30.107464Z"
     }
    },
    "outputs": [
@@ -967,7 +959,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "5dd66f18",
+   "id": "24ab04e8",
    "metadata": {},
    "source": [
     "However, by default the kernel will use the same parameters for all the input dimensions, and in practice it is rare that all the input dimensions behave in the same way, so usually this is not what we want."
@@ -975,7 +967,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "3db985bc",
+   "id": "7d2c6cb3",
    "metadata": {},
    "source": [
     "### Multi-dimensional parameters\n",
@@ -988,13 +980,13 @@
   {
    "cell_type": "code",
    "execution_count": 22,
-   "id": "af824933",
+   "id": "7be1e3f0",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-22T11:42:09.186206Z",
-     "iopub.status.busy": "2022-09-22T11:42:09.185997Z",
-     "iopub.status.idle": "2022-09-22T11:42:09.871325Z",
-     "shell.execute_reply": "2022-09-22T11:42:09.870829Z"
+     "iopub.execute_input": "2022-09-23T13:54:30.111486Z",
+     "iopub.status.busy": "2022-09-23T13:54:30.111268Z",
+     "iopub.status.idle": "2022-09-23T13:54:30.797606Z",
+     "shell.execute_reply": "2022-09-23T13:54:30.797050Z"
     }
    },
    "outputs": [
@@ -1015,17 +1007,17 @@
   },
   {
    "cell_type": "markdown",
-   "id": "15aa2d08",
+   "id": "61ef8daa",
    "metadata": {},
    "source": [
     "Notice that even though we explicitly initialise the `lengthscales` the values are still optimised / scaled, so usually you do not have to worry too much about setting the values right.\n",
     "\n",
-    "Again, see our section on [Parameters and Their Optimisation](parameters_and_their_optimisation.html) to better understand how parameters are set and trained."
+    "Again, see our section on [Parameters and Their Optimisation](parameters_and_their_optimisation.ipynb) to better understand how parameters are set and trained."
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "61e90693",
+   "id": "e1d15330",
    "metadata": {},
    "source": [
     "### Active dimensions\n",
@@ -1036,13 +1028,13 @@
   {
    "cell_type": "code",
    "execution_count": 23,
-   "id": "a9d98371",
+   "id": "938e2944",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-22T11:42:09.874805Z",
-     "iopub.status.busy": "2022-09-22T11:42:09.874628Z",
-     "iopub.status.idle": "2022-09-22T11:42:10.625994Z",
-     "shell.execute_reply": "2022-09-22T11:42:10.625600Z"
+     "iopub.execute_input": "2022-09-23T13:54:30.801152Z",
+     "iopub.status.busy": "2022-09-23T13:54:30.800957Z",
+     "iopub.status.idle": "2022-09-23T13:54:31.536546Z",
+     "shell.execute_reply": "2022-09-23T13:54:31.536023Z"
     }
    },
    "outputs": [
