@@ -248,7 +248,7 @@ class Gamma(ScalarLikelihood):
     @inherit_check_shapes
     def _conditional_variance(self, X: TensorType, F: TensorType) -> tf.Tensor:
         scale = self.invlink(F)
-        return self._shape(X) * (scale ** 2)
+        return self._shape(X) * (scale**2)
 
     @inherit_check_shapes
     def _variational_expectations(
