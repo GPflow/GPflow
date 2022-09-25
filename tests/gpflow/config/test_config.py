@@ -45,6 +45,7 @@ _env_values = [
     ("positive_bijector", "softplus", "softplus"),
     ("summary_fmt", "simple", "simple"),
     ("positive_minimum", "1e-3", 1e-3),
+    ("likelihoods_positive_minimum", "5e-4", 5e-4),
     ("jitter", "1e-2", 1e-2),
 ]
 
