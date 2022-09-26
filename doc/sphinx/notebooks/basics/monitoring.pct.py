@@ -21,8 +21,8 @@
 # ## Setup
 
 # %%
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 import tensorflow as tf
 
 import gpflow
@@ -57,13 +57,18 @@ optimisation_steps = reduce_in_tests(100)
 # Create dummy data.
 
 X = np.random.randn(num_data, 1)  # [N, 2]
-Y = np.sin(X) + 0.5 * np.cos(X) + np.random.randn(*X.shape) * noise_std  # [N, 1]
+Y = (
+    np.sin(X) + 0.5 * np.cos(X) + np.random.randn(*X.shape) * noise_std
+)  # [N, 1]
 plt.plot(X, Y, "o")
 
 # %%
 # Set up model and print
 
-kernel = gpflow.kernels.SquaredExponential(lengthscales=[1.0, 2.0]) + gpflow.kernels.Linear()
+kernel = (
+    gpflow.kernels.SquaredExponential(lengthscales=[1.0, 2.0])
+    + gpflow.kernels.Linear()
+)
 model = gpflow.models.GPR((X, Y), kernel, noise_variance=noise_std ** 2)
 model
 
@@ -99,7 +104,9 @@ plt.show()
 log_dir = "logs"  # Directory where TensorBoard files will be written.
 model_task = ModelToTensorBoard(log_dir, model)
 image_task = ImageToTensorBoard(log_dir, plot_prediction, "image_samples")
-lml_task = ScalarToTensorBoard(log_dir, lambda: model.training_loss(), "training_objective")
+lml_task = ScalarToTensorBoard(
+    log_dir, lambda: model.training_loss(), "training_objective"
+)
 
 # %% [markdown]
 # We now group the tasks in a set of fast and slow tasks and pass them to the monitor.
@@ -178,11 +185,14 @@ opt = gpflow.optimizers.Scipy()
 
 log_dir_scipy = f"{log_dir}/scipy"
 model_task = ModelToTensorBoard(log_dir_scipy, model)
-lml_task = ScalarToTensorBoard(log_dir_scipy, lambda: model.training_loss(), "training_objective")
+lml_task = ScalarToTensorBoard(
+    log_dir_scipy, lambda: model.training_loss(), "training_objective"
+)
 image_task = ImageToTensorBoard(log_dir_scipy, plot_prediction, "image_samples")
 
 monitor = Monitor(
-    MonitorTaskGroup([model_task, lml_task], period=1), MonitorTaskGroup(image_task, period=5)
+    MonitorTaskGroup([model_task, lml_task], period=1),
+    MonitorTaskGroup(image_task, period=5),
 )
 
 # %%

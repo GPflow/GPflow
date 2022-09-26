@@ -1,7 +1,8 @@
+import numpy as np
+import tensorflow as tf
+
 import gpflow
 from gpflow.ci_utils import reduce_in_tests
-import tensorflow as tf
-import numpy as np
 
 nRepeats = reduce_in_tests(50)
 
@@ -62,16 +63,30 @@ def getRegressionModel(X, Y):
 
 def getSparseModel(X, Y, isFITC=False):
     if isFITC:
-        m = gpflow.models.GPRFITC((X, Y), kernel=getKernel(), inducing_variable=X.copy())
+        m = gpflow.models.GPRFITC(
+            (X, Y), kernel=getKernel(), inducing_variable=X.copy()
+        )
     else:
-        m = gpflow.models.SGPR((X, Y), kernel=getKernel(), inducing_variable=X.copy())
+        m = gpflow.models.SGPR(
+            (X, Y), kernel=getKernel(), inducing_variable=X.copy()
+        )
     return m
 
 
 def printModelParameters(model):
-    print("  Likelihood variance = {:.5g}".format(model.likelihood.variance.numpy()))
-    print("  Kernel variance     = {:.5g}".format(model.kernel.variance.numpy()))
-    print("  Kernel lengthscale  = {:.5g}".format(model.kernel.lengthscales.numpy()))
+    print(
+        "  Likelihood variance = {:.5g}".format(
+            model.likelihood.variance.numpy()
+        )
+    )
+    print(
+        "  Kernel variance     = {:.5g}".format(model.kernel.variance.numpy())
+    )
+    print(
+        "  Kernel lengthscale  = {:.5g}".format(
+            model.kernel.lengthscales.numpy()
+        )
+    )
 
 
 def plotPredictions(ax, model, color, label=None):
@@ -125,11 +140,17 @@ def plotComparisonFigure(
     plotPredictions(ax_predictions, sparse_model, "b", label="Approximate")
     ax_predictions.legend(loc=9)
     ax_predictions.plot(
-        sparse_model.inducing_variable.Z.numpy(), -1.0 * np.ones(Xtrain.shape), "ko"
+        sparse_model.inducing_variable.Z.numpy(),
+        -1.0 * np.ones(Xtrain.shape),
+        "ko",
     )
     ax_predictions.set_ylim(predict_limits)
-    ax_inducing_points.plot(Xtrain, sparse_model.inducing_variable.Z.numpy(), "bo")
-    xs = np.linspace(ax_inducing_points.get_xlim()[0], ax_inducing_points.get_xlim()[1], 200)
+    ax_inducing_points.plot(
+        Xtrain, sparse_model.inducing_variable.Z.numpy(), "bo"
+    )
+    xs = np.linspace(
+        ax_inducing_points.get_xlim()[0], ax_inducing_points.get_xlim()[1], 200
+    )
     ax_inducing_points.plot(xs, xs, "g")
     ax_inducing_points.set_xlabel("Optimal inducing point position")
     ax_inducing_points.set_ylabel("Learnt inducing point position")
@@ -163,11 +184,17 @@ class Callback:
                 var.assign(val)
 
             self.n_iters.append(self.counter)
-            self.log_likelihoods.append(self.model.maximum_log_likelihood_objective().numpy())
+            self.log_likelihoods.append(
+                self.model.maximum_log_likelihood_objective().numpy()
+            )
 
-            predictive_mean, predictive_variance = self.model.predict_y(self.Xtest)
+            predictive_mean, predictive_variance = self.model.predict_y(
+                self.Xtest
+            )
             test_log_likelihood = tf.reduce_mean(
-                getLogPredictiveDensities(self.Ytest, predictive_mean, predictive_variance)
+                getLogPredictiveDensities(
+                    self.Ytest, predictive_mean, predictive_variance
+                )
             )
             self.hold_out_likelihood.append(test_log_likelihood.numpy())
 
@@ -181,8 +208,8 @@ def stretch(lenNIters, initialValues):
 
 
 def snelsonDemo():
-    from matplotlib import pyplot as plt
     from IPython import embed
+    from matplotlib import pyplot as plt
 
     Xtrain, Ytrain, Xtest, Ytest = getTrainingTestData()
 
@@ -199,8 +226,12 @@ def snelsonDemo():
     figB, axes = plt.subplots(3, 2)
 
     # run sparse model on training data initialized from exact optimal solution.
-    VFEmodel, VFEcb = trainSparseModel(Xtrain, Ytrain, exact_model, False, Xtest, Ytest)
-    FITCmodel, FITCcb = trainSparseModel(Xtrain, Ytrain, exact_model, True, Xtest, Ytest)
+    VFEmodel, VFEcb = trainSparseModel(
+        Xtrain, Ytrain, exact_model, False, Xtest, Ytest
+    )
+    FITCmodel, FITCcb = trainSparseModel(
+        Xtrain, Ytrain, exact_model, True, Xtest, Ytest
+    )
 
     print("Exact model parameters \n")
     printModelParameters(exact_model)

@@ -33,8 +33,9 @@
 
 # %%
 import numpy as np
-import gpflow
 import tensorflow_probability as tfp
+
+import gpflow
 from gpflow.utilities import print_summary, set_trainable, to_default_float
 
 # %% [markdown]
@@ -46,7 +47,9 @@ np.random.seed(1)
 X = np.random.rand(20, 1)
 Y = np.sin(12 * X) + 0.66 * np.cos(25 * X) + np.random.randn(20, 1) * 0.01
 
-m = gpflow.models.GPR((X, Y), kernel=gpflow.kernels.Matern32() + gpflow.kernels.Linear())
+m = gpflow.models.GPR(
+    (X, Y), kernel=gpflow.kernels.Matern32() + gpflow.kernels.Linear()
+)
 
 # %% [markdown]
 # ## Viewing, getting, and setting parameters
@@ -107,7 +110,9 @@ new_parameter = gpflow.Parameter(
     old_parameter,
     trainable=old_parameter.trainable,
     prior=old_parameter.prior,
-    name=old_parameter.name.split(":")[0],  # tensorflow is weird and adds ':0' to the name
+    name=old_parameter.name.split(":")[
+        0
+    ],  # tensorflow is weird and adds ':0' to the name
     transform=tfp.bijectors.Exp(),
 )
 m.kernel.kernels[0].lengthscales = new_parameter
@@ -123,7 +128,9 @@ p.transform.inverse(p)
 
 # %%
 p = m.kernel.kernels[0].variance
-m.kernel.kernels[0].variance = gpflow.Parameter(p.numpy(), transform=tfp.bijectors.Exp())
+m.kernel.kernels[0].variance = gpflow.Parameter(
+    p.numpy(), transform=tfp.bijectors.Exp()
+)
 
 # %%
 print_summary(m, fmt="notebook")
@@ -169,7 +176,9 @@ print_summary(m)
 
 # %%
 k = gpflow.kernels.Matern32()
-k.variance.prior = tfp.distributions.Gamma(to_default_float(2), to_default_float(3))
+k.variance.prior = tfp.distributions.Gamma(
+    to_default_float(2), to_default_float(3)
+)
 
 print_summary(k)
 
@@ -219,7 +228,9 @@ opt.minimize(m.training_loss, variables=m.trainable_variables)
 import tensorflow as tf
 
 
-class LinearMulticlass(gpflow.models.BayesianModel, gpflow.models.InternalDataTrainingLossMixin):
+class LinearMulticlass(
+    gpflow.models.BayesianModel, gpflow.models.InternalDataTrainingLossMixin
+):
     # The InternalDataTrainingLossMixin provides the training_loss method.
     # (There is also an ExternalDataTrainingLossMixin for models that do not encapsulate data.)
 
@@ -227,13 +238,17 @@ class LinearMulticlass(gpflow.models.BayesianModel, gpflow.models.InternalDataTr
         super().__init__(name=name)  # always call the parent constructor
 
         self.X = X.copy()  # X is a NumPy array of inputs
-        self.Y = Y.copy()  # Y is a 1-of-k (one-hot) representation of the labels
+        self.Y = (
+            Y.copy()
+        )  # Y is a 1-of-k (one-hot) representation of the labels
 
         self.num_data, self.input_dim = X.shape
         _, self.num_classes = Y.shape
 
         # make some parameters
-        self.W = gpflow.Parameter(np.random.randn(self.input_dim, self.num_classes))
+        self.W = gpflow.Parameter(
+            np.random.randn(self.input_dim, self.num_classes)
+        )
         self.b = gpflow.Parameter(np.random.randn(self.num_classes))
 
         # ^^ You must make the parameters attributes of the class for
@@ -245,7 +260,9 @@ class LinearMulticlass(gpflow.models.BayesianModel, gpflow.models.InternalDataTr
         p = tf.nn.softmax(
             tf.matmul(self.X, self.W) + self.b
         )  # Parameters can be used like a tf.Tensor
-        return tf.reduce_sum(tf.math.log(p) * self.Y)  # be sure to return a scalar
+        return tf.reduce_sum(
+            tf.math.log(p) * self.Y
+        )  # be sure to return a scalar
 
 
 # %% [markdown]
@@ -268,7 +285,9 @@ plt.style.use("ggplot")
 # %matplotlib inline
 
 plt.rcParams["figure.figsize"] = (12, 6)
-_ = plt.scatter(X[:, 0], X[:, 1], 100, np.argmax(Y, 1), lw=2, cmap=plt.cm.viridis)
+_ = plt.scatter(
+    X[:, 0], X[:, 1], 100, np.argmax(Y, 1), lw=2, cmap=plt.cm.viridis
+)
 
 # %%
 m = LinearMulticlass(X, Y)
@@ -289,8 +308,12 @@ p_test /= p_test.sum(1)[:, None]
 # %%
 plt.figure(figsize=(12, 6))
 for i in range(3):
-    plt.contour(xx, yy, p_test[:, i].reshape(200, 200), [0.5], colors="k", linewidths=1)
-_ = plt.scatter(X[:, 0], X[:, 1], 100, np.argmax(Y, 1), lw=2, cmap=plt.cm.viridis)
+    plt.contour(
+        xx, yy, p_test[:, i].reshape(200, 200), [0.5], colors="k", linewidths=1
+    )
+_ = plt.scatter(
+    X[:, 0], X[:, 1], 100, np.argmax(Y, 1), lw=2, cmap=plt.cm.viridis
+)
 
 # %% [markdown]
 # That concludes the new model example and this notebook. You might want to see for yourself that the `LinearMulticlass` model and its parameters have all the functionality demonstrated here. You could also add some priors and run Hamiltonian Monte Carlo using the HMC optimizer `gpflow.train.HMC` and its `sample` method. See [Markov Chain Monte Carlo (MCMC)](../advanced/mcmc.ipynb) for more information on running the sampler.

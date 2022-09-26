@@ -52,7 +52,7 @@ from .kernels import Kernel
 from .likelihoods import Gaussian
 from .mean_functions import MeanFunction
 from .utilities import Dispatcher, add_likelihood_noise_cov, assert_params_false
-from .utilities.ops import eye, leading_transpose
+from .utilities.ops import eye
 
 
 class _QDistribution(Module):

@@ -30,10 +30,11 @@
 #
 
 # %%
-import gpflow
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 import tensorflow as tf
+
+import gpflow
 from gpflow.utilities import print_summary
 
 # The lines below are specific to the notebook format
@@ -125,7 +126,9 @@ opt = gpflow.optimizers.Scipy()
 # `m.trainable_variables`, and the number of iterations.
 
 # %%
-opt_logs = opt.minimize(m.training_loss, m.trainable_variables, options=dict(maxiter=100))
+opt_logs = opt.minimize(
+    m.training_loss, m.trainable_variables, options=dict(maxiter=100)
+)
 print_summary(m)
 
 # %% [markdown]
@@ -154,7 +157,9 @@ print_summary(m)
 
 # %%
 ## generate test points for prediction
-xx = np.linspace(-0.1, 1.1, 100).reshape(100, 1)  # test points must be of shape (N, D)
+xx = np.linspace(-0.1, 1.1, 100).reshape(
+    100, 1
+)  # test points must be of shape (N, D)
 
 ## predict mean and variance of latent GP at test points
 mean, var = m.predict_f(xx)
