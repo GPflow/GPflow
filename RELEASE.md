@@ -39,8 +39,7 @@ This release contains contributions from:
 
 ## Breaking Changes
 
-* <DOCUMENT BREAKING CHANGES HERE>
-* <THIS SECTION SHOULD CONTAIN API AND BEHAVIORAL BREAKING CHANGES>
+* Removed `gpflow.utilities.ops.cast`. Use `tf.cast` instead.
 
 ## Known Caveats
 
@@ -63,7 +62,7 @@ This release contains contributions from:
 
 This release contains contributions from:
 
-<INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
+jesnie
 
 
 # Release 2.6.0

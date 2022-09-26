@@ -20,7 +20,6 @@ import tensorflow_probability as tfp
 from ..base import TensorData
 from ..config import default_float, default_int
 from ..experimental.check_shapes import check_shapes
-from .ops import cast
 
 __all__ = [
     "is_variable",
@@ -36,7 +35,7 @@ __all__ = [
     "return: [any...]",
 )
 def to_default_int(x: TensorData) -> tf.Tensor:
-    return cast(x, dtype=default_int())
+    return tf.cast(x, dtype=default_int())
 
 
 @check_shapes(
@@ -44,7 +43,7 @@ def to_default_int(x: TensorData) -> tf.Tensor:
     "return: [any...]",
 )
 def to_default_float(x: TensorData) -> tf.Tensor:
-    return cast(x, dtype=default_float())
+    return tf.cast(x, dtype=default_float())
 
 
 def set_trainable(model: Union[tf.Module, Iterable[tf.Module]], flag: bool) -> None:
