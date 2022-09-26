@@ -780,13 +780,13 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">time</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 
-<span class="kn">import</span> <span class="nn">gpflow</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
 <span class="kn">import</span> <span class="nn">tensorflow_probability</span> <span class="k">as</span> <span class="nn">tfp</span>
 
+<span class="kn">import</span> <span class="nn">gpflow</span>
 <span class="kn">from</span> <span class="nn">gpflow</span> <span class="kn">import</span> <span class="n">set_trainable</span>
 <span class="kn">from</span> <span class="nn">gpflow.ci_utils</span> <span class="kn">import</span> <span class="n">is_continuous_integration</span>
 
@@ -813,14 +813,14 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-09-26 08:29:56.395074: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2022-09-26 11:31:07.492538: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
-2022-09-26 08:29:56.538830: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2022-09-26 08:29:56.538850: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
-2022-09-26 08:29:56.569915: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-2022-09-26 08:29:57.270173: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libnvinfer.so.7&#39;; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
-2022-09-26 08:29:57.270268: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libnvinfer_plugin.so.7&#39;; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
-2022-09-26 08:29:57.270278: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
+2022-09-26 11:31:07.643848: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-09-26 11:31:07.643870: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2022-09-26 11:31:07.672957: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2022-09-26 11:31:08.418418: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libnvinfer.so.7&#39;; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
+2022-09-26 11:31:08.418536: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libnvinfer_plugin.so.7&#39;; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
+2022-09-26 11:31:08.418551: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
 /home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.experimental.check_shapes.decorator.check_shapes which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
   warn(
 /home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.experimental.check_shapes.inheritance.inherit_check_shapes which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
@@ -832,8 +832,12 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">affine_scalar_bijector</span><span class="p">(</span><span class="n">shift</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="n">scale_bijector</span> <span class="o">=</span> <span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Scale</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span> <span class="k">if</span> <span class="n">scale</span> <span class="k">else</span> <span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
-    <span class="n">shift_bijector</span> <span class="o">=</span> <span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Shift</span><span class="p">(</span><span class="n">shift</span><span class="p">)</span> <span class="k">if</span> <span class="n">shift</span> <span class="k">else</span> <span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
+    <span class="n">scale_bijector</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Scale</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span> <span class="k">if</span> <span class="n">scale</span> <span class="k">else</span> <span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
+    <span class="p">)</span>
+    <span class="n">shift_bijector</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Shift</span><span class="p">(</span><span class="n">shift</span><span class="p">)</span> <span class="k">if</span> <span class="n">shift</span> <span class="k">else</span> <span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
+    <span class="p">)</span>
     <span class="k">return</span> <span class="n">shift_bijector</span><span class="p">(</span><span class="n">scale_bijector</span><span class="p">)</span>
 
 
@@ -921,10 +925,10 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 <div class="highlight"><pre>
 /home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.experimental.check_shapes.checker.ShapeChecker.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
   warn(
-2022-09-26 08:30:00.432936: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
-2022-09-26 08:30:00.432964: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)
-2022-09-26 08:30:00.432984: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (95ed5cd5c59f): /proc/driver/nvidia/version does not exist
-2022-09-26 08:30:00.433243: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2022-09-26 11:31:11.996285: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-09-26 11:31:11.996318: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)
+2022-09-26 11:31:11.996364: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (9b6785ccb17d): /proc/driver/nvidia/version does not exist
+2022-09-26 11:31:11.996671: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
 </pre></div></div>
 </div>
@@ -1019,10 +1023,6 @@ At iterate   19    f=  6.06242D+01    |proj g|=  1.80232D-01
 At iterate   20    f=  6.04829D+01    |proj g|=  1.79481D-01
 
 At iterate   21    f=  6.04182D+01    |proj g|=  1.66211D-01
-
-At iterate   22    f=  6.04028D+01    |proj g|=  1.52839D-01
-
-At iterate   23    f=  6.03795D+01    |proj g|=  4.28437D-02
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -1038,6 +1038,10 @@ At iterate   23    f=  6.03795D+01    |proj g|=  4.28437D-02
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
+
+At iterate   22    f=  6.04028D+01    |proj g|=  1.52839D-01
+
+At iterate   23    f=  6.03795D+01    |proj g|=  4.28437D-02
 
 At iterate   24    f=  6.03764D+01    |proj g|=  4.87340D-02
 
@@ -1090,7 +1094,7 @@ F     = final function value
   F =   60.371382131218326
 
 CONVERGENCE: REL_REDUCTION_OF_F_&lt;=_FACTR*EPSMCH
-31.839 iter/s
+28.465 iter/s
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
@@ -1122,15 +1126,23 @@ RBF elbo after training: -6.0371e+01
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f64</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
-<span class="n">positive_with_min</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">affine_scalar_bijector</span><span class="p">(</span><span class="n">shift</span><span class="o">=</span><span class="n">f64</span><span class="p">(</span><span class="mf">1e-4</span><span class="p">))(</span><span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Softplus</span><span class="p">())</span>
+<span class="n">positive_with_min</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">affine_scalar_bijector</span><span class="p">(</span><span class="n">shift</span><span class="o">=</span><span class="n">f64</span><span class="p">(</span><span class="mf">1e-4</span><span class="p">))(</span>
+    <span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Softplus</span><span class="p">()</span>
+<span class="p">)</span>
 <span class="n">constrained</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">affine_scalar_bijector</span><span class="p">(</span><span class="n">shift</span><span class="o">=</span><span class="n">f64</span><span class="p">(</span><span class="mf">1e-4</span><span class="p">),</span> <span class="n">scale</span><span class="o">=</span><span class="n">f64</span><span class="p">(</span><span class="mf">100.0</span><span class="p">))(</span>
     <span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Sigmoid</span><span class="p">()</span>
 <span class="p">)</span>
-<span class="n">max_abs_1</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">affine_scalar_bijector</span><span class="p">(</span><span class="n">shift</span><span class="o">=</span><span class="n">f64</span><span class="p">(</span><span class="o">-</span><span class="mf">2.0</span><span class="p">),</span> <span class="n">scale</span><span class="o">=</span><span class="n">f64</span><span class="p">(</span><span class="mf">4.0</span><span class="p">))(</span><span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Sigmoid</span><span class="p">())</span>
+<span class="n">max_abs_1</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">affine_scalar_bijector</span><span class="p">(</span><span class="n">shift</span><span class="o">=</span><span class="n">f64</span><span class="p">(</span><span class="o">-</span><span class="mf">2.0</span><span class="p">),</span> <span class="n">scale</span><span class="o">=</span><span class="n">f64</span><span class="p">(</span><span class="mf">4.0</span><span class="p">))(</span>
+    <span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Sigmoid</span><span class="p">()</span>
+<span class="p">)</span>
 
 <span class="n">patch_shape</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
-<span class="n">conv_k</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Convolutional</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(),</span> <span class="n">IMAGE_SHAPE</span><span class="p">,</span> <span class="n">patch_shape</span><span class="p">)</span>
-<span class="n">conv_k</span><span class="o">.</span><span class="n">base_kernel</span><span class="o">.</span><span class="n">lengthscales</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">positive_with_min</span><span class="p">())</span>
+<span class="n">conv_k</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Convolutional</span><span class="p">(</span>
+    <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(),</span> <span class="n">IMAGE_SHAPE</span><span class="p">,</span> <span class="n">patch_shape</span>
+<span class="p">)</span>
+<span class="n">conv_k</span><span class="o">.</span><span class="n">base_kernel</span><span class="o">.</span><span class="n">lengthscales</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span>
+    <span class="mf">1.0</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">positive_with_min</span><span class="p">()</span>
+<span class="p">)</span>
 <span class="c1"># Weight scale and variance are non-identifiable. We also need to prevent variance from shooting off crazily.</span>
 <span class="n">conv_k</span><span class="o">.</span><span class="n">base_kernel</span><span class="o">.</span><span class="n">variance</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">constrained</span><span class="p">())</span>
 <span class="n">conv_k</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">conv_k</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">transform</span><span class="o">=</span><span class="n">max_abs_1</span><span class="p">())</span>
@@ -1194,14 +1206,6 @@ conv elbo before training: -8.7271e+01
 <div class="nboutput docutils container">
 <div class="prompt empty docutils container">
 </div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
- This problem is unconstrained.
-</pre></div></div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 RUNNING THE L-BFGS-B CODE
@@ -1216,6 +1220,21 @@ At X0         0 variables are exactly at the bounds
 At iterate    0    f=  8.72706D+01    |proj g|=  3.34786D+01
 
 At iterate    1    f=  7.06198D+01    |proj g|=  1.23134D+01
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+ This problem is unconstrained.
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
 
 At iterate    2    f=  7.03607D+01    |proj g|=  6.56137D+00
 
@@ -1233,6 +1252,7 @@ At iterate    8    f=  6.49795D+01    |proj g|=  9.75563D-01
 
 At iterate    9    f=  6.48808D+01    |proj g|=  9.60694D-01
 
+4.765 iter/s
 At iterate   10    f=  6.48453D+01    |proj g|=  1.39257D+00
 
            * * *
@@ -1252,7 +1272,6 @@ F     = final function value
   F =   64.845328136876162
 
 STOP: TOTAL NO. of ITERATIONS REACHED LIMIT
-4.997 iter/s
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
@@ -1267,21 +1286,15 @@ STOP: TOTAL NO. of ITERATIONS REACHED LIMIT
     <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;disp&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;maxiter&quot;</span><span class="p">:</span> <span class="n">MAXITER</span><span class="p">},</span>
 <span class="p">)</span>
 <span class="n">train_acc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">conv_m</span><span class="o">.</span><span class="n">predict_y</span><span class="p">(</span><span class="n">X</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">Y</span><span class="p">)</span>
-<span class="n">test_acc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">conv_m</span><span class="o">.</span><span class="n">predict_y</span><span class="p">(</span><span class="n">Xt</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">Yt</span><span class="p">)</span>
+<span class="n">test_acc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span>
+    <span class="p">(</span><span class="n">conv_m</span><span class="o">.</span><span class="n">predict_y</span><span class="p">(</span><span class="n">Xt</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">Yt</span>
+<span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Train acc: </span><span class="si">{</span><span class="n">train_acc</span> <span class="o">*</span> <span class="mi">100</span><span class="si">}</span><span class="s2">%</span><span class="se">\n</span><span class="s2">Test acc : </span><span class="si">{</span><span class="n">test_acc</span><span class="o">*</span><span class="mi">100</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;conv elbo after training: </span><span class="si">%.4e</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">conv_elbo</span><span class="p">())</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
- This problem is unconstrained.
-</pre></div></div>
-</div>
-<div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
@@ -1298,6 +1311,21 @@ At X0         0 variables are exactly at the bounds
 At iterate    0    f=  6.48453D+01    |proj g|=  3.53996D+00
 
 At iterate    1    f=  6.24919D+01    |proj g|=  7.35357D+00
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+ This problem is unconstrained.
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
 
 At iterate    2    f=  6.23531D+01    |proj g|=  7.58264D+00
 
@@ -1530,7 +1558,9 @@ conv elbo after training: -2.6753e+01
     <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;disp&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;maxiter&quot;</span><span class="p">:</span> <span class="n">MAXITER</span><span class="p">},</span>
 <span class="p">)</span>
 <span class="n">train_acc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">conv_m</span><span class="o">.</span><span class="n">predict_y</span><span class="p">(</span><span class="n">X</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">Y</span><span class="p">)</span>
-<span class="n">test_acc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">conv_m</span><span class="o">.</span><span class="n">predict_y</span><span class="p">(</span><span class="n">Xt</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">Yt</span><span class="p">)</span>
+<span class="n">test_acc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span>
+    <span class="p">(</span><span class="n">conv_m</span><span class="o">.</span><span class="n">predict_y</span><span class="p">(</span><span class="n">Xt</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">Yt</span>
+<span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Train acc: </span><span class="si">{</span><span class="n">train_acc</span> <span class="o">*</span> <span class="mi">100</span><span class="si">}</span><span class="s2">%</span><span class="se">\n</span><span class="s2">Test acc : </span><span class="si">{</span><span class="n">test_acc</span><span class="o">*</span><span class="mi">100</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;conv elbo after training: </span><span class="si">%.4e</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">conv_elbo</span><span class="p">())</span>
 </pre></div>
@@ -1551,7 +1581,6 @@ Machine precision = 2.220D-16
 At X0         0 variables are exactly at the bounds
 
 At iterate    0    f=  2.67533D+01    |proj g|=  3.69556D-01
-
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -1567,6 +1596,7 @@ At iterate    0    f=  2.67533D+01    |proj g|=  3.69556D-01
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
+
 At iterate    1    f=  2.67533D+01    |proj g|=  2.06365D-01
 
 At iterate    2    f=  2.67533D+01    |proj g|=  3.86139D-02
@@ -1801,21 +1831,15 @@ conv elbo after training: -2.6736e+01
     <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;disp&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;maxiter&quot;</span><span class="p">:</span> <span class="n">MAXITER</span><span class="p">},</span>
 <span class="p">)</span>
 <span class="n">train_acc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">conv_m</span><span class="o">.</span><span class="n">predict_y</span><span class="p">(</span><span class="n">X</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">Y</span><span class="p">)</span>
-<span class="n">test_acc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">conv_m</span><span class="o">.</span><span class="n">predict_y</span><span class="p">(</span><span class="n">Xt</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">Yt</span><span class="p">)</span>
+<span class="n">test_acc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span>
+    <span class="p">(</span><span class="n">conv_m</span><span class="o">.</span><span class="n">predict_y</span><span class="p">(</span><span class="n">Xt</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">Yt</span>
+<span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Train acc: </span><span class="si">{</span><span class="n">train_acc</span> <span class="o">*</span> <span class="mi">100</span><span class="si">}</span><span class="s2">%</span><span class="se">\n</span><span class="s2">Test acc : </span><span class="si">{</span><span class="n">test_acc</span><span class="o">*</span><span class="mi">100</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;conv elbo after training: </span><span class="si">%.4e</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">conv_elbo</span><span class="p">())</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
- This problem is unconstrained.
-</pre></div></div>
-</div>
-<div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
@@ -1832,6 +1856,21 @@ At X0         0 variables are exactly at the bounds
 At iterate    0    f=  2.67363D+01    |proj g|=  3.15890D-01
 
 At iterate    1    f=  2.66593D+01    |proj g|=  1.23447D+01
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+ This problem is unconstrained.
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
 
 At iterate    2    f=  2.59601D+01    |proj g|=  1.31911D+01
 

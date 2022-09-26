@@ -771,13 +771,13 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="kn">from</span> <span class="nn">cglb</span> <span class="kn">import</span> <span class="n">load_snelson_data</span><span class="p">,</span> <span class="n">plot_prediction</span>
-<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span> <span class="nn">gpflow.models</span> <span class="kn">import</span> <span class="n">CGLB</span><span class="p">,</span> <span class="n">SGPR</span><span class="p">,</span> <span class="n">GPR</span>
+
 <span class="kn">from</span> <span class="nn">gpflow.kernels</span> <span class="kn">import</span> <span class="n">SquaredExponential</span>
+<span class="kn">from</span> <span class="nn">gpflow.models</span> <span class="kn">import</span> <span class="n">CGLB</span><span class="p">,</span> <span class="n">GPR</span><span class="p">,</span> <span class="n">SGPR</span>
 <span class="kn">from</span> <span class="nn">gpflow.optimizers</span> <span class="kn">import</span> <span class="n">Scipy</span>
 </pre></div>
 </div>
@@ -787,14 +787,14 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-09-26 08:30:30.247575: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2022-09-26 11:31:58.607484: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
-2022-09-26 08:30:30.370325: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2022-09-26 08:30:30.370350: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
-2022-09-26 08:30:30.398696: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-2022-09-26 08:30:30.986275: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libnvinfer.so.7&#39;; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
-2022-09-26 08:30:30.986337: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libnvinfer_plugin.so.7&#39;; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
-2022-09-26 08:30:30.986345: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
+2022-09-26 11:31:58.741845: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-09-26 11:31:58.741869: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2022-09-26 11:31:58.771483: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2022-09-26 11:31:59.450382: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libnvinfer.so.7&#39;; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
+2022-09-26 11:31:59.450454: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libnvinfer_plugin.so.7&#39;; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
+2022-09-26 11:31:59.450462: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
 /home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.experimental.check_shapes.decorator.check_shapes which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
   warn(
 /home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.experimental.check_shapes.inheritance.inherit_check_shapes which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
@@ -834,8 +834,18 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 
 <span class="n">noise</span> <span class="o">=</span> <span class="mf">0.1</span>
 <span class="n">gpr</span> <span class="o">=</span> <span class="n">GPR</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">kernel</span><span class="o">=</span><span class="n">SquaredExponential</span><span class="p">(),</span> <span class="n">noise_variance</span><span class="o">=</span><span class="n">noise</span><span class="p">)</span>
-<span class="n">cglb</span> <span class="o">=</span> <span class="n">CGLB</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">kernel</span><span class="o">=</span><span class="n">SquaredExponential</span><span class="p">(),</span> <span class="n">noise_variance</span><span class="o">=</span><span class="n">noise</span><span class="p">,</span> <span class="n">inducing_variable</span><span class="o">=</span><span class="n">iv</span><span class="p">)</span>
-<span class="n">sgpr</span> <span class="o">=</span> <span class="n">SGPR</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">kernel</span><span class="o">=</span><span class="n">SquaredExponential</span><span class="p">(),</span> <span class="n">noise_variance</span><span class="o">=</span><span class="n">noise</span><span class="p">,</span> <span class="n">inducing_variable</span><span class="o">=</span><span class="n">iv</span><span class="p">)</span>
+<span class="n">cglb</span> <span class="o">=</span> <span class="n">CGLB</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">,</span>
+    <span class="n">kernel</span><span class="o">=</span><span class="n">SquaredExponential</span><span class="p">(),</span>
+    <span class="n">noise_variance</span><span class="o">=</span><span class="n">noise</span><span class="p">,</span>
+    <span class="n">inducing_variable</span><span class="o">=</span><span class="n">iv</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">sgpr</span> <span class="o">=</span> <span class="n">SGPR</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">,</span>
+    <span class="n">kernel</span><span class="o">=</span><span class="n">SquaredExponential</span><span class="p">(),</span>
+    <span class="n">noise_variance</span><span class="o">=</span><span class="n">noise</span><span class="p">,</span>
+    <span class="n">inducing_variable</span><span class="o">=</span><span class="n">iv</span><span class="p">,</span>
+<span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">loss_with_changed_parameter</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">parameter</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
@@ -847,7 +857,9 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 
 
 <span class="n">ls</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
-<span class="n">losses_fn</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="p">[</span><span class="n">loss_with_changed_parameter</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">lengthscales</span><span class="p">,</span> <span class="n">l</span><span class="p">)</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">ls</span><span class="p">]</span>
+<span class="n">losses_fn</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="p">[</span>
+    <span class="n">loss_with_changed_parameter</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">lengthscales</span><span class="p">,</span> <span class="n">l</span><span class="p">)</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">ls</span>
+<span class="p">]</span>
 <span class="n">gpr_obj</span> <span class="o">=</span> <span class="n">losses_fn</span><span class="p">(</span><span class="n">gpr</span><span class="p">)</span>
 <span class="n">sgpr_obj</span> <span class="o">=</span> <span class="n">losses_fn</span><span class="p">(</span><span class="n">sgpr</span><span class="p">)</span>
 <span class="n">cglb_obj</span> <span class="o">=</span> <span class="n">losses_fn</span><span class="p">(</span><span class="n">cglb</span><span class="p">)</span>
@@ -869,10 +881,10 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 <div class="highlight"><pre>
 /home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.experimental.check_shapes.checker.ShapeChecker.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
   warn(
-2022-09-26 08:30:33.823005: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
-2022-09-26 08:30:33.823029: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)
-2022-09-26 08:30:33.823048: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (07e48adbde83): /proc/driver/nvidia/version does not exist
-2022-09-26 08:30:33.823276: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2022-09-26 11:32:02.157075: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-09-26 11:32:02.157107: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)
+2022-09-26 11:32:02.157125: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (d1c0c8db69ef): /proc/driver/nvidia/version does not exist
+2022-09-26 11:32:02.157377: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
 </pre></div></div>
 </div>
@@ -910,7 +922,10 @@ the CG. However you can include <code class="docutils literal notranslate"><span
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">variables</span> <span class="o">=</span> <span class="n">cglb</span><span class="o">.</span><span class="n">trainable_variables</span>
 <span class="n">_</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
-    <span class="n">cglb</span><span class="o">.</span><span class="n">training_loss_closure</span><span class="p">(</span><span class="nb">compile</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span> <span class="n">variables</span><span class="p">,</span> <span class="nb">compile</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+    <span class="n">cglb</span><span class="o">.</span><span class="n">training_loss_closure</span><span class="p">(</span><span class="nb">compile</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+    <span class="n">variables</span><span class="p">,</span>
+    <span class="nb">compile</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">100</span><span class="p">),</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -966,12 +981,23 @@ array([[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
 
 <span class="n">mu_no_tol</span> <span class="o">=</span> <span class="n">pred_no_tol</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
 <span class="n">std_no_tol</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">pred_no_tol</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">squeeze</span><span class="p">())</span>
-<span class="n">plot_prediction</span><span class="p">(</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">xnew</span><span class="p">,</span> <span class="n">mu_no_tol</span><span class="p">,</span> <span class="n">std_no_tol</span><span class="p">,</span> <span class="s2">&quot;tab:blue&quot;</span><span class="p">,</span> <span class="s2">&quot;CGLB, use cached $v=0$&quot;</span><span class="p">)</span>
+<span class="n">plot_prediction</span><span class="p">(</span>
+    <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+    <span class="n">x</span><span class="p">,</span>
+    <span class="n">y</span><span class="p">,</span>
+    <span class="n">xnew</span><span class="p">,</span>
+    <span class="n">mu_no_tol</span><span class="p">,</span>
+    <span class="n">std_no_tol</span><span class="p">,</span>
+    <span class="s2">&quot;tab:blue&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;CGLB, use cached $v=0$&quot;</span><span class="p">,</span>
+<span class="p">)</span>
 
 
 <span class="n">mu_tol</span> <span class="o">=</span> <span class="n">pred_tol</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
 <span class="n">std_tol</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">pred_tol</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">squeeze</span><span class="p">())</span>
-<span class="n">plot_prediction</span><span class="p">(</span><span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">xnew</span><span class="p">,</span> <span class="n">mu_tol</span><span class="p">,</span> <span class="n">std_tol</span><span class="p">,</span> <span class="s2">&quot;tab:green&quot;</span><span class="p">,</span> <span class="s2">&quot;CGLB, tol=0.01&quot;</span><span class="p">)</span>
+<span class="n">plot_prediction</span><span class="p">(</span>
+    <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">xnew</span><span class="p">,</span> <span class="n">mu_tol</span><span class="p">,</span> <span class="n">std_tol</span><span class="p">,</span> <span class="s2">&quot;tab:green&quot;</span><span class="p">,</span> <span class="s2">&quot;CGLB, tol=0.01&quot;</span>
+<span class="p">)</span>
 
 <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>

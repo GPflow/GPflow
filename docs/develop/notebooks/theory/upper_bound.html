@@ -779,15 +779,15 @@ div.rendered_html tbody tr:hover {
 <span class="o">%</span><span class="k">matplotlib</span> inline
 <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;figure.figsize&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
 
+<span class="kn">import</span> <span class="nn">logging</span>
+
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
 
 <span class="kn">import</span> <span class="nn">gpflow</span>
 <span class="kn">from</span> <span class="nn">gpflow</span> <span class="kn">import</span> <span class="n">set_trainable</span>
-<span class="kn">from</span> <span class="nn">gpflow.utilities</span> <span class="kn">import</span> <span class="n">print_summary</span>
 <span class="kn">from</span> <span class="nn">gpflow.ci_utils</span> <span class="kn">import</span> <span class="n">reduce_in_tests</span>
-
-<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">gpflow.utilities</span> <span class="kn">import</span> <span class="n">print_summary</span>
 
 <span class="n">logging</span><span class="o">.</span><span class="n">disable</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">)</span>
 
@@ -802,14 +802,14 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-09-26 08:32:06.754236: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2022-09-26 11:33:21.321094: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
-2022-09-26 08:32:06.885569: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2022-09-26 08:32:06.885596: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
-2022-09-26 08:32:06.916691: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-2022-09-26 08:32:07.587194: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libnvinfer.so.7&#39;; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
-2022-09-26 08:32:07.587270: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libnvinfer_plugin.so.7&#39;; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
-2022-09-26 08:32:07.587279: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
+2022-09-26 11:33:21.473119: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-09-26 11:33:21.473147: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2022-09-26 11:33:21.503088: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2022-09-26 11:33:22.227542: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libnvinfer.so.7&#39;; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
+2022-09-26 11:33:22.227612: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libnvinfer_plugin.so.7&#39;; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
+2022-09-26 11:33:22.227629: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
 /home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.experimental.check_shapes.decorator.check_shapes which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
   warn(
 /home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.experimental.check_shapes.inheritance.inherit_check_shapes which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
@@ -837,7 +837,9 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
         <span class="n">Z</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">inducing_variable</span><span class="o">.</span><span class="n">Z</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">Z</span><span class="p">),</span> <span class="s2">&quot;o&quot;</span><span class="p">)</span>
     <span class="n">two_sigma</span> <span class="o">=</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">pYv</span> <span class="o">**</span> <span class="mf">0.5</span><span class="p">)[:,</span> <span class="mi">0</span><span class="p">]</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">pX</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">pY</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">two_sigma</span><span class="p">,</span> <span class="n">pY</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">two_sigma</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.15</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span>
+        <span class="n">pX</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">pY</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">two_sigma</span><span class="p">,</span> <span class="n">pY</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">two_sigma</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.15</span>
+    <span class="p">)</span>
     <span class="n">lml</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">maximum_log_likelihood_objective</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> (lml = </span><span class="si">%f</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">lml</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">lml</span>
@@ -852,7 +854,9 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpr</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">((</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">),</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">())</span>
 <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
-    <span class="n">gpr</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">gpr</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">1000</span><span class="p">))</span>
+    <span class="n">gpr</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span>
+    <span class="n">gpr</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span>
+    <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">1000</span><span class="p">)),</span>
 <span class="p">)</span>
 <span class="n">full_lml</span> <span class="o">=</span> <span class="n">plot_model</span><span class="p">(</span><span class="n">gpr</span><span class="p">)</span>
 </pre></div>
@@ -865,10 +869,10 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 <div class="highlight"><pre>
 /home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.experimental.check_shapes.checker.ShapeChecker.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
   warn(
-2022-09-26 08:32:10.331159: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
-2022-09-26 08:32:10.331188: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)
-2022-09-26 08:32:10.331208: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (81e1ff774366): /proc/driver/nvidia/version does not exist
-2022-09-26 08:32:10.331468: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2022-09-26 11:33:25.122571: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-09-26 11:33:25.122597: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)
+2022-09-26 11:33:25.122615: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (628bd5419a85): /proc/driver/nvidia/version does not exist
+2022-09-26 11:33:25.122878: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
 </pre></div></div>
 </div>
@@ -893,7 +897,9 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 <span class="n">vfe_hyps</span> <span class="o">=</span> <span class="p">[]</span>
 <span class="k">for</span> <span class="n">M</span> <span class="ow">in</span> <span class="n">Ms</span><span class="p">:</span>
     <span class="n">Zinit</span> <span class="o">=</span> <span class="n">X</span><span class="p">[:</span><span class="n">M</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-    <span class="n">vfe</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">SGPR</span><span class="p">((</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">),</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(),</span> <span class="n">inducing_variable</span><span class="o">=</span><span class="n">Zinit</span><span class="p">)</span>
+    <span class="n">vfe</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">SGPR</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">),</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(),</span> <span class="n">inducing_variable</span><span class="o">=</span><span class="n">Zinit</span>
+    <span class="p">)</span>
     <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
         <span class="n">vfe</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span>
         <span class="n">vfe</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span>
@@ -964,9 +970,13 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 
 <span class="k">for</span> <span class="n">M</span> <span class="ow">in</span> <span class="n">fMs</span><span class="p">:</span>
     <span class="n">Zinit</span> <span class="o">=</span> <span class="n">vfe</span><span class="o">.</span><span class="n">inducing_variable</span><span class="o">.</span><span class="n">Z</span><span class="o">.</span><span class="n">numpy</span><span class="p">()[:</span><span class="n">M</span><span class="p">,</span> <span class="p">:]</span>
-    <span class="n">Zinit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">Zinit</span><span class="p">,</span> <span class="n">X</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">))[:</span> <span class="p">(</span><span class="n">M</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">Zinit</span><span class="p">))],</span> <span class="p">:]</span><span class="o">.</span><span class="n">copy</span><span class="p">()))</span>
+    <span class="n">Zinit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">Zinit</span><span class="p">,</span> <span class="n">X</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">))[:</span> <span class="p">(</span><span class="n">M</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">Zinit</span><span class="p">))],</span> <span class="p">:]</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+    <span class="p">)</span>
 
-    <span class="n">vfe</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">SGPR</span><span class="p">((</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">),</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(),</span> <span class="n">inducing_variable</span><span class="o">=</span><span class="n">Zinit</span><span class="p">)</span>
+    <span class="n">vfe</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">SGPR</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">),</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(),</span> <span class="n">inducing_variable</span><span class="o">=</span><span class="n">Zinit</span>
+    <span class="p">)</span>
 
     <span class="c1"># copy hyperparameters (omitting inducing_variable.Z) from optimized model:</span>
     <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">multiple_assign</span><span class="p">(</span><span class="n">vfe</span><span class="p">,</span> <span class="n">init_params</span><span class="p">)</span>
@@ -1033,11 +1043,16 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">single_inducing_point</span> <span class="o">=</span> <span class="n">X</span><span class="p">[:</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 <span class="n">vfe</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">SGPR</span><span class="p">(</span>
-    <span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">),</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(),</span> <span class="n">inducing_variable</span><span class="o">=</span><span class="n">single_inducing_point</span>
+    <span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">),</span>
+    <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(),</span>
+    <span class="n">inducing_variable</span><span class="o">=</span><span class="n">single_inducing_point</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="n">objective</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="n">vfe</span><span class="o">.</span><span class="n">training_loss</span><span class="p">)</span>
 <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
-    <span class="n">objective</span><span class="p">,</span> <span class="n">vfe</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">1000</span><span class="p">)),</span> <span class="nb">compile</span><span class="o">=</span><span class="kc">False</span>
+    <span class="n">objective</span><span class="p">,</span>
+    <span class="n">vfe</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span>
+    <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">1000</span><span class="p">)),</span>
+    <span class="nb">compile</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="c1"># Note that we need to set compile=False here due to a discrepancy in compiling with tf.function</span>
 <span class="c1"># see https://github.com/GPflow/GPflow/issues/1260</span>
