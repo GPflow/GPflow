@@ -525,7 +525,7 @@ class SGPR_with_posterior(SGPR_deprecated):
     """
     Sparse Variational GP regression.
     The key reference is :cite:t:`titsias2009variational`.
-    
+
     This is an implementation of SGPR that provides a posterior() method that
     enables caching for faster subsequent predictions.
     """
