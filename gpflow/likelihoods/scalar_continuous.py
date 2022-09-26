@@ -20,8 +20,8 @@ import tensorflow as tf
 
 from .. import logdensities
 from ..base import MeanAndVariance, TensorType
-from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..config import default_likelihoods_positive_minimum
+from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..utilities.parameter_or_function import (
     ConstantOrFunction,
     ParameterOrFunction,
@@ -248,7 +248,7 @@ class Gamma(ScalarLikelihood):
     @inherit_check_shapes
     def _conditional_variance(self, X: TensorType, F: TensorType) -> tf.Tensor:
         scale = self.invlink(F)
-        return self._shape(X) * (scale**2)
+        return self._shape(X) * (scale ** 2)
 
     @inherit_check_shapes
     def _variational_expectations(
