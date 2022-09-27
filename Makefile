@@ -1,5 +1,10 @@
+NOTEBOOK_BLACK_CONFIG=-t py37 -l 80
+NOTEBOOK_BLACK_TARGETS=doc/sphinx/notebooks
+NOTEBOOK_ISORT_CONFIG=--atomic -l 80 --trailing-comma --remove-redundant-aliases --multi-line 3
+NOTEBOOK_ISORT_TARGETS=doc/sphinx/notebooks
+
 BLACK_CONFIG=-t py37 -l 100
-BLACK_TARGETS=gpflow tests benchmark doc setup.py
+BLACK_TARGETS=gpflow tests benchmark doc/*.py setup.py
 ISORT_CONFIG=--atomic -l 100 --trailing-comma --remove-redundant-aliases --multi-line 3
 ISORT_TARGETS=gpflow tests benchmark doc/*.py setup.py
 MYPY_TARGETS=gpflow tests benchmark doc/*.py setup.py
@@ -32,11 +37,15 @@ package:
 
 format:
 	black $(BLACK_CONFIG) $(BLACK_TARGETS)
+	black $(NOTEBOOK_BLACK_CONFIG) $(NOTEBOOK_BLACK_TARGETS)
 	isort $(ISORT_CONFIG) $(ISORT_TARGETS)
+	isort $(NOTEBOOK_ISORT_CONFIG) $(NOTEBOOK_ISORT_TARGETS)
 
 format-check:
 	black --check $(BLACK_CONFIG) $(BLACK_TARGETS)
+	black --check $(NOTEBOOK_BLACK_CONFIG) $(NOTEBOOK_BLACK_TARGETS)
 	isort --check-only $(ISORT_CONFIG) $(ISORT_TARGETS)
+	isort --check-only $(NOTEBOOK_ISORT_CONFIG) $(NOTEBOOK_ISORT_TARGETS)
 
 type-check:
 	mypy `python -m gpflow.mypy_flags` $(MYPY_TARGETS)

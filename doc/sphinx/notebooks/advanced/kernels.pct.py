@@ -20,15 +20,13 @@
 # GPflow comes with a range of kernels. In this notebook, we examine some of them, show how you can combine them to make new kernels, and discuss the `active_dims` feature.
 
 # %%
-import gpflow
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
-plt.style.use("ggplot")
-import tensorflow as tf
-
+import gpflow
 from gpflow.ci_utils import reduce_in_tests
 
+plt.style.use("ggplot")
 # %matplotlib inline
 
 # %% [markdown]
@@ -90,7 +88,9 @@ plotkernelsample(gpflow.kernels.RBF(), axes[0, 3])
 plotkernelsample(gpflow.kernels.Constant(), axes[1, 0])
 plotkernelsample(gpflow.kernels.Linear(), axes[1, 1])
 plotkernelsample(gpflow.kernels.Cosine(), axes[1, 2])
-plotkernelsample(gpflow.kernels.Periodic(gpflow.kernels.SquaredExponential()), axes[1, 3])
+plotkernelsample(
+    gpflow.kernels.Periodic(gpflow.kernels.SquaredExponential()), axes[1, 3]
+)
 _ = axes[0, 0].set_ylim(-3, 3)
 
 # %% [markdown]
@@ -131,7 +131,9 @@ X1 = np.array([[0.0]])
 X2 = np.linspace(-2, 2, 101).reshape(-1, 1)
 
 K21 = k(X2, X1)  # cov(f(X2), f(X1)): matrix with shape [101, 1]
-K22 = k(X2)  # equivalent to k(X2, X2) (but more efficient): matrix with shape [101, 101]
+K22 = k(
+    X2
+)  # equivalent to k(X2, X2) (but more efficient): matrix with shape [101, 101]
 
 # plotting
 plt.figure()
@@ -194,9 +196,9 @@ k = k1 + k2
 # `active_dims` makes it easy to create additive models. Here we build an additive Matern 5/2 kernel:
 
 # %%
-k = gpflow.kernels.Matern52(active_dims=[0], lengthscales=2) + gpflow.kernels.Matern52(
-    active_dims=[1], lengthscales=2
-)
+k = gpflow.kernels.Matern52(
+    active_dims=[0], lengthscales=2
+) + gpflow.kernels.Matern52(active_dims=[1], lengthscales=2)
 
 # %% [markdown]
 # Let's plot this kernel and sample from it:

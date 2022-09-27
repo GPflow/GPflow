@@ -15,13 +15,13 @@
 # ---
 
 # %%
+import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
-import matplotlib.pyplot as plt
 from cglb import load_snelson_data, plot_prediction
-from pathlib import Path
-from gpflow.models import CGLB, SGPR, GPR
+
 from gpflow.kernels import SquaredExponential
+from gpflow.models import CGLB, GPR, SGPR
 from gpflow.optimizers import Scipy
 
 # %%
@@ -50,8 +50,18 @@ iv = x[iv_indices, :]
 
 noise = 0.1
 gpr = GPR(data, kernel=SquaredExponential(), noise_variance=noise)
-cglb = CGLB(data, kernel=SquaredExponential(), noise_variance=noise, inducing_variable=iv)
-sgpr = SGPR(data, kernel=SquaredExponential(), noise_variance=noise, inducing_variable=iv)
+cglb = CGLB(
+    data,
+    kernel=SquaredExponential(),
+    noise_variance=noise,
+    inducing_variable=iv,
+)
+sgpr = SGPR(
+    data,
+    kernel=SquaredExponential(),
+    noise_variance=noise,
+    inducing_variable=iv,
+)
 
 
 def loss_with_changed_parameter(model, parameter, value: float):
@@ -63,7 +73,9 @@ def loss_with_changed_parameter(model, parameter, value: float):
 
 
 ls = np.linspace(0.01, 3, 100)
-losses_fn = lambda m: [loss_with_changed_parameter(m, m.kernel.lengthscales, l) for l in ls]
+losses_fn = lambda m: [
+    loss_with_changed_parameter(m, m.kernel.lengthscales, l) for l in ls
+]
 gpr_obj = losses_fn(gpr)
 sgpr_obj = losses_fn(sgpr)
 cglb_obj = losses_fn(cglb)
@@ -105,7 +117,10 @@ opt = Scipy()
 # %%
 variables = cglb.trainable_variables
 _ = opt.minimize(
-    cglb.training_loss_closure(compile=False), variables, compile=False, options=dict(maxiter=100)
+    cglb.training_loss_closure(compile=False),
+    variables,
+    compile=False,
+    options=dict(maxiter=100),
 )
 
 # %% [markdown]
@@ -133,12 +148,23 @@ xnew = xnew.squeeze()
 
 mu_no_tol = pred_no_tol[0].numpy().squeeze()
 std_no_tol = np.sqrt(pred_no_tol[1].numpy().squeeze())
-plot_prediction(axes[0], x, y, xnew, mu_no_tol, std_no_tol, "tab:blue", "CGLB, use cached $v=0$")
+plot_prediction(
+    axes[0],
+    x,
+    y,
+    xnew,
+    mu_no_tol,
+    std_no_tol,
+    "tab:blue",
+    "CGLB, use cached $v=0$",
+)
 
 
 mu_tol = pred_tol[0].numpy().squeeze()
 std_tol = np.sqrt(pred_tol[1].numpy().squeeze())
-plot_prediction(axes[1], x, y, xnew, mu_tol, std_tol, "tab:green", "CGLB, tol=0.01")
+plot_prediction(
+    axes[1], x, y, xnew, mu_tol, std_tol, "tab:green", "CGLB, tol=0.01"
+)
 
 axes[0].legend()
 axes[1].legend()

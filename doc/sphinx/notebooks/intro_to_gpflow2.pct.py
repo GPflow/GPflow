@@ -24,25 +24,21 @@
 #
 
 # %%
-from typing import Tuple, Optional
-import tempfile
-import pathlib
-
-import datetime
-import io
-import matplotlib.pyplot as plt
-
-import numpy as np
-import tensorflow as tf
-import gpflow
-
-from gpflow.config import default_float
-from gpflow.ci_utils import reduce_in_tests
-from gpflow.utilities import to_default_float
-
 import warnings
 
 warnings.filterwarnings("ignore")
+
+import pathlib
+import tempfile
+from typing import Optional, Tuple
+
+import matplotlib.pyplot as plt
+import numpy as np
+import tensorflow as tf
+
+import gpflow
+from gpflow.ci_utils import reduce_in_tests
+from gpflow.config import default_float
 
 # %% [markdown]
 # Make `tensorboard` work inside notebook:
@@ -79,7 +75,9 @@ tf.random.set_seed(0)
 
 # %%
 def noisy_sin(x):
-    return tf.math.sin(x) + 0.1 * tf.random.normal(x.shape, dtype=default_float())
+    return tf.math.sin(x) + 0.1 * tf.random.normal(
+        x.shape, dtype=default_float()
+    )
 
 
 num_train_data = reduce_in_tests(100)
@@ -210,7 +208,9 @@ optimizer.minimize(
 # %%
 vgp_model.training_loss_closure()  # compiled
 vgp_model.training_loss_closure(compile=True)  # compiled
-vgp_model.training_loss_closure(compile=False)  # uncompiled, same as vgp_model.training_loss
+vgp_model.training_loss_closure(
+    compile=False
+)  # uncompiled, same as vgp_model.training_loss
 
 # %% [markdown]
 # ### External data
@@ -230,7 +230,9 @@ optimizer = tf.optimizers.Adam()
 training_loss = model.training_loss_closure(
     data
 )  # We save the compiled closure in a variable so as not to re-compile it each step
-optimizer.minimize(training_loss, model.trainable_variables)  # Note that this does a single step
+optimizer.minimize(
+    training_loss, model.trainable_variables
+)  # Note that this does a single step
 
 # %% [markdown]
 # SVGP can handle mini-batching, and an iterator from a batched tf.data.Dataset can be passed to the model's training_loss_closure():
@@ -240,7 +242,9 @@ batch_size = 5
 batched_dataset = tf.data.Dataset.from_tensor_slices(data).batch(batch_size)
 training_loss = model.training_loss_closure(iter(batched_dataset))
 
-optimizer.minimize(training_loss, model.trainable_variables)  # Note that this does a single step
+optimizer.minimize(
+    training_loss, model.trainable_variables
+)  # Note that this does a single step
 
 # %% [markdown]
 # As previously, training_loss_closure takes an optional `compile` argument for tf.function compilation (True by default).
@@ -253,7 +257,9 @@ optimizer.minimize(training_loss, model.trainable_variables)  # Note that this d
 # The `optimization_step` can (and should) be wrapped in `tf.function` to be compiled to a graph if executing it many times.
 
 # %%
-def optimization_step(model: gpflow.models.SVGP, batch: Tuple[tf.Tensor, tf.Tensor]):
+def optimization_step(
+    model: gpflow.models.SVGP, batch: Tuple[tf.Tensor, tf.Tensor]
+):
     with tf.GradientTape(watch_accessed_variables=False) as tape:
         tape.watch(model.trainable_variables)
         loss = model.training_loss(batch)
@@ -266,7 +272,9 @@ def optimization_step(model: gpflow.models.SVGP, batch: Tuple[tf.Tensor, tf.Tens
 # We can use the functionality of TensorFlow Datasets to define a simple training loop that iterates over batches of the training dataset:
 
 # %%
-def simple_training_loop(model: gpflow.models.SVGP, epochs: int = 1, logging_epoch_freq: int = 10):
+def simple_training_loop(
+    model: gpflow.models.SVGP, epochs: int = 1, logging_epoch_freq: int = 10
+):
     tf_optimization_step = tf.function(optimization_step)
 
     batches = iter(train_dataset)
@@ -290,14 +298,13 @@ simple_training_loop(model, epochs=10, logging_epoch_freq=2)
 
 # %%
 from gpflow.monitor import (
+    ExecuteCallback,
     ImageToTensorBoard,
     ModelToTensorBoard,
-    ExecuteCallback,
     Monitor,
     MonitorTaskGroup,
     ScalarToTensorBoard,
 )
-
 
 samples_input = np.linspace(0, 10, reduce_in_tests(100)).reshape(-1, 1)
 
@@ -447,7 +454,9 @@ def checkpointing_training_loop(
         epoch_id = epoch + 1
         if epoch_id % logging_epoch_freq == 0:
             ckpt_path = manager.save()
-            tf.print(f"Epoch {epoch_id}: ELBO (train) {model.elbo(data)}, saved at {ckpt_path}")
+            tf.print(
+                f"Epoch {epoch_id}: ELBO (train) {model.elbo(data)}, saved at {ckpt_path}"
+            )
 
 
 # %%
@@ -485,7 +494,9 @@ for i, recorded_checkpoint in enumerate(manager.checkpoints):
 # The following returns a dictionary of all parameters within
 
 # %%
-model = gpflow.models.SGPR(data, kernel=kernel, inducing_variable=inducing_variable)
+model = gpflow.models.SGPR(
+    data, kernel=kernel, inducing_variable=inducing_variable
+)
 
 # %%
 gpflow.utilities.parameter_dict(model)
@@ -505,7 +516,8 @@ gpflow.utilities.multiple_assign(model, params)
 # %%
 predict_f = lambda Xnew: model.predict_f(Xnew)
 model.predict_f_compiled = tf.function(
-    predict_f, input_signature=[tf.TensorSpec(shape=[None, 1], dtype=tf.float64)]
+    predict_f,
+    input_signature=[tf.TensorSpec(shape=[None, 1], dtype=tf.float64)],
 )
 
 # %% [markdown]
@@ -542,13 +554,19 @@ user_str = "User config\t"
 global_str = "Global config\t"
 
 with gpflow.config.as_context(user_config):
-    print(f"{user_str} gpflow.config.default_float = {gpflow.config.default_float()}")
+    print(
+        f"{user_str} gpflow.config.default_float = {gpflow.config.default_float()}"
+    )
     print(
         f"{user_str} gpflow.config.positive_bijector = {gpflow.config.default_positive_bijector()}"
     )
 
-print(f"{global_str} gpflow.config.default_float = {gpflow.config.default_float()}")
-print(f"{global_str} gpflow.config.positive_bijector = {gpflow.config.default_positive_bijector()}")
+print(
+    f"{global_str} gpflow.config.default_float = {gpflow.config.default_float()}"
+)
+print(
+    f"{global_str} gpflow.config.positive_bijector = {gpflow.config.default_positive_bijector()}"
+)
 
 # %%
 with gpflow.config.as_context(user_config):

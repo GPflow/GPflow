@@ -77,8 +77,9 @@
 # Note that in the (S)VGP case, $\alpha$ is the parameter as proposed by Opper and Archambeau for the mean of the predictive distribution.
 
 # +
-import gpflow
 import numpy as np
+
+import gpflow
 from gpflow.ci_utils import reduce_in_tests
 
 # Create some data
@@ -140,7 +141,9 @@ posterior.predict_f(Xnew)
 #
 # And finally, we follow the same approach this time for the SGPR case.
 
-model = gpflow.models.SGPR((X, Y), gpflow.kernels.SquaredExponential(), inducing_points)
+model = gpflow.models.SGPR(
+    (X, Y), gpflow.kernels.SquaredExponential(), inducing_points
+)
 
 # The predict_f method on the instance performs no caching.
 

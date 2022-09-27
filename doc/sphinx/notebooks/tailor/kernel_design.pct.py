@@ -23,11 +23,12 @@
 # where $\sigma^2$ is a variance parameter.
 
 # %%
-import gpflow
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 import tensorflow as tf
-from gpflow.utilities import print_summary, positive
+
+import gpflow
+from gpflow.utilities import positive, print_summary
 
 plt.style.use("ggplot")
 # %matplotlib inline
@@ -58,7 +59,9 @@ class Brownian(gpflow.kernels.Kernel):
     def K(self, X, X2=None):
         if X2 is None:
             X2 = X
-        return self.variance * tf.minimum(X, tf.transpose(X2))  # this returns a 2D tensor
+        return self.variance * tf.minimum(
+            X, tf.transpose(X2)
+        )  # this returns a 2D tensor
 
     def K_diag(self, X):
         return self.variance * tf.reshape(X, (-1,))  # this returns a 1D tensor

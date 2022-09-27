@@ -17,25 +17,22 @@
 # # Comparing FITC approximation to VFE approximation
 # This notebook examines why we prefer the Variational Free Energy (VFE) objective to the Fully Independent Training Conditional (FITC) approximation for our sparse approximations.
 #
-
 # %%
-import gpflow
-import tensorflow as tf
-from gpflow.ci_utils import reduce_in_tests
 import matplotlib.pyplot as plt
+from FITCvsVFE import (
+    getTrainingTestData,
+    plotComparisonFigure,
+    plotPredictions,
+    printModelParameters,
+    repeatMinimization,
+    stretch,
+)
+
+import gpflow
+from gpflow.ci_utils import reduce_in_tests
 
 # %matplotlib inline
 
-from FITCvsVFE import (
-    getTrainingTestData,
-    printModelParameters,
-    plotPredictions,
-    repeatMinimization,
-    stretch,
-    plotComparisonFigure,
-)
-
-import logging
 
 # logging.disable(logging.WARN)  # do not clutter up the notebook with optimization warnings
 
@@ -83,11 +80,15 @@ def initializeHyperparametersFromExactSolution(sparse_model):
 
 # %%
 # Train VFE model initialized from the perfect solution.
-VFEmodel = gpflow.models.SGPR((Xtrain, Ytrain), kernel=getKernel(), inducing_variable=Xtrain.copy())
+VFEmodel = gpflow.models.SGPR(
+    (Xtrain, Ytrain), kernel=getKernel(), inducing_variable=Xtrain.copy()
+)
 
 initializeHyperparametersFromExactSolution(VFEmodel)
 
-VFEcb = repeatMinimization(VFEmodel, Xtest, Ytest)  # optimize with several restarts
+VFEcb = repeatMinimization(
+    VFEmodel, Xtest, Ytest
+)  # optimize with several restarts
 print("Sparse model parameters after VFE optimization:")
 printModelParameters(VFEmodel)
 
@@ -99,7 +100,9 @@ FITCmodel = gpflow.models.GPRFITC(
 
 initializeHyperparametersFromExactSolution(FITCmodel)
 
-FITCcb = repeatMinimization(FITCmodel, Xtest, Ytest)  # optimize with several restarts
+FITCcb = repeatMinimization(
+    FITCmodel, Xtest, Ytest
+)  # optimize with several restarts
 print("Sparse model parameters after FITC optimization:")
 printModelParameters(FITCmodel)
 
