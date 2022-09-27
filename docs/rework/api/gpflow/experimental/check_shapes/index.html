@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
-    <title>gpflow.experimental.check_shapes &#8212; GPflow 2.5.2 documentation</title>
+    <title>gpflow.experimental.check_shapes &#8212; GPflow 2.6.0 documentation</title>
   <script>
     document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
     document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
@@ -644,9 +644,9 @@
 <section id="speed-and-interactions-with-tf-function">
 <h2>Speed, and interactions with <cite>tf.function</cite><a class="headerlink" href="#speed-and-interactions-with-tf-function" title="Permalink to this heading">#</a></h2>
 <p>Shape checking has some performance impact. Shape checking can be disabled to help alleviate this.
-Shape checking can be set to one of three different states.</p>
+Shape checking can be set to one of three different states:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">ENABLED</span></code>. Shapes are checked wherever they can.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ENABLED</span></code>. Shapes are checked wherever they can be.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">EAGER_MODE_ONLY</span></code>. Shapes are not checked within anything wrapped in <code class="xref py py-func docutils literal notranslate"><span class="pre">tf.function()</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">DISABLED</span></code>. Shapes are never checked.</p></li>
 </ul>
@@ -662,9 +662,9 @@ Shape checking can be set to one of three different states.</p>
 <p>Beware that any function declared while shape checking is disabled, will continue not to check
 shapes, even if shape checking is otherwise enabled again.</p>
 <p>The default state is <code class="docutils literal notranslate"><span class="pre">EAGER_MODE_ONLY</span></code>; which is appropriate for smaller project, experiments, and
-notebooks. Write and debug your code in eager mode, and add <code class="xref py py-func docutils literal notranslate"><span class="pre">tf.function()</span></code> when your code is
-correct and you want it to run fast. For larger project you probably want to modify this setting. In
-particular you may want to enable all shape checks in your unit tests. If you use
+notebooks. Write and debug your code in eager mode, and add <code class="xref py py-func docutils literal notranslate"><span class="pre">tf.function()</span></code> when you believe
+your code is correct and you want it to run fast. For larger project you probably want to modify
+this setting. In particular you may want to enable all shape checks in your unit tests. If you use
 <a class="reference external" href="https://docs.pytest.org/">pytest</a> you can do this by updating your root <code class="docutils literal notranslate"><span class="pre">conftest.py</span></code> with:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">autouse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">enable_shape_checks</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="kc">None</span><span class="p">]:</span>
