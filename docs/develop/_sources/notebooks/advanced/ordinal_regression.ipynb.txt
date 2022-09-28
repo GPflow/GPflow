@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "adb05fb4",
+   "id": "261620c6",
    "metadata": {},
    "source": [
     "Ordinal regression\n",
@@ -13,13 +13,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "b00b6a1e",
+   "id": "19dc7183",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-26T11:32:13.061004Z",
-     "iopub.status.busy": "2022-09-26T11:32:13.060662Z",
-     "iopub.status.idle": "2022-09-26T11:32:18.038875Z",
-     "shell.execute_reply": "2022-09-26T11:32:18.038110Z"
+     "iopub.execute_input": "2022-09-28T08:52:56.572722Z",
+     "iopub.status.busy": "2022-09-28T08:52:56.572444Z",
+     "iopub.status.idle": "2022-09-28T08:53:01.032403Z",
+     "shell.execute_reply": "2022-09-28T08:53:01.031544Z"
     },
     "lines_to_next_cell": 2
    },
@@ -28,26 +28,20 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-09-26 11:32:13.788714: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
-      "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
+      "2022-09-28 08:52:57.213483: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n",
+      "2022-09-28 08:52:57.360181: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2022-09-28 08:52:57.360212: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n",
+      "2022-09-28 08:52:57.388484: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-09-26 11:32:13.959269: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
-      "2022-09-26 11:32:13.959300: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n",
-      "2022-09-26 11:32:13.988734: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "2022-09-26 11:32:14.850808: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory\n",
-      "2022-09-26 11:32:14.850880: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory\n",
-      "2022-09-26 11:32:14.850889: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.\n"
+      "2022-09-28 08:52:58.072044: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory\n",
+      "2022-09-28 08:52:58.072110: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory\n",
+      "2022-09-28 08:52:58.072118: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.\n"
      ]
     },
     {
@@ -76,13 +70,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "83b4e4df",
+   "id": "2e51801c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-26T11:32:18.043510Z",
-     "iopub.status.busy": "2022-09-26T11:32:18.042898Z",
-     "iopub.status.idle": "2022-09-26T11:32:18.370584Z",
-     "shell.execute_reply": "2022-09-26T11:32:18.369974Z"
+     "iopub.execute_input": "2022-09-28T08:53:01.035508Z",
+     "iopub.status.busy": "2022-09-28T08:53:01.035102Z",
+     "iopub.status.idle": "2022-09-28T08:53:01.346856Z",
+     "shell.execute_reply": "2022-09-28T08:53:01.345830Z"
     }
    },
    "outputs": [
@@ -92,10 +86,10 @@
      "text": [
       "/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You're calling gpflow.experimental.check_shapes.checker.ShapeChecker.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.\n",
       "  warn(\n",
-      "2022-09-26 11:32:18.048565: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
-      "2022-09-26 11:32:18.048598: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)\n",
-      "2022-09-26 11:32:18.048618: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (9b6785ccb17d): /proc/driver/nvidia/version does not exist\n",
-      "2022-09-26 11:32:18.048899: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2022-09-28 08:53:01.040555: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2022-09-28 08:53:01.040580: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2022-09-28 08:53:01.040598: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (a03357946d36): /proc/driver/nvidia/version does not exist\n",
+      "2022-09-28 08:53:01.040843: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     },
@@ -162,13 +156,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "1bbc5444",
+   "id": "1b712788",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-26T11:32:18.375127Z",
-     "iopub.status.busy": "2022-09-26T11:32:18.374764Z",
-     "iopub.status.idle": "2022-09-26T11:32:22.620195Z",
-     "shell.execute_reply": "2022-09-26T11:32:22.618947Z"
+     "iopub.execute_input": "2022-09-28T08:53:01.352187Z",
+     "iopub.status.busy": "2022-09-28T08:53:01.351614Z",
+     "iopub.status.idle": "2022-09-28T08:53:05.085048Z",
+     "shell.execute_reply": "2022-09-28T08:53:05.084373Z"
     }
    },
    "outputs": [
@@ -327,20 +321,20 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "990d4545",
+   "id": "f6c34d5c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-26T11:32:22.625289Z",
-     "iopub.status.busy": "2022-09-26T11:32:22.624756Z",
-     "iopub.status.idle": "2022-09-26T11:32:22.935272Z",
-     "shell.execute_reply": "2022-09-26T11:32:22.934430Z"
+     "iopub.execute_input": "2022-09-28T08:53:05.087632Z",
+     "iopub.status.busy": "2022-09-28T08:53:05.087349Z",
+     "iopub.status.idle": "2022-09-28T08:53:05.310553Z",
+     "shell.execute_reply": "2022-09-28T08:53:05.310000Z"
     }
    },
    "outputs": [
     {
      "data": {
       "text/plain": [
-       "[<matplotlib.lines.Line2D at 0x7f74542a3610>]"
+       "[<matplotlib.lines.Line2D at 0x7f88500cf400>]"
       ]
      },
      "execution_count": 4,
@@ -374,13 +368,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "2f5a982b",
+   "id": "f4543106",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-26T11:32:22.940573Z",
-     "iopub.status.busy": "2022-09-26T11:32:22.940057Z",
-     "iopub.status.idle": "2022-09-26T11:32:22.946630Z",
-     "shell.execute_reply": "2022-09-26T11:32:22.945807Z"
+     "iopub.execute_input": "2022-09-28T08:53:05.313278Z",
+     "iopub.status.busy": "2022-09-28T08:53:05.313006Z",
+     "iopub.status.idle": "2022-09-28T08:53:05.317156Z",
+     "shell.execute_reply": "2022-09-28T08:53:05.316674Z"
     }
    },
    "outputs": [],
@@ -400,20 +394,20 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "cea422fc",
+   "id": "a45fec65",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-26T11:32:22.950649Z",
-     "iopub.status.busy": "2022-09-26T11:32:22.950221Z",
-     "iopub.status.idle": "2022-09-26T11:32:23.657833Z",
-     "shell.execute_reply": "2022-09-26T11:32:23.657001Z"
+     "iopub.execute_input": "2022-09-28T08:53:05.319288Z",
+     "iopub.status.busy": "2022-09-28T08:53:05.319043Z",
+     "iopub.status.idle": "2022-09-28T08:53:05.905859Z",
+     "shell.execute_reply": "2022-09-28T08:53:05.905306Z"
     }
    },
    "outputs": [
     {
      "data": {
       "text/plain": [
-       "[<matplotlib.lines.Line2D at 0x7f7454305f00>]"
+       "[<matplotlib.lines.Line2D at 0x7f88501466b0>]"
       ]
      },
      "execution_count": 6,
@@ -448,13 +442,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "1d647bd8",
+   "id": "12eb4cb8",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-09-26T11:32:23.661657Z",
-     "iopub.status.busy": "2022-09-26T11:32:23.661290Z",
-     "iopub.status.idle": "2022-09-26T11:32:23.849908Z",
-     "shell.execute_reply": "2022-09-26T11:32:23.849238Z"
+     "iopub.execute_input": "2022-09-28T08:53:05.908585Z",
+     "iopub.status.busy": "2022-09-28T08:53:05.908273Z",
+     "iopub.status.idle": "2022-09-28T08:53:06.088205Z",
+     "shell.execute_reply": "2022-09-28T08:53:06.087664Z"
     }
    },
    "outputs": [
@@ -510,7 +504,7 @@
    "name": "python",
    "nbconvert_exporter": "python",
    "pygments_lexer": "ipython3",
-   "version": "3.10.6"
+   "version": "3.10.7"
   }
  },
  "nbformat": 4,
