@@ -23,26 +23,12 @@ from ..experimental.check_shapes import check_shapes
 
 
 @check_shapes(
-    "value: [any...]",
-    "return: [any...]",
-)
-def cast(
-    value: Union[tf.Tensor, AnyNDArray], dtype: tf.DType, name: Optional[str] = None
-) -> tf.Tensor:
-    if not tf.is_tensor(value):
-        # TODO(awav): Release TF2.2 resolves this issue
-        # workaround for https://github.com/tensorflow/tensorflow/issues/35938
-        return tf.convert_to_tensor(value, dtype, name=name)
-    return tf.cast(value, dtype, name=name)
-
-
-@check_shapes(
     "value: []",
     "return: [N, N]",
 )
 def eye(num: int, value: tf.Tensor, dtype: Optional[tf.DType] = None) -> tf.Tensor:
     if dtype is not None:
-        value = cast(value, dtype)
+        value = tf.cast(value, dtype)
     return tf.linalg.diag(tf.fill([num], value))
 
 

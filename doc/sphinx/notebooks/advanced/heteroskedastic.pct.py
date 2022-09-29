@@ -39,8 +39,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
-import gpflow as gpf
 
+import gpflow as gpf
 
 # %% [markdown]
 # ## Data Generation

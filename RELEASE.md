@@ -33,7 +33,7 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
-# Release 2.7.0 (next upcoming release in progress)
+# Release 2.6.2 (next upcoming release in progress)
 
 <INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
 
@@ -64,6 +64,26 @@ This release contains contributions from:
 This release contains contributions from:
 
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
+
+
+# Release 2.6.1
+
+This is a bug-fixes release, due to problems with model saving in `2.6.0`.
+
+## Breaking Changes
+
+* Removed `gpflow.utilities.ops.cast`. Use `tf.cast` instead.
+
+## Bug Fixes and Other Changes
+
+* Fixed bug related to `tf.saved_model` and methods wrapped in `@check_shapes`.
+* Some documentation formatting fixes.
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+jesnie
 
 
 # Release 2.6.0

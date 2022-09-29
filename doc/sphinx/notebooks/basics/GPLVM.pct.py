@@ -18,16 +18,18 @@
 # This notebook shows how to use the Bayesian GPLVM model. This is an unsupervised learning method usually used for dimensionality reduction. For an in-depth overview of GPLVMs,see **[1, 2]**.
 
 # %%
-import gpflow
-import numpy as np
-
 import matplotlib.pyplot as plt
+import numpy as np
 import tensorflow as tf
 
 import gpflow
-from gpflow.utilities import ops, print_summary
-from gpflow.config import set_default_float, default_float, set_default_summary_fmt
 from gpflow.ci_utils import reduce_in_tests
+from gpflow.config import (
+    default_float,
+    set_default_float,
+    set_default_summary_fmt,
+)
+from gpflow.utilities import ops, print_summary
 
 set_default_float(np.float64)
 set_default_summary_fmt("notebook")
@@ -54,7 +56,11 @@ Y = tf.convert_to_tensor(data["Y"], dtype=default_float())
 labels = tf.convert_to_tensor(data["labels"])
 
 # %%
-print("Number of points: {} and Number of dimensions: {}".format(Y.shape[0], Y.shape[1]))
+print(
+    "Number of points: {} and Number of dimensions: {}".format(
+        Y.shape[0], Y.shape[1]
+    )
+)
 
 # %% [markdown]
 # ## Model construction
@@ -79,7 +85,8 @@ X_var_init = tf.ones((num_data, latent_dim), dtype=default_float())
 # %%
 np.random.seed(1)  # for reproducibility
 inducing_variable = tf.convert_to_tensor(
-    np.random.permutation(X_mean_init.numpy())[:num_inducing], dtype=default_float()
+    np.random.permutation(X_mean_init.numpy())[:num_inducing],
+    dtype=default_float(),
 )
 
 # %% [markdown]
@@ -143,7 +150,9 @@ f, ax = plt.subplots(1, 2, figsize=(10, 6))
 
 for i in np.unique(labels):
     ax[0].scatter(X_pca[labels == i, 0], X_pca[labels == i, 1], label=i)
-    ax[1].scatter(gplvm_X_mean[labels == i, 0], gplvm_X_mean[labels == i, 1], label=i)
+    ax[1].scatter(
+        gplvm_X_mean[labels == i, 0], gplvm_X_mean[labels == i, 1], label=i
+    )
     ax[0].set_title("PCA")
     ax[1].set_title("Bayesian GPLVM")
 

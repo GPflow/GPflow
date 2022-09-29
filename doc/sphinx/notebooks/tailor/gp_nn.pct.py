@@ -19,17 +19,15 @@
 # This notebook explores the combination of Keras TensorFlow neural networks with GPflow models.
 
 # %%
+from typing import Dict, Optional, Tuple
+
 import numpy as np
 import tensorflow as tf
-from matplotlib import pyplot as plt
-import gpflow
-from gpflow.ci_utils import reduce_in_tests
+import tensorflow_datasets as tfds
 from scipy.cluster.vq import kmeans2
 
-from typing import Dict, Optional, Tuple
-import tensorflow as tf
-import tensorflow_datasets as tfds
 import gpflow
+from gpflow.ci_utils import reduce_in_tests
 from gpflow.utilities import to_default_float
 
 iterations = reduce_in_tests(100)
@@ -38,7 +36,9 @@ iterations = reduce_in_tests(100)
 # ## Convolutional network inside a GPflow model
 
 # %%
-original_dataset, info = tfds.load(name="mnist", split=tfds.Split.TRAIN, with_info=True)
+original_dataset, info = tfds.load(
+    name="mnist", split=tfds.Split.TRAIN, with_info=True
+)
 total_num_data = info.splits["train"].num_examples
 image_shape = info.features["image"].shape
 image_size = tf.reduce_prod(image_shape)
@@ -83,14 +83,22 @@ class KernelWithConvNN(gpflow.kernels.Kernel):
 
             self.cnn = tf.keras.Sequential(
                 [
-                    tf.keras.layers.InputLayer(input_shape=input_shape, batch_size=batch_size),
+                    tf.keras.layers.InputLayer(
+                        input_shape=input_shape, batch_size=batch_size
+                    ),
                     tf.keras.layers.Reshape(image_shape),
                     tf.keras.layers.Conv2D(
-                        filters=32, kernel_size=image_shape[:-1], padding="same", activation="relu"
+                        filters=32,
+                        kernel_size=image_shape[:-1],
+                        padding="same",
+                        activation="relu",
                     ),
                     tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=2),
                     tf.keras.layers.Conv2D(
-                        filters=64, kernel_size=(5, 5), padding="same", activation="relu"
+                        filters=64,
+                        kernel_size=(5, 5),
+                        padding="same",
+                        activation="relu",
                     ),
                     tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=2),
                     tf.keras.layers.Flatten(),
@@ -101,7 +109,9 @@ class KernelWithConvNN(gpflow.kernels.Kernel):
 
             self.cnn.build()
 
-    def K(self, a_input: tf.Tensor, b_input: Optional[tf.Tensor] = None) -> tf.Tensor:
+    def K(
+        self, a_input: tf.Tensor, b_input: Optional[tf.Tensor] = None
+    ) -> tf.Tensor:
         transformed_a = self.cnn(a_input)
         transformed_b = self.cnn(b_input) if b_input is not None else b_input
         return self.base_kernel.K(transformed_a, transformed_b)
@@ -127,7 +137,9 @@ def Kuu(inducing_variable, kernel, jitter=None):
     return func(inducing_variable, kernel.base_kernel, jitter=jitter)
 
 
-@gpflow.covariances.Kuf.register(KernelSpaceInducingPoints, KernelWithConvNN, object)
+@gpflow.covariances.Kuf.register(
+    KernelSpaceInducingPoints, KernelWithConvNN, object
+)
 def Kuf(inducing_variable, kernel, a_input):
     return kernel.base_kernel(inducing_variable.Z, kernel.cnn(a_input))
 
@@ -144,12 +156,17 @@ images_subset = tf.reshape(images_subset, [-1, image_size])
 labels_subset = tf.reshape(labels_subset, [-1, 1])
 
 kernel = KernelWithConvNN(
-    image_shape, output_dim, gpflow.kernels.SquaredExponential(), batch_size=batch_size
+    image_shape,
+    output_dim,
+    gpflow.kernels.SquaredExponential(),
+    batch_size=batch_size,
 )
 
 likelihood = gpflow.likelihoods.MultiClass(num_mnist_classes)
 
-inducing_variable_kmeans = kmeans2(images_subset.numpy(), num_inducing_points, minit="points")[0]
+inducing_variable_kmeans = kmeans2(
+    images_subset.numpy(), num_inducing_points, minit="points"
+)[0]
 inducing_variable_cnn = kernel.cnn(inducing_variable_kmeans)
 inducing_variable = KernelSpaceInducingPoints(inducing_variable_cnn)
 

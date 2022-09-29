@@ -22,11 +22,11 @@
 # We first look at a one-dimensional example, and then show how you can adapt this when the input space is two-dimensional.
 
 # %%
+import matplotlib.pyplot as plt
 import numpy as np
-import gpflow
 import tensorflow as tf
 
-import matplotlib.pyplot as plt
+import gpflow
 
 # %matplotlib inline
 
@@ -113,7 +113,9 @@ _ = plt.plot(X_gen, Y_gen, "C3x", ms=8, mew=2)
 
 # %%
 m = gpflow.models.VGP(
-    (X, Y), likelihood=gpflow.likelihoods.Bernoulli(), kernel=gpflow.kernels.Matern52()
+    (X, Y),
+    likelihood=gpflow.likelihoods.Bernoulli(),
+    kernel=gpflow.kernels.Matern52(),
 )
 
 opt = gpflow.optimizers.Scipy()
@@ -177,19 +179,30 @@ mask = Y[:, 0] == 1
 
 plt.figure(figsize=(6, 6))
 plt.plot(X[mask, 0], X[mask, 1], "oC0", mew=0, alpha=0.5)
-_ = plt.plot(X[np.logical_not(mask), 0], X[np.logical_not(mask), 1], "oC1", mew=0, alpha=0.5)
+_ = plt.plot(
+    X[np.logical_not(mask), 0],
+    X[np.logical_not(mask), 1],
+    "oC1",
+    mew=0,
+    alpha=0.5,
+)
 
 # %% [markdown]
 # The model definition is the same as above; the only important difference is that we now specify that the kernel operates over a two-dimensional input space:
 
 # %%
 m = gpflow.models.VGP(
-    (X, Y), kernel=gpflow.kernels.SquaredExponential(), likelihood=gpflow.likelihoods.Bernoulli()
+    (X, Y),
+    kernel=gpflow.kernels.SquaredExponential(),
+    likelihood=gpflow.likelihoods.Bernoulli(),
 )
 
 opt = gpflow.optimizers.Scipy()
 opt.minimize(
-    m.training_loss, variables=m.trainable_variables, options=dict(maxiter=25), method="L-BFGS-B"
+    m.training_loss,
+    variables=m.trainable_variables,
+    options=dict(maxiter=25),
+    method="L-BFGS-B",
 )
 # in practice, the optimization needs around 250 iterations to converge
 
@@ -206,7 +219,13 @@ Xplot = np.vstack((xx.flatten(), yy.flatten())).T
 p, _ = m.predict_y(Xplot)  # here we only care about the mean
 plt.figure(figsize=(7, 7))
 plt.plot(X[mask, 0], X[mask, 1], "oC0", mew=0, alpha=0.5)
-plt.plot(X[np.logical_not(mask), 0], X[np.logical_not(mask), 1], "oC1", mew=0, alpha=0.5)
+plt.plot(
+    X[np.logical_not(mask), 0],
+    X[np.logical_not(mask), 1],
+    "oC1",
+    mew=0,
+    alpha=0.5,
+)
 
 _ = plt.contour(
     xx,
