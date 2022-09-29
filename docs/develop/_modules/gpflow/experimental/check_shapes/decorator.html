@@ -340,7 +340,7 @@ function checkPageExistsAndRedirect(event) {
         <span class="n">bound_error_context</span> <span class="o">=</span> <span class="n">FunctionDefinitionContext</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
         <span class="n">signature</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
 
-        <span class="k">def</span> <span class="nf">wrapped</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">wrapped_function</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">get_enable_check_shapes</span><span class="p">():</span>
                 <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
@@ -413,6 +413,16 @@ function checkPageExistsAndRedirect(event) {
             <span class="n">_check_specs</span><span class="p">(</span><span class="n">post_specs</span><span class="p">)</span>
 
             <span class="k">return</span> <span class="n">result</span>
+
+        <span class="c1"># Work-around for TensorFlow saved_model expecting methods to have a `self` argument:</span>
+        <span class="k">if</span> <span class="s2">&quot;self&quot;</span> <span class="ow">in</span> <span class="n">signature</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
+
+            <span class="k">def</span> <span class="nf">wrapped_method</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">wrapped_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+            <span class="n">wrapped</span> <span class="o">=</span> <span class="n">wrapped_method</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">wrapped</span> <span class="o">=</span> <span class="n">wrapped_function</span>
 
         <span class="c1"># Make TensorFlow understand our decoration:</span>
         <span class="k">if</span> <span class="n">tf_decorator</span><span class="p">:</span>
