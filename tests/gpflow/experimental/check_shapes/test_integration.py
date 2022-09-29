@@ -15,6 +15,7 @@
 # pylint: disable=unused-argument  # Bunch of fake functions below has unused arguments.
 # pylint: disable=no-member  # PyLint struggles with TensorFlow.
 
+from pathlib import Path
 from time import perf_counter
 from typing import Any, Callable, Optional
 
@@ -348,3 +349,35 @@ def test_issue_1936() -> None:
     x = tf.constant(7.0)
     f_tf_cond(x)
     f_if(x)
+
+
+@pytest.mark.parametrize("model_type", ["SuperModel", "SubModel"])
+def test_tf_saved_model(model_type: str, tmp_path: Path) -> None:
+    class SuperModel:
+        @check_shapes(
+            "x: [any...]",
+            "return: [any...]",
+        )
+        def f(self, x: tf.Tensor) -> tf.Tensor:
+            return x
+
+    class SubModel(SuperModel):
+        @inherit_check_shapes
+        def f(self, x: tf.Tensor) -> tf.Tensor:
+            return x + 1
+
+    x = np.arange(5)
+    model = eval(model_type)()
+    out_module = tf.Module()
+    out_module.f = tf.function(
+        model.f,
+        input_signature=[tf.TensorSpec(shape=[None], dtype=tf.float64)],
+    )
+    tf.saved_model.save(out_module, str(tmp_path))
+
+    in_module = tf.saved_model.load(str(tmp_path))
+
+    np.testing.assert_allclose(
+        model.f(x),
+        in_module.f(x),
+    )
