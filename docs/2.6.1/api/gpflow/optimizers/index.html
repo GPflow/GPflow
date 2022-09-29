@@ -1,0 +1,1435 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>gpflow.optimizers &#8212; GPflow 2.6.1 documentation</title>
+<script>
+  document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+  document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
+</script>
+
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+
+
+  <link rel="stylesheet"
+    href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css" />
+
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
+
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="gpflow.optimizers.natgrad" href="natgrad/index.html" />
+    <link rel="prev" title="gpflow.monitor" href="../monitor/index.html" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="docsearch:language" content="en">
+  </head>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+    <div class="bd-header-announcement container-fluid" id="banner">
+      
+
+    </div>
+
+    
+    <nav class="bd-header navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="bd-header__inner container-xl">
+
+  <div id="navbar-start">
+    
+    
+  
+
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+    <img src="../../../_static/gpflow_logo.svg" class="logo__image only-light" alt="Logo image">
+    <img src="../../../_static/gpflow_logo.svg" class="logo__image only-dark" alt="Logo image">
+  
+  
+</a>
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="fas fa-bars"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../intro.html">
+  Introduction
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../manual.html">
+  GPflow manual
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../notebooks/intro_to_gpflow2.html">
+  GPflow with TensorFlow 2
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../notebooks_file.html">
+  Notebooks
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../derivations.html">
+  Derivations
+ </a>
+</li>
+
+<li class="toctree-l1 current active nav-item">
+ <a class="reference internal nav-link" href="../index.html">
+  API reference
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../bibliography.html">
+  Bibliography
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <div class="dropdown" id="version_switcher">
+    <button type="button" class="btn btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+        2.6.1  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div id="version_switcher_menu" class="dropdown-menu list-group-flush py-0" aria-labelledby="version_switcher_button">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+
+<!-- NOTE: this JS must live here (not in our global JS file) because it relies
+     on being processed by Jinja before it is run (specifically for replacing
+     variables api/gpflow/optimizers/index and {'json_url': 'https://gpflow.github.io/GPflow/versions.json', 'version_match': '2.6.1'}.
+-->
+
+<script type="text/javascript">
+// Check if corresponding page path exists in other version of docs
+// and, if so, go there instead of the homepage of the other docs version
+function checkPageExistsAndRedirect(event) {
+    const currentFilePath = "api/gpflow/optimizers/index.html",
+          tryUrl = event.target.getAttribute("href");
+    let otherDocsHomepage = tryUrl.replace(currentFilePath, "");
+    $.ajax({
+        type: 'HEAD',
+        url: tryUrl,
+        // if the page exists, go there
+        success: function() {
+            location.href = tryUrl;
+        }
+    }).fail(function() {
+        location.href = otherDocsHomepage;
+    });
+    // this prevents the browser from following the href of the clicked node
+    // (which is fine because this function takes care of redirecting)
+    return false;
+}
+
+// Populate the version switcher from the JSON config file
+(function () {
+    $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
+        const currentFilePath = "api/gpflow/optimizers/index.html";
+        let btn = document.getElementById("version_switcher_button");
+        // Set empty strings by default so that these attributes exist and can be used in CSS selectors
+        btn.dataset["activeVersionName"] = "";
+        btn.dataset["activeVersion"] = "";
+        // create links to the corresponding page in the other docs versions
+        $.each(data, function(index, entry) {
+            // if no custom name specified (e.g., "latest"), use version string
+            if (!("name" in entry)) {
+                entry.name = entry.version;
+            }
+            // create the node
+            const node = document.createElement("a");
+            node.setAttribute("class", "list-group-item list-group-item-action py-1");
+            node.textContent = `${entry.name}`;
+            node.setAttribute("href", `${entry.url}${currentFilePath}`);
+            // on click, AJAX calls will check if the linked page exists before
+            // trying to redirect, and if not, will redirect to the homepage
+            // for that version of the docs.
+            node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
+            $("#version_switcher_menu").append(node);
+            // replace dropdown button text with the preferred display name of
+            // this version, rather than using sphinx's  variable.
+            // also highlight the dropdown entry for the currently-viewed
+            // version's entry
+            if (entry.version == "2.6.1") {
+                node.classList.add("active");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
+            }
+        });
+    });
+})();
+</script>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="bd-container container-xl">
+      <div class="bd-container__inner row">
+          
+
+<!-- Only show if we have sidebars configured, else just a small margin  -->
+<div class="bd-sidebar-primary col-12 col-md-3 bd-sidebar">
+  <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    <ul class="current nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../base/index.html">
+   gpflow.base
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../conditionals/index.html">
+   gpflow.conditionals
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../conditionals/util/index.html">
+     gpflow.conditionals.util
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../config/index.html">
+   gpflow.config
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../covariances/index.html">
+   gpflow.covariances
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../expectations/index.html">
+   gpflow.expectations
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+  <label for="toctree-checkbox-2">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../expectations/quadratures/index.html">
+     gpflow.expectations.quadratures
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../experimental/index.html">
+   gpflow.experimental
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/>
+  <label for="toctree-checkbox-3">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../experimental/check_shapes/index.html">
+     gpflow.experimental.check_shapes
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
+    <label for="toctree-checkbox-4">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/accessors/index.html">
+       gpflow.experimental.check_shapes.accessors
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/argument_ref/index.html">
+       gpflow.experimental.check_shapes.argument_ref
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/bool_specs/index.html">
+       gpflow.experimental.check_shapes.bool_specs
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/checker_context/index.html">
+       gpflow.experimental.check_shapes.checker_context
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/decorator/index.html">
+       gpflow.experimental.check_shapes.decorator
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/error_contexts/index.html">
+       gpflow.experimental.check_shapes.error_contexts
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/exceptions/index.html">
+       gpflow.experimental.check_shapes.exceptions
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/parser/index.html">
+       gpflow.experimental.check_shapes.parser
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/shapes/index.html">
+       gpflow.experimental.check_shapes.shapes
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/specs/index.html">
+       gpflow.experimental.check_shapes.specs
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../experimental/utils/index.html">
+     gpflow.experimental.utils
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../functions/index.html">
+   gpflow.functions
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../inducing_variables/index.html">
+   gpflow.inducing_variables
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/>
+  <label for="toctree-checkbox-5">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../inducing_variables/inducing_variables/index.html">
+     gpflow.inducing_variables.inducing_variables
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../kernels/index.html">
+   gpflow.kernels
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/>
+  <label for="toctree-checkbox-6">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../kernels/base/index.html">
+     gpflow.kernels.base
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../kullback_leiblers/index.html">
+   gpflow.kullback_leiblers
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../likelihoods/index.html">
+   gpflow.likelihoods
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+  <label for="toctree-checkbox-7">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../likelihoods/utils/index.html">
+     gpflow.likelihoods.utils
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../logdensities/index.html">
+   gpflow.logdensities
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../models/index.html">
+   gpflow.models
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+  <label for="toctree-checkbox-8">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/cglb/index.html">
+     gpflow.models.cglb
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/gpr/index.html">
+     gpflow.models.gpr
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/sgpr/index.html">
+     gpflow.models.sgpr
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/svgp/index.html">
+     gpflow.models.svgp
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/util/index.html">
+     gpflow.models.util
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/vgp/index.html">
+     gpflow.models.vgp
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../monitor/index.html">
+   gpflow.monitor
+  </a>
+ </li>
+ <li class="toctree-l1 current active has-children">
+  <a class="current reference internal" href="#">
+   gpflow.optimizers
+  </a>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/>
+  <label for="toctree-checkbox-9">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="natgrad/index.html">
+     gpflow.optimizers.natgrad
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../posteriors/index.html">
+   gpflow.posteriors
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../probability_distributions/index.html">
+   gpflow.probability_distributions
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../quadrature/index.html">
+   gpflow.quadrature
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/>
+  <label for="toctree-checkbox-10">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../quadrature/gauss_hermite/index.html">
+     gpflow.quadrature.gauss_hermite
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../type_flags/index.html">
+   gpflow.type_flags
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../utilities/index.html">
+   gpflow.utilities
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" type="checkbox"/>
+  <label for="toctree-checkbox-11">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../utilities/ops/index.html">
+     gpflow.utilities.ops
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../utilities/parameter_or_function/index.html">
+     gpflow.utilities.parameter_or_function
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+  </div>
+</nav>
+  </div>
+  <div class="sidebar-end-items">
+  </div>
+</div>
+
+
+          
+
+
+<div class="bd-sidebar-secondary d-none d-xl-block col-xl-2 bd-toc">
+  
+    
+    <div class="toc-item">
+      
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#modules">
+   Modules
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#classes">
+   Classes
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-optimizers-naturalgradient">
+     gpflow.optimizers.NaturalGradient
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.optimizers.NaturalGradient">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         NaturalGradient
+        </span>
+       </code>
+      </a>
+      <ul class="nav section-nav flex-column">
+       <li class="toc-h5 nav-item toc-entry">
+        <a class="reference internal nav-link" href="#gpflow.optimizers.NaturalGradient.get_config">
+         <code class="docutils literal notranslate">
+          <span class="pre">
+           NaturalGradient.get_config()
+          </span>
+         </code>
+        </a>
+       </li>
+       <li class="toc-h5 nav-item toc-entry">
+        <a class="reference internal nav-link" href="#gpflow.optimizers.NaturalGradient.minimize">
+         <code class="docutils literal notranslate">
+          <span class="pre">
+           NaturalGradient.minimize()
+          </span>
+         </code>
+        </a>
+       </li>
+      </ul>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-optimizers-samplinghelper">
+     gpflow.optimizers.SamplingHelper
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.optimizers.SamplingHelper">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         SamplingHelper
+        </span>
+       </code>
+      </a>
+      <ul class="nav section-nav flex-column">
+       <li class="toc-h5 nav-item toc-entry">
+        <a class="reference internal nav-link" href="#gpflow.optimizers.SamplingHelper.convert_to_constrained_values">
+         <code class="docutils literal notranslate">
+          <span class="pre">
+           SamplingHelper.convert_to_constrained_values()
+          </span>
+         </code>
+        </a>
+       </li>
+       <li class="toc-h5 nav-item toc-entry">
+        <a class="reference internal nav-link" href="#gpflow.optimizers.SamplingHelper.current_state">
+         <code class="docutils literal notranslate">
+          <span class="pre">
+           SamplingHelper.current_state
+          </span>
+         </code>
+        </a>
+       </li>
+       <li class="toc-h5 nav-item toc-entry">
+        <a class="reference internal nav-link" href="#gpflow.optimizers.SamplingHelper.target_log_prob_fn">
+         <code class="docutils literal notranslate">
+          <span class="pre">
+           SamplingHelper.target_log_prob_fn
+          </span>
+         </code>
+        </a>
+       </li>
+      </ul>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-optimizers-scipy">
+     gpflow.optimizers.Scipy
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.optimizers.Scipy">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         Scipy
+        </span>
+       </code>
+      </a>
+      <ul class="nav section-nav flex-column">
+       <li class="toc-h5 nav-item toc-entry">
+        <a class="reference internal nav-link" href="#gpflow.optimizers.Scipy.minimize">
+         <code class="docutils literal notranslate">
+          <span class="pre">
+           Scipy.minimize()
+          </span>
+         </code>
+        </a>
+       </li>
+      </ul>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-optimizers-xinat">
+     gpflow.optimizers.XiNat
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.optimizers.XiNat">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         XiNat
+        </span>
+       </code>
+      </a>
+      <ul class="nav section-nav flex-column">
+       <li class="toc-h5 nav-item toc-entry">
+        <a class="reference internal nav-link" href="#gpflow.optimizers.XiNat.meanvarsqrt_to_xi">
+         <code class="docutils literal notranslate">
+          <span class="pre">
+           XiNat.meanvarsqrt_to_xi()
+          </span>
+         </code>
+        </a>
+       </li>
+       <li class="toc-h5 nav-item toc-entry">
+        <a class="reference internal nav-link" href="#gpflow.optimizers.XiNat.naturals_to_xi">
+         <code class="docutils literal notranslate">
+          <span class="pre">
+           XiNat.naturals_to_xi()
+          </span>
+         </code>
+        </a>
+       </li>
+       <li class="toc-h5 nav-item toc-entry">
+        <a class="reference internal nav-link" href="#gpflow.optimizers.XiNat.xi_to_meanvarsqrt">
+         <code class="docutils literal notranslate">
+          <span class="pre">
+           XiNat.xi_to_meanvarsqrt()
+          </span>
+         </code>
+        </a>
+       </li>
+      </ul>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-optimizers-xisqrtmeanvar">
+     gpflow.optimizers.XiSqrtMeanVar
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.optimizers.XiSqrtMeanVar">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         XiSqrtMeanVar
+        </span>
+       </code>
+      </a>
+      <ul class="nav section-nav flex-column">
+       <li class="toc-h5 nav-item toc-entry">
+        <a class="reference internal nav-link" href="#gpflow.optimizers.XiSqrtMeanVar.meanvarsqrt_to_xi">
+         <code class="docutils literal notranslate">
+          <span class="pre">
+           XiSqrtMeanVar.meanvarsqrt_to_xi()
+          </span>
+         </code>
+        </a>
+       </li>
+       <li class="toc-h5 nav-item toc-entry">
+        <a class="reference internal nav-link" href="#gpflow.optimizers.XiSqrtMeanVar.naturals_to_xi">
+         <code class="docutils literal notranslate">
+          <span class="pre">
+           XiSqrtMeanVar.naturals_to_xi()
+          </span>
+         </code>
+        </a>
+       </li>
+       <li class="toc-h5 nav-item toc-entry">
+        <a class="reference internal nav-link" href="#gpflow.optimizers.XiSqrtMeanVar.xi_to_meanvarsqrt">
+         <code class="docutils literal notranslate">
+          <span class="pre">
+           XiSqrtMeanVar.xi_to_meanvarsqrt()
+          </span>
+         </code>
+        </a>
+       </li>
+      </ul>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-optimizers-xitransform">
+     gpflow.optimizers.XiTransform
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.optimizers.XiTransform">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         XiTransform
+        </span>
+       </code>
+      </a>
+      <ul class="nav section-nav flex-column">
+       <li class="toc-h5 nav-item toc-entry">
+        <a class="reference internal nav-link" href="#gpflow.optimizers.XiTransform.meanvarsqrt_to_xi">
+         <code class="docutils literal notranslate">
+          <span class="pre">
+           XiTransform.meanvarsqrt_to_xi()
+          </span>
+         </code>
+        </a>
+       </li>
+       <li class="toc-h5 nav-item toc-entry">
+        <a class="reference internal nav-link" href="#gpflow.optimizers.XiTransform.naturals_to_xi">
+         <code class="docutils literal notranslate">
+          <span class="pre">
+           XiTransform.naturals_to_xi()
+          </span>
+         </code>
+        </a>
+       </li>
+       <li class="toc-h5 nav-item toc-entry">
+        <a class="reference internal nav-link" href="#gpflow.optimizers.XiTransform.xi_to_meanvarsqrt">
+         <code class="docutils literal notranslate">
+          <span class="pre">
+           XiTransform.xi_to_meanvarsqrt()
+          </span>
+         </code>
+        </a>
+       </li>
+      </ul>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+</nav>
+    </div>
+    
+    <div class="toc-item">
+      
+    </div>
+    
+  
+</div>
+
+
+          
+          
+          <div class="bd-content col-12 col-md-9 col-xl-7">
+              
+              <article class="bd-article" role="main">
+                
+  <section id="gpflow-optimizers">
+<h1>gpflow.optimizers<a class="headerlink" href="#gpflow-optimizers" title="Permalink to this heading">#</a></h1>
+<span class="target" id="module-gpflow.optimizers"></span><section id="modules">
+<h2>Modules<a class="headerlink" href="#modules" title="Permalink to this heading">#</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="natgrad/index.html">gpflow.optimizers.natgrad</a></li>
+</ul>
+</div>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this heading">#</a></h2>
+<section id="gpflow-optimizers-naturalgradient">
+<h3>gpflow.optimizers.NaturalGradient<a class="headerlink" href="#gpflow-optimizers-naturalgradient" title="Permalink to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.optimizers.NaturalGradient">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.optimizers.</span></span><span class="sig-name descname"><span class="pre">NaturalGradient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gamma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xi_transform=&lt;gpflow.optimizers.natgrad.XiNat</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name=None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/optimizers/natgrad.html#NaturalGradient"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.optimizers.NaturalGradient" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">OptimizerV2</span></code></p>
+<p>Implements a natural gradient descent optimizer for variational models
+that are based on a distribution q(u) = N(q_mu, q_sqrt q_sqrtᵀ) that is
+parameterized by mean q_mu and lower-triangular Cholesky factor q_sqrt
+of the covariance.</p>
+<p>Note that this optimizer does not implement the standard API of
+tf.optimizers.Optimizer. Its only public method is minimize(), which has
+a custom signature (var_list needs to be a list of (q_mu, q_sqrt) tuples,
+where q_mu and q_sqrt are gpflow.Parameter instances, not tf.Variable).</p>
+<p>Note furthermore that the natural gradients are implemented only for the
+full covariance case (i.e., q_diag=True is NOT supported).</p>
+<p>When using in your work, please cite <span id="id1">Salimbeni <em>et al.</em> [<a class="reference internal" href="../../../bibliography.html#id17" title="Hugh Salimbeni, Stefanos Eleftheriadis, and James Hensman. Natural gradients in practice: non-conjugate variational inference in gaussian process models. In AISTATS. 2018.">SEH18</a>]</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>gamma</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>]) – </p></li>
+<li><p><strong>xi_transform</strong> (<a class="reference internal" href="#gpflow.optimizers.XiTransform" title="gpflow.optimizers.natgrad.XiTransform"><code class="xref py py-class docutils literal notranslate"><span class="pre">XiTransform</span></code></a>) – </p></li>
+<li><p><strong>name</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.optimizers.NaturalGradient.get_config">
+<span class="sig-name descname"><span class="pre">get_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/optimizers/natgrad.html#NaturalGradient.get_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.optimizers.NaturalGradient.get_config" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the config of the optimizer.</p>
+<p>An optimizer config is a Python dictionary (serializable)
+containing the configuration of an optimizer.
+The same optimizer can be reinstantiated later
+(without any saved state) from this configuration.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>Python dictionary.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.optimizers.NaturalGradient.minimize">
+<span class="sig-name descname"><span class="pre">minimize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loss_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/optimizers/natgrad.html#NaturalGradient.minimize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.optimizers.NaturalGradient.minimize" title="Permalink to this definition">#</a></dt>
+<dd><p>Minimizes objective function of the model.
+Natural Gradient optimizer works with variational parameters only.</p>
+<p>GPflow implements the <cite>XiNat</cite> (default) and <cite>XiSqrtMeanVar</cite> transformations
+for parameters. Custom transformations that implement the <cite>XiTransform</cite>
+interface are also possible.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>loss_fn</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[[], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – Loss function.</p></li>
+<li><p><strong>var_list</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>], <code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>, <a class="reference internal" href="#gpflow.optimizers.XiTransform" title="gpflow.optimizers.natgrad.XiTransform"><code class="xref py py-class docutils literal notranslate"><span class="pre">XiTransform</span></code></a>]]]) – <ul>
+<li><p><strong>var_list[all][0]</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+<li><p><strong>var_list[all][1]</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>List of pair tuples of variational parameters or
+triplet tuple with variational parameters and ξ transformation.
+If ξ is not specified, will use self.xi_transform.
+For example, <cite>var_list</cite> could be:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">var_list</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="n">q_mu1</span><span class="p">,</span> <span class="n">q_sqrt1</span><span class="p">),</span>
+    <span class="p">(</span><span class="n">q_mu2</span><span class="p">,</span> <span class="n">q_sqrt2</span><span class="p">,</span> <span class="n">XiSqrtMeanVar</span><span class="p">())</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="gpflow-optimizers-samplinghelper">
+<h3>gpflow.optimizers.SamplingHelper<a class="headerlink" href="#gpflow-optimizers-samplinghelper" title="Permalink to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.optimizers.SamplingHelper">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.optimizers.</span></span><span class="sig-name descname"><span class="pre">SamplingHelper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_log_prob_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/optimizers/mcmc.html#SamplingHelper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.optimizers.SamplingHelper" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>This helper makes it easy to read from variables being set with a prior and
+writes values back to the same variables.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="o">...</span>  <span class="c1"># Create a GPflow model</span>
+<span class="n">hmc_helper</span> <span class="o">=</span> <span class="n">SamplingHelper</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">log_posterior_density</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span><span class="p">)</span>
+
+<span class="n">target_log_prob_fn</span> <span class="o">=</span> <span class="n">hmc_helper</span><span class="o">.</span><span class="n">target_log_prob_fn</span>
+<span class="n">current_state</span> <span class="o">=</span> <span class="n">hmc_helper</span><span class="o">.</span><span class="n">current_state</span>
+
+<span class="n">hmc</span> <span class="o">=</span> <span class="n">tfp</span><span class="o">.</span><span class="n">mcmc</span><span class="o">.</span><span class="n">HamiltonianMonteCarlo</span><span class="p">(</span><span class="n">target_log_prob_fn</span><span class="o">=</span><span class="n">target_log_prob_fn</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+<span class="n">adaptive_hmc</span> <span class="o">=</span> <span class="n">tfp</span><span class="o">.</span><span class="n">mcmc</span><span class="o">.</span><span class="n">SimpleStepSizeAdaptation</span><span class="p">(</span><span class="n">hmc</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+
+<span class="nd">@tf</span><span class="o">.</span><span class="n">function</span>
+<span class="k">def</span> <span class="nf">run_chain_fn</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">mcmc</span><span class="o">.</span><span class="n">sample_chain</span><span class="p">(</span>
+        <span class="n">num_samples</span><span class="p">,</span> <span class="n">num_burnin_steps</span><span class="p">,</span> <span class="n">current_state</span><span class="p">,</span> <span class="n">kernel</span><span class="o">=</span><span class="n">adaptive_hmc</span><span class="p">)</span>
+
+<span class="n">hmc_samples</span> <span class="o">=</span> <span class="n">run_chain_fn</span><span class="p">()</span>
+<span class="n">parameter_samples</span> <span class="o">=</span> <span class="n">hmc_helper</span><span class="o">.</span><span class="n">convert_to_constrained_values</span><span class="p">(</span><span class="n">hmc_samples</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>target_log_prob_fn</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[[], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – </p></li>
+<li><p><strong>parameters</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.optimizers.SamplingHelper.convert_to_constrained_values">
+<span class="sig-name descname"><span class="pre">convert_to_constrained_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hmc_samples</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/optimizers/mcmc.html#SamplingHelper.convert_to_constrained_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.optimizers.SamplingHelper.convert_to_constrained_values" title="Permalink to this definition">#</a></dt>
+<dd><p>Converts list of unconstrained values in <cite>hmc_samples</cite> to constrained
+versions. Each value in the list corresponds to an entry in parameters
+passed to the constructor; for parameters that have a transform, the
+constrained representation is returned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>hmc_samples</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – </p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="gpflow.optimizers.SamplingHelper.current_state">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">current_state</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Variable</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#gpflow.optimizers.SamplingHelper.current_state" title="Permalink to this definition">#</a></dt>
+<dd><p>Return the current state of the unconstrained variables, used in HMC.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="gpflow.optimizers.SamplingHelper.target_log_prob_fn">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">target_log_prob_fn</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#gpflow.optimizers.SamplingHelper.target_log_prob_fn" title="Permalink to this definition">#</a></dt>
+<dd><p>The target log probability, adjusted to allow for optimisation to occur on the tracked
+unconstrained underlying variables.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]]]]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="gpflow-optimizers-scipy">
+<h3>gpflow.optimizers.Scipy<a class="headerlink" href="#gpflow-optimizers-scipy" title="Permalink to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.optimizers.Scipy">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.optimizers.</span></span><span class="sig-name descname"><span class="pre">Scipy</span></span><a class="reference internal" href="../../../_modules/gpflow/optimizers/scipy.html#Scipy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.optimizers.Scipy" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.optimizers.Scipy.minimize">
+<span class="sig-name descname"><span class="pre">minimize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">closure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'L-BFGS-B'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step_callback</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allow_unused_variables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">scipy_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/optimizers/scipy.html#Scipy.minimize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.optimizers.Scipy.minimize" title="Permalink to this definition">#</a></dt>
+<dd><p>Minimize <cite>closure</cite>.</p>
+<p>Minimize is a wrapper around the <cite>scipy.optimize.minimize</cite> function handling the packing and
+unpacking of a list of shaped variables on the TensorFlow side vs. the flat numpy array
+required on the Scipy side.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>closure</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[[], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – A closure that re-evaluates the model, returning the loss to be minimized.</p></li>
+<li><p><strong>variables</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>]) – The list (tuple) of variables to be optimized
+(typically <cite>model.trainable_variables</cite>)</p></li>
+<li><p><strong>method</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]) – The type of solver to use in SciPy. Defaults to “L-BFGS-B”.</p></li>
+<li><p><strong>step_callback</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]], <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>], <a class="reference internal" href="../monitor/index.html#gpflow.monitor.Monitor" title="gpflow.monitor.base.Monitor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Monitor</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – If not None, a callable that gets called once after each optimisation
+step. The callable is passed the arguments <cite>step</cite>, <cite>variables</cite>, and <cite>values</cite>. <cite>step</cite> is
+the optimisation step counter, <cite>variables</cite> is the list of trainable variables as above,
+and <cite>values</cite> is the corresponding list of tensors of matching shape that contains their
+value at this optimisation step.</p></li>
+<li><p><strong>compile</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – If True, wraps the evaluation function (the passed <cite>closure</cite> as well as its
+gradient computation) inside a <cite>tf.function()</cite>, which will improve optimization speed in
+most cases.</p></li>
+<li><p><strong>allow_unused_variables</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to allow variables that are not actually used in the
+closure.</p></li>
+<li><p><strong>scipy_kwargs</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>) – Arguments passed through to <cite>scipy.optimize.minimize</cite>.
+Note that Scipy’s minimize() takes a <cite>callback</cite> argument, but you probably want to use
+our wrapper and pass in <cite>step_callback</cite>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">OptimizeResult</span></code></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The optimization result represented as a Scipy <code class="docutils literal notranslate"><span class="pre">OptimizeResult</span></code> object.
+See the Scipy documentation for description of attributes.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="gpflow-optimizers-xinat">
+<h3>gpflow.optimizers.XiNat<a class="headerlink" href="#gpflow-optimizers-xinat" title="Permalink to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.optimizers.XiNat">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.optimizers.</span></span><span class="sig-name descname"><span class="pre">XiNat</span></span><a class="reference internal" href="../../../_modules/gpflow/optimizers/natgrad.html#XiNat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.optimizers.XiNat" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.optimizers.XiTransform" title="gpflow.optimizers.natgrad.XiTransform"><code class="xref py py-class docutils literal notranslate"><span class="pre">XiTransform</span></code></a></p>
+<p>This is the default transform. Using the natural directly saves the forward mode
+gradient, and also gives the analytic optimal solution for gamma=1 in the case
+of Gaussian likelihood.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.optimizers.XiNat.meanvarsqrt_to_xi">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">meanvarsqrt_to_xi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">varsqrt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/optimizers/natgrad.html#XiNat.meanvarsqrt_to_xi"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.optimizers.XiNat.meanvarsqrt_to_xi" title="Permalink to this definition">#</a></dt>
+<dd><p>Transforms the parameter <cite>mean</cite> and <cite>varsqrt</cite> to <cite>xi1</cite>, <cite>xi2</cite></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mean</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>mean</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>the mean parameter</p>
+</p></li>
+<li><p><strong>varsqrt</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>varsqrt</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>the varsqrt parameter</p>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>tuple (xi1, xi2), the xi parameters</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.optimizers.XiNat.naturals_to_xi">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">naturals_to_xi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nat1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nat2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/optimizers/natgrad.html#XiNat.naturals_to_xi"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.optimizers.XiNat.naturals_to_xi" title="Permalink to this definition">#</a></dt>
+<dd><p>Applies the transform so that <cite>nat1</cite>, <cite>nat2</cite> is mapped to <cite>xi1</cite>, <cite>xi2</cite></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nat1</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>nat1</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>the θ₁ parameter</p>
+</p></li>
+<li><p><strong>nat2</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>nat2</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>the θ₂ parameter</p>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>tuple <cite>xi1</cite>, <cite>xi2</cite></p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.optimizers.XiNat.xi_to_meanvarsqrt">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">xi_to_meanvarsqrt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xi1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xi2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/optimizers/natgrad.html#XiNat.xi_to_meanvarsqrt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.optimizers.XiNat.xi_to_meanvarsqrt" title="Permalink to this definition">#</a></dt>
+<dd><p>Transforms the parameter <cite>xi1</cite>, <cite>xi2</cite> to <cite>mean</cite>, <cite>varsqrt</cite></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>xi1</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>xi1</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>the ξ₁ parameter</p>
+</p></li>
+<li><p><strong>xi2</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>xi2</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>the ξ₂ parameter</p>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>tuple (mean, varsqrt), the meanvarsqrt parameters</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="gpflow-optimizers-xisqrtmeanvar">
+<h3>gpflow.optimizers.XiSqrtMeanVar<a class="headerlink" href="#gpflow-optimizers-xisqrtmeanvar" title="Permalink to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.optimizers.XiSqrtMeanVar">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.optimizers.</span></span><span class="sig-name descname"><span class="pre">XiSqrtMeanVar</span></span><a class="reference internal" href="../../../_modules/gpflow/optimizers/natgrad.html#XiSqrtMeanVar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.optimizers.XiSqrtMeanVar" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.optimizers.XiTransform" title="gpflow.optimizers.natgrad.XiTransform"><code class="xref py py-class docutils literal notranslate"><span class="pre">XiTransform</span></code></a></p>
+<p>This transformation will perform natural gradient descent on the model parameters,
+so saves the conversion to and from Xi.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.optimizers.XiSqrtMeanVar.meanvarsqrt_to_xi">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">meanvarsqrt_to_xi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">varsqrt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/optimizers/natgrad.html#XiSqrtMeanVar.meanvarsqrt_to_xi"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.optimizers.XiSqrtMeanVar.meanvarsqrt_to_xi" title="Permalink to this definition">#</a></dt>
+<dd><p>Transforms the parameter <cite>mean</cite> and <cite>varsqrt</cite> to <cite>xi1</cite>, <cite>xi2</cite></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mean</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>mean</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>the mean parameter</p>
+</p></li>
+<li><p><strong>varsqrt</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>varsqrt</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>the varsqrt parameter</p>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>tuple (xi1, xi2), the xi parameters</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.optimizers.XiSqrtMeanVar.naturals_to_xi">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">naturals_to_xi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nat1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nat2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/optimizers/natgrad.html#XiSqrtMeanVar.naturals_to_xi"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.optimizers.XiSqrtMeanVar.naturals_to_xi" title="Permalink to this definition">#</a></dt>
+<dd><p>Applies the transform so that <cite>nat1</cite>, <cite>nat2</cite> is mapped to <cite>xi1</cite>, <cite>xi2</cite></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nat1</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>nat1</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>the θ₁ parameter</p>
+</p></li>
+<li><p><strong>nat2</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>nat2</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>the θ₂ parameter</p>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>tuple <cite>xi1</cite>, <cite>xi2</cite></p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.optimizers.XiSqrtMeanVar.xi_to_meanvarsqrt">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">xi_to_meanvarsqrt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xi1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xi2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/optimizers/natgrad.html#XiSqrtMeanVar.xi_to_meanvarsqrt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.optimizers.XiSqrtMeanVar.xi_to_meanvarsqrt" title="Permalink to this definition">#</a></dt>
+<dd><p>Transforms the parameter <cite>xi1</cite>, <cite>xi2</cite> to <cite>mean</cite>, <cite>varsqrt</cite></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>xi1</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>xi1</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>the ξ₁ parameter</p>
+</p></li>
+<li><p><strong>xi2</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>xi2</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>the ξ₂ parameter</p>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>tuple (mean, varsqrt), the meanvarsqrt parameters</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="gpflow-optimizers-xitransform">
+<h3>gpflow.optimizers.XiTransform<a class="headerlink" href="#gpflow-optimizers-xitransform" title="Permalink to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.optimizers.XiTransform">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.optimizers.</span></span><span class="sig-name descname"><span class="pre">XiTransform</span></span><a class="reference internal" href="../../../_modules/gpflow/optimizers/natgrad.html#XiTransform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.optimizers.XiTransform" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>XiTransform is the base class that implements three transformations necessary
+for the natural gradient calculation wrt any parameterization.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.optimizers.XiTransform.meanvarsqrt_to_xi">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">meanvarsqrt_to_xi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">varsqrt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/optimizers/natgrad.html#XiTransform.meanvarsqrt_to_xi"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.optimizers.XiTransform.meanvarsqrt_to_xi" title="Permalink to this definition">#</a></dt>
+<dd><p>Transforms the parameter <cite>mean</cite> and <cite>varsqrt</cite> to <cite>xi1</cite>, <cite>xi2</cite></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mean</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>mean</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>the mean parameter</p>
+</p></li>
+<li><p><strong>varsqrt</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>varsqrt</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>the varsqrt parameter</p>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>tuple (xi1, xi2), the xi parameters</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.optimizers.XiTransform.naturals_to_xi">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">naturals_to_xi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nat1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nat2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/optimizers/natgrad.html#XiTransform.naturals_to_xi"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.optimizers.XiTransform.naturals_to_xi" title="Permalink to this definition">#</a></dt>
+<dd><p>Applies the transform so that <cite>nat1</cite>, <cite>nat2</cite> is mapped to <cite>xi1</cite>, <cite>xi2</cite></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nat1</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>nat1</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>the θ₁ parameter</p>
+</p></li>
+<li><p><strong>nat2</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>nat2</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>the θ₂ parameter</p>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>tuple <cite>xi1</cite>, <cite>xi2</cite></p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.optimizers.XiTransform.xi_to_meanvarsqrt">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">xi_to_meanvarsqrt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xi1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xi2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/optimizers/natgrad.html#XiTransform.xi_to_meanvarsqrt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.optimizers.XiTransform.xi_to_meanvarsqrt" title="Permalink to this definition">#</a></dt>
+<dd><p>Transforms the parameter <cite>xi1</cite>, <cite>xi2</cite> to <cite>mean</cite>, <cite>varsqrt</cite></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>xi1</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>xi1</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>the ξ₁ parameter</p>
+</p></li>
+<li><p><strong>xi2</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>xi2</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>the ξ₂ parameter</p>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>tuple (mean, varsqrt), the meanvarsqrt parameters</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+              </article>
+              
+
+              
+          </div>
+          
+      </div>
+    </div>
+
+  
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695"></script>
+
+<footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    <p class="copyright">
+    &copy; Copyright 2022, The GPflow Contributors.<br>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.2.2.<br>
+</p>
+  </div>
+  
+</div>
+</footer>
+  </body>
+</html>
