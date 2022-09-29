@@ -57,7 +57,9 @@ plt.rcParams["figure.figsize"] = (12, 5)
 # ## The Module and Parameter classes
 
 # %% [markdown]
-# The two fundamental classes of GPflow are [gpflow.Module](../../api/gpflow/index.rst#gpflow-module) and [gpflow.Parameter](../../api/gpflow/index.rst#gpflow-parameter). Parameters are leaf nodes holding numerical values, that can be tuned / trained to make the model fit the data. Modules recursively composes other modules and parameters to create models. All the GPflow models, kernels, mean functions, etc. are modules.
+# The two fundamental classes of GPflow are:
+# * [gpflow.Parameter](../../api/gpflow/index.rst#gpflow-parameter). Parameters are leaf nodes holding numerical values, that can be tuned / trained to make the model fit the data.
+# * [gpflow.Module](../../api/gpflow/index.rst#gpflow-module). Modules recursively composes other modules and parameters to create models. All the GPflow models, kernels, mean functions, etc. are modules.
 #
 # As an example, let's build a simple linear model:
 
@@ -189,6 +191,12 @@ gpflow.utilities.print_summary(model)
 # Notice how the optimiser recovered the slope of $(2, 3)$ and bias of $1$ from the equation we used to generate the data: $y_i = 2x_{i0} + 3x_{i1} + 1$.
 
 # %% [markdown]
+# The default GPflow optimiser uses a gradient descent method called [BFGS](https://en.wikipedia.org/wiki/Broyden%E2%80%93Fletcher%E2%80%93Goldfarb%E2%80%93Shanno_algorithm). For this algoritm to work well you need:
+#
+# * A deterministic loss function. Notice this rules out mini-batching, because the random batches inject randomness into the loss function.
+# * Not too many parameters. You will probably be fine up to a couple of thousand parameters.
+
+# %% [markdown]
 # ## What to do if you model fails to fit
 #
 # In our above example the optimiser perfectly recovered the parameters of the process that generated our data. However, it was a very easy problem we were solving. As you start working with more complicated data sets you may find that the optimiser fails to find a good fit for you model. In this section we will discuss what you can do to help the optimiser a bit.
@@ -202,6 +210,10 @@ gpflow.utilities.print_summary(model)
 co2_data = pd.read_csv(
     "https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.csv", comment="#"
 )
+# hide: begin
+# Don't update data as time passes, so that we have stable model fitting below.
+co2_data = co2_data[co2_data["year"] < 2022]
+# hide: end
 Xco2 = co2_data["decimal date"].values[:, None]
 Yco2 = co2_data["average"].values[:, None]
 
@@ -239,17 +251,18 @@ if is_continuous_integration():
 
 def plot_co2_kernel(
     kernel: gpflow.kernels.Kernel,
-    mean_function: Optional[gpflow.functions.MeanFunction] = None,
+    *,
+    optimize: bool = False,
 ) -> None:
     model = gpflow.models.GPR(
         (Xco2, Yco2),
         kernel=kernel,
-        mean_function=mean_function,
     )
-    opt = gpflow.optimizers.Scipy()
-    opt.minimize(
-        model.training_loss, model.trainable_variables, options=opt_options
-    )
+    if optimize:
+        opt = gpflow.optimizers.Scipy()
+        opt.minimize(
+            model.training_loss, model.trainable_variables, options=opt_options
+        )
     gpflow.utilities.print_summary(model, "notebook")
 
     _, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
@@ -261,7 +274,7 @@ def plot_co2_kernel(
 # Let us start by trying to fit our favourite kernel: the squared exponential:
 
 # %%
-plot_co2_kernel(gpflow.kernels.SquaredExponential())
+plot_co2_kernel(gpflow.kernels.SquaredExponential(), optimize=True)
 
 # %% [markdown]
 # We are off to a good start. From the left plot it is clear that the kernel has captured the long-term trend of the data. However, on the zoomed-in plot on the right it is also clear that the data has some kind of yearly cycle that our model has failed to capture.
@@ -271,11 +284,12 @@ plot_co2_kernel(gpflow.kernels.SquaredExponential())
 # %%
 plot_co2_kernel(
     gpflow.kernels.SquaredExponential()
-    + gpflow.kernels.Periodic(gpflow.kernels.SquaredExponential())
+    + gpflow.kernels.Periodic(gpflow.kernels.SquaredExponential()),
+    optimize=True,
 )
 
 # %% [markdown]
-# Huh. What happened? The optimiser has completely failed to find a good fit. With the extended model the loss function has become too complicated for the optimiser.
+# Huh. What happened? The optimiser has failed to find a good fit. With the extended model the loss function has become too complicated for the optimiser.
 #
 # Below we will look at what we can do to help the optimiser.
 
@@ -292,7 +306,8 @@ plot_co2_kernel(
 # %%
 plot_co2_kernel(
     gpflow.kernels.SquaredExponential(variance=280_000, lengthscales=140.0)
-    + gpflow.kernels.Periodic(gpflow.kernels.SquaredExponential(), period=1.0)
+    + gpflow.kernels.Periodic(gpflow.kernels.SquaredExponential(), period=1.0),
+    optimize=True,
 )
 
 # %% [markdown]
@@ -322,14 +337,14 @@ long_term_kernel.variance.prior = tfp.distributions.LogNormal(
     tf.math.log(gpflow.utilities.to_default_float(280_000.0)), 1.0
 )
 long_term_kernel.lengthscales.prior = tfp.distributions.LogNormal(
-    tf.math.log(gpflow.utilities.to_default_float(140.0)), 0.1
+    tf.math.log(gpflow.utilities.to_default_float(140.0)), 0.05
 )
 periodic_kernel = gpflow.kernels.Periodic(gpflow.kernels.SquaredExponential())
 periodic_kernel.period.prior = tfp.distributions.LogNormal(
     tf.math.log(gpflow.utilities.to_default_float(1.0)), 0.1
 )
 
-plot_co2_kernel(long_term_kernel + periodic_kernel)
+plot_co2_kernel(long_term_kernel + periodic_kernel, optimize=True)
 
 # %% [markdown]
 # Notice that many parameters have constraints on what values are valid. In this case all of `variance`, `lengthscales` and `period` should be non-negative. That is why we chose the `LogNormal` distribution for our prior - it only allows positive values.
@@ -395,7 +410,7 @@ periodic_kernel.period = gpflow.Parameter(
     ),
 )
 
-plot_co2_kernel(long_term_kernel + periodic_kernel)
+plot_co2_kernel(long_term_kernel + periodic_kernel, optimize=True)
 
 # %% [markdown]
 # Again, be aware that many parameters have constraints on what kind of values they logically can take, and if you replace the transform of a parameter you must make sure that the transform only allows values that are logically valid in the context in which they are used.
@@ -427,10 +442,12 @@ long_term_kernel = gpflow.kernels.SquaredExponential(
 )
 gpflow.set_trainable(long_term_kernel, False)
 
-periodic_kernel = gpflow.kernels.Periodic(gpflow.kernels.SquaredExponential())
+periodic_kernel = gpflow.kernels.Periodic(
+    gpflow.kernels.SquaredExponential(), period=1
+)
 gpflow.set_trainable(periodic_kernel.period, False)
 
-plot_co2_kernel(long_term_kernel + periodic_kernel)
+plot_co2_kernel(long_term_kernel + periodic_kernel, optimize=True)
 
 # %% [markdown]
 # Notice how the `trainable` column of the parameter table reflects the whether the parameters are trainable. Also notice how the final value of the un-trainable parameters have exactly the value we initialised them to. Setting a parameter untrainable is a heavy-handed tool, and we generally recommend using one of the softer methods demonstrated above.
@@ -441,9 +458,12 @@ plot_co2_kernel(long_term_kernel + periodic_kernel)
 # %% [markdown]
 # ### Multi-stage training
 #
-# Remember how we first trained a model with only a `SquaredExponential` kernel, and in the above subsections we have been using parameters learned from that experiment for the initial values in a more complicated kernel? Well, it is possible to run optimisation multiple times, so instead of "copy and pasting" values, we can learn them anew every time. This is mostly useful if your data might change, and you are trying to write solid reusable code:
+# Remember how we first trained a model with only a `SquaredExponential` kernel, and in the above subsections we have been using parameters learned from that experiment for the initial values in a more complicated kernel?
+#
+# What if you do not have access to the data when you write your code, and you can not "copy and paste" from a previous experiment? Well, it is possible to run optimisation multiple times, so we can start by running optimisation on a smaller set of parameters, which is a simpler problem to optimise; and then optimise all the parameters in a second run.
 
 # %%
+# First we only use, and optimise, the long_term_kernel:
 long_term_kernel = gpflow.kernels.SquaredExponential()
 
 model = gpflow.models.GPR((Xco2, Yco2), kernel=long_term_kernel)
@@ -452,6 +472,7 @@ opt.minimize(
     model.training_loss, model.trainable_variables, options=opt_options
 )
 
+# And then we use, and optimise, the full kernel:
 periodic_kernel = gpflow.kernels.Periodic(gpflow.kernels.SquaredExponential())
 
 kernel = long_term_kernel + periodic_kernel
@@ -461,9 +482,7 @@ opt.minimize(
     model.training_loss, model.trainable_variables, options=opt_options
 )
 
-# Prevent `plot_co2_kernel` from changing the kernel.
-gpflow.set_trainable(kernel, False)
-plot_co2_kernel(kernel)
+plot_co2_kernel(kernel, optimize=False)
 
 # %% [markdown]
 # ### The Keras optimisers
@@ -498,6 +517,4 @@ for i in range(maxiter):
         print(i, model.training_loss().numpy())
 
 kernel = model.kernel
-# Prevent `plot_co2_kernel` from changing the kernel.
-gpflow.set_trainable(kernel, False)
-plot_co2_kernel(kernel)
+plot_co2_kernel(kernel, optimize=False)

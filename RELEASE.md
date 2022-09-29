@@ -55,9 +55,7 @@ This release contains contributions from:
 
 ## Bug Fixes and Other Changes
 
-* <SIMILAR TO ABOVE SECTION, BUT FOR OTHER IMPORTANT CHANGES / BUG FIXES>
-* <IF A CHANGE CLOSES A GITHUB ISSUE, IT SHOULD BE DOCUMENTED HERE>
-* <NOTES SHOULD BE GROUPED PER AREA>
+* Fixed bug related to `tf.saved_model` and methods wrapped in `@check_shapes`.
 
 ## Thanks to our Contributors
 
