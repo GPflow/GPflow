@@ -83,7 +83,7 @@ def check_shapes(*specs: str, tf_decorator: bool = False) -> Callable[[C], C]:
         bound_error_context = FunctionDefinitionContext(func)
         signature = inspect.signature(func)
 
-        def wrapped(*args: Any, **kwargs: Any) -> Any:
+        def wrapped_function(*args: Any, **kwargs: Any) -> Any:
             if not get_enable_check_shapes():
                 return func(*args, **kwargs)
 
@@ -156,6 +156,16 @@ def check_shapes(*specs: str, tf_decorator: bool = False) -> Callable[[C], C]:
             _check_specs(post_specs)
 
             return result
+
+        # Work-around for TensorFlow saved_model expecting methods to have a `self` argument:
+        if "self" in signature.parameters:
+
+            def wrapped_method(self: Any, *args: Any, **kwargs: Any) -> Any:
+                return wrapped_function(self, *args, **kwargs)
+
+            wrapped = wrapped_method
+        else:
+            wrapped = wrapped_function
 
         # Make TensorFlow understand our decoration:
         if tf_decorator:
