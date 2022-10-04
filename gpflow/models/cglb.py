@@ -15,11 +15,11 @@
 from typing import Any, List, NamedTuple, Optional, Tuple
 
 import tensorflow as tf
+from check_shapes import check_shapes, inherit_check_shapes
 
 from ..base import InputData, MeanAndVariance, Parameter, RegressionData, TensorType
 from ..config import default_float, default_int
 from ..covariances import Kuf
-from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..utilities import add_noise_cov, assert_params_false, to_default_float
 from .sgpr import SGPR
 

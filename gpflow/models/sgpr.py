@@ -16,12 +16,12 @@ from typing import NamedTuple, Optional, Tuple
 
 import numpy as np
 import tensorflow as tf
+from check_shapes import check_shapes, inherit_check_shapes
 
 from .. import posteriors
 from ..base import InputData, MeanAndVariance, RegressionData, TensorData
 from ..config import default_float, default_jitter
 from ..covariances.dispatch import Kuf, Kuu
-from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..inducing_variables import InducingPoints
 from ..kernels import Kernel
 from ..likelihoods import Gaussian

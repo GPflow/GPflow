@@ -18,10 +18,10 @@ from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, Union
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
+from check_shapes import check_shapes
 from typing_extensions import Final
 
 from .config import default_float, default_summary_fmt
-from .experimental.check_shapes import check_shapes
 from .type_flags import GENERIC_NP_ARRAYS, NP_TYPE_CHECKING
 
 if TYPE_CHECKING:  # pragma: no cover

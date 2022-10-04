@@ -2,9 +2,9 @@ from typing import Any
 
 import numpy as np
 import tensorflow as tf
+from check_shapes import ShapeChecker
 
 import gpflow
-from gpflow.experimental.check_shapes import ShapeChecker
 from gpflow.utilities import training_loop
 
 

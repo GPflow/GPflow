@@ -16,10 +16,10 @@ import abc
 from typing import Any, Optional
 
 import tensorflow as tf
+from check_shapes import check_shapes
 
 from ..base import InputData, MeanAndVariance, Module, RegressionData
 from ..conditionals.util import sample_mvn
-from ..experimental.check_shapes import check_shapes
 from ..kernels import Kernel, MultioutputKernel
 from ..likelihoods import Likelihood, SwitchedLikelihood
 from ..mean_functions import MeanFunction, Zero

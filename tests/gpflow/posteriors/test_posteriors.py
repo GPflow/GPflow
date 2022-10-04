@@ -17,12 +17,12 @@ import numpy as np
 import pytest
 import tensorflow as tf
 from _pytest.fixtures import SubRequest
+from check_shapes import check_shapes
 
 import gpflow
 import gpflow.ci_utils
 from gpflow.base import TensorType
 from gpflow.conditionals import conditional
-from gpflow.experimental.check_shapes import check_shapes
 from gpflow.inducing_variables import InducingPoints, InducingVariables
 from gpflow.kernels import Kernel
 from gpflow.likelihoods import Gaussian

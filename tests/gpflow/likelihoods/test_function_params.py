@@ -18,8 +18,8 @@ from typing import Any
 import numpy as np
 import pytest
 import tensorflow as tf
+from check_shapes import ShapeChecker
 
-from gpflow.experimental.check_shapes import ShapeChecker
 from gpflow.functions import Linear
 from gpflow.likelihoods import Beta, Gamma, Gaussian, ScalarLikelihood, StudentT
 from gpflow.utilities import to_default_float

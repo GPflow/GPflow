@@ -41,10 +41,10 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 import tensorflow_probability as tfp
+from check_shapes import check_shapes
 from matplotlib.axes import Axes
 
 import gpflow
-from gpflow.experimental.check_shapes import check_shapes
 
 # hide: begin
 from gpflow.ci_utils import is_continuous_integration  # isort:skip

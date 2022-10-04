@@ -33,9 +33,9 @@ from typing import Callable, List, Optional, Sequence, Tuple, Union, overload
 
 import numpy as np
 import tensorflow as tf
+from check_shapes import check_shapes
 
 from ..base import AnyNDArray, Module, TensorType
-from ..experimental.check_shapes import check_shapes
 
 ActiveDims = Union[slice, Sequence[int]]
 NormalizedActiveDims = Union[slice, AnyNDArray]

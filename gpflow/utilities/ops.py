@@ -13,13 +13,11 @@
 # limitations under the License.
 
 import copy
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, List, Optional
 
 import tensorflow as tf
 import tensorflow_probability as tfp
-
-from ..base import AnyNDArray
-from ..experimental.check_shapes import check_shapes
+from check_shapes import check_shapes
 
 
 @check_shapes(

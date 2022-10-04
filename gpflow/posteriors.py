@@ -18,6 +18,14 @@ from dataclasses import dataclass
 from typing import Optional, Tuple, Type, Union, cast
 
 import tensorflow as tf
+from check_shapes import (
+    ErrorContext,
+    Shape,
+    check_shapes,
+    get_shape,
+    inherit_check_shapes,
+    register_get_shape,
+)
 
 from . import covariances, kernels, mean_functions
 from .base import MeanAndVariance, Module, RegressionData, TensorType
@@ -32,14 +40,6 @@ from .conditionals.util import (
 )
 from .config import default_float, default_jitter
 from .covariances import Kuf, Kuu
-from .experimental.check_shapes import (
-    ErrorContext,
-    Shape,
-    check_shapes,
-    get_shape,
-    inherit_check_shapes,
-    register_get_shape,
-)
 from .inducing_variables import (
     FallbackSeparateIndependentInducingVariables,
     FallbackSharedIndependentInducingVariables,

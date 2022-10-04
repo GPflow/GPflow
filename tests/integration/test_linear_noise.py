@@ -16,12 +16,12 @@ from typing import Callable
 
 import numpy as np
 import pytest
+from check_shapes import ShapeChecker
 
 import gpflow
 from gpflow import default_float
 from gpflow.base import AnyNDArray, RegressionData
 from gpflow.config import default_float
-from gpflow.experimental.check_shapes import ShapeChecker
 from gpflow.functions import Linear
 from gpflow.kernels import Kernel
 from gpflow.likelihoods import Gaussian

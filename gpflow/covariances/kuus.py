@@ -13,9 +13,9 @@
 # limitations under the License.
 
 import tensorflow as tf
+from check_shapes import check_shapes
 
 from ..config import default_float
-from ..experimental.check_shapes import check_shapes
 from ..inducing_variables import InducingPatches, InducingPoints, Multiscale
 from ..kernels import Convolutional, Kernel, SquaredExponential
 from .dispatch import Kuu

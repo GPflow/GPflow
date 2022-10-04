@@ -16,9 +16,9 @@ import abc
 from typing import Any, Callable, Iterable, Tuple, Union
 
 import tensorflow as tf
+from check_shapes import check_shapes
 
 from ..base import TensorType
-from ..experimental.check_shapes import check_shapes
 
 
 class GaussianQuadrature:

@@ -37,9 +37,9 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
+from check_shapes import inherit_check_shapes
 
 import gpflow
-from gpflow.experimental.check_shapes import inherit_check_shapes
 
 # hide: begin
 # %matplotlib inline

@@ -17,12 +17,12 @@ from typing import Any, Optional, Sequence, Tuple, Type, Union, cast
 import numpy as np
 import pytest
 import tensorflow as tf
+from check_shapes import check_shapes
 from numpy.testing import assert_allclose
 
 import gpflow.ci_utils
 from gpflow.base import AnyNDArray, TensorType
 from gpflow.config import default_float
-from gpflow.experimental.check_shapes import check_shapes
 from gpflow.kernels import (
     RBF,
     AnisotropicStationary,

@@ -14,9 +14,9 @@
 from typing import Optional, Union
 
 import tensorflow as tf
+from check_shapes import check_shapes
 
 from ..base import Parameter, TensorData, TensorType
-from ..experimental.check_shapes import check_shapes
 from ..functions import Function
 from . import positive
 

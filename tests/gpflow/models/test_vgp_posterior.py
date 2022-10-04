@@ -2,10 +2,10 @@ from typing import Tuple
 
 import numpy as np
 import pytest
+from check_shapes import check_shapes
 
 import gpflow
 from gpflow.base import AnyNDArray, RegressionData
-from gpflow.experimental.check_shapes import check_shapes
 from gpflow.models.vgp import VGP_deprecated, VGP_with_posterior
 from gpflow.posteriors import PrecomputeCacheType
 

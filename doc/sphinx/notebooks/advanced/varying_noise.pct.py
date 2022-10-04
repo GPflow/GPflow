@@ -42,10 +42,10 @@ from typing import Optional, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
+from check_shapes import inherit_check_shapes
 
 import gpflow as gf
 from gpflow.ci_utils import reduce_in_tests
-from gpflow.experimental.check_shapes import inherit_check_shapes
 from gpflow.utilities import print_summary
 
 # %matplotlib inline
