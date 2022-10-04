@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
-    <title>Parameters and Their Optimisation &#8212; GPflow 2.6.0 documentation</title>
+    <title>Parameters and Their Optimisation &#8212; GPflow 2.6.1 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -667,7 +667,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <section id="The-Module-and-Parameter-classes">
 <h2>The Module and Parameter classes<a class="headerlink" href="#The-Module-and-Parameter-classes" title="Permalink to this heading">#</a></h2>
-<p>The two fundamental classes of GPflow are <a class="reference internal" href="../../api/gpflow/index.html#gpflow-module"><span class="std std-ref">gpflow.Module</span></a> and <a class="reference internal" href="../../api/gpflow/index.html#gpflow-parameter"><span class="std std-ref">gpflow.Parameter</span></a>. Parameters are leaf nodes holding numerical values, that can be tuned / trained to make the model fit the data. Modules recursively composes other modules and parameters to create models. All the GPflow models, kernels, mean functions, etc. are modules.</p>
+<p>The two fundamental classes of GPflow are: * <a class="reference internal" href="../../api/gpflow/index.html#gpflow-parameter"><span class="std std-ref">gpflow.Parameter</span></a>. Parameters are leaf nodes holding numerical values, that can be tuned / trained to make the model fit the data. * <a class="reference internal" href="../../api/gpflow/index.html#gpflow-module"><span class="std std-ref">gpflow.Module</span></a>. Modules recursively composes other modules and parameters to create models. All the GPflow models, kernels, mean functions, etc. are modules.</p>
 <p>As an example, let’s build a simple linear model:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -795,7 +795,7 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
-&lt;__main__.LinearModel object at 0x7f7a561198a0&gt;
+&lt;__main__.LinearModel object at 0x7faf30e121d0&gt;
 <table>
 <thead>
 <tr><th>name             </th><th>class    </th><th>transform  </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th>value  </th></tr>
@@ -933,6 +933,11 @@ div.rendered_html tbody tr:hover {
 </table></div>
 </div>
 <p>Notice how the optimiser recovered the slope of <span class="math notranslate nohighlight">\((2, 3)\)</span> and bias of <span class="math notranslate nohighlight">\(1\)</span> from the equation we used to generate the data: <span class="math notranslate nohighlight">\(y_i = 2x_{i0} + 3x_{i1} + 1\)</span>.</p>
+<p>The default GPflow optimiser uses a gradient descent method called <a class="reference external" href="https://en.wikipedia.org/wiki/Broyden%E2%80%93Fletcher%E2%80%93Goldfarb%E2%80%93Shanno_algorithm">BFGS</a>. For this algoritm to work well you need:</p>
+<ul class="simple">
+<li><p>A deterministic loss function. Notice this rules out mini-batching, because the random batches inject randomness into the loss function.</p></li>
+<li><p>Not too many parameters. You will probably be fine up to a couple of thousand parameters.</p></li>
+</ul>
 </section>
 </section>
 <section id="What-to-do-if-you-model-fails-to-fit">
@@ -983,17 +988,18 @@ div.rendered_html tbody tr:hover {
 
 <span class="k">def</span> <span class="nf">plot_co2_kernel</span><span class="p">(</span>
     <span class="n">kernel</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Kernel</span><span class="p">,</span>
-    <span class="n">mean_function</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">gpflow</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">MeanFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">optimize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="n">model</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">(</span>
         <span class="p">(</span><span class="n">Xco2</span><span class="p">,</span> <span class="n">Yco2</span><span class="p">),</span>
         <span class="n">kernel</span><span class="o">=</span><span class="n">kernel</span><span class="p">,</span>
-        <span class="n">mean_function</span><span class="o">=</span><span class="n">mean_function</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
-    <span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">opt_options</span>
-    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">optimize</span><span class="p">:</span>
+        <span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
+        <span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">opt_options</span>
+        <span class="p">)</span>
     <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;notebook&quot;</span><span class="p">)</span>
 
     <span class="n">_</span><span class="p">,</span> <span class="p">(</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
@@ -1007,7 +1013,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_co2_kernel</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">())</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_co2_kernel</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(),</span> <span class="n">optimize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -1020,9 +1026,9 @@ div.rendered_html tbody tr:hover {
 <tr><th>name                   </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style="text-align: right;">      value</th></tr>
 </thead>
 <tbody>
-<tr><td>GPR.kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">99916.7    </td></tr>
-<tr><td>GPR.kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   49.8905 </td></tr>
-<tr><td>GPR.likelihood.variance</td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    4.70003</td></tr>
+<tr><td>GPR.kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">92550.7    </td></tr>
+<tr><td>GPR.kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   48.048  </td></tr>
+<tr><td>GPR.likelihood.variance</td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    4.72417</td></tr>
 </tbody>
 </table></div>
 </div>
@@ -1030,7 +1036,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_getting_started_parameters_and_their_optimisation_41_1.png" src="../../_images/notebooks_getting_started_parameters_and_their_optimisation_41_1.png" />
+<img alt="../../_images/notebooks_getting_started_parameters_and_their_optimisation_42_1.png" src="../../_images/notebooks_getting_started_parameters_and_their_optimisation_42_1.png" />
 </div>
 </div>
 <p>We are off to a good start. From the left plot it is clear that the kernel has captured the long-term trend of the data. However, on the zoomed-in plot on the right it is also clear that the data has some kind of yearly cycle that our model has failed to capture.</p>
@@ -1041,7 +1047,8 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_co2_kernel</span><span class="p">(</span>
     <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">()</span>
-    <span class="o">+</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Periodic</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">())</span>
+    <span class="o">+</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Periodic</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">()),</span>
+    <span class="n">optimize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -1052,15 +1059,15 @@ div.rendered_html tbody tr:hover {
 <div class="output_area rendered_html docutils container">
 <table>
 <thead>
-<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style="text-align: right;">      value</th></tr>
+<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style="text-align: right;">    value</th></tr>
 </thead>
 <tbody>
-<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">28013.2    </td></tr>
-<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   44.0654 </td></tr>
-<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">37398.5    </td></tr>
-<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;"> 2404.56   </td></tr>
-<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;"> 1032.07   </td></tr>
-<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    4.69783</td></tr>
+<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">23560.6  </td></tr>
+<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   42.137</td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">36653.5  </td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;"> 2507.71 </td></tr>
+<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;"> 3121.07 </td></tr>
+<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    4.722</td></tr>
 </tbody>
 </table></div>
 </div>
@@ -1068,10 +1075,10 @@ div.rendered_html tbody tr:hover {
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_getting_started_parameters_and_their_optimisation_43_1.png" src="../../_images/notebooks_getting_started_parameters_and_their_optimisation_43_1.png" />
+<img alt="../../_images/notebooks_getting_started_parameters_and_their_optimisation_44_1.png" src="../../_images/notebooks_getting_started_parameters_and_their_optimisation_44_1.png" />
 </div>
 </div>
-<p>Huh. What happened? The optimiser has completely failed to find a good fit. With the extended model the loss function has become too complicated for the optimiser.</p>
+<p>Huh. What happened? The optimiser has failed to find a good fit. With the extended model the loss function has become too complicated for the optimiser.</p>
 <p>Below we will look at what we can do to help the optimiser.</p>
 </section>
 <section id="Setting-the-initial-value">
@@ -1088,7 +1095,8 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_co2_kernel</span><span class="p">(</span>
     <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(</span><span class="n">variance</span><span class="o">=</span><span class="mi">280_000</span><span class="p">,</span> <span class="n">lengthscales</span><span class="o">=</span><span class="mf">140.0</span><span class="p">)</span>
-    <span class="o">+</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Periodic</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(),</span> <span class="n">period</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+    <span class="o">+</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Periodic</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(),</span> <span class="n">period</span><span class="o">=</span><span class="mf">1.0</span><span class="p">),</span>
+    <span class="n">optimize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -1099,15 +1107,15 @@ div.rendered_html tbody tr:hover {
 <div class="output_area rendered_html docutils container">
 <table>
 <thead>
-<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style="text-align: right;">          value</th></tr>
+<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style="text-align: right;">       value</th></tr>
 </thead>
 <tbody>
-<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">69886.7        </td></tr>
-<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    0          </td></tr>
-<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    9.52549e+07</td></tr>
-<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    0          </td></tr>
-<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    0          </td></tr>
-<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    0          </td></tr>
+<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">280000      </td></tr>
+<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   139.971  </td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     1.21026</td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.59362</td></tr>
+<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.99967</td></tr>
+<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.40952</td></tr>
 </tbody>
 </table></div>
 </div>
@@ -1115,7 +1123,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_getting_started_parameters_and_their_optimisation_46_1.png" src="../../_images/notebooks_getting_started_parameters_and_their_optimisation_46_1.png" />
+<img alt="../../_images/notebooks_getting_started_parameters_and_their_optimisation_47_1.png" src="../../_images/notebooks_getting_started_parameters_and_their_optimisation_47_1.png" />
 </div>
 </div>
 </section>
@@ -1152,14 +1160,14 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
     <span class="n">tf</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">to_default_float</span><span class="p">(</span><span class="mf">280_000.0</span><span class="p">)),</span> <span class="mf">1.0</span>
 <span class="p">)</span>
 <span class="n">long_term_kernel</span><span class="o">.</span><span class="n">lengthscales</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">tfp</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span>
-    <span class="n">tf</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">to_default_float</span><span class="p">(</span><span class="mf">140.0</span><span class="p">)),</span> <span class="mf">0.1</span>
+    <span class="n">tf</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">to_default_float</span><span class="p">(</span><span class="mf">140.0</span><span class="p">)),</span> <span class="mf">0.05</span>
 <span class="p">)</span>
 <span class="n">periodic_kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Periodic</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">())</span>
 <span class="n">periodic_kernel</span><span class="o">.</span><span class="n">period</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">tfp</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span>
     <span class="n">tf</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">to_default_float</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)),</span> <span class="mf">0.1</span>
 <span class="p">)</span>
 
-<span class="n">plot_co2_kernel</span><span class="p">(</span><span class="n">long_term_kernel</span> <span class="o">+</span> <span class="n">periodic_kernel</span><span class="p">)</span>
+<span class="n">plot_co2_kernel</span><span class="p">(</span><span class="n">long_term_kernel</span> <span class="o">+</span> <span class="n">periodic_kernel</span><span class="p">,</span> <span class="n">optimize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -1169,15 +1177,15 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <div class="output_area rendered_html docutils container">
 <table>
 <thead>
-<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior    </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style="text-align: right;">      value</th></tr>
+<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior    </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style="text-align: right;">     value</th></tr>
 </thead>
 <tbody>
-<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>LogNormal</td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">4.83196e+07</td></tr>
-<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>LogNormal</td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">0          </td></tr>
-<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>         </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">1.20823e+08</td></tr>
-<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>         </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">0          </td></tr>
-<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>LogNormal</td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">0          </td></tr>
-<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>         </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">0          </td></tr>
+<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>LogNormal</td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">1406.93   </td></tr>
+<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>LogNormal</td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;"> 104.982  </td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>         </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">1204.02   </td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>         </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   3.24878</td></tr>
+<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>LogNormal</td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   0.99961</td></tr>
+<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>         </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   0.63827</td></tr>
 </tbody>
 </table></div>
 </div>
@@ -1185,7 +1193,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_getting_started_parameters_and_their_optimisation_53_1.png" src="../../_images/notebooks_getting_started_parameters_and_their_optimisation_53_1.png" />
+<img alt="../../_images/notebooks_getting_started_parameters_and_their_optimisation_54_1.png" src="../../_images/notebooks_getting_started_parameters_and_their_optimisation_54_1.png" />
 </div>
 </div>
 <p>Notice that many parameters have constraints on what values are valid. In this case all of <code class="docutils literal notranslate"><span class="pre">variance</span></code>, <code class="docutils literal notranslate"><span class="pre">lengthscales</span></code> and <code class="docutils literal notranslate"><span class="pre">period</span></code> should be non-negative. That is why we chose the <code class="docutils literal notranslate"><span class="pre">LogNormal</span></code> distribution for our prior - it only allows positive values.</p>
@@ -1287,7 +1295,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
     <span class="p">),</span>
 <span class="p">)</span>
 
-<span class="n">plot_co2_kernel</span><span class="p">(</span><span class="n">long_term_kernel</span> <span class="o">+</span> <span class="n">periodic_kernel</span><span class="p">)</span>
+<span class="n">plot_co2_kernel</span><span class="p">(</span><span class="n">long_term_kernel</span> <span class="o">+</span> <span class="n">periodic_kernel</span><span class="p">,</span> <span class="n">optimize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -1302,10 +1310,10 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <tbody>
 <tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>SoftClip        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">280000      </td></tr>
 <tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>SoftClip        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   100.002  </td></tr>
-<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    74.1069 </td></tr>
-<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     1.52477</td></tr>
-<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>SoftClip        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.9996 </td></tr>
-<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.38733</td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    62.8789 </td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     1.44412</td></tr>
+<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>SoftClip        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.99962</td></tr>
+<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.37432</td></tr>
 </tbody>
 </table></div>
 </div>
@@ -1313,7 +1321,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_getting_started_parameters_and_their_optimisation_66_1.png" src="../../_images/notebooks_getting_started_parameters_and_their_optimisation_66_1.png" />
+<img alt="../../_images/notebooks_getting_started_parameters_and_their_optimisation_67_1.png" src="../../_images/notebooks_getting_started_parameters_and_their_optimisation_67_1.png" />
 </div>
 </div>
 <p>Again, be aware that many parameters have constraints on what kind of values they logically can take, and if you replace the transform of a parameter you must make sure that the transform only allows values that are logically valid in the context in which they are used.</p>
@@ -1351,10 +1359,10 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <span class="p">)</span>
 <span class="n">gpflow</span><span class="o">.</span><span class="n">set_trainable</span><span class="p">(</span><span class="n">long_term_kernel</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 
-<span class="n">periodic_kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Periodic</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">())</span>
+<span class="n">periodic_kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Periodic</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(),</span> <span class="n">period</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="n">gpflow</span><span class="o">.</span><span class="n">set_trainable</span><span class="p">(</span><span class="n">periodic_kernel</span><span class="o">.</span><span class="n">period</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 
-<span class="n">plot_co2_kernel</span><span class="p">(</span><span class="n">long_term_kernel</span> <span class="o">+</span> <span class="n">periodic_kernel</span><span class="p">)</span>
+<span class="n">plot_co2_kernel</span><span class="p">(</span><span class="n">long_term_kernel</span> <span class="o">+</span> <span class="n">periodic_kernel</span><span class="p">,</span> <span class="n">optimize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -1369,10 +1377,10 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <tbody>
 <tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>False      </td><td>()     </td><td>float64</td><td style="text-align: right;">280000      </td></tr>
 <tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>False      </td><td>()     </td><td>float64</td><td style="text-align: right;">   140      </td></tr>
-<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    48.7168 </td></tr>
-<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     1.36623</td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    44.4121 </td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     1.32236</td></tr>
 <tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>False      </td><td>()     </td><td>float64</td><td style="text-align: right;">     1      </td></tr>
-<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.47065</td></tr>
+<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.46552</td></tr>
 </tbody>
 </table></div>
 </div>
@@ -1380,7 +1388,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_getting_started_parameters_and_their_optimisation_72_1.png" src="../../_images/notebooks_getting_started_parameters_and_their_optimisation_72_1.png" />
+<img alt="../../_images/notebooks_getting_started_parameters_and_their_optimisation_73_1.png" src="../../_images/notebooks_getting_started_parameters_and_their_optimisation_73_1.png" />
 </div>
 </div>
 <p>Notice how the <code class="docutils literal notranslate"><span class="pre">trainable</span></code> column of the parameter table reflects the whether the parameters are trainable. Also notice how the final value of the un-trainable parameters have exactly the value we initialised them to. Setting a parameter untrainable is a heavy-handed tool, and we generally recommend using one of the softer methods demonstrated above.</p>
@@ -1390,12 +1398,14 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <h2>Advanced training<a class="headerlink" href="#Advanced-training" title="Permalink to this heading">#</a></h2>
 <section id="Multi-stage-training">
 <h3>Multi-stage training<a class="headerlink" href="#Multi-stage-training" title="Permalink to this heading">#</a></h3>
-<p>Remember how we first trained a model with only a <code class="docutils literal notranslate"><span class="pre">SquaredExponential</span></code> kernel, and in the above subsections we have been using parameters learned from that experiment for the initial values in a more complicated kernel? Well, it is possible to run optimisation multiple times, so instead of “copy and pasting” values, we can learn them anew every time. This is mostly useful if your data might change, and you are trying to write solid reusable code:</p>
+<p>Remember how we first trained a model with only a <code class="docutils literal notranslate"><span class="pre">SquaredExponential</span></code> kernel, and in the above subsections we have been using parameters learned from that experiment for the initial values in a more complicated kernel?</p>
+<p>What if you do not have access to the data when you write your code, and you can not “copy and paste” from a previous experiment? Well, it is possible to run optimisation multiple times, so we can start by running optimisation on a smaller set of parameters, which is a simpler problem to optimise; and then optimise all the parameters in a second run.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">long_term_kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># First we only use, and optimise, the long_term_kernel:</span>
+<span class="n">long_term_kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">()</span>
 
 <span class="n">model</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">((</span><span class="n">Xco2</span><span class="p">,</span> <span class="n">Yco2</span><span class="p">),</span> <span class="n">kernel</span><span class="o">=</span><span class="n">long_term_kernel</span><span class="p">)</span>
 <span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
@@ -1403,6 +1413,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
     <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">opt_options</span>
 <span class="p">)</span>
 
+<span class="c1"># And then we use, and optimise, the full kernel:</span>
 <span class="n">periodic_kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Periodic</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">())</span>
 
 <span class="n">kernel</span> <span class="o">=</span> <span class="n">long_term_kernel</span> <span class="o">+</span> <span class="n">periodic_kernel</span>
@@ -1412,9 +1423,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
     <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">opt_options</span>
 <span class="p">)</span>
 
-<span class="c1"># Prevent `plot_co2_kernel` from changing the kernel.</span>
-<span class="n">gpflow</span><span class="o">.</span><span class="n">set_trainable</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
-<span class="n">plot_co2_kernel</span><span class="p">(</span><span class="n">kernel</span><span class="p">)</span>
+<span class="n">plot_co2_kernel</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">optimize</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -1424,15 +1433,15 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <div class="output_area rendered_html docutils container">
 <table>
 <thead>
-<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style="text-align: right;">      value</th></tr>
+<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style="text-align: right;">     value</th></tr>
 </thead>
 <tbody>
-<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>False      </td><td>()     </td><td>float64</td><td style="text-align: right;">99916.7    </td></tr>
-<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>False      </td><td>()     </td><td>float64</td><td style="text-align: right;">   49.8867 </td></tr>
-<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>False      </td><td>()     </td><td>float64</td><td style="text-align: right;">    1      </td></tr>
-<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>False      </td><td>()     </td><td>float64</td><td style="text-align: right;">    1      </td></tr>
-<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>False      </td><td>()     </td><td>float64</td><td style="text-align: right;">    1      </td></tr>
-<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    0.34501</td></tr>
+<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">92550.7   </td></tr>
+<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   48.0432</td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    1     </td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    1     </td></tr>
+<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    1     </td></tr>
+<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    1     </td></tr>
 </tbody>
 </table></div>
 </div>
@@ -1440,7 +1449,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_getting_started_parameters_and_their_optimisation_76_1.png" src="../../_images/notebooks_getting_started_parameters_and_their_optimisation_76_1.png" />
+<img alt="../../_images/notebooks_getting_started_parameters_and_their_optimisation_77_1.png" src="../../_images/notebooks_getting_started_parameters_and_their_optimisation_77_1.png" />
 </div>
 </div>
 </section>
@@ -1474,9 +1483,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
         <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
 
 <span class="n">kernel</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">kernel</span>
-<span class="c1"># Prevent `plot_co2_kernel` from changing the kernel.</span>
-<span class="n">gpflow</span><span class="o">.</span><span class="n">set_trainable</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
-<span class="n">plot_co2_kernel</span><span class="p">(</span><span class="n">kernel</span><span class="p">)</span>
+<span class="n">plot_co2_kernel</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">optimize</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -1485,26 +1492,26 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-0 1000.3103210097041
-100 980.4509510531951
-200 964.2579084959708
-300 950.0708258597233
-400 937.6962463974968
-500 926.990022623095
-600 917.8398442967325
-700 910.145361257209
-800 903.8061523474757
-900 898.6929459701918
-1000 894.6967963871082
-1100 891.5973400283881
-1200 889.288987548881
-1300 887.5919052952197
-1400 886.3380304464888
-1500 885.5560963920814
-1600 884.6950853830389
-1700 884.1195315674989
-1800 883.9836126313455
-1900 883.1931337940107
+0 991.6642452919384
+100 971.9969244437586
+200 955.9239211582623
+300 941.8268525762583
+400 929.5124969975786
+500 918.8366728936893
+600 909.6873235710906
+700 901.9652667585605
+800 895.5838013609218
+900 890.3854280193607
+1000 886.2786754486506
+1100 883.104920317619
+1200 880.7006179207016
+1300 878.9144299234766
+1400 877.580730360578
+1500 876.6684550608326
+1600 875.8133566526251
+1700 875.1903254968499
+1800 874.897354965005
+1900 874.187476325266
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -1516,12 +1523,12 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style="text-align: right;">       value</th></tr>
 </thead>
 <tbody>
-<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>False      </td><td>()     </td><td>float64</td><td style="text-align: right;">280002      </td></tr>
-<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>False      </td><td>()     </td><td>float64</td><td style="text-align: right;">   137.571  </td></tr>
-<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>False      </td><td>()     </td><td>float64</td><td style="text-align: right;">     1.80382</td></tr>
-<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>False      </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.55318</td></tr>
-<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>False      </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.99961</td></tr>
-<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.44761</td></tr>
+<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">280002      </td></tr>
+<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   137.551  </td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     1.80473</td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.55247</td></tr>
+<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.99962</td></tr>
+<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     1      </td></tr>
 </tbody>
 </table></div>
 </div>
@@ -1529,7 +1536,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_getting_started_parameters_and_their_optimisation_78_2.png" src="../../_images/notebooks_getting_started_parameters_and_their_optimisation_78_2.png" />
+<img alt="../../_images/notebooks_getting_started_parameters_and_their_optimisation_79_2.png" src="../../_images/notebooks_getting_started_parameters_and_their_optimisation_79_2.png" />
 </div>
 </div>
 </section>

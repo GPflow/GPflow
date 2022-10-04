@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
-    <title>GPflow &#8212; GPflow 2.6.0 documentation</title>
+    <title>GPflow &#8212; GPflow 2.6.1 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -251,6 +251,43 @@ function checkPageExistsAndRedirect(event) {
   </ul>
  </li>
  <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#what-models-are-implemented">
+   What models are implemented?
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#regression">
+     Regression
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#mcmc">
+     MCMC
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#variational-inference">
+     Variational inference
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#interdomain-inference-and-multioutput-gps">
+     Interdomain inference and multioutput GPs
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gplvm">
+     GPLVM
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#heteroskedastic-models">
+     Heteroskedastic models
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#contact">
    Contact
   </a>
@@ -328,6 +365,66 @@ Today it is primarily maintained by the company <a class="reference external" hr
 </ul>
 </div>
 </section>
+<section id="what-models-are-implemented">
+<span id="implemented-models"></span><h2>What models are implemented?<a class="headerlink" href="#what-models-are-implemented" title="Permalink to this heading">#</a></h2>
+<p>GPflow has a slew of kernels that can be combined in a straightforward way. As for inference, the options are currently:</p>
+<section id="regression">
+<h3>Regression<a class="headerlink" href="#regression" title="Permalink to this heading">#</a></h3>
+<p>For GP regression with Gaussian noise, it’s possible to marginalize the function values exactly: you’ll find this in <a class="reference internal" href="api/gpflow/models/index.html#gpflow.models.GPR" title="gpflow.models.GPR"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.GPR</span></code></a>. You can do maximum likelihood or MCMC for the covariance function parameters.</p>
+<p>It’s also possible to do Sparse GP regression using the <a class="reference internal" href="api/gpflow/models/index.html#gpflow.models.SGPR" title="gpflow.models.SGPR"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.SGPR</span></code></a> class. This is based on work by Michalis Titsias <span id="id1">[<a class="reference internal" href="bibliography.html#id19" title="Michalis K Titsias. Variational learning of inducing variables in sparse gaussian processes. In International Conference on Artificial Intelligence and Statistics, 567–574. 2009.">Tit09</a>]</span>.</p>
+</section>
+<section id="mcmc">
+<h3>MCMC<a class="headerlink" href="#mcmc" title="Permalink to this heading">#</a></h3>
+<p>For non-Gaussian likelihoods, GPflow has a model that can jointly sample over the function values and the covariance parameters: <a class="reference internal" href="api/gpflow/models/index.html#gpflow.models.GPMC" title="gpflow.models.GPMC"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.GPMC</span></code></a>. There’s also a sparse equivalent in <a class="reference internal" href="api/gpflow/models/index.html#gpflow.models.SGPMC" title="gpflow.models.SGPMC"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.SGPMC</span></code></a>, based on <span id="id2">Hensman <em>et al.</em> [<a class="reference internal" href="bibliography.html#id7" title="James Hensman, Alexander G. de G. Matthews, Maurizio Filippone, and Zoubin Ghahramani. Mcmc for variatinoally sparse gaussian processes. In Proceedings of NIPS. 2015. URL: https://proceedings.neurips.cc/paper/2015/file/6b180037abbebea991d8b1232f8a8ca9-Paper.pdf.">HMFG15</a>]</span>.</p>
+</section>
+<section id="variational-inference">
+<h3>Variational inference<a class="headerlink" href="#variational-inference" title="Permalink to this heading">#</a></h3>
+<p>It’s often sufficient to approximate the function values as a Gaussian, for which we follow <span id="id3">Opper and Archambeau [<a class="reference internal" href="bibliography.html#id14" title="Manfred Opper and Cedric Archambeau. The variational gaussian approximation revisited. Neural Comput., pages 786–792, 2009.">OA09</a>]</span> in <a class="reference internal" href="api/gpflow/models/index.html#gpflow.models.VGP" title="gpflow.models.VGP"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.VGP</span></code></a>. In addition, there is a sparse version based on <span id="id4">Hensman <em>et al.</em> [<a class="reference internal" href="bibliography.html#id6" title="James Hensman, Alexander G. de G. Matthews, and Zoubin Ghahramani. Scalable variational gaussian process classification. In Proceedings of AISTATS. 2015.">HMG15</a>]</span> in <a class="reference internal" href="api/gpflow/models/index.html#gpflow.models.SVGP" title="gpflow.models.SVGP"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.SVGP</span></code></a>. In the Gaussian likelihood case some of the optimization may be done analytically as discussed in <span id="id5">Titsias [<a class="reference internal" href="bibliography.html#id19" title="Michalis K Titsias. Variational learning of inducing variables in sparse gaussian processes. In International Conference on Artificial Intelligence and Statistics, 567–574. 2009.">Tit09</a>]</span> and implemented in <a class="reference internal" href="api/gpflow/models/index.html#gpflow.models.SGPR" title="gpflow.models.SGPR"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.SGPR</span></code></a> . All of the sparse methods in GPflow are solidified in <span id="id6">Matthews <em>et al.</em> [<a class="reference internal" href="bibliography.html#id10" title="Alexander G de G Matthews, James Hensman, Richard Turner, and Zoubin Ghahramani. On sparse variational methods and the kullback-leibler divergence between stochastic processes. In Artificial Intelligence and Statistics, 231–239. PMLR, 2016.">MHTG16</a>]</span>.</p>
+<p>The following table summarizes the model options in GPflow.</p>
+<table class="table">
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>Gaussian
+Likelihood</p></th>
+<th class="head"><p>Non-Gaussian (variational)</p></th>
+<th class="head"><p>Non-Gaussian
+(MCMC)</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Full-covariance</p></td>
+<td><p><a class="reference internal" href="api/gpflow/models/index.html#gpflow.models.GPR" title="gpflow.models.GPR"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.GPR</span></code></a></p></td>
+<td><p><a class="reference internal" href="api/gpflow/models/index.html#gpflow.models.VGP" title="gpflow.models.VGP"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.VGP</span></code></a></p></td>
+<td><p><a class="reference internal" href="api/gpflow/models/index.html#gpflow.models.GPMC" title="gpflow.models.GPMC"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.GPMC</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p>Sparse approximation</p></td>
+<td><p><a class="reference internal" href="api/gpflow/models/index.html#gpflow.models.SGPR" title="gpflow.models.SGPR"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.SGPR</span></code></a></p></td>
+<td><p><a class="reference internal" href="api/gpflow/models/index.html#gpflow.models.SVGP" title="gpflow.models.SVGP"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.SVGP</span></code></a></p></td>
+<td><p><a class="reference internal" href="api/gpflow/models/index.html#gpflow.models.SGPMC" title="gpflow.models.SGPMC"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.SGPMC</span></code></a></p></td>
+</tr>
+</tbody>
+</table>
+<p>A unified view of many of the relevant references, along with some extensions, and an early discussion of GPflow itself, is given in the PhD thesis of Matthews <span id="id7">[<a class="reference internal" href="bibliography.html#id11" title="Alexander Graeme de Garis Matthews. Scalable Gaussian process inference using variational methods. PhD thesis, University of Cambridge, 2017.">Mat17</a>]</span>.</p>
+</section>
+<section id="interdomain-inference-and-multioutput-gps">
+<h3>Interdomain inference and multioutput GPs<a class="headerlink" href="#interdomain-inference-and-multioutput-gps" title="Permalink to this heading">#</a></h3>
+<p>GPflow has an extensive and flexible framework for specifying interdomain inducing variables for variational approximations.
+Interdomain variables can greatly improve the effectiveness of a variational approximation, and are used in e.g.
+<a class="reference internal" href="notebooks/advanced/convolutional.html"><span class="doc">Fake convolutional.ipynb</span></a>. In particular, they are crucial for defining sensible sparse
+approximations for multioutput GPs (<a class="reference internal" href="notebooks/advanced/multioutput.html"><span class="doc">Fake multioutput.ipynb</span></a>).</p>
+<p>GPflow has a unifying design for using multioutput GPs and specifying interdomain approximations. A review of the
+mathematical background and the resulting software design is described in <span id="id8">van der Wilk <em>et al.</em> [<a class="reference internal" href="bibliography.html#id4" title="Mark van der Wilk, Vincent Dutordoir, ST John, Artem Artemev, Vincent Adam, and James Hensman. A framework for interdomain and multioutput Gaussian processes. arXiv:2003.01115, 2020. URL: https://arxiv.org/abs/2003.01115.">vandWilkDJ+20</a>]</span>.</p>
+</section>
+<section id="gplvm">
+<h3>GPLVM<a class="headerlink" href="#gplvm" title="Permalink to this heading">#</a></h3>
+<p>For visualisation, the GPLVM <span id="id9">[<a class="reference internal" href="bibliography.html#id8" title="Neil Lawrence. Gaussian process latent variable models for visualisation of high dimensional data. Advances in neural information processing systems, 2003.">Law03</a>]</span> and Bayesian GPLVM <span id="id10">[<a class="reference internal" href="bibliography.html#id20" title="Michalis Titsias and Neil D Lawrence. Bayesian gaussian process latent variable model. In Proceedings of the thirteenth international conference on artificial intelligence and statistics, 844–851. JMLR Workshop and Conference Proceedings, 2010.">TL10</a>]</span> models are implemented
+in GPflow (<a class="reference internal" href="notebooks/advanced/GPLVM.html"><span class="doc">Fake GPLVM.ipynb</span></a>).</p>
+</section>
+<section id="heteroskedastic-models">
+<h3>Heteroskedastic models<a class="headerlink" href="#heteroskedastic-models" title="Permalink to this heading">#</a></h3>
+<p>GPflow supports heteroskedastic models by configure a likelihood object. See examples in <a class="reference internal" href="notebooks/advanced/varying_noise.html"><span class="doc">Fake varying_noise.ipynb</span></a> and <a class="reference internal" href="notebooks/advanced/heteroskedastic.html"><span class="doc">Fake heteroskedastic.ipynb</span></a></p>
+</section>
+</section>
 <section id="contact">
 <h2>Contact<a class="headerlink" href="#contact" title="Permalink to this heading">#</a></h2>
 <ul class="simple">
@@ -343,7 +440,7 @@ us. We maintain a <a class="reference external" href="https://github.com/GPflow/
 </section>
 <section id="citing-gpflow">
 <h2>Citing GPflow<a class="headerlink" href="#citing-gpflow" title="Permalink to this heading">#</a></h2>
-<p>To cite GPflow, please reference <span id="id1">Matthews <em>et al.</em> [<a class="reference internal" href="bibliography.html#id3" title="Alexander G. de G. Matthews, Mark van der Wilk, Tom Nickson, Keisuke. Fujii, Alexis Boukouvalas, Pablo León-Villagrá, Zoubin Ghahramani, and James Hensman. GPflow: A Gaussian process library using TensorFlow. Journal of Machine Learning Research, 18(40):1-6, apr 2017. URL: http://jmlr.org/papers/v18/16-537.html.">MvandWilkN+17</a>]</span>. Sample BibTeX is given below:</p>
+<p>To cite GPflow, please reference <span id="id11">Matthews <em>et al.</em> [<a class="reference internal" href="bibliography.html#id3" title="Alexander G. de G. Matthews, Mark van der Wilk, Tom Nickson, Keisuke. Fujii, Alexis Boukouvalas, Pablo León-Villagrá, Zoubin Ghahramani, and James Hensman. GPflow: A Gaussian process library using TensorFlow. Journal of Machine Learning Research, 18(40):1-6, apr 2017. URL: http://jmlr.org/papers/v18/16-537.html.">MvandWilkN+17</a>]</span>. Sample BibTeX is given below:</p>
 <div class="highlight-bib notranslate"><div class="highlight"><pre><span></span><span class="nc">@ARTICLE</span><span class="p">{</span><span class="nl">GPflow2017</span><span class="p">,</span><span class="w"></span>
 <span class="w">    </span><span class="na">author</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">{Matthews, Alexander G. de G. and</span>
 <span class="s">              {van der Wilk}, Mark and</span>
@@ -366,7 +463,7 @@ us. We maintain a <a class="reference external" href="https://github.com/GPflow/
 </div>
 <p>Since the publication of the GPflow paper, the software has been significantly extended
 with the framework for interdomain approximations and multioutput priors. We review the
-framework and describe the design in <span id="id2">van der Wilk <em>et al.</em> [<a class="reference internal" href="bibliography.html#id4" title="Mark van der Wilk, Vincent Dutordoir, ST John, Artem Artemev, Vincent Adam, and James Hensman. A framework for interdomain and multioutput Gaussian processes. arXiv:2003.01115, 2020. URL: https://arxiv.org/abs/2003.01115.">vandWilkDJ+20</a>]</span>, which can be cited by users:</p>
+framework and describe the design in <span id="id12">van der Wilk <em>et al.</em> [<a class="reference internal" href="bibliography.html#id4" title="Mark van der Wilk, Vincent Dutordoir, ST John, Artem Artemev, Vincent Adam, and James Hensman. A framework for interdomain and multioutput Gaussian processes. arXiv:2003.01115, 2020. URL: https://arxiv.org/abs/2003.01115.">vandWilkDJ+20</a>]</span>, which can be cited by users:</p>
 <div class="highlight-bib notranslate"><div class="highlight"><pre><span></span><span class="nc">@article</span><span class="p">{</span><span class="nl">GPflow2020multioutput</span><span class="p">,</span><span class="w"></span>
 <span class="w">  </span><span class="na">author</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">{{van der Wilk}, Mark and</span>
 <span class="s">            Dutordoir, Vincent and</span>

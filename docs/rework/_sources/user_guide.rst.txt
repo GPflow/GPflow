@@ -3,55 +3,6 @@ User Guide
 
 You can use this document to get familiar with the more in-depth topics of GPflow. If you are new to GPflow you should see our :doc:`getting_started` guide first. We have also provided a `flow diagram <_static/GPflows.png>`_ to guide you to the relevant parts of GPflow for your specific problem.
 
-.. _implemented_models:
-
-What models are implemented?
-----------------------------
-GPflow has a slew of kernels that can be combined in a straightforward way. As for inference, the options are currently:
-
-Regression
-""""""""""
-For GP regression with Gaussian noise, it's possible to marginalize the function values exactly: you'll find this in :class:`gpflow.models.GPR`. You can do maximum likelihood or MCMC for the covariance function parameters.
-
-It's also possible to do Sparse GP regression using the :class:`gpflow.models.SGPR` class. This is based on work by Michalis Titsias :cite:p:`titsias2009variational`.
-
-MCMC
-""""
-For non-Gaussian likelihoods, GPflow has a model that can jointly sample over the function values and the covariance parameters: :class:`gpflow.models.GPMC`. There's also a sparse equivalent in :class:`gpflow.models.SGPMC`, based on :cite:t:`hensman2015mcmc`.
-
-Variational inference
-"""""""""""""""""""""
-It's often sufficient to approximate the function values as a Gaussian, for which we follow :cite:t:`Opper:2009` in :class:`gpflow.models.VGP`. In addition, there is a sparse version based on :cite:t:`hensman2014scalable` in :class:`gpflow.models.SVGP`. In the Gaussian likelihood case some of the optimization may be done analytically as discussed in :cite:t:`titsias2009variational` and implemented in :class:`gpflow.models.SGPR` . All of the sparse methods in GPflow are solidified in :cite:t:`matthews2016sparse`.
-
-The following table summarizes the model options in GPflow.
-
-+----------------------+----------------------------+----------------------------+------------------------------+
-|                      | Gaussian                   | Non-Gaussian (variational) | Non-Gaussian                 |
-|                      | Likelihood                 |                            | (MCMC)                       |
-+======================+============================+============================+==============================+
-| Full-covariance      | :class:`gpflow.models.GPR` | :class:`gpflow.models.VGP` | :class:`gpflow.models.GPMC`  |
-+----------------------+----------------------------+----------------------------+------------------------------+
-| Sparse approximation | :class:`gpflow.models.SGPR`| :class:`gpflow.models.SVGP`| :class:`gpflow.models.SGPMC` |
-+----------------------+----------------------------+----------------------------+------------------------------+
-
-A unified view of many of the relevant references, along with some extensions, and an early discussion of GPflow itself, is given in the PhD thesis of Matthews :cite:p:`matthews2017scalable`.
-
-Interdomain inference and multioutput GPs
-"""""""""""""""""""""""""""""""""""""""""
-GPflow has an extensive and flexible framework for specifying interdomain inducing variables for variational approximations.
-Interdomain variables can greatly improve the effectiveness of a variational approximation, and are used in e.g.
-:doc:`notebooks/advanced/convolutional`. In particular, they are crucial for defining sensible sparse
-approximations for multioutput GPs (:doc:`notebooks/advanced/multioutput`).
-
-GPflow has a unifying design for using multioutput GPs and specifying interdomain approximations. A review of the
-mathematical background and the resulting software design is described in :cite:t:`GPflow2020multioutput`.
-
-GPLVM
-"""""
-For visualisation, the GPLVM :cite:p:`lawrence2003gaussian` and Bayesian GPLVM :cite:p:`titsias2010bayesian` models are implemented
-in GPflow (:doc:`notebooks/advanced/GPLVM`).
-
-
 
 Theoretical notes
 -----------------
