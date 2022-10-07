@@ -129,7 +129,7 @@ class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables)
     """
 
     @check_shapes(
-        "inducing_variable_list[all]: [M, D, 1]",
+        "inducing_variable_list[all]: [., D, 1]",
     )
     def __init__(self, inducing_variable_list: Sequence[InducingVariables]):
         super().__init__()
@@ -140,7 +140,15 @@ class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables)
         "return: []",
     )
     def num_inducing(self) -> tf.Tensor:
-        return self.inducing_variable_list[0].num_inducing
+        num_inducings = tf.stack([iv.num_inducing for iv in self.inducing_variable_list])
+        num_inducing, _ = tf.unique(num_inducings)
+        tf.debugging.assert_equal(
+            tf.shape(num_inducing),
+            [1],
+            message="'num_inducing' does not make sense"
+            " when children have different numbers of inducing points.",
+        )
+        return num_inducing[0]
 
     @property
     def inducing_variables(self) -> Tuple[InducingVariables, ...]:
@@ -152,6 +160,9 @@ class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables)
         if inner is None:
             return inner
         assert inner[2] == 1
+        for iv in self.inducing_variable_list[1:]:
+            if inner != iv.shape:
+                return None
         return inner[:2] + (len(self.inducing_variable_list),)
 
 
