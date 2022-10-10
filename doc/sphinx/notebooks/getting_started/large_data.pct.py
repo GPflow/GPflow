@@ -18,7 +18,7 @@
 # pylint: disable=line-too-long,redefined-outer-name
 
 # %% [markdown]
-# # Large Data
+# # Large Data with SGPR
 #
 # Making predictions with Gaussian Processes is $O(N^3)$, which can be prohibitive for large $N$. In this chapter we introduce the Sparse Gaussian Process Regression (SGPR), which tries to solve this problem. The SGPR tries to approximate the $N$ actual data points with $M$ "inducing variables". With inducing variables the SGPR can make predicitions in $O(NM^2)$, which can make a big difference if $M << N$.
 #

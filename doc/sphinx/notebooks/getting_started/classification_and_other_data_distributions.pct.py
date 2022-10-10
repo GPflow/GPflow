@@ -18,7 +18,7 @@
 # pylint: disable=line-too-long,redefined-outer-name
 
 # %% [markdown]
-# # Classification and other data distributions
+# # Classification, other data distributions, VGP and SVGP
 #
 # In this chapter we will talk about what you can do if your data is not normally distributed.
 

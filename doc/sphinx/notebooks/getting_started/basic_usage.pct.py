@@ -18,7 +18,7 @@
 # pylint: disable=line-too-long
 
 # %% [markdown]
-# # Basic Usage
+# # Basic Usage with GPR
 #
 # In this chapter we will go over the most basic concepts you will need to understand to use GPflow. We will train a simple model on some simple data; and demonstrate how to use the model to make predictions, and how to plot the results.
 #
