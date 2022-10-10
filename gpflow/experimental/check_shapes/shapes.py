@@ -15,11 +15,12 @@
 Code for extracting shapes from object.
 """
 import inspect
-from typing import TYPE_CHECKING, Any, Callable, Dict, Sequence, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Sequence, Tuple, Type
 
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
+from packaging.version import Version
 
 from .base_types import Shape
 from .error_contexts import ErrorContext, IndexContext, ObjectTypeContext, StackContext
@@ -111,10 +112,22 @@ def get_ndarray_shape(shaped: AnyNDArray, context: ErrorContext) -> Shape:
 @register_get_shape(tf.Tensor)
 @register_get_shape(tf.Variable)
 @register_get_shape(tfp.util.DeferredTensor)
-def get_tensorflow_shape(
-    shaped: Union[tf.Tensor, tf.Variable, tfp.util.DeferredTensor], context: ErrorContext
-) -> Shape:
+def get_tensorflow_shape(shaped: Any, context: ErrorContext) -> Shape:
     shape = shaped.shape
     if not shape:
         return None
     return tuple(shape)
+
+
+if Version(tfp.__version__) < Version("0.14.0"):
+    register_get_shape(tfp.python.layers.internal.distribution_tensor_coercible._TensorCoercible)(
+        get_tensorflow_shape
+    )
+else:
+
+    @register_get_shape(tfp.python.layers.internal.distribution_tensor_coercible._TensorCoercible)
+    def get_tensor_coercible_shape(shaped: Any, context: ErrorContext) -> Shape:
+        shape = shaped.shape()
+        if not shape:
+            return None
+        return tuple(shape)

@@ -90,17 +90,35 @@ def test_inducing_points_with_variable_shape() -> None:
         ),
     ],
 )
+@pytest.mark.parametrize("none_shape", [False, True])
 def test_shape(
     iv_factory: Callable[[tf.Tensor], giv.InducingVariables],
+    none_shape: bool,
     expected_shape: Tuple[Optional[int], ...],
 ) -> None:
     M = expected_shape[0]
     ones = tf.ones((7, 3))
-    t1 = tf.Variable(ones)
-    t2 = tf.Variable(ones, shape=tf.TensorShape(None))
+    kwargs = {"shape": tf.TensorShape(None)} if none_shape else {}
+    iv = iv_factory(tf.Variable(ones, **kwargs))
+    if none_shape:
+        assert get_shape(iv, TestContext()) is None
+    else:
+        assert expected_shape == get_shape(iv, TestContext())
+    assert M == iv.num_inducing
+    assert M == len(iv)
 
-    for t, e in zip((t1, t2), (expected_shape, None)):
-        iv = iv_factory(t)
-        assert e == get_shape(iv, TestContext())
-        assert M == iv.num_inducing
-        assert M == len(iv)
+
+@pytest.mark.parametrize("none_shape", [False, True])
+def test_shape__inconsistent(none_shape: bool) -> None:
+    kwargs = {"shape": tf.TensorShape(None)} if none_shape else {}
+    iv = giv.SeparateIndependentInducingVariables(
+        [
+            giv.InducingPoints(tf.Variable(tf.ones((5, 3)), **kwargs)),
+            giv.InducingPoints(tf.Variable(tf.ones((7, 3)), **kwargs)),
+        ]
+    )
+    assert get_shape(iv, TestContext()) is None
+    with pytest.raises(tf.errors.InvalidArgumentError):
+        iv.num_inducing
+    with pytest.raises(tf.errors.InvalidArgumentError):
+        len(iv)
