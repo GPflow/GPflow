@@ -1,0 +1,1843 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "87f4498b",
+   "metadata": {},
+   "source": [
+    "GPflow with TensorFlow 2\n",
+    "===\n",
+    "\n",
+    "##### Small steps big changes\n",
+    "\n",
+    "<br>\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "b410b00b",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:23.959529Z",
+     "iopub.status.busy": "2022-10-10T13:39:23.959136Z",
+     "iopub.status.idle": "2022-10-10T13:39:28.019043Z",
+     "shell.execute_reply": "2022-10-10T13:39:28.018385Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2022-10-10 13:39:24.495683: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n",
+      "2022-10-10 13:39:24.627856: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2022-10-10 13:39:24.627877: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n",
+      "2022-10-10 13:39:24.657027: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2022-10-10 13:39:25.327251: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory\n",
+      "2022-10-10 13:39:25.327316: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory\n",
+      "2022-10-10 13:39:25.327324: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.\n"
+     ]
+    }
+   ],
+   "source": [
+    "import warnings\n",
+    "\n",
+    "warnings.filterwarnings(\"ignore\")\n",
+    "\n",
+    "import pathlib\n",
+    "import tempfile\n",
+    "from typing import Optional, Tuple\n",
+    "\n",
+    "import matplotlib.pyplot as plt\n",
+    "import numpy as np\n",
+    "import tensorflow as tf\n",
+    "\n",
+    "import gpflow\n",
+    "from gpflow.ci_utils import reduce_in_tests\n",
+    "from gpflow.config import default_float"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "05416ee5",
+   "metadata": {},
+   "source": [
+    "Make `tensorboard` work inside notebook:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "44e314c9",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:28.022686Z",
+     "iopub.status.busy": "2022-10-10T13:39:28.022206Z",
+     "iopub.status.idle": "2022-10-10T13:39:28.341489Z",
+     "shell.execute_reply": "2022-10-10T13:39:28.340722Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "output_logdir = \"/tmp/tensorboard\"\n",
+    "\n",
+    "!rm -rf \"{output_logdir}\"\n",
+    "!mkdir \"{output_logdir}\"\n",
+    "\n",
+    "%load_ext tensorboard\n",
+    "%matplotlib inline\n",
+    "\n",
+    "\n",
+    "def enumerated_logdir(_logdir_id: int = [0]):\n",
+    "    logdir = pathlib.Path(output_logdir, str(_logdir_id[0]))\n",
+    "    _logdir_id[0] += 1\n",
+    "    return str(logdir)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "2e28ae3f",
+   "metadata": {},
+   "source": [
+    "Set up random seeds and default float for `gpflow` tensors:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "698162dd",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:28.344885Z",
+     "iopub.status.busy": "2022-10-10T13:39:28.344582Z",
+     "iopub.status.idle": "2022-10-10T13:39:28.348423Z",
+     "shell.execute_reply": "2022-10-10T13:39:28.347881Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "gpflow.config.set_default_float(np.float64)\n",
+    "np.random.seed(0)\n",
+    "tf.random.set_seed(0)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "b289222c",
+   "metadata": {},
+   "source": [
+    "## Loading data using TensorFlow Datasets\n",
+    "\n",
+    "For this example, we create a synthetic dataset (noisy sine function):"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "db901041",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:28.351321Z",
+     "iopub.status.busy": "2022-10-10T13:39:28.351063Z",
+     "iopub.status.idle": "2022-10-10T13:39:28.659243Z",
+     "shell.execute_reply": "2022-10-10T13:39:28.658683Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2022-10-10 13:39:28.354881: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2022-10-10 13:39:28.354911: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2022-10-10 13:39:28.354931: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (a159df69e377): /proc/driver/nvidia/version does not exist\n",
+      "2022-10-10 13:39:28.355258: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
+     ]
+    },
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAAi8AAAGdCAYAAADaPpOnAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjYuMSwgaHR0cHM6Ly9tYXRwbG90bGliLm9yZy/av/WaAAAACXBIWXMAAA9hAAAPYQGoP6dpAAAxdElEQVR4nO3df5CU9X3A8c/dg7tghjui4h0XjoCpiUqUECwMmpZ1jwltHTO2GRNba4zOQNqBqXg2Fhr3dtk9QzU/JiOhGlMNySTEmJlg02rs0FuO1Ig/gr0GRU01tFD0jqYNu0jqHn3u2z/s8/js3rN7++v5/X7N3Og+u3v7ZXl4vp/n+/18P98OpZQSAACAgOj0ugEAAACNIHgBAACBQvACAAACheAFAAAECsELAAAIFIIXAAAQKAQvAAAgUAheAABAoMzyugHtNjU1Ja+//rrMnTtXOjo6vG4OAACog1JKTp06JX19fdLZWXtsJXTBy+uvvy79/f1eNwMAADTh2LFjsnDhwpqvCV3wMnfuXBF5+w/f1dXlcWsAAEA9isWi9Pf3m/14LaELXoypoq6uLoIXAAACpp6UDxJ2AQBAoBC8AACAQCF4AQAAgULwAgAAAoXgBQAABArBCwAACBSCFwAAECgELwAAIFAIXgAAQKAQvAAAAiOTyUgul7N9LpfLSSaTcbdB8ATBCwAgMDRNk6GhoWkBTC6Xk6GhIdE0zaOWwU2h29sIABBeqVRKRESGhobMx0bgks1mzecRbh1KKeV1I9qpWCxKd3e3FAoFNmYEgJAyApZYLCaTk5MELiHQSP9N8AIACKR4PC6Tk5MSi8WkVCp53Ry0qJH+m5wXAEDg5HI5M3CZnJysmsSLcCJ4AQAEijXHpVQqSTabtU3iRXiRsAsACAy75Fy7JF6EG8ELACAwdF23Tc41Huu67kWz4DISdgEAgOdI2AUAAKFF8AIAAAKF4AUAAAQKwQsAAAgUghcAABAoBC8AACBQCF4AAECgELwAAIBAIXgBAACBQvACAAACheAFAAAECsELAAAIFIIXAAAQKAQvAAAgUAheAABAoBC8AACAQCF4AQD4UiaTkVwuZ/tcLpeTTCbjboPgGwQvAABf0jRNhoaGpgUwuVxOhoaGRNM0j1oGr83yugEIlkwmI5qmSSqVmvZcLpcTXde5GwLQFsZ1ZmhoyHxsBC7ZbNb2OoRoIHhBQ4w7IREpu3BYLygA0C7WAGZ4eFgmJycJXCAdSinldSPaqVgsSnd3txQKBenq6vK6OaFUeefDnRCAmbQ6ahuPx2VyclJisZiUSiUHWwqvNNJ/k/OChqVSKclmszI0NCTxeJzABcCMWslfyeVyZuAyOTlZNYkXEaJCplAoKBFRhULB66b4SjqdVtls1va5bDar0ul0w78zFospEVGxWKzF1gGIgmw2q0TEvBZVPq71nkQiobLZrO17mr2GwV8a6b8dHXn58Y9/LNdcc4309fVJR0eHPProozO+Z3R0VD784Q9LPB6X3/iN35Bdu3Y52cTIaHfWPndCABrV6KitdUo6mUya+XbG78jlcqw8iiono6jHH39cfe5zn1M/+MEPlIioPXv21Hz9L37xC3X22WerwcFBdfjwYbVjxw6laZp64okn6v5MRl6qa+aux8nfAyCa6h21rRwxtl5rstmsSiQSXHtCpJH+27Vpo3qClzvuuEMtXbq07NgnP/lJtW7duro/h+ClNuMfv3HxaDVwmek4AFi16xrU7PvhX76ZNmrUgQMHZO3atWXH1q1bJwcOHPCoReGTSqXMqZ5YLNZwkq2u67bDvMZwsK7r7WwugBCxTgOVSqWy6Z96GKuR7K5hVNyNFl/VeRkfH5eenp6yYz09PVIsFuV//ud/ZM6cOdPeUyqVypbNFYtFx9sZZHa5Ko0EMLUuDqw2AlCNXUkFuyJ0tVjrTFXm21FnKlp8Fbw0Y/v27bJt2zavmxEI1eqziBB4AHBWrVFb4/lG3HnnnSIiZUm8XMeiw1fBS29vr0xMTJQdm5iYkK6uLttRFxGRrVu3yuDgoPm4WCxKf3+/o+0Monbc9QBAs1odta2s4j00NCSxWKxdzUPA+Cp4Wb16tTz++ONlx/bu3SurV6+u+p54PC7xeNzppgVeu+96AMBNldcwY6uAWCwmd955J9ewiHE0eHnzzTfl1VdfNR8fOXJExsbG5JxzzpFFixbJ1q1b5fjx4/Ktb31LRET+5E/+RL761a/KHXfcIbfccovk83l55JFH5LHHHnOymZFArgqAILNewypz9yqfR/g5utropz/9qSxfvlyWL18uIiKDg4OyfPlyc5rijTfekKNHj5qvX7JkiTz22GOyd+9eWbZsmXzpS1+Sv/mbv5F169Y52UwAQEC0umIJ4cDGjACAQKi2CSybw4ZDI/23r3Je4JxWd3QFAK+RuwcDwUtEWOsjVLtjAQA/I3cPBoKXiLBbFs1QKwA3MPKLdvPV9gBwVqM7ugJAO7R7V/tmZDKZqkm9bC0QPAQvEdPq3kZcAABYVV4TrI+Na4L1xumqq64yn3PzBsoPARTah+AlYuz2NmoEFwAAVpXXBOPxwMCA7TVhdHTUk5FfawBlDa4YgQ4ox/e4dlkjW2pHjbGVvLGFfOVjt38PgHCovAYkk0klIiqZTE57PhaLKRFRsVjM07Ya7eC65R+N9N8ELxFRLcBoNYDhAgBAqenXBCOAsV4j/HLd8DqAgr1G+m+mjSKiVn2EbDbbcH2EVnNnAIRL5TVhZGSk7LGI+KIyrjF1rmla1alz8vcCwIVgylWMvLijnjuodDpd9c4qm82qdDrtcCsBuGWmkRe764TbU87WzzP+v/LzmQb3DtNGBC+Oqjfnpd1TVQD8aaacl0QiUfXfvFs3MnbXncoAhmuTtwheCF4c02qgwsUBCJdq/8aNAMYv//arjQQb7ers7OTa5LFG+m82ZkRDmqmUaSxHNOa/WZYIhEflNcH6uPKa4NdquvF43MzNKZVK056nQrA7Guq/HQ+lXMbIS/OczFEhux+AH9WTv8cUuDtYbYSmOFWArtXCeADgBGuRuloroChw50MuBFOuYuSlNe3OUSHnBYAfNTOa4pc6NWFFzgs5Ly1pV45KtTsT7lgAeMXIX9F1fVoei5G/Yjxvl8cyU34MmtdI/820EaZpVwG6VgvjsQkkgHYzpsftAhfrcbvrC1PgPuL4OJDLmDZqnV+GRusd1qUYHoBGNDOdzRS486jzQvDSNL/9A62nPawEANCoRm7SuMa4g+CF4KUpfv0H2sxSRq/bDMD/6i3hwOiuO0jYJWG3KX4uxFRPkhzF8ADUi+uF/1CkjpGXUGlkeJdieABmwkitP1GkDqFRbxEp47WsBACcEdTVf5Xttl5TjOftitDB3whe4Ft29WCqXWQaCXIANM6pCtxOq2y3UcJBRMraXW8JB/iECyNBrmLaKDzqTZLza6IxEDZBnW5pd7tJ4HUGq40IXiKFCwngHr/UgWpUO9vNDZMzWG3EaiMAcEw9q//8uHqxnaX9K6e12fakdWwPAABoykyJuVdddVVdifF+y5Fpd0K/Nf8uHo8TuLjN8XEglzFtBADNm2lKRBrIHfFLjoyT7aA8Q/uQ80LwAgBNq9bZ1wpqZgpgvMqRcTI/xes/W9gQvBC8AEBLKjvmRCLRdGK8l6MTTiX0+2VUKUwIXgheAKBl7Qg6wjg6wWojZ1BhFwDQknYkuIa1eKRR6K4yOZdCdy5yIZhyFSMvANCadkyJMDqBRjXSf8/yMnACAPhLtW05RN4up299bMeo72I3OmHUd2F0Aq0ieAEAmGpNiRjP12LUd7ELXKiFgnahwq6H/FiBEgBaRfVZNIMKuwHhtwqUQTZTVVCCQMA9VJ+F05g28pB1Hjmfz0symTQfW/+hMwozMyMQFJGqQ9UA3JNKpWR4eNhcsUTggrZyPH3YZUFcbWStXikVWfhk5tePolGAf4SxvgucRZG6gAUvSr1TDIrOtzVcMAHvcSOBZhC8BCx4qexw6Xxbw0ZpgHeo74JmUWE3QOwqUIoI88RNave29wAaQ/VZuMKFYMpVQRp5sbsTqZX/gtoYqgaA4KLCbkBU3qFUrozJ5/N1VbRE61VBAQDBQfDiIevS52qdr3HceAx7rVYFBQAEBxV2fYJquwCAKGuk/yZ4AQCYuJGCV9geAADQFLYtQRCQ8wIAMNklurOxIvyGaSMAiIhGpoSMgMWomUTgAqcxbQQAmKaRKaFUKmUGLhTMhN8wbQQAEdHIlJBdtWoCGPgFwQsARIg1gBkeHradEqoMaKg3Bb8h5wUAIigej5sjK6VSyTxeaySGpF04iZwXn8tkMlU3DMzlctRQAOCoWhuYsrEigoBpIw8YSXMiUvXOBgCcMNOUUK2bJ0Zc4BcELx6gjgIAL7CBKcKC4MUj9STNAUA7sYEpwsKVhN2dO3fKF77wBRkfH5dly5bJjh07ZOXKlbav3bVrl9x8881lx+LxuLz11lt1fVbQEnarJc0BABAlvkrY/d73vieDg4OSTqfl+eefl2XLlsm6devkxIkTVd/T1dUlb7zxhvnz7//+70430xO1kuYAoBUsDECYOR68fPnLX5b169fLzTffLJdcconcf//9cvbZZ8tDDz1U9T0dHR3S29tr/vT09DjdTNdZ555LpZJks1nbypcA0Aw2WPQPAkkHKAeVSiWlaZras2dP2fFPfepT6mMf+5jte77xjW8oTdPUokWL1MKFC9XHPvYx9cILL1T9jLfeeksVCgXz59ixY0pEVKFQaOcfpa2y2awSEZXNZus6DgDNqLymcI3xBtf8+hQKhbr7b0cTdn/5y1+KruvTRk56enrk5Zdftn3PBz7wAXnooYfksssuk0KhIF/84hfliiuukBdffFEWLlw47fXbt2+Xbdu2OdJ+p5A0B8ANLAzwB1aYtp+jCbuvv/66vOc975GnnnpKVq9ebR6/4447ZP/+/fLMM8/M+DvOnDkjF198sfzhH/6h7bBbqVQqS3QtFovS398fmIRdAHAaCwP8gZ26a/NNwu55550nmqbJxMRE2fGJiQnp7e2t63ecddZZsnz5cnn11Vdtn4/H49LV1VX2AwB4GwsD/IOdutvH0eAlFovJihUrZGRkxDw2NTUlIyMjZSMxtei6LocOHZIFCxY41UwACCUWBvgLgWQbOZ2A8/DDD6t4PK527dqlDh8+rDZs2KDmzZunxsfHlVJK3XjjjWrLli3m67dt26b+4R/+Qb322mvq4MGD6vrrr1ezZ89WL774Yl2f10jCDwCEFUmi/kLy9Mx8k7ArIvLJT35S/vM//1OGhoZkfHxcPvShD8kTTzxhJvEePXpUOjvfGQD61a9+JevXr5fx8XF597vfLStWrJCnnnpKLrnkEqebCgChwcIA/2BbhvZzpcKum4JWYRcAEG6ZTEY0TbMNUHK5nOi6Tq0Xaaz/JngBgBCj40RQ+Ga1EQDAW1TaRRixqzQAhFitAmnJZJIRGQQSIy8AEHKpVMpcJh2Px83AJZ/PMyKDQCJ4AYAIqCyQNjIyMq3uCyXrERRMGwFVkOiIMLErkMbeRwgqRl6AKkh0RFjUqrRLyXoEksMF81xHhV20E1UxEXQzVdpNJpNKRFQsFuPchqca6b8JXoAZGBd5Lu4IonQ6XfWcNQIXgnP4QSP9N0XqgDrE43FzWL1UKnndHKBl1ZJzSdqFVxrpv0nYBWZQK9ERCCr2PkKQMfLiEFaqhEPlXSh3pQDgDLYH8AFWqgRftZ1gK2tjAECrMplM1WtKLpfjZrcC00YOqVWSm7v2YGBYHYBbjBteEamagwQLh5OHXee31UasVAEA1CPqpRlYbeSDnBcrVqoAcAv5dsFmjLQYCwSiNFJPzouP2K1UAQCnkG8XbFQ8rg/Bi4NqleQGACfYJZWTbxcc3PDWyfFJLJe5mfPSSOVK4/V2x5V6e24znU472VwAEUK+XfCQ81J//83ISwtqDc/m83lJJpNldzmappnHrStVGM4F0G5MPwQLpRkaw1LpFjS6HNr6+kQiISIM5wJwBpWhg4XSDA1yYSTIVV4slW50eJbhXABOivr0A4KJpdIeLJVudDk0y6cBOIENFxFULJV2WaPZ4WSTA3BKremHbDbL9APCwfFxIJe5PW1UbXg2mUzavr5ytRHDuQAANNZ/E7y0oFrgYQQolQFMteMEMP5Wa0k8S9wBoD1YKu2SasOzIyMjkkwmJZ/PlxWJMpZJj4yMlL2e4Vx/o2IpAPiMC8GUq/y0MSOrisKD1RsA4CxWG/loY0ZWFYVHlDdMAwCnsdrIJ1hVFC5ULAUAfyB4cQibMoYPwSgA+APbAzig2h4VIuVbCSA4Kv9Ojcci/F0CgNsIXhzAHhXhQjAKAP5Cwi4wg0wmI5qm2QYouVxOdF2XTCbjfsMAIEQa6b8JXgDAxwieERWsNgKAkKBIIjAdOS8A4GN2+VXsEI2oY9oIAAKAIokIO3JeCF4AhBAVu6MpKnlP5LwAQMhUFkm86qqrqhZKzOVyoejM8Dbynmw4tsOSR/y0MSMAtEO1jUHFZnNQNg0NpyhsDttI/03wAgA+Vq2Tsgtgwtih4R3G328sFgvl3zO7SpPzAiAkZsp3yOfzMjo6SiJvRIQ574mEXYIXABES5g4N7wj7ijMSdgEgItjtPBqstX1KpZJks1nbJN6ooEgdAAQUu51HA5vDTkfwAgABRIcWHbqu204RGY91XfeiWZ4i5wVok6gUkoI/cL4hbBrpvxl5AdrEKCQlUn7Ha71DBtqlVmDCiAvCjuAFaBM20AMAd7DaCGgjXdclmUzK0NCQxOPxacmUDOMDQOsIXoAmZDIZ2yWKmqZJPp+Xjo4Oc/mqdQQmknuQAECbMW0ENKFafotBKSWapsnk5KQMDAxIPp9n6ggA2oTgBWhCrfwWEZFkMin5fN4ciUkmkwQuANAmLJUGWlBZrltEzBEWo2S7pmlV6zQAAN7GUmnAJalUSoaHh2VyclI6Ozslk8mYozDWku3JZDKShaTQGmq5wI7deWEcE5Fp50UYzxUSdoEWWIOUqakp81jlHiTGFBLQCCO3qjI5nATwaLM7L4xjledFaM8VFTKFQkGJiCoUCl43BSGXzWaViKhsNlv22Hqs2muBelU7zziXoq2e60/QzpVG+m+mjYAm2BWf03VdFi9eLP/2b/9m+55EIsHUERpmTQ43pijJn0K188LuWBjPFRJ2gSbYzTkbAU0ymZTf+q3fMueXqbKLdjASwGOxmJRKJa+bA5+wOy+Ceq400n+7kvOyc+dOWbx4scyePVtWrVolzz77bM3Xf//735eLLrpIZs+eLZdeeqk8/vjjbjQTqJuRmGuVSqWm5bcQuKAdKhPA7QokInrszovInCtOz2E9/PDDKhaLqYceeki9+OKLav369WrevHlqYmLC9vU/+clPlKZp6p577lGHDx9Wd955pzrrrLPUoUOH6vo8cl7gNWOeORaLBWq+Gd5Lp9NV86WSyaT5POcVop7z4njwsnLlSrVx40bzsa7rqq+vT23fvt329Z/4xCfU1VdfXXZs1apV6jOf+Uxdn0fwArfYdTQGTdPMAAaoVyKRsO18ksmkEhGVSCTKjgelU0J72f39V1swEKRzxTcJu5OTk3Lw4EHZunWreayzs1PWrl0rBw4csH3PgQMHZHBwsOzYunXr5NFHH7V9falUKpvTKxaLrTccqEO1LQIGBgZE13Vze4BcLseUEeqSTCZldHTUPK+MjT7z+bz5vIiUJYkjeuyKXhrHjP83hPZccTKKOn78uBIR9dRTT5Ud/+xnP6tWrlxp+56zzjpL7d69u+zYzp071fnnn2/7+nQ6bUab1h9GXuCGyrsa4w45mUzaPg/MxHoHbUw9cg4hCnwz8uKGrVu3lo3UFItF6e/v97BFiBLrcsVt27aZd8ojIyPTnrc+BqqxnjOVW04AeJujwct5550nmqbJxMRE2fGJiQnp7e21fU9vb29Dr4/H4xKPx9vTYKAJ1i0CNE0zAxfr8yIhHLYFAI84ulQ6FovJihUryi7mU1NTMjIyIqtXr7Z9z+rVq6dd/Pfu3Vv19YDXrEsTdV23XZqYSqVCta8InGPdnTwWi4mI2G4RAESa03NYDz/8sIrH42rXrl3q8OHDasOGDWrevHlqfHxcKaXUjTfeqLZs2WK+/ic/+YmaNWuW+uIXv6heeukllU6nWSoN36J0O9qp1nJXziuEna+WSiul1I4dO9SiRYtULBZTK1euVE8//bT53Jo1a9RNN91U9vpHHnlEvf/971exWEwtXbpUPfbYY3V/VruDl1rLYbPZrEqn0235HARPtUDFOJ5IJDh30JDKpdIG6zkFhJXvEnY3bdokmzZtsn1udHR02rHrrrtOrrvuOodbVZ9qy2GtlVMRTXbLFUXeOU/y+TznDhqyZs0aSSaTVc8p8qaA/+dCMOUqJ6aNmBpAszh3YGAUF6jNd9NGbnIq54WS72gW5w6UmnmakfMCTglK4Ezw4lDCrtH5UPIdjeLcgVKMxMEbQQmcCV4YeYGPGOeOsd+R3QXEL3c+cB7XEnghCIEzwQs5L/CJyo31jP9yLkUbI3Hwgt8DZ4KXNgYvQRlug/9UC3qrBTKIBr93IAiHankuxnmnaZoHraqtkf7b0Qq7YVBrOWw2m2XpIqqqPHeMcyafz4umaZLP59mzJmKsy+RLpZJks1mq58IRRpkP67llVAMXkarVwKvJZDJVX5/L5dyvIO5CMOUqKuzC75gyiCZGceE267lVWam50fPOjfPXd0XqALzNug/S5OSk5HI5Rl4iYqaihoziot0qd7UXmb5Deb073lf+rlQqVTaS6Pp1rOVQyWcYeYFfkfgNwAudnZ1VR3sbXe3oZM4WCbsEL/AZpgwAeMGJYMOpqW8SdgGfsU4ZWBPfKhO/PUl8AxBKTiSI2019e6KtYZMPMPICv2MUBoDTnLjOOD31TcIu4GO+S3wDEDrtThC3u0bZXcvc0qGUUq59mguKxaJ0d3dLoVCQrq4ur5sDVGVcDIzhVwIXAH6VyWRE0zTba1QulxNd11ue8m6k/yZ4ATwUj8fN+eNSqeR1cwDAM4303yTsAh7xTeIbAAQMwQvgAcrEA0DzSNgFXOa3xDcACBqCF8BllIkHgNaQsAsAADxHwi4AAAgtghcAABAoBC+Ai6z7GlXK5XKSSCRqPs++RwBA8AK4StM02yXRxgqkep4HgKhjtRHgonr2NTIeV3seAKKO1UaAB2ba14h9jwBEDXsbEbwgAGba14h9jwBECUulAZ+baV8j9j0CgOrIeQFcZkwJJRIJSSaTImKfA5NIJGTfvn3TcmAAIOoIXgAXWZNvRcT8f2NjxtHRUcnn8yIiZmDDvkcAUI7gBXCR3b5G1gDmwQcfFBGZ9hr2PQKAd5CwC3iMlUUAwGojghcEDiuLAEQdq42AAGFlEQA0huAF8JA1gbdUKpmJuwQwAFAdCbuAR+zK/rOyCABmRvACeCCTycj+/furJucmEglWFgFAFUwbAR7QNE1GR0enHTdGY5LJpGQyGdfbBQBBwMgL4IF6dpcGANhjqTTgIWq8AMDbqPNC8IIAocYLAFDnBQgMarwAQOMIXgCPUOMFAJpDwi7gAWq8AEDzCF4AD9jtLi0y8+7RmUxGNE2zDWxyuZzous4SawChR/ACeKBWgFFrxEXTNNuRGetIDgCEHcELECDUhwEAlkoDgUR9GABhQ50XghdEAPVhAIQJdV6AkKM+DIAoI3gBAsa6eaNdfZhcLseKIwChRsIuECDWwCWfz0sulytL4h0dHZV8Ps+qIwChRvACBIiu65JIJMwf66ojI3BJJBIk77qAmjuAd5g2AgIkk8lIMpk0gxZjyigej0s+nxcRkWQy6WUTI8OouVOZb2SMjmma5lHLgPBj5AUIGOs0UTabNZN2RYQl021Q74hKrZo7iUSi6u9nVAZoHcELECCVHavRcRoeeughEbGv0kunWZ9Gqhhb/x6Gh4fNmjvGsXp+B4AmqJApFApKRFShUPC6KUDbZbNZJSIqm82a/y8iStM08/+N5+3el0gkPGp5sFi/Z7vHlWKxmBIRFYvFmv4dQNQ10n8TvAABYw1arIFLMplUyWRyWgBjfT0dZ/2M780ITLLZrEqn01UDQ+Pvwfq83e8AYI/gheAFIbd48eJpgYvROVoDGKPTpONsTuWISrXRFOM7t/49VPsdAOz5Jnj5r//6L/VHf/RHau7cuaq7u1vdcsst6tSpUzXfs2bNmrK7ShFRn/nMZ+r+TIIXhF3lnb5dx1o5OkPg0rhqoyaVAcuSJUuqPp9IJBh5AerUSP/taMLuDTfcIG+88Ybs3btXzpw5IzfffLNs2LBBdu/eXfN969evL0toO/vss51sJhAouq6bReqs2wMYiaG6rrNMt0WVO3Ubj0XKk3Q7OjrkyJEjkkwmzePWmjsiUvN3AGiSUxHU4cOHlYio5557zjz2ox/9SHV0dKjjx49Xfd+aNWvUrbfe2vTnMvKCsJspEdQ66sK0UeOqJdZWHje+28pcl1o5RiTtAtX5YtrowQcfVPPmzSs7dubMGaVpmvrBD35Q9X1r1qxR5513njr33HPV0qVL1ZYtW9Tp06ervv6tt95ShULB/Dl27BjBC0Jrpo6VhN3W2SXlGqxJu9bg0PjejceJRGLG3wGgnC+Cl7vuuku9//3vn3Z8/vz56q//+q+rvu9rX/uaeuKJJ9TPfvYz9e1vf1u95z3vUb//+79f9fXpdHpajgzBC8Jqpo71ve99L0ulHVZtpKsyBwlAYxzNedmyZYvcfffdNV/z0ksvNfprTRs2bDD//9JLL5UFCxbIwMCAvPbaa/K+971v2uu3bt0qg4OD5uNisSj9/f1Nfz7gZ7UKzKVSKTPfpTKnwpoPg+bZVdC15rhomiaTk5Ny1VVXyb59+7xrKBByDQcvt99+u3z605+u+ZoLLrhAent75cSJE2XH//d//1f++7//W3p7e+v+vFWrVomIyKuvvmobvMTjcYnH43X/PiDMZgpu0Bpd16dV0BURyefzkkwmZWpqSkZHR2V0dLQsiRpAezUcvMyfP1/mz58/4+tWr14tJ0+elIMHD8qKFStE5O1/4FNTU2ZAUo+xsTEREVmwYEGjTQWAtqoMDq0bZBqPa20PAKA9HFsqffHFF8vv/M7vyPr16+X++++XM2fOyKZNm+T666+Xvr4+ERE5fvy4DAwMyLe+9S1ZuXKlvPbaa7J79275vd/7PTn33HPlZz/7mdx2223y27/923LZZZc51VQgsOrdRBDtl0qlJJ/Py+joaNm+Rta/C6bpAGc4WuflO9/5jmzatEkGBgaks7NTPv7xj8u9995rPn/mzBl55ZVX5Ne//rWIiMRiMfnHf/xH+cpXviKnT5+W/v5++fjHPy533nmnk80EAquRTQTRfvv27ZN4PC6Tk5MSi8XK/g4YcQGc42jwcs4559QsSLd48WJRSpmP+/v7Zf/+/U42CQiVyt2lrcXQKkcB0H65XM4MXCqLBQJwjqPBCwDnWQOYatMXaL96qvACcEaHsg59hECxWJTu7m4pFArS1dXldXMA11inL0qlktfNCbVqo1uMegHNa6T/ZuQFCAGmL9xlLJmmng7gDUZegIAz7vaTyaSMjIzYTmew6giA3zHyAkSENXDJ5/NlIy5DQ0Nm5VdWHQEIE4IXIMCs0xeVCaPWwIUpJABhwrQRECJGAGPkvhC4AAiKRvrvTpfaBMAFqVTKDFxisZjoui65XM72tblcjjwYAIFE8AKESOWqo3/6p3+SoaGhaQGMMUKjaZpHLQWA5hG8ACFhXWVUKpUkm82aux1bAxhqkQAIOnJegBCYqWiasRqJXBgAfsVSaSBi6ima9uSTT9puIAgAQcO0ERACmUymakCSSqVE07RpFXgBIKgIXoCQs8uFsUviBYCgYNoICDG7XBhrBV7rYwAICoIXIMTYQBBAGLHaCAAAeI4KuwDQpEwmQ1ViwOeYNgIQeZlMRjRNM1dmWfOBcrmc6LpuHmeHbsB7BC8AIq8yYBF5O6HZ2JnbKPJHcT/AHwheAESe3QosI3DRNI3ABfAZEnYB4P8ZS8uNYn6apomu6xKLxaRUKnndPCDUSNgFUBNJqfZSqZRt4EJVYsBfCF6ACDJyPCo7ZGPkQdM0j1rmrVwuVxa4JJNJqhIDPkTOCxBBdjke1XamjorKHbiN/+ZyOaoSAz5D8AJElLVDHh4elsnJycgHLtlsVnRdl0QiURbQiVCVGPATEnaBiIvH4+aO01FNSrXWealk1HmJah4Q4JZG+m+CFyDCKlfXRHXkBYD3WG0EYEbWqRKSUgEECTkvQATZJed6lZTKlA2ARhG8ABGk67rtFJEXSal2pflFygMsALAi5wWA5ypHgqot22aUBgivRvpvRl4AeK7eZduM0gAQYeQFgI/Us2y73lEaAMHCyAuAwDFK81v3ErILRiiuB4Cl0gA8V++ybWNDSesGirFYzByBId8FiAZGXgB4qpFl20bOy+joaNkozcDAgOTzeXJegIggeAHgqUaWbadSKRkdHTU3ThwZGTEDl2QyydQREBEk7AIIjMqdn42RF+MxuS9AcLE9AIBQMkZpRkZGynJeRkZGzB2hAYQf00YAAsNIyK13ZRKAcGLkBUCgtLKhpLFaqdrvZbUSEAyMvAAIjFY3lKRCLxAOBC8AAqPVDSXtAh0q9ALBw2ojAJFjBCxGzgyBC+C9RvpvghcAkVTPPkoA3MNSaQCowW61EoDgIHgBECmtrFYC4A8k7AJoq0wmI5qm2eaQ5HI50XXdsyXJra5WAuAPjLwAaCtjOXLlSIYROGia5lHL7FcrGYGUXYVear8A/kTwAsBWswXdUqnUtKkYvyxHzmQy0z7fWvvF+mfyQ7AFoAoVMoVCQYmIKhQKXjcFCLRsNqtERGWz2bqOV0okEkpEVCwWm/b6bDar0um0E81uSuWfqd4/I4D2aaT/JucFgK1WC7olk0kZHR2VycnJstGLymq2XufBiJT/WYeHh6n9AvidC8GUqxh5AdrLGIWwG0Gp533Wn2Qy6esRDuPPGIvFvG4KEDmN9N8ELwBm1Ginbg1KKoOYZDI57TV+0GyQBqA9CF4IXoC2abRTtwtKjPcaP34LEMh5AbxH8ELwArRFM516Op2elpxrDVg6Ojp8NTXTamIygPYgeCF4AVrWjk698rVGzoumab4JDCqDLSu/rYoCwozVRgBaZlfQTeSdlTmVBd0qVa5MyuVyks/nJZlMmv/1Q1XbWqucWG0E+BO7SgNwhHWbALtARtd1s0Acy5IBNNJ/Ozbyctddd8ljjz0mY2NjEovF5OTJkzO+Rykl6XRavv71r8vJkyflyiuvlPvuu08uvPBCp5oJwCHWEY3KUZzKQGWmURwAsHJs5CWdTsu8efPkP/7jP+TBBx+sK3i5++67Zfv27fLNb35TlixZIqlUSg4dOiSHDx+W2bNn1/W5jLwAABA8jfTfjk8b7dq1SzZv3jxj8KKUkr6+Prn99tvlz//8z0VEpFAoSE9Pj+zatUuuv/76uj6P4AVoDz/vDg0gfBrpv32zMeORI0dkfHxc1q5dax7r7u6WVatWyYEDB6q+r1QqSbFYLPsB0Do/7w4NINp8s9pofHxcRER6enrKjvf09JjP2dm+fbts27bN0bYBUdTq3kYA4JSGRl62bNkiHR0dNX9efvllp9pqa+vWrVIoFMyfY8eOufr5QJilUinJZrMyNDQk8XicwAWALzQ08nL77bfLpz/96ZqvueCCC5pqSG9vr4iITExMyIIFC8zjExMT8qEPfajq++LxuMTj8aY+E8DMUqmUudNyLBYjcAHguYaCl/nz58v8+fMdaciSJUukt7dXRkZGzGClWCzKM888I3/6p3/qyGcCmFkulzMDl8nJScnlcgQwADzlWMLu0aNHZWxsTI4ePSq6rsvY2JiMjY3Jm2++ab7moosukj179oiISEdHh2zevFmGh4flhz/8oRw6dEg+9alPSV9fn1x77bVONRNADdYcl1KpZE4hVSbxAoCbHEvYHRoakm9+85vm4+XLl4uIyL59+ySRSIiIyCuvvCKFQsF8zR133CGnT5+WDRs2yMmTJ+UjH/mIPPHEE3XXeAHQPnbJuXZJvADgNrYHAGDLr3Ve/NouAK3xxfYAAILNrxsWGvVnKtthHSkCEG4ELwAChfozAJg2AtAwP0zdGAGLsQqKwAUItkBuDwAgOPywdUAqlTIDF+rPANHCtBGAhvlh6ob6M0B0EbwAaIo1gDEq8LoZuFgDJeOxtV0AwoucFwAticfj5ghIqVRy/POqjfCQtAsEG0ulAbjCi6kbXddtAxTjsa7rjn4+AO8x8gKgKdWmbto58uGHVU0A3MHICwBHubV1AAXpANgheAHQMLembvywqgmA/zBtBMD3KEgHhF8j/TfBC4BAcHtVEwB3UWEXQKjYrWoCEF0ELwB8zZrjUiqVJJvN2m5NACA6SNgF4FturWoCECwELwB8i4J0AOyQsAsAADxHwi4AAAgtghcAABAoBC8AACBQCF4AAECgELwAAIBAIXgBAACBQvACAAACheAFAAAECsELAAAIFIIXAAAQKKHb28jY7aBYLHrcEgAAUC+j365n16LQBS+nTp0SEZH+/n6PWwIAABp16tQp6e7urvma0G3MODU1Ja+//rrMnTtXOjo6Wv59xWJR+vv75dixY2z06DC+a3fxfbuL79tdfN/uasf3rZSSU6dOSV9fn3R21s5qCd3IS2dnpyxcuLDtv7erq4t/AC7hu3YX37e7+L7dxfftrla/75lGXAwk7AIAgEAheAEAAIFC8DKDeDwu6XRa4vG4100JPb5rd/F9u4vv21183+5y+/sOXcIuAAAIN0ZeAABAoBC8AACAQCF4AQAAgULwAgAAAoXgpYadO3fK4sWLZfbs2bJq1Sp59tlnvW5SKG3fvl1+8zd/U+bOnSvnn3++XHvttfLKK6943axI+Ku/+ivp6OiQzZs3e92UUDt+/Lj88R//sZx77rkyZ84cufTSS+WnP/2p180KHV3XJZVKyZIlS2TOnDnyvve9T3K5XF175WBmP/7xj+Waa66Rvr4+6ejokEcffbTseaWUDA0NyYIFC2TOnDmydu1a+dd//VdH2kLwUsX3vvc9GRwclHQ6Lc8//7wsW7ZM1q1bJydOnPC6aaGzf/9+2bhxozz99NOyd+9eOXPmjHz0ox+V06dPe920UHvuuefka1/7mlx22WVeNyXUfvWrX8mVV14pZ511lvzoRz+Sw4cPy5e+9CV597vf7XXTQufuu++W++67T7761a/KSy+9JHfffbfcc889smPHDq+bFgqnT5+WZcuWyc6dO22fv+eee+Tee++V+++/X5555hl517veJevWrZO33nqr/Y1RsLVy5Uq1ceNG87Gu66qvr09t377dw1ZFw4kTJ5SIqP3793vdlNA6deqUuvDCC9XevXvVmjVr1K233up1k0LrL/7iL9RHPvIRr5sRCVdffbW65ZZbyo79wR/8gbrhhhs8alF4iYjas2eP+Xhqakr19vaqL3zhC+axkydPqng8rr773e+2/fMZebExOTkpBw8elLVr15rHOjs7Ze3atXLgwAEPWxYNhUJBRETOOeccj1sSXhs3bpSrr7667ByHM374wx/K5ZdfLtddd52cf/75snz5cvn617/udbNC6YorrpCRkRH5+c9/LiIi//Iv/yJPPvmk/O7v/q7HLQu/I0eOyPj4eNk1pbu7W1atWuVIvxm6jRnb4Ze//KXoui49PT1lx3t6euTll1/2qFXRMDU1JZs3b5Yrr7xSPvjBD3rdnFB6+OGH5fnnn5fnnnvO66ZEwi9+8Qu57777ZHBwUP7yL/9SnnvuOfmzP/szicVictNNN3ndvFDZsmWLFItFueiii0TTNNF1Xe666y654YYbvG5a6I2Pj4uI2PabxnPtRPACX9m4caO88MIL8uSTT3rdlFA6duyY3HrrrbJ3716ZPXu2182JhKmpKbn88svl85//vIiILF++XF544QW5//77CV7a7JFHHpHvfOc7snv3blm6dKmMjY3J5s2bpa+vj+86ZJg2snHeeeeJpmkyMTFRdnxiYkJ6e3s9alX4bdq0Sf7+7/9e9u3bJwsXLvS6OaF08OBBOXHihHz4wx+WWbNmyaxZs2T//v1y7733yqxZs0TXda+bGDoLFiyQSy65pOzYxRdfLEePHvWoReH12c9+VrZs2SLXX3+9XHrppXLjjTfKbbfdJtu3b/e6aaFn9I1u9ZsELzZisZisWLFCRkZGzGNTU1MyMjIiq1ev9rBl4aSUkk2bNsmePXskn8/LkiVLvG5SaA0MDMihQ4dkbGzM/Ln88svlhhtukLGxMdE0zesmhs6VV145ben/z3/+c3nve9/rUYvC69e//rV0dpZ3a5qmydTUlEctio4lS5ZIb29vWb9ZLBblmWeecaTfZNqoisHBQbnpppvk8ssvl5UrV8pXvvIVOX36tNx8881eNy10Nm7cKLt375a//du/lblz55rzo93d3TJnzhyPWxcuc+fOnZZL9K53vUvOPfdccowcctttt8kVV1whn//85+UTn/iEPPvss/LAAw/IAw884HXTQueaa66Ru+66SxYtWiRLly6Vf/7nf5Yvf/nLcsstt3jdtFB488035dVXXzUfHzlyRMbGxuScc86RRYsWyebNm2V4eFguvPBCWbJkiaRSKenr65Nrr722/Y1p+/qlENmxY4datGiRisViauXKlerpp5/2ukmhJCK2P9/4xje8bloksFTaeX/3d3+nPvjBD6p4PK4uuugi9cADD3jdpFAqFovq1ltvVYsWLVKzZ89WF1xwgfrc5z6nSqWS100LhX379tleq2+66Sal1NvLpVOplOrp6VHxeFwNDAyoV155xZG2dChF6UEAABAc5LwAAIBAIXgBAACBQvACAAACheAFAAAECsELAAAIFIIXAAAQKAQvAAAgUAheAABAoBC8AACAQCF4AQAAgULwAgAAAoXgBQAABMr/AXiNf2flyqOzAAAAAElFTkSuQmCC\n",
+      "text/plain": [
+       "<Figure size 640x480 with 1 Axes>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "def noisy_sin(x):\n",
+    "    return tf.math.sin(x) + 0.1 * tf.random.normal(\n",
+    "        x.shape, dtype=default_float()\n",
+    "    )\n",
+    "\n",
+    "\n",
+    "num_train_data = reduce_in_tests(100)\n",
+    "num_test_data = reduce_in_tests(500)\n",
+    "\n",
+    "X = tf.random.uniform((num_train_data, 1), dtype=default_float()) * 10\n",
+    "Xtest = tf.random.uniform((num_test_data, 1), dtype=default_float()) * 10\n",
+    "\n",
+    "Y = noisy_sin(X)\n",
+    "Ytest = noisy_sin(Xtest)\n",
+    "\n",
+    "data = (X, Y)\n",
+    "\n",
+    "plt.plot(X, Y, \"xk\")\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "d88206f0",
+   "metadata": {},
+   "source": [
+    "Working with TensorFlow Datasets is an efficient way to rapidly shuffle, iterate, and batch from data. For `prefetch` size we use `tf.data.experimental.AUTOTUNE` as recommended by TensorFlow [guidelines](https://www.tensorflow.org/guide/data_performance)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "ad651247",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:28.662123Z",
+     "iopub.status.busy": "2022-10-10T13:39:28.661842Z",
+     "iopub.status.idle": "2022-10-10T13:39:28.682421Z",
+     "shell.execute_reply": "2022-10-10T13:39:28.681880Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "prefetch_size=-1\n",
+      "shuffle_buffer_size=50\n",
+      "num_batches_per_epoch=3\n"
+     ]
+    }
+   ],
+   "source": [
+    "train_dataset = tf.data.Dataset.from_tensor_slices((X, Y))\n",
+    "test_dataset = tf.data.Dataset.from_tensor_slices((Xtest, Ytest))\n",
+    "\n",
+    "batch_size = 32\n",
+    "num_features = 10\n",
+    "prefetch_size = tf.data.experimental.AUTOTUNE\n",
+    "shuffle_buffer_size = num_train_data // 2\n",
+    "num_batches_per_epoch = num_train_data // batch_size\n",
+    "\n",
+    "original_train_dataset = train_dataset\n",
+    "train_dataset = (\n",
+    "    train_dataset.repeat()\n",
+    "    .prefetch(prefetch_size)\n",
+    "    .shuffle(buffer_size=shuffle_buffer_size)\n",
+    "    .batch(batch_size)\n",
+    ")\n",
+    "\n",
+    "print(f\"prefetch_size={prefetch_size}\")\n",
+    "print(f\"shuffle_buffer_size={shuffle_buffer_size}\")\n",
+    "print(f\"num_batches_per_epoch={num_batches_per_epoch}\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "d600f6ad",
+   "metadata": {},
+   "source": [
+    "## Define a GP model\n",
+    "\n",
+    "In GPflow 2.0, we use `tf.Module` (or the very thin `gpflow.base.Module` wrapper) to build all our models, as well as their components (kernels, likelihoods, parameters, and so on)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "9efcc124",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:28.684992Z",
+     "iopub.status.busy": "2022-10-10T13:39:28.684737Z",
+     "iopub.status.idle": "2022-10-10T13:39:28.755578Z",
+     "shell.execute_reply": "2022-10-10T13:39:28.754941Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "kernel = gpflow.kernels.SquaredExponential(variance=2.0)\n",
+    "likelihood = gpflow.likelihoods.Gaussian()\n",
+    "inducing_variable = np.linspace(0, 10, num_features).reshape(-1, 1)\n",
+    "\n",
+    "model = gpflow.models.SVGP(\n",
+    "    kernel=kernel, likelihood=likelihood, inducing_variable=inducing_variable\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "61bd54c3",
+   "metadata": {},
+   "source": [
+    "You can set a module (or a particular parameter) to be non-trainable using the auxiliary method ```set_trainable(module, False)```:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "c96ec6d2",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:28.758722Z",
+     "iopub.status.busy": "2022-10-10T13:39:28.758430Z",
+     "iopub.status.idle": "2022-10-10T13:39:28.783770Z",
+     "shell.execute_reply": "2022-10-10T13:39:28.783136Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "from gpflow import set_trainable\n",
+    "\n",
+    "set_trainable(likelihood, False)\n",
+    "set_trainable(kernel.variance, False)\n",
+    "\n",
+    "set_trainable(likelihood, True)\n",
+    "set_trainable(kernel.variance, True)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "fba44a66",
+   "metadata": {},
+   "source": [
+    "We can use ```param.assign(value)``` to assign a value to a parameter:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "52b3d48d",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:28.841875Z",
+     "iopub.status.busy": "2022-10-10T13:39:28.841520Z",
+     "iopub.status.idle": "2022-10-10T13:39:28.850181Z",
+     "shell.execute_reply": "2022-10-10T13:39:28.849552Z"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "<tf.Variable 'UnreadVariable' shape=() dtype=float64, numpy=-0.43275212956718856>"
+      ]
+     },
+     "execution_count": 8,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "kernel.lengthscales.assign(0.5)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "0514cda4",
+   "metadata": {},
+   "source": [
+    "All these changes are reflected when we use ```print_summary(model)``` to print a detailed summary of the model. By default the output is displayed in a minimalistic and simple table."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "a3c57a2e",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:28.853375Z",
+     "iopub.status.busy": "2022-10-10T13:39:28.853029Z",
+     "iopub.status.idle": "2022-10-10T13:39:29.063335Z",
+     "shell.execute_reply": "2022-10-10T13:39:29.062746Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "╒══════════════════════════╤═══════════╤══════════════════╤═════════╤═════════════╤═════════════╤═════════╤══════════════════╕\n",
+      "│ name                     │ class     │ transform        │ prior   │ trainable   │ shape       │ dtype   │ value            │\n",
+      "╞══════════════════════════╪═══════════╪══════════════════╪═════════╪═════════════╪═════════════╪═════════╪══════════════════╡\n",
+      "│ SVGP.kernel.variance     │ Parameter │ Softplus         │         │ True        │ ()          │ float64 │ 2.0              │\n",
+      "├──────────────────────────┼───────────┼──────────────────┼─────────┼─────────────┼─────────────┼─────────┼──────────────────┤\n",
+      "│ SVGP.kernel.lengthscales │ Parameter │ Softplus         │         │ True        │ ()          │ float64 │ 0.5              │\n",
+      "├──────────────────────────┼───────────┼──────────────────┼─────────┼─────────────┼─────────────┼─────────┼──────────────────┤\n",
+      "│ SVGP.likelihood.variance │ Parameter │ Softplus + Shift │         │ True        │ ()          │ float64 │ 1.0              │\n",
+      "├──────────────────────────┼───────────┼──────────────────┼─────────┼─────────────┼─────────────┼─────────┼──────────────────┤\n",
+      "│ SVGP.inducing_variable.Z │ Parameter │ Identity         │         │ True        │ (10, 1)     │ float64 │ [[0....          │\n",
+      "├──────────────────────────┼───────────┼──────────────────┼─────────┼─────────────┼─────────────┼─────────┼──────────────────┤\n",
+      "│ SVGP.q_mu                │ Parameter │ Identity         │         │ True        │ (10, 1)     │ float64 │ [[0....          │\n",
+      "├──────────────────────────┼───────────┼──────────────────┼─────────┼─────────────┼─────────────┼─────────┼──────────────────┤\n",
+      "│ SVGP.q_sqrt              │ Parameter │ FillTriangular   │         │ True        │ (1, 10, 10) │ float64 │ [[[1., 0., 0.... │\n",
+      "╘══════════════════════════╧═══════════╧══════════════════╧═════════╧═════════════╧═════════════╧═════════╧══════════════════╛\n"
+     ]
+    }
+   ],
+   "source": [
+    "from gpflow.utilities import print_summary\n",
+    "\n",
+    "print_summary(model)  # same as print_summary(model, fmt=\"fancy_table\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "491ab89c",
+   "metadata": {},
+   "source": [
+    "We can change default printing so that it will look nicer in our notebook:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "d453a679",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:29.066256Z",
+     "iopub.status.busy": "2022-10-10T13:39:29.065976Z",
+     "iopub.status.idle": "2022-10-10T13:39:29.077833Z",
+     "shell.execute_reply": "2022-10-10T13:39:29.077334Z"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<table>\n",
+       "<thead>\n",
+       "<tr><th>name                    </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape      </th><th>dtype  </th><th>value           </th></tr>\n",
+       "</thead>\n",
+       "<tbody>\n",
+       "<tr><td>SVGP.kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()         </td><td>float64</td><td>2.0             </td></tr>\n",
+       "<tr><td>SVGP.kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()         </td><td>float64</td><td>0.5             </td></tr>\n",
+       "<tr><td>SVGP.likelihood.variance</td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()         </td><td>float64</td><td>1.0             </td></tr>\n",
+       "<tr><td>SVGP.inducing_variable.Z</td><td>Parameter</td><td>Identity        </td><td>       </td><td>True       </td><td>(10, 1)    </td><td>float64</td><td>[[0....         </td></tr>\n",
+       "<tr><td>SVGP.q_mu               </td><td>Parameter</td><td>Identity        </td><td>       </td><td>True       </td><td>(10, 1)    </td><td>float64</td><td>[[0....         </td></tr>\n",
+       "<tr><td>SVGP.q_sqrt             </td><td>Parameter</td><td>FillTriangular  </td><td>       </td><td>True       </td><td>(1, 10, 10)</td><td>float64</td><td>[[[1., 0., 0....</td></tr>\n",
+       "</tbody>\n",
+       "</table>"
+      ],
+      "text/plain": [
+       "<IPython.core.display.HTML object>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "gpflow.config.set_default_summary_fmt(\"notebook\")\n",
+    "\n",
+    "print_summary(model)  # same as print_summary(model, fmt=\"notebook\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "8e589972",
+   "metadata": {},
+   "source": [
+    "Jupyter notebooks also format GPflow classes (that are subclasses of `gpflow.base.Module`) in the same nice way when at the end of a cell (this is independent of the `default_summary_fmt`):"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "8468ffd2",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:29.080443Z",
+     "iopub.status.busy": "2022-10-10T13:39:29.080189Z",
+     "iopub.status.idle": "2022-10-10T13:39:29.099244Z",
+     "shell.execute_reply": "2022-10-10T13:39:29.098696Z"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "&lt;gpflow.models.svgp.SVGP object at 0x7f54dc9820b0&gt;\n",
+       "<table>\n",
+       "<thead>\n",
+       "<tr><th>name                    </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape      </th><th>dtype  </th><th>value           </th></tr>\n",
+       "</thead>\n",
+       "<tbody>\n",
+       "<tr><td>SVGP.kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()         </td><td>float64</td><td>2.0             </td></tr>\n",
+       "<tr><td>SVGP.kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()         </td><td>float64</td><td>0.5             </td></tr>\n",
+       "<tr><td>SVGP.likelihood.variance</td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()         </td><td>float64</td><td>1.0             </td></tr>\n",
+       "<tr><td>SVGP.inducing_variable.Z</td><td>Parameter</td><td>Identity        </td><td>       </td><td>True       </td><td>(10, 1)    </td><td>float64</td><td>[[0....         </td></tr>\n",
+       "<tr><td>SVGP.q_mu               </td><td>Parameter</td><td>Identity        </td><td>       </td><td>True       </td><td>(10, 1)    </td><td>float64</td><td>[[0....         </td></tr>\n",
+       "<tr><td>SVGP.q_sqrt             </td><td>Parameter</td><td>FillTriangular  </td><td>       </td><td>True       </td><td>(1, 10, 10)</td><td>float64</td><td>[[[1., 0., 0....</td></tr>\n",
+       "</tbody>\n",
+       "</table>"
+      ],
+      "text/plain": [
+       "<gpflow.models.svgp.SVGP object at 0x7f54dc9820b0>\n",
+       "name                      class      transform         prior    trainable    shape        dtype    value\n",
+       "------------------------  ---------  ----------------  -------  -----------  -----------  -------  ----------------\n",
+       "SVGP.kernel.variance      Parameter  Softplus                   True         ()           float64  2.0\n",
+       "SVGP.kernel.lengthscales  Parameter  Softplus                   True         ()           float64  0.5\n",
+       "SVGP.likelihood.variance  Parameter  Softplus + Shift           True         ()           float64  1.0\n",
+       "SVGP.inducing_variable.Z  Parameter  Identity                   True         (10, 1)      float64  [[0....\n",
+       "SVGP.q_mu                 Parameter  Identity                   True         (10, 1)      float64  [[0....\n",
+       "SVGP.q_sqrt               Parameter  FillTriangular             True         (1, 10, 10)  float64  [[[1., 0., 0...."
+      ]
+     },
+     "execution_count": 11,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "model"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "96b521ed",
+   "metadata": {},
+   "source": [
+    "## Training using training_loss and training_loss_closure\n",
+    "\n",
+    "GPflow models come with training_loss and training_loss_closure methods to make it easy to train your models.\n",
+    "There is a slight difference between models that own their own data (most of them, e.g. GPR, VGP, ...) and models that do not own the data (SVGP).\n",
+    "\n",
+    "### Model-internal data\n",
+    "For models that own their own data (inheriting from InternalDataTrainingLossMixin), data is provided at model construction time.\n",
+    "In this case, model.training_loss does not take any arguments, and can be directly passed to an optimizer's `minimize()` method:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "id": "965d833e",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:29.101924Z",
+     "iopub.status.busy": "2022-10-10T13:39:29.101645Z",
+     "iopub.status.idle": "2022-10-10T13:39:29.237130Z",
+     "shell.execute_reply": "2022-10-10T13:39:29.236552Z"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "<tf.Variable 'UnreadVariable' shape=() dtype=int64, numpy=1>"
+      ]
+     },
+     "execution_count": 12,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "vgp_model = gpflow.models.VGP(data, kernel, likelihood)\n",
+    "optimizer = tf.optimizers.Adam()\n",
+    "optimizer.minimize(\n",
+    "    vgp_model.training_loss, vgp_model.trainable_variables\n",
+    ")  # Note: this does a single step\n",
+    "# In practice, you will need to call minimize() many times, this will be further discussed below."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a0971ca5",
+   "metadata": {},
+   "source": [
+    "This also works for the Scipy optimizer, though it will do the full optimization on a single call to minimize():"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "id": "ca74472f",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:29.239820Z",
+     "iopub.status.busy": "2022-10-10T13:39:29.239515Z",
+     "iopub.status.idle": "2022-10-10T13:39:33.702342Z",
+     "shell.execute_reply": "2022-10-10T13:39:33.701577Z"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "      fun: -67.28079600584473\n",
+       " hess_inv: <5153x5153 LbfgsInvHessProduct with dtype=float64>\n",
+       "      jac: array([ 0.00639123, -0.00635877, -0.00583661, ..., -0.02814375,\n",
+       "        0.00295686,  0.00134197])\n",
+       "  message: 'CONVERGENCE: REL_REDUCTION_OF_F_<=_FACTR*EPSMCH'\n",
+       "     nfev: 686\n",
+       "      nit: 648\n",
+       "     njev: 686\n",
+       "   status: 0\n",
+       "  success: True\n",
+       "        x: array([-0.19034939,  1.64051246,  0.0252172 , ...,  1.71755914,\n",
+       "        0.78426537, -4.65251939])"
+      ]
+     },
+     "execution_count": 13,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "optimizer = gpflow.optimizers.Scipy()\n",
+    "optimizer.minimize(\n",
+    "    vgp_model.training_loss,\n",
+    "    vgp_model.trainable_variables,\n",
+    "    options=dict(maxiter=reduce_in_tests(1000)),\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "b9626910",
+   "metadata": {},
+   "source": [
+    "You can obtain a compiled version using training_loss_closure, whose `compile` argument is True by default:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "id": "f7c04b58",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:33.705829Z",
+     "iopub.status.busy": "2022-10-10T13:39:33.705415Z",
+     "iopub.status.idle": "2022-10-10T13:39:33.711708Z",
+     "shell.execute_reply": "2022-10-10T13:39:33.710996Z"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "<bound method InternalDataTrainingLossMixin.training_loss of <gpflow.models.vgp.VGP object at 0x7f53ca3b39a0>>"
+      ]
+     },
+     "execution_count": 14,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "vgp_model.training_loss_closure()  # compiled\n",
+    "vgp_model.training_loss_closure(compile=True)  # compiled\n",
+    "vgp_model.training_loss_closure(\n",
+    "    compile=False\n",
+    ")  # uncompiled, same as vgp_model.training_loss"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "47b1bdc0",
+   "metadata": {},
+   "source": [
+    "### External data\n",
+    "\n",
+    "The SVGP model inherits from ExternalDataTrainingLossMixin and expects the data to be passed to training_loss().\n",
+    "For SVGP as for the other regression models, `data` is a two-tuple of `(X, Y)`, where `X` is an array/tensor with shape `(num_data, input_dim)` and `Y` is an array/tensor with shape `(num_data, output_dim)`:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "id": "4a1991ba",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:33.715134Z",
+     "iopub.status.busy": "2022-10-10T13:39:33.714558Z",
+     "iopub.status.idle": "2022-10-10T13:39:33.783184Z",
+     "shell.execute_reply": "2022-10-10T13:39:33.782629Z"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "<tf.Tensor: shape=(), dtype=float64, numpy=8183.981124497032>"
+      ]
+     },
+     "execution_count": 15,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "assert isinstance(model, gpflow.models.SVGP)\n",
+    "model.training_loss(data)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "8447c2ea",
+   "metadata": {},
+   "source": [
+    "To make optimizing it easy, it has a `training_loss_closure()` method, that takes the data and returns a closure that computes the training loss on this data:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "id": "8a4cc065",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:33.785945Z",
+     "iopub.status.busy": "2022-10-10T13:39:33.785662Z",
+     "iopub.status.idle": "2022-10-10T13:39:35.950642Z",
+     "shell.execute_reply": "2022-10-10T13:39:35.950067Z"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "<tf.Variable 'UnreadVariable' shape=() dtype=int64, numpy=1>"
+      ]
+     },
+     "execution_count": 16,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "optimizer = tf.optimizers.Adam()\n",
+    "training_loss = model.training_loss_closure(\n",
+    "    data\n",
+    ")  # We save the compiled closure in a variable so as not to re-compile it each step\n",
+    "optimizer.minimize(\n",
+    "    training_loss, model.trainable_variables\n",
+    ")  # Note that this does a single step"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "c8c653d1",
+   "metadata": {},
+   "source": [
+    "SVGP can handle mini-batching, and an iterator from a batched tf.data.Dataset can be passed to the model's training_loss_closure():"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "id": "9a627388",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:35.953437Z",
+     "iopub.status.busy": "2022-10-10T13:39:35.953137Z",
+     "iopub.status.idle": "2022-10-10T13:39:37.146860Z",
+     "shell.execute_reply": "2022-10-10T13:39:37.146290Z"
+    },
+    "lines_to_next_cell": 1
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "<tf.Variable 'UnreadVariable' shape=() dtype=int64, numpy=2>"
+      ]
+     },
+     "execution_count": 17,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "batch_size = 5\n",
+    "batched_dataset = tf.data.Dataset.from_tensor_slices(data).batch(batch_size)\n",
+    "training_loss = model.training_loss_closure(iter(batched_dataset))\n",
+    "\n",
+    "optimizer.minimize(\n",
+    "    training_loss, model.trainable_variables\n",
+    ")  # Note that this does a single step"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "821f0306",
+   "metadata": {},
+   "source": [
+    "As previously, training_loss_closure takes an optional `compile` argument for tf.function compilation (True by default)."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "367bf4fc",
+   "metadata": {},
+   "source": [
+    "## Training using Gradient Tapes\n",
+    "\n",
+    "For a more elaborate example of a gradient update we can define an `optimization_step` that explicitly computes and applies gradients to the model.\n",
+    "In TensorFlow 2, we can optimize (trainable) model parameters with TensorFlow optimizers using `tf.GradientTape`. In this simple example, we perform one gradient update of the Adam optimizer to minimize the training_loss (in this case the negative ELBO) of our model.\n",
+    "The `optimization_step` can (and should) be wrapped in `tf.function` to be compiled to a graph if executing it many times."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "id": "1bd2c568",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:37.149718Z",
+     "iopub.status.busy": "2022-10-10T13:39:37.149427Z",
+     "iopub.status.idle": "2022-10-10T13:39:37.153477Z",
+     "shell.execute_reply": "2022-10-10T13:39:37.152956Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "def optimization_step(\n",
+    "    model: gpflow.models.SVGP, batch: Tuple[tf.Tensor, tf.Tensor]\n",
+    "):\n",
+    "    with tf.GradientTape(watch_accessed_variables=False) as tape:\n",
+    "        tape.watch(model.trainable_variables)\n",
+    "        loss = model.training_loss(batch)\n",
+    "    grads = tape.gradient(loss, model.trainable_variables)\n",
+    "    optimizer.apply_gradients(zip(grads, model.trainable_variables))\n",
+    "    return loss"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "d1edb4de",
+   "metadata": {},
+   "source": [
+    "We can use the functionality of TensorFlow Datasets to define a simple training loop that iterates over batches of the training dataset:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "id": "0b65fdc5",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:37.156117Z",
+     "iopub.status.busy": "2022-10-10T13:39:37.155852Z",
+     "iopub.status.idle": "2022-10-10T13:39:37.160065Z",
+     "shell.execute_reply": "2022-10-10T13:39:37.159542Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "def simple_training_loop(\n",
+    "    model: gpflow.models.SVGP, epochs: int = 1, logging_epoch_freq: int = 10\n",
+    "):\n",
+    "    tf_optimization_step = tf.function(optimization_step)\n",
+    "\n",
+    "    batches = iter(train_dataset)\n",
+    "    for epoch in range(reduce_in_tests(epochs)):\n",
+    "        for _ in range(reduce_in_tests(num_batches_per_epoch)):\n",
+    "            tf_optimization_step(model, next(batches))\n",
+    "\n",
+    "        epoch_id = epoch + 1\n",
+    "        if epoch_id % logging_epoch_freq == 0:\n",
+    "            tf.print(f\"Epoch {epoch_id}: ELBO (train) {model.elbo(data)}\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "id": "6a4e8473",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:37.162359Z",
+     "iopub.status.busy": "2022-10-10T13:39:37.162092Z",
+     "iopub.status.idle": "2022-10-10T13:39:38.338254Z",
+     "shell.execute_reply": "2022-10-10T13:39:38.337421Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 2: ELBO (train) -7913.1929941921935\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 4: ELBO (train) -7709.468598155783\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 6: ELBO (train) -7503.5176386383\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 8: ELBO (train) -7299.591081344768\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 10: ELBO (train) -7099.074410864153\n"
+     ]
+    }
+   ],
+   "source": [
+    "simple_training_loop(model, epochs=10, logging_epoch_freq=2)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "016820c4",
+   "metadata": {},
+   "source": [
+    "## Monitoring\n",
+    "\n",
+    "`gpflow.monitor` provides a thin wrapper on top of tf.summary that makes it easy to monitor the training procedure.\n",
+    "For a more detailed tutorial see the [monitoring notebook](./basics/monitoring.pct.py)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "id": "e97c19d6",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:38.342512Z",
+     "iopub.status.busy": "2022-10-10T13:39:38.342174Z",
+     "iopub.status.idle": "2022-10-10T13:39:38.366643Z",
+     "shell.execute_reply": "2022-10-10T13:39:38.366039Z"
+    },
+    "lines_to_next_cell": 2
+   },
+   "outputs": [],
+   "source": [
+    "from gpflow.monitor import (\n",
+    "    ExecuteCallback,\n",
+    "    ImageToTensorBoard,\n",
+    "    ModelToTensorBoard,\n",
+    "    Monitor,\n",
+    "    MonitorTaskGroup,\n",
+    "    ScalarToTensorBoard,\n",
+    ")\n",
+    "\n",
+    "samples_input = np.linspace(0, 10, reduce_in_tests(100)).reshape(-1, 1)\n",
+    "\n",
+    "\n",
+    "def plot_model(fig, ax):\n",
+    "    tf.print(\"Plotting...\")\n",
+    "    mean, var = model.predict_f(samples_input)\n",
+    "    num_samples = 10\n",
+    "    samples = model.predict_f_samples(samples_input, num_samples)\n",
+    "    ax.plot(samples_input, mean, \"C0\", lw=2)\n",
+    "    ax.fill_between(\n",
+    "        samples_input[:, 0],\n",
+    "        mean[:, 0] - 1.96 * np.sqrt(var[:, 0]),\n",
+    "        mean[:, 0] + 1.96 * np.sqrt(var[:, 0]),\n",
+    "        color=\"C0\",\n",
+    "        alpha=0.2,\n",
+    "    )\n",
+    "    ax.plot(X, Y, \"kx\")\n",
+    "    ax.plot(samples_input, samples[:, :, 0].numpy().T, \"C0\", linewidth=0.5)\n",
+    "    ax.set_ylim(-2.0, +2.0)\n",
+    "    ax.set_xlim(0, 10)\n",
+    "\n",
+    "\n",
+    "def print_cb(epoch_id=None, data=None):\n",
+    "    tf.print(f\"Epoch {epoch_id}: ELBO (train)\", model.elbo(data))\n",
+    "\n",
+    "\n",
+    "def elbo_cb(data=None, **_):\n",
+    "    return model.elbo(data)\n",
+    "\n",
+    "\n",
+    "output_logdir = enumerated_logdir()\n",
+    "\n",
+    "model_task = ModelToTensorBoard(output_logdir, model)\n",
+    "elbo_task = ScalarToTensorBoard(output_logdir, elbo_cb, \"elbo\")\n",
+    "print_task = ExecuteCallback(callback=print_cb)\n",
+    "\n",
+    "# We group these tasks and specify a period of `100` steps for them\n",
+    "fast_tasks = MonitorTaskGroup([model_task, elbo_task, print_task], period=100)\n",
+    "\n",
+    "# We also want to see the model's fit during the optimisation\n",
+    "image_task = ImageToTensorBoard(output_logdir, plot_model, \"samples_image\")\n",
+    "\n",
+    "# We typically don't want to plot too frequently during optimisation,\n",
+    "# which is why we specify a larger period for this task.\n",
+    "slow_taks = MonitorTaskGroup(image_task, period=500)\n",
+    "monitor = Monitor(fast_tasks, slow_taks)\n",
+    "\n",
+    "\n",
+    "def monitored_training_loop(epochs: int):\n",
+    "    tf_optimization_step = tf.function(optimization_step)\n",
+    "\n",
+    "    batches = iter(train_dataset)\n",
+    "\n",
+    "    for epoch in range(epochs):\n",
+    "        for _ in range(reduce_in_tests(num_batches_per_epoch)):\n",
+    "            batch = next(batches)\n",
+    "            tf_optimization_step(model, batch)\n",
+    "\n",
+    "        epoch_id = epoch + 1\n",
+    "        monitor(epoch, epoch_id=epoch_id, data=data)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "36c838f1",
+   "metadata": {
+    "lines_to_next_cell": 2
+   },
+   "source": [
+    "NOTE: for optimal performance it is recommended to wrap the monitoring inside `tf.function`.\n",
+    "This is detailed in the [monitoring notebook](./basics/monitoring.ipynb)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "id": "b15e5e17",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:38.369731Z",
+     "iopub.status.busy": "2022-10-10T13:39:38.369442Z",
+     "iopub.status.idle": "2022-10-10T13:39:43.972940Z",
+     "shell.execute_reply": "2022-10-10T13:39:43.972211Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 1: ELBO (train) -7776.86024303905\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Plotting...\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 101: ELBO (train) -2018.964474034811\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 201: ELBO (train) -839.55018631600012\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 301: ELBO (train) -369.83054936654463\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 401: ELBO (train) -155.97372720424897\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 501: ELBO (train) -53.974071371746284\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Plotting...\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 601: ELBO (train) -7.36371388163936\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 701: ELBO (train) 14.765824306449829\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 801: ELBO (train) 26.914388333901755\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 901: ELBO (train) 34.579448404854759\n"
+     ]
+    }
+   ],
+   "source": [
+    "model = gpflow.models.SVGP(\n",
+    "    kernel=kernel, likelihood=likelihood, inducing_variable=inducing_variable\n",
+    ")\n",
+    "\n",
+    "monitored_training_loop(epochs=1000)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "5764a5dc",
+   "metadata": {},
+   "source": [
+    "Then, we can use TensorBoard to examine the training procedure in more detail"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "id": "e40d004b",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:43.976307Z",
+     "iopub.status.busy": "2022-10-10T13:39:43.975946Z",
+     "iopub.status.idle": "2022-10-10T13:39:43.979056Z",
+     "shell.execute_reply": "2022-10-10T13:39:43.978478Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "# %tensorboard --logdir \"{output_logdir}\""
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "dbd46b1b",
+   "metadata": {},
+   "source": [
+    "## Saving and loading models\n",
+    "\n",
+    "### Checkpointing\n",
+    "\n",
+    "With the help of `tf.train.CheckpointManager` and `tf.train.Checkpoint`, we can checkpoint the model throughout the training procedure. Let's start with a simple example using checkpointing to save and load a `tf.Variable`:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "id": "da9d753b",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:43.981598Z",
+     "iopub.status.busy": "2022-10-10T13:39:43.981352Z",
+     "iopub.status.idle": "2022-10-10T13:39:43.985006Z",
+     "shell.execute_reply": "2022-10-10T13:39:43.984458Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "initial_value = 1.2\n",
+    "a = tf.Variable(initial_value)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a19a9a92",
+   "metadata": {},
+   "source": [
+    "Create `Checkpoint` object:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "id": "c1d6e40d",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:43.987631Z",
+     "iopub.status.busy": "2022-10-10T13:39:43.987374Z",
+     "iopub.status.idle": "2022-10-10T13:39:43.990925Z",
+     "shell.execute_reply": "2022-10-10T13:39:43.990381Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "ckpt = tf.train.Checkpoint(a=a)\n",
+    "manager = tf.train.CheckpointManager(ckpt, output_logdir, max_to_keep=3)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "37c9a879",
+   "metadata": {},
+   "source": [
+    "Save the variable `a` and change its value right after:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 26,
+   "id": "10e2f041",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:43.993502Z",
+     "iopub.status.busy": "2022-10-10T13:39:43.993236Z",
+     "iopub.status.idle": "2022-10-10T13:39:44.015422Z",
+     "shell.execute_reply": "2022-10-10T13:39:44.014726Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "manager.save()\n",
+    "_ = a.assign(0.33)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "9d586cba",
+   "metadata": {},
+   "source": [
+    "Now we can restore the old variable value:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 27,
+   "id": "2ce0d443",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:44.018824Z",
+     "iopub.status.busy": "2022-10-10T13:39:44.018493Z",
+     "iopub.status.idle": "2022-10-10T13:39:44.027701Z",
+     "shell.execute_reply": "2022-10-10T13:39:44.027045Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Current value of variable a: 0.330\n",
+      "Value of variable a after restore: 1.200\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(f\"Current value of variable a: {a.numpy():0.3f}\")\n",
+    "\n",
+    "ckpt.restore(manager.latest_checkpoint)\n",
+    "\n",
+    "print(f\"Value of variable a after restore: {a.numpy():0.3f}\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "8e977ec0",
+   "metadata": {},
+   "source": [
+    "In the example below, we modify a simple training loop to save the model every 100 epochs using the `CheckpointManager`."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 28,
+   "id": "f4a1523e",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:44.030570Z",
+     "iopub.status.busy": "2022-10-10T13:39:44.030267Z",
+     "iopub.status.idle": "2022-10-10T13:39:44.071147Z",
+     "shell.execute_reply": "2022-10-10T13:39:44.070403Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "model = gpflow.models.SVGP(\n",
+    "    kernel=kernel, likelihood=likelihood, inducing_variable=inducing_variable\n",
+    ")\n",
+    "\n",
+    "\n",
+    "def checkpointing_training_loop(\n",
+    "    model: gpflow.models.SVGP,\n",
+    "    batch_size: int,\n",
+    "    epochs: int,\n",
+    "    manager: tf.train.CheckpointManager,\n",
+    "    logging_epoch_freq: int = 100,\n",
+    "    epoch_var: Optional[tf.Variable] = None,\n",
+    "    step_var: Optional[tf.Variable] = None,\n",
+    "):\n",
+    "    tf_optimization_step = tf.function(optimization_step)\n",
+    "\n",
+    "    batches = iter(train_dataset)\n",
+    "\n",
+    "    for epoch in range(epochs):\n",
+    "        for step in range(reduce_in_tests(num_batches_per_epoch)):\n",
+    "            tf_optimization_step(model, next(batches))\n",
+    "            if step_var is not None:\n",
+    "                step_var.assign(epoch * num_batches_per_epoch + step + 1)\n",
+    "        if epoch_var is not None:\n",
+    "            epoch_var.assign(epoch + 1)\n",
+    "\n",
+    "        epoch_id = epoch + 1\n",
+    "        if epoch_id % logging_epoch_freq == 0:\n",
+    "            ckpt_path = manager.save()\n",
+    "            tf.print(\n",
+    "                f\"Epoch {epoch_id}: ELBO (train) {model.elbo(data)}, saved at {ckpt_path}\"\n",
+    "            )"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 29,
+   "id": "5517a9d3",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:44.074514Z",
+     "iopub.status.busy": "2022-10-10T13:39:44.074198Z",
+     "iopub.status.idle": "2022-10-10T13:39:49.598793Z",
+     "shell.execute_reply": "2022-10-10T13:39:49.598195Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Checkpoint folder path at: /tmp/tensorboard/0\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 100: ELBO (train) -149.15494727967928, saved at /tmp/tensorboard/0/ckpt-1\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 200: ELBO (train) -8.421502159170839, saved at /tmp/tensorboard/0/ckpt-2\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 300: ELBO (train) 24.782835896532845, saved at /tmp/tensorboard/0/ckpt-3\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 400: ELBO (train) 36.742774484611004, saved at /tmp/tensorboard/0/ckpt-4\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 500: ELBO (train) 42.11155832402494, saved at /tmp/tensorboard/0/ckpt-5\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 600: ELBO (train) 45.03015224854348, saved at /tmp/tensorboard/0/ckpt-6\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 700: ELBO (train) 46.8830577823748, saved at /tmp/tensorboard/0/ckpt-7\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 800: ELBO (train) 48.214091697705406, saved at /tmp/tensorboard/0/ckpt-8\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 900: ELBO (train) 49.26585648203592, saved at /tmp/tensorboard/0/ckpt-9\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 1000: ELBO (train) 50.16361862034715, saved at /tmp/tensorboard/0/ckpt-10\n"
+     ]
+    }
+   ],
+   "source": [
+    "step_var = tf.Variable(1, dtype=tf.int32, trainable=False)\n",
+    "epoch_var = tf.Variable(1, dtype=tf.int32, trainable=False)\n",
+    "ckpt = tf.train.Checkpoint(model=model, step=step_var, epoch=epoch_var)\n",
+    "manager = tf.train.CheckpointManager(ckpt, output_logdir, max_to_keep=5)\n",
+    "\n",
+    "print(f\"Checkpoint folder path at: {output_logdir}\")\n",
+    "\n",
+    "checkpointing_training_loop(\n",
+    "    model,\n",
+    "    batch_size=batch_size,\n",
+    "    epochs=1000,\n",
+    "    manager=manager,\n",
+    "    epoch_var=epoch_var,\n",
+    "    step_var=step_var,\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "abd4bf62",
+   "metadata": {},
+   "source": [
+    "After the models have been saved, we can restore them using ```tf.train.Checkpoint.restore``` and assert that their performance corresponds to that logged during training."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 30,
+   "id": "b1e117e4",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:49.601661Z",
+     "iopub.status.busy": "2022-10-10T13:39:49.601357Z",
+     "iopub.status.idle": "2022-10-10T13:39:49.789187Z",
+     "shell.execute_reply": "2022-10-10T13:39:49.788591Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0 restored model from epoch 600 [step:1800] : ELBO training set 45.03015224854348\n",
+      "1 restored model from epoch 700 [step:2100] : ELBO training set 46.8830577823748\n",
+      "2 restored model from epoch 800 [step:2400] : ELBO training set 48.214091697705406\n",
+      "3 restored model from epoch 900 [step:2700] : ELBO training set 49.26585648203592\n",
+      "4 restored model from epoch 1000 [step:3000] : ELBO training set 50.16361862034715\n"
+     ]
+    }
+   ],
+   "source": [
+    "for i, recorded_checkpoint in enumerate(manager.checkpoints):\n",
+    "    ckpt.restore(recorded_checkpoint)\n",
+    "    print(\n",
+    "        f\"{i} restored model from epoch {int(epoch_var)} [step:{int(step_var)}] : ELBO training set {model.elbo(data)}\"\n",
+    "    )"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "272bc110",
+   "metadata": {},
+   "source": [
+    "### Copying (hyper)parameter values between models\n",
+    "\n",
+    "It is easy to interact with the set of all parameters of a model or a subcomponent programmatically.\n",
+    "\n",
+    "The following returns a dictionary of all parameters within"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 31,
+   "id": "91662af4",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:49.792076Z",
+     "iopub.status.busy": "2022-10-10T13:39:49.791779Z",
+     "iopub.status.idle": "2022-10-10T13:39:49.807515Z",
+     "shell.execute_reply": "2022-10-10T13:39:49.806908Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "model = gpflow.models.SGPR(\n",
+    "    data, kernel=kernel, inducing_variable=inducing_variable\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 32,
+   "id": "198a9871",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:49.810529Z",
+     "iopub.status.busy": "2022-10-10T13:39:49.810225Z",
+     "iopub.status.idle": "2022-10-10T13:39:49.819639Z",
+     "shell.execute_reply": "2022-10-10T13:39:49.819094Z"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "{'.kernel.variance': <Parameter: name=softplus, dtype=float64, shape=[], fn=\"softplus\", numpy=0.8890651823586637>,\n",
+       " '.kernel.lengthscales': <Parameter: name=softplus, dtype=float64, shape=[], fn=\"softplus\", numpy=1.6808082106211253>,\n",
+       " '.likelihood.variance': <Parameter: name=chain_of_shift_of_softplus, dtype=float64, shape=[], fn=\"chain_of_shift_of_softplus\", numpy=1.0>,\n",
+       " '.inducing_variable.Z': <Parameter: name=identity, dtype=float64, shape=[10, 1], fn=\"identity\", numpy=\n",
+       " array([[ 0.        ],\n",
+       "        [ 1.11111111],\n",
+       "        [ 2.22222222],\n",
+       "        [ 3.33333333],\n",
+       "        [ 4.44444444],\n",
+       "        [ 5.55555556],\n",
+       "        [ 6.66666667],\n",
+       "        [ 7.77777778],\n",
+       "        [ 8.88888889],\n",
+       "        [10.        ]])>}"
+      ]
+     },
+     "execution_count": 32,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "gpflow.utilities.parameter_dict(model)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "1638bf52",
+   "metadata": {},
+   "source": [
+    "Such a dictionary can be assigned back to this model (or another model with the same tree of parameters) as follows:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 33,
+   "id": "5dd7d2cc",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:49.822429Z",
+     "iopub.status.busy": "2022-10-10T13:39:49.822124Z",
+     "iopub.status.idle": "2022-10-10T13:39:49.833207Z",
+     "shell.execute_reply": "2022-10-10T13:39:49.832576Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "params = gpflow.utilities.parameter_dict(model)\n",
+    "gpflow.utilities.multiple_assign(model, params)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "3e5ea950",
+   "metadata": {},
+   "source": [
+    "### TensorFlow `saved_model`\n",
+    "\n",
+    "In order to save the model we need to explicitly store the `tf.function`-compiled functions that we wish to export:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 34,
+   "id": "d05f6669",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:49.836507Z",
+     "iopub.status.busy": "2022-10-10T13:39:49.836189Z",
+     "iopub.status.idle": "2022-10-10T13:39:49.840106Z",
+     "shell.execute_reply": "2022-10-10T13:39:49.839533Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "predict_f = lambda Xnew: model.predict_f(Xnew)\n",
+    "model.predict_f_compiled = tf.function(\n",
+    "    predict_f,\n",
+    "    input_signature=[tf.TensorSpec(shape=[None, 1], dtype=tf.float64)],\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "2fe5aace",
+   "metadata": {},
+   "source": [
+    "We also save the original prediction for later comparison. Here `samples_input` needs to be a tensor so that `tf.function` will compile a single graph:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 35,
+   "id": "cc0ce4bf",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:49.842632Z",
+     "iopub.status.busy": "2022-10-10T13:39:49.842347Z",
+     "iopub.status.idle": "2022-10-10T13:39:50.577778Z",
+     "shell.execute_reply": "2022-10-10T13:39:50.577131Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "samples_input = tf.convert_to_tensor(samples_input, dtype=default_float())\n",
+    "original_result = model.predict_f_compiled(samples_input)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "be5c54f5",
+   "metadata": {
+    "lines_to_next_cell": 0
+   },
+   "source": [
+    "Let's save the model:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 36,
+   "id": "165c49a2",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:50.581044Z",
+     "iopub.status.busy": "2022-10-10T13:39:50.580758Z",
+     "iopub.status.idle": "2022-10-10T13:39:51.124355Z",
+     "shell.execute_reply": "2022-10-10T13:39:51.123692Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "WARNING:absl:Function `<lambda>` contains input name(s) Xnew with unsupported characters which will be renamed to xnew in the SavedModel.\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "WARNING:tensorflow:From /tmp/max_venv/lib/python3.10/site-packages/tensorflow/python/trackable/autotrackable.py:95: Bijector.has_static_min_event_ndims (from tensorflow_probability.python.bijectors.bijector) is deprecated and will be removed after 2021-08-01.\n",
+      "Instructions for updating:\n",
+      "`min_event_ndims` is now static for all bijectors; this property is no longer needed.\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "WARNING:tensorflow:From /tmp/max_venv/lib/python3.10/site-packages/tensorflow/python/trackable/autotrackable.py:95: Bijector.has_static_min_event_ndims (from tensorflow_probability.python.bijectors.bijector) is deprecated and will be removed after 2021-08-01.\n",
+      "Instructions for updating:\n",
+      "`min_event_ndims` is now static for all bijectors; this property is no longer needed.\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "INFO:tensorflow:Assets written to: /tmp/assets\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "INFO:tensorflow:Assets written to: /tmp/assets\n"
+     ]
+    }
+   ],
+   "source": [
+    "save_dir = str(pathlib.Path(tempfile.gettempdir()))\n",
+    "tf.saved_model.save(model, save_dir)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "acbfe1e1",
+   "metadata": {},
+   "source": [
+    "We can load the module back as a new instance and compare the prediction results:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 37,
+   "id": "3114b675",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:51.127508Z",
+     "iopub.status.busy": "2022-10-10T13:39:51.127219Z",
+     "iopub.status.idle": "2022-10-10T13:39:51.334736Z",
+     "shell.execute_reply": "2022-10-10T13:39:51.334082Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "loaded_model = tf.saved_model.load(save_dir)\n",
+    "loaded_result = loaded_model.predict_f_compiled(samples_input)\n",
+    "\n",
+    "np.testing.assert_array_equal(loaded_result, original_result)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f1c16b17",
+   "metadata": {},
+   "source": [
+    "## User config update\n",
+    "\n",
+    "In this notebook, we used a lot `gpflow.config` methods for setting and getting default attributes from global configuration. However, GPflow provides a way for local config modification without updating values in global. As you can see below, using `gpflow.config.as_context` replaces temporarily global config with your instance. At creation time, custom config instance uses standard values from the global config:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 38,
+   "id": "61109b35",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:51.338006Z",
+     "iopub.status.busy": "2022-10-10T13:39:51.337703Z",
+     "iopub.status.idle": "2022-10-10T13:39:51.342540Z",
+     "shell.execute_reply": "2022-10-10T13:39:51.341994Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "User config\t gpflow.config.default_float = <dtype: 'float32'>\n",
+      "User config\t gpflow.config.positive_bijector = exp\n",
+      "Global config\t gpflow.config.default_float = <class 'numpy.float64'>\n",
+      "Global config\t gpflow.config.positive_bijector = softplus\n"
+     ]
+    }
+   ],
+   "source": [
+    "user_config = gpflow.config.Config(float=tf.float32, positive_bijector=\"exp\")\n",
+    "\n",
+    "user_str = \"User config\\t\"\n",
+    "global_str = \"Global config\\t\"\n",
+    "\n",
+    "with gpflow.config.as_context(user_config):\n",
+    "    print(\n",
+    "        f\"{user_str} gpflow.config.default_float = {gpflow.config.default_float()}\"\n",
+    "    )\n",
+    "    print(\n",
+    "        f\"{user_str} gpflow.config.positive_bijector = {gpflow.config.default_positive_bijector()}\"\n",
+    "    )\n",
+    "\n",
+    "print(\n",
+    "    f\"{global_str} gpflow.config.default_float = {gpflow.config.default_float()}\"\n",
+    ")\n",
+    "print(\n",
+    "    f\"{global_str} gpflow.config.positive_bijector = {gpflow.config.default_positive_bijector()}\"\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 39,
+   "id": "de78a6a2",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-10-10T13:39:51.344921Z",
+     "iopub.status.busy": "2022-10-10T13:39:51.344674Z",
+     "iopub.status.idle": "2022-10-10T13:39:51.358089Z",
+     "shell.execute_reply": "2022-10-10T13:39:51.357518Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "User config\t<Parameter: name=exp, dtype=float32, shape=[], fn=\"exp\", numpy=1.1>\n",
+      "Global config\t<Parameter: name=softplus, dtype=float64, shape=[], fn=\"softplus\", numpy=1.1>\n"
+     ]
+    }
+   ],
+   "source": [
+    "with gpflow.config.as_context(user_config):\n",
+    "    p = gpflow.Parameter(1.1, transform=gpflow.utilities.positive())\n",
+    "    print(f\"{user_str}{p}\")\n",
+    "\n",
+    "p = gpflow.Parameter(1.1, transform=gpflow.utilities.positive())\n",
+    "print(f\"{global_str}{p}\")"
+   ]
+  }
+ ],
+ "metadata": {
+  "jupytext": {
+   "formats": "ipynb,.pct.py:percent"
+  },
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.10.7"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

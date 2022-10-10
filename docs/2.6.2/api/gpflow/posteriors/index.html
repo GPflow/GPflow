@@ -1,0 +1,1428 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>gpflow.posteriors &#8212; GPflow 2.6.2 documentation</title>
+  <script>
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=1e1de1a1873e13ef5536" rel="stylesheet">
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=1e1de1a1873e13ef5536" rel="stylesheet">
+
+  
+  <link rel="stylesheet"
+    href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=1e1de1a1873e13ef5536">
+
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api/gpflow/posteriors/index';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://gpflow.github.io/GPflow/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.6.2';
+        </script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="gpflow.probability_distributions" href="../probability_distributions/index.html" />
+    <link rel="prev" title="gpflow.optimizers.natgrad" href="../optimizers/natgrad/index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="docsearch:language" content="en">
+  </head>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+
+  
+  <input type="checkbox" class="sidebar-toggle" name="__primary" id="__primary">
+  <label class="overlay overlay-primary" for="__primary"></label>
+
+  
+  <input type="checkbox" class="sidebar-toggle" name="__secondary" id="__secondary">
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+      
+<form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+    </div>
+  </div>
+
+  
+  <nav class="bd-header navbar navbar-expand-lg bd-navbar" id="navbar-main"><div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+      <span class="fa-solid fa-bars"></span>
+  </label>
+  <div id="navbar-start">
+    
+    
+  
+
+
+<a class="navbar-brand logo" href="../../../index.html">
+
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <img src="../../../_static/gpflow_logo.svg" class="logo__image only-light" alt="Logo image">
+    <img src="../../../_static/gpflow_logo.svg" class="logo__image only-dark" alt="Logo image">
+  
+  
+</a>
+    
+  </div>
+
+  
+  <div class="col-lg-9 navbar-header-items">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <nav class="navbar-nav">
+    <p class="sidebar-header-items__title" role="heading" aria-level="1" aria-label="Site Navigation">
+        Site Navigation
+    </p>
+    <ul id="navbar-main-elements" class="navbar-nav">
+        
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../intro.html">
+                        Introduction
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../manual.html">
+                        GPflow manual
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../notebooks/intro_to_gpflow2.html">
+                        GPflow with TensorFlow 2
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../notebooks_file.html">
+                        Notebooks
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../derivations.html">
+                        Derivations
+                    </a>
+                </li>
+                
+            <div class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    More
+                </button>
+                <div class="dropdown-menu">
+                    
+                <li class="nav-item current active">
+                    <a class="nav-link" href="../index.html">
+                        API reference
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../bibliography.html">
+                        Bibliography
+                    </a>
+                </li>
+                
+                </div>
+            </div>
+            
+    </ul>
+</nav>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      <div class="navbar-end-item navbar-end__search-button-container">
+        
+<button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" data-toggle="tooltip">
+  <i class="fa-solid fa-magnifying-glass"></i>
+</button>
+      </div>
+      
+      <div class="navbar-end-item">
+        <div class="version-switcher__container dropdown">
+    <button type="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-toggle="dropdown">
+        2.6.2  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div class="version-switcher__menu dropdown-menu list-group-flush py-0">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+      </div>
+      
+    </div>
+  </div>
+
+
+  
+  <div class="search-button-container--mobile">
+<button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" data-toggle="tooltip">
+  <i class="fa-solid fa-magnifying-glass"></i>
+</button>
+  </div>
+
+  
+  <label class="sidebar-toggle secondary-toggle" for="__secondary">
+      <span class="fa-solid fa-outdent"></span>
+  </label>
+  
+
+</div>
+  </nav>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+      
+      <div class="navbar-center-item">
+        <nav class="navbar-nav">
+    <p class="sidebar-header-items__title" role="heading" aria-level="1" aria-label="Site Navigation">
+        Site Navigation
+    </p>
+    <ul id="navbar-main-elements" class="navbar-nav">
+        
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../intro.html">
+                        Introduction
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../manual.html">
+                        GPflow manual
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../notebooks/intro_to_gpflow2.html">
+                        GPflow with TensorFlow 2
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../notebooks_file.html">
+                        Notebooks
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../derivations.html">
+                        Derivations
+                    </a>
+                </li>
+                
+            <div class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    More
+                </button>
+                <div class="dropdown-menu">
+                    
+                <li class="nav-item current active">
+                    <a class="nav-link" href="../index.html">
+                        API reference
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../bibliography.html">
+                        Bibliography
+                    </a>
+                </li>
+                
+                </div>
+            </div>
+            
+    </ul>
+</nav>
+      </div>
+      
+      </div>
+    
+
+    
+    
+    <div class="sidebar-header-items__end">
+      
+      <div class="navbar-end-item">
+        <div class="version-switcher__container dropdown">
+    <button type="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-toggle="dropdown">
+        2.6.2  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div class="version-switcher__menu dropdown-menu list-group-flush py-0">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+      </div>
+      
+    </div>
+    
+  </div>
+
+  
+  <div class="sidebar-start-items sidebar-primary__section">
+    <div class="sidebar-start-items__item"><nav class="bd-links" id="bd-docs-nav" aria-label="Section navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">
+    Section Navigation
+  </p>
+  <div class="bd-toc-item navbar-nav">
+    <ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../base/index.html">gpflow.base</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../conditionals/index.html">gpflow.conditionals</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../conditionals/util/index.html">gpflow.conditionals.util</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../config/index.html">gpflow.config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../covariances/index.html">gpflow.covariances</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../expectations/index.html">gpflow.expectations</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../expectations/quadratures/index.html">gpflow.expectations.quadratures</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../experimental/index.html">gpflow.experimental</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-3"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../experimental/check_shapes/index.html">gpflow.experimental.check_shapes</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-4"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../experimental/check_shapes/accessors/index.html">gpflow.experimental.check_shapes.accessors</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../experimental/check_shapes/argument_ref/index.html">gpflow.experimental.check_shapes.argument_ref</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../experimental/check_shapes/bool_specs/index.html">gpflow.experimental.check_shapes.bool_specs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../experimental/check_shapes/checker_context/index.html">gpflow.experimental.check_shapes.checker_context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../experimental/check_shapes/decorator/index.html">gpflow.experimental.check_shapes.decorator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../experimental/check_shapes/error_contexts/index.html">gpflow.experimental.check_shapes.error_contexts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../experimental/check_shapes/exceptions/index.html">gpflow.experimental.check_shapes.exceptions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../experimental/check_shapes/parser/index.html">gpflow.experimental.check_shapes.parser</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../experimental/check_shapes/shapes/index.html">gpflow.experimental.check_shapes.shapes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../experimental/check_shapes/specs/index.html">gpflow.experimental.check_shapes.specs</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../experimental/utils/index.html">gpflow.experimental.utils</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../functions/index.html">gpflow.functions</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../inducing_variables/index.html">gpflow.inducing_variables</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-5"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../inducing_variables/inducing_variables/index.html">gpflow.inducing_variables.inducing_variables</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../kernels/index.html">gpflow.kernels</a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-6"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../kernels/base/index.html">gpflow.kernels.base</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../kullback_leiblers/index.html">gpflow.kullback_leiblers</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../likelihoods/index.html">gpflow.likelihoods</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-7"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../likelihoods/utils/index.html">gpflow.likelihoods.utils</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../logdensities/index.html">gpflow.logdensities</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../models/index.html">gpflow.models</a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-8"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../models/cglb/index.html">gpflow.models.cglb</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../models/gpr/index.html">gpflow.models.gpr</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../models/sgpr/index.html">gpflow.models.sgpr</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../models/svgp/index.html">gpflow.models.svgp</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../models/util/index.html">gpflow.models.util</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../models/vgp/index.html">gpflow.models.vgp</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../monitor/index.html">gpflow.monitor</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../optimizers/index.html">gpflow.optimizers</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-9"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../optimizers/natgrad/index.html">gpflow.optimizers.natgrad</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">gpflow.posteriors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../probability_distributions/index.html">gpflow.probability_distributions</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../quadrature/index.html">gpflow.quadrature</a><input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-10"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../quadrature/gauss_hermite/index.html">gpflow.quadrature.gauss_hermite</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../type_flags/index.html">gpflow.type_flags</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../utilities/index.html">gpflow.utilities</a><input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-11"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../utilities/ops/index.html">gpflow.utilities.ops</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utilities/parameter_or_function/index.html">gpflow.utilities.parameter_or_function</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+</nav>
+    </div>
+  </div>
+  
+
+  
+  <div class="sidebar-end-items sidebar-primary__section">
+    <div class="sidebar-end-items__item">
+    </div>
+  </div>
+
+      </div>
+      <main class="bd-main">
+        
+        
+        <div class="bd-content">
+          <div class="bd-article-container">
+            
+            <div class="bd-header-article">
+                
+            </div>
+            
+            
+            <article class="bd-article" role="main">
+              
+  <section id="gpflow-posteriors">
+<h1>gpflow.posteriors<a class="headerlink" href="#gpflow-posteriors" title="Permalink to this heading">#</a></h1>
+<span class="target" id="module-gpflow.posteriors"></span><section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this heading">#</a></h2>
+<section id="gpflow-posteriors-abstractposterior">
+<h3>gpflow.posteriors.AbstractPosterior<a class="headerlink" href="#gpflow-posteriors-abstractposterior" title="Permalink to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.posteriors.AbstractPosterior">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">AbstractPosterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#AbstractPosterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.AbstractPosterior" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../index.html#gpflow.Module" title="gpflow.base.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>) – </p></li>
+<li><p><strong>X_data</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.InducingVariables" title="gpflow.inducing_variables.inducing_variables.InducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingVariables</span></code></a>]) – </p></li>
+<li><p><strong>cache</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>]]) – </p></li>
+<li><p><strong>mean_function</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="../functions/index.html#gpflow.functions.MeanFunction" title="gpflow.functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeanFunction</span></code></a>]) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.posteriors.AbstractPosterior.fused_predict_f">
+<span class="sig-name descname"><span class="pre">fused_predict_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#AbstractPosterior.fused_predict_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.AbstractPosterior.fused_predict_f" title="Permalink to this definition">#</a></dt>
+<dd><p>Computes predictive mean and (co)variance at Xnew, including mean_function
+Does not make use of caching</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Xnew</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – <ul>
+<li><p><strong>Xnew</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>N</em>, <em>P</em>] if <em>full_cov</em> and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>P</em>] if (not <em>full_cov</em>) and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>] if (not <em>full_cov</em>) and (not <em>full_output_cov</em>).</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>P</em>, <em>N</em>, <em>N</em>] if <em>full_cov</em> and (not <em>full_output_cov</em>).</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.posteriors.AbstractPosterior.predict_f">
+<span class="sig-name descname"><span class="pre">predict_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#AbstractPosterior.predict_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.AbstractPosterior.predict_f" title="Permalink to this definition">#</a></dt>
+<dd><p>Computes predictive mean and (co)variance at Xnew, including mean_function.
+Relies on precomputed alpha and Qinv (see _precompute method)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Xnew</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – <ul>
+<li><p><strong>Xnew</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>N</em>, <em>P</em>] if <em>full_cov</em> and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>P</em>] if (not <em>full_cov</em>) and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>] if (not <em>full_cov</em>) and (not <em>full_output_cov</em>).</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>P</em>, <em>N</em>, <em>N</em>] if <em>full_cov</em> and (not <em>full_output_cov</em>).</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.posteriors.AbstractPosterior.update_cache">
+<span class="sig-name descname"><span class="pre">update_cache</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#AbstractPosterior.update_cache"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.AbstractPosterior.update_cache" title="Permalink to this definition">#</a></dt>
+<dd><p>Sets the cache depending on the value of <cite>precompute_cache</cite> to a
+<cite>tf.Tensor</cite>, <cite>tf.Variable</cite>, or clears the cache. If <cite>precompute_cache</cite>
+is not given, the setting defaults to the most-recently-used one.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>precompute_cache</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="#gpflow.posteriors.PrecomputeCacheType" title="gpflow.posteriors.PrecomputeCacheType"><code class="xref py py-class docutils literal notranslate"><span class="pre">PrecomputeCacheType</span></code></a>]) – </p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="gpflow-posteriors-baseposterior">
+<h3>gpflow.posteriors.BasePosterior<a class="headerlink" href="#gpflow-posteriors-baseposterior" title="Permalink to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.posteriors.BasePosterior">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">BasePosterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whiten</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#BasePosterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.BasePosterior" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.posteriors.AbstractPosterior" title="gpflow.posteriors.AbstractPosterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractPosterior</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>) – </p></li>
+<li><p><strong>inducing_variable</strong> (<a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.InducingVariables" title="gpflow.inducing_variables.inducing_variables.InducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingVariables</span></code></a>) – </p></li>
+<li><p><strong>q_mu</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
+<li><p><strong>whiten</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>mean_function</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="../functions/index.html#gpflow.functions.MeanFunction" title="gpflow.functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeanFunction</span></code></a>]) – </p></li>
+<li><p><strong>precompute_cache</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="#gpflow.posteriors.PrecomputeCacheType" title="gpflow.posteriors.PrecomputeCacheType"><code class="xref py py-class docutils literal notranslate"><span class="pre">PrecomputeCacheType</span></code></a>]) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-posteriors-fallbackindependentlatentposterior">
+<h3>gpflow.posteriors.FallbackIndependentLatentPosterior<a class="headerlink" href="#gpflow-posteriors-fallbackindependentlatentposterior" title="Permalink to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.posteriors.FallbackIndependentLatentPosterior">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">FallbackIndependentLatentPosterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whiten</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#FallbackIndependentLatentPosterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.FallbackIndependentLatentPosterior" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.posteriors.FullyCorrelatedPosterior" title="gpflow.posteriors.FullyCorrelatedPosterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">FullyCorrelatedPosterior</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>) – </p></li>
+<li><p><strong>inducing_variable</strong> (<a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.InducingVariables" title="gpflow.inducing_variables.inducing_variables.InducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingVariables</span></code></a>) – </p></li>
+<li><p><strong>q_mu</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
+<li><p><strong>whiten</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>mean_function</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="../functions/index.html#gpflow.functions.MeanFunction" title="gpflow.functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeanFunction</span></code></a>]) – </p></li>
+<li><p><strong>precompute_cache</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="#gpflow.posteriors.PrecomputeCacheType" title="gpflow.posteriors.PrecomputeCacheType"><code class="xref py py-class docutils literal notranslate"><span class="pre">PrecomputeCacheType</span></code></a>]) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-posteriors-fullycorrelatedposterior">
+<h3>gpflow.posteriors.FullyCorrelatedPosterior<a class="headerlink" href="#gpflow-posteriors-fullycorrelatedposterior" title="Permalink to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.posteriors.FullyCorrelatedPosterior">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">FullyCorrelatedPosterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whiten</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#FullyCorrelatedPosterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.FullyCorrelatedPosterior" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.posteriors.BasePosterior" title="gpflow.posteriors.BasePosterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">BasePosterior</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>) – </p></li>
+<li><p><strong>inducing_variable</strong> (<a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.InducingVariables" title="gpflow.inducing_variables.inducing_variables.InducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingVariables</span></code></a>) – </p></li>
+<li><p><strong>q_mu</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
+<li><p><strong>whiten</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>mean_function</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="../functions/index.html#gpflow.functions.MeanFunction" title="gpflow.functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeanFunction</span></code></a>]) – </p></li>
+<li><p><strong>precompute_cache</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="#gpflow.posteriors.PrecomputeCacheType" title="gpflow.posteriors.PrecomputeCacheType"><code class="xref py py-class docutils literal notranslate"><span class="pre">PrecomputeCacheType</span></code></a>]) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-posteriors-gprposterior">
+<h3>gpflow.posteriors.GPRPosterior<a class="headerlink" href="#gpflow-posteriors-gprposterior" title="Permalink to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.posteriors.GPRPosterior">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">GPRPosterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#GPRPosterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.GPRPosterior" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.posteriors.AbstractPosterior" title="gpflow.posteriors.AbstractPosterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractPosterior</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>) – </p></li>
+<li><p><strong>data</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>], <code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]]) – </p></li>
+<li><p><strong>likelihood</strong> (<a class="reference internal" href="../likelihoods/index.html#gpflow.likelihoods.Gaussian" title="gpflow.likelihoods.scalar_continuous.Gaussian"><code class="xref py py-class docutils literal notranslate"><span class="pre">Gaussian</span></code></a>) – </p></li>
+<li><p><strong>mean_function</strong> (<a class="reference internal" href="../functions/index.html#gpflow.functions.MeanFunction" title="gpflow.functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeanFunction</span></code></a>) – </p></li>
+<li><p><strong>precompute_cache</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="#gpflow.posteriors.PrecomputeCacheType" title="gpflow.posteriors.PrecomputeCacheType"><code class="xref py py-class docutils literal notranslate"><span class="pre">PrecomputeCacheType</span></code></a>]) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-posteriors-independentposterior">
+<h3>gpflow.posteriors.IndependentPosterior<a class="headerlink" href="#gpflow-posteriors-independentposterior" title="Permalink to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.posteriors.IndependentPosterior">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">IndependentPosterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whiten</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#IndependentPosterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.IndependentPosterior" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.posteriors.BasePosterior" title="gpflow.posteriors.BasePosterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">BasePosterior</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>) – </p></li>
+<li><p><strong>inducing_variable</strong> (<a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.InducingVariables" title="gpflow.inducing_variables.inducing_variables.InducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingVariables</span></code></a>) – </p></li>
+<li><p><strong>q_mu</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
+<li><p><strong>whiten</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>mean_function</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="../functions/index.html#gpflow.functions.MeanFunction" title="gpflow.functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeanFunction</span></code></a>]) – </p></li>
+<li><p><strong>precompute_cache</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="#gpflow.posteriors.PrecomputeCacheType" title="gpflow.posteriors.PrecomputeCacheType"><code class="xref py py-class docutils literal notranslate"><span class="pre">PrecomputeCacheType</span></code></a>]) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-posteriors-independentposteriormultioutput">
+<h3>gpflow.posteriors.IndependentPosteriorMultiOutput<a class="headerlink" href="#gpflow-posteriors-independentposteriormultioutput" title="Permalink to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.posteriors.IndependentPosteriorMultiOutput">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">IndependentPosteriorMultiOutput</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whiten</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#IndependentPosteriorMultiOutput"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.IndependentPosteriorMultiOutput" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.posteriors.IndependentPosterior" title="gpflow.posteriors.IndependentPosterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">IndependentPosterior</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>) – </p></li>
+<li><p><strong>inducing_variable</strong> (<a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.InducingVariables" title="gpflow.inducing_variables.inducing_variables.InducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingVariables</span></code></a>) – </p></li>
+<li><p><strong>q_mu</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
+<li><p><strong>whiten</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>mean_function</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="../functions/index.html#gpflow.functions.MeanFunction" title="gpflow.functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeanFunction</span></code></a>]) – </p></li>
+<li><p><strong>precompute_cache</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="#gpflow.posteriors.PrecomputeCacheType" title="gpflow.posteriors.PrecomputeCacheType"><code class="xref py py-class docutils literal notranslate"><span class="pre">PrecomputeCacheType</span></code></a>]) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-posteriors-independentposteriorsingleoutput">
+<h3>gpflow.posteriors.IndependentPosteriorSingleOutput<a class="headerlink" href="#gpflow-posteriors-independentposteriorsingleoutput" title="Permalink to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.posteriors.IndependentPosteriorSingleOutput">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">IndependentPosteriorSingleOutput</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whiten</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#IndependentPosteriorSingleOutput"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.IndependentPosteriorSingleOutput" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.posteriors.IndependentPosterior" title="gpflow.posteriors.IndependentPosterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">IndependentPosterior</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>) – </p></li>
+<li><p><strong>inducing_variable</strong> (<a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.InducingVariables" title="gpflow.inducing_variables.inducing_variables.InducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingVariables</span></code></a>) – </p></li>
+<li><p><strong>q_mu</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
+<li><p><strong>whiten</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>mean_function</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="../functions/index.html#gpflow.functions.MeanFunction" title="gpflow.functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeanFunction</span></code></a>]) – </p></li>
+<li><p><strong>precompute_cache</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="#gpflow.posteriors.PrecomputeCacheType" title="gpflow.posteriors.PrecomputeCacheType"><code class="xref py py-class docutils literal notranslate"><span class="pre">PrecomputeCacheType</span></code></a>]) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-posteriors-linearcoregionalizationposterior">
+<h3>gpflow.posteriors.LinearCoregionalizationPosterior<a class="headerlink" href="#gpflow-posteriors-linearcoregionalizationposterior" title="Permalink to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.posteriors.LinearCoregionalizationPosterior">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">LinearCoregionalizationPosterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whiten</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#LinearCoregionalizationPosterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.LinearCoregionalizationPosterior" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.posteriors.IndependentPosteriorMultiOutput" title="gpflow.posteriors.IndependentPosteriorMultiOutput"><code class="xref py py-class docutils literal notranslate"><span class="pre">IndependentPosteriorMultiOutput</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>) – </p></li>
+<li><p><strong>inducing_variable</strong> (<a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.InducingVariables" title="gpflow.inducing_variables.inducing_variables.InducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingVariables</span></code></a>) – </p></li>
+<li><p><strong>q_mu</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
+<li><p><strong>whiten</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>mean_function</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="../functions/index.html#gpflow.functions.MeanFunction" title="gpflow.functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeanFunction</span></code></a>]) – </p></li>
+<li><p><strong>precompute_cache</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="#gpflow.posteriors.PrecomputeCacheType" title="gpflow.posteriors.PrecomputeCacheType"><code class="xref py py-class docutils literal notranslate"><span class="pre">PrecomputeCacheType</span></code></a>]) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-posteriors-precomputecachetype">
+<h3>gpflow.posteriors.PrecomputeCacheType<a class="headerlink" href="#gpflow-posteriors-precomputecachetype" title="Permalink to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.posteriors.PrecomputeCacheType">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">PrecomputeCacheType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#PrecomputeCacheType"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.PrecomputeCacheType" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
+<ul class="simple">
+<li><p><cite>PrecomputeCacheType.TENSOR</cite> (or <cite>“tensor”</cite>): Precomputes the cached
+quantities and stores them as tensors (which allows differentiating
+through the prediction). This is the default.</p></li>
+<li><p><cite>PrecomputeCacheType.VARIABLE</cite> (or <cite>“variable”</cite>): Precomputes the cached
+quantities and stores them as variables, which allows for updating
+their values without changing the compute graph (relevant for AOT
+compilation).</p></li>
+<li><p><cite>PrecomputeCacheType.NOCACHE</cite> (or <cite>“nocache”</cite> or <cite>None</cite>): Avoids
+immediate cache computation. This is useful for avoiding extraneous
+computations when you only want to call the posterior’s
+<cite>fused_predict_f</cite> method.</p></li>
+</ul>
+</dd></dl>
+
+</section>
+<section id="gpflow-posteriors-precomputedvalue">
+<h3>gpflow.posteriors.PrecomputedValue<a class="headerlink" href="#gpflow-posteriors-precomputedvalue" title="Permalink to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.posteriors.PrecomputedValue">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">PrecomputedValue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis_dynamic</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#PrecomputedValue"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.PrecomputedValue" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>value</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
+<li><p><strong>axis_dynamic</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>]) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gpflow.posteriors.PrecomputedValue.axis_dynamic">
+<span class="sig-name descname"><span class="pre">axis_dynamic</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#gpflow.posteriors.PrecomputedValue.axis_dynamic" title="Permalink to this definition">#</a></dt>
+<dd><p>A tuple with one element per dimension of <cite>value</cite>. That element is <cite>True</cite> if that dimension
+of <cite>value</cite> might change size.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gpflow.posteriors.PrecomputedValue.value">
+<span class="sig-name descname"><span class="pre">value</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tensor</span></em><a class="headerlink" href="#gpflow.posteriors.PrecomputedValue.value" title="Permalink to this definition">#</a></dt>
+<dd><p>The precomputed value itself.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.posteriors.PrecomputedValue.wrap_alpha_Qinv">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">wrap_alpha_Qinv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Qinv</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#PrecomputedValue.wrap_alpha_Qinv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.PrecomputedValue.wrap_alpha_Qinv" title="Permalink to this definition">#</a></dt>
+<dd><p>Wraps <cite>alpha</cite> and <cite>Qinv</cite> in <cite>PrecomputedValue</cite>s.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>alpha</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – <ul>
+<li><p><strong>alpha</strong> has shape [<em>M_L_or_L_M_M</em>…].</p></li>
+</ul>
+</p></li>
+<li><p><strong>Qinv</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – <ul>
+<li><p><strong>Qinv</strong> has shape [<em>M_M_or_L_M_M</em>…].</p></li>
+</ul>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<a class="reference internal" href="#gpflow.posteriors.PrecomputedValue" title="gpflow.posteriors.PrecomputedValue"><code class="xref py py-class docutils literal notranslate"><span class="pre">PrecomputedValue</span></code></a>, <code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="gpflow-posteriors-sgprposterior">
+<h3>gpflow.posteriors.SGPRPosterior<a class="headerlink" href="#gpflow-posteriors-sgprposterior" title="Permalink to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.posteriors.SGPRPosterior">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">SGPRPosterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#SGPRPosterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.SGPRPosterior" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.posteriors.AbstractPosterior" title="gpflow.posteriors.AbstractPosterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractPosterior</span></code></a></p>
+<p>This class represents posteriors which can be derived from SGPR
+models to compute faster predictions on unseen points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>) – </p></li>
+<li><p><strong>data</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>], <code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]]) – </p></li>
+<li><p><strong>inducing_variable</strong> (<a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.InducingPoints" title="gpflow.inducing_variables.inducing_variables.InducingPoints"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingPoints</span></code></a>) – </p></li>
+<li><p><strong>likelihood</strong> (<a class="reference internal" href="../likelihoods/index.html#gpflow.likelihoods.Gaussian" title="gpflow.likelihoods.scalar_continuous.Gaussian"><code class="xref py py-class docutils literal notranslate"><span class="pre">Gaussian</span></code></a>) – </p></li>
+<li><p><strong>num_latent_gps</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – </p></li>
+<li><p><strong>mean_function</strong> (<a class="reference internal" href="../functions/index.html#gpflow.functions.MeanFunction" title="gpflow.functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeanFunction</span></code></a>) – </p></li>
+<li><p><strong>precompute_cache</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="#gpflow.posteriors.PrecomputeCacheType" title="gpflow.posteriors.PrecomputeCacheType"><code class="xref py py-class docutils literal notranslate"><span class="pre">PrecomputeCacheType</span></code></a>]) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-posteriors-vgpposterior">
+<h3>gpflow.posteriors.VGPPosterior<a class="headerlink" href="#gpflow-posteriors-vgpposterior" title="Permalink to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.posteriors.VGPPosterior">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">VGPPosterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#VGPPosterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.VGPPosterior" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.posteriors.AbstractPosterior" title="gpflow.posteriors.AbstractPosterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractPosterior</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>) – </p></li>
+<li><p><strong>X</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
+<li><p><strong>q_mu</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
+<li><p><strong>mean_function</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="../functions/index.html#gpflow.functions.MeanFunction" title="gpflow.functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeanFunction</span></code></a>]) – </p></li>
+<li><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>precompute_cache</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="#gpflow.posteriors.PrecomputeCacheType" title="gpflow.posteriors.PrecomputeCacheType"><code class="xref py py-class docutils literal notranslate"><span class="pre">PrecomputeCacheType</span></code></a>]) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this heading">#</a></h2>
+<section id="gpflow-posteriors-create-posterior">
+<h3>gpflow.posteriors.create_posterior<a class="headerlink" href="#gpflow-posteriors-create-posterior" title="Permalink to this heading">#</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.posteriors.create_posterior">
+<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">create_posterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whiten</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">PrecomputeCacheType.TENSOR</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#create_posterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.create_posterior" title="Permalink to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>) – </p></li>
+<li><p><strong>inducing_variable</strong> (<a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.InducingVariables" title="gpflow.inducing_variables.inducing_variables.InducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingVariables</span></code></a>) – </p></li>
+<li><p><strong>q_mu</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – </p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – </p></li>
+<li><p><strong>whiten</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>mean_function</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="../functions/index.html#gpflow.functions.MeanFunction" title="gpflow.functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeanFunction</span></code></a>]) – </p></li>
+<li><p><strong>precompute_cache</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<a class="reference internal" href="#gpflow.posteriors.PrecomputeCacheType" title="gpflow.posteriors.PrecomputeCacheType"><code class="xref py py-class docutils literal notranslate"><span class="pre">PrecomputeCacheType</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#gpflow.posteriors.BasePosterior" title="gpflow.posteriors.BasePosterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">BasePosterior</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-posteriors-get-posterior-class">
+<h3>gpflow.posteriors.get_posterior_class<a class="headerlink" href="#gpflow-posteriors-get-posterior-class" title="Permalink to this heading">#</a></h3>
+<p>This function uses multiple dispatch, which will depend on the type of argument passed in:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">posteriors</span><span class="o">.</span><span class="n">get_posterior_class</span><span class="p">(</span> <span class="n">Kernel</span><span class="p">,</span> <span class="n">InducingVariables</span> <span class="p">)</span>
+<span class="c1"># dispatch to -&gt; gpflow.posteriors._get_posterior_base_case(...)</span>
+</pre></div>
+</div>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.posteriors._get_posterior_base_case">
+<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">_get_posterior_base_case</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#_get_posterior_base_case"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors._get_posterior_base_case" title="Permalink to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>) – </p></li>
+<li><p><strong>inducing_variable</strong> (<a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.InducingVariables" title="gpflow.inducing_variables.inducing_variables.InducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingVariables</span></code></a>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Type</span></code>[<a class="reference internal" href="#gpflow.posteriors.BasePosterior" title="gpflow.posteriors.BasePosterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">BasePosterior</span></code></a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">posteriors</span><span class="o">.</span><span class="n">get_posterior_class</span><span class="p">(</span> <span class="n">MultioutputKernel</span><span class="p">,</span> <span class="n">InducingPoints</span> <span class="p">)</span>
+<span class="c1"># dispatch to -&gt; gpflow.posteriors._get_posterior_fully_correlated_mo(...)</span>
+</pre></div>
+</div>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.posteriors._get_posterior_fully_correlated_mo">
+<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">_get_posterior_fully_correlated_mo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#_get_posterior_fully_correlated_mo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors._get_posterior_fully_correlated_mo" title="Permalink to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>) – </p></li>
+<li><p><strong>inducing_variable</strong> (<a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.InducingVariables" title="gpflow.inducing_variables.inducing_variables.InducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingVariables</span></code></a>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Type</span></code>[<a class="reference internal" href="#gpflow.posteriors.BasePosterior" title="gpflow.posteriors.BasePosterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">BasePosterior</span></code></a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">posteriors</span><span class="o">.</span><span class="n">get_posterior_class</span><span class="p">(</span> <span class="n">SharedIndependent</span><span class="p">,</span> <span class="n">SeparateIndependentInducingVariables</span> <span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">posteriors</span><span class="o">.</span><span class="n">get_posterior_class</span><span class="p">(</span> <span class="n">SeparateIndependent</span><span class="p">,</span> <span class="n">SeparateIndependentInducingVariables</span> <span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">posteriors</span><span class="o">.</span><span class="n">get_posterior_class</span><span class="p">(</span> <span class="n">SharedIndependent</span><span class="p">,</span> <span class="n">SharedIndependentInducingVariables</span> <span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">posteriors</span><span class="o">.</span><span class="n">get_posterior_class</span><span class="p">(</span> <span class="n">SeparateIndependent</span><span class="p">,</span> <span class="n">SharedIndependentInducingVariables</span> <span class="p">)</span>
+<span class="c1"># dispatch to -&gt; gpflow.posteriors._get_posterior_independent_mo(...)</span>
+</pre></div>
+</div>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.posteriors._get_posterior_independent_mo">
+<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">_get_posterior_independent_mo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#_get_posterior_independent_mo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors._get_posterior_independent_mo" title="Permalink to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>) – </p></li>
+<li><p><strong>inducing_variable</strong> (<a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.InducingVariables" title="gpflow.inducing_variables.inducing_variables.InducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingVariables</span></code></a>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Type</span></code>[<a class="reference internal" href="#gpflow.posteriors.BasePosterior" title="gpflow.posteriors.BasePosterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">BasePosterior</span></code></a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">posteriors</span><span class="o">.</span><span class="n">get_posterior_class</span><span class="p">(</span> <span class="n">IndependentLatent</span><span class="p">,</span> <span class="n">FallbackSeparateIndependentInducingVariables</span> <span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">posteriors</span><span class="o">.</span><span class="n">get_posterior_class</span><span class="p">(</span> <span class="n">IndependentLatent</span><span class="p">,</span> <span class="n">FallbackSharedIndependentInducingVariables</span> <span class="p">)</span>
+<span class="c1"># dispatch to -&gt; gpflow.posteriors._get_posterior_independentlatent_mo_fallback(...)</span>
+</pre></div>
+</div>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.posteriors._get_posterior_independentlatent_mo_fallback">
+<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">_get_posterior_independentlatent_mo_fallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#_get_posterior_independentlatent_mo_fallback"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors._get_posterior_independentlatent_mo_fallback" title="Permalink to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>) – </p></li>
+<li><p><strong>inducing_variable</strong> (<a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.InducingVariables" title="gpflow.inducing_variables.inducing_variables.InducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingVariables</span></code></a>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Type</span></code>[<a class="reference internal" href="#gpflow.posteriors.BasePosterior" title="gpflow.posteriors.BasePosterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">BasePosterior</span></code></a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">posteriors</span><span class="o">.</span><span class="n">get_posterior_class</span><span class="p">(</span> <span class="n">LinearCoregionalization</span><span class="p">,</span> <span class="n">SeparateIndependentInducingVariables</span> <span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">posteriors</span><span class="o">.</span><span class="n">get_posterior_class</span><span class="p">(</span> <span class="n">LinearCoregionalization</span><span class="p">,</span> <span class="n">SharedIndependentInducingVariables</span> <span class="p">)</span>
+<span class="c1"># dispatch to -&gt; gpflow.posteriors._get_posterior_linearcoregionalization_mo_efficient(...)</span>
+</pre></div>
+</div>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.posteriors._get_posterior_linearcoregionalization_mo_efficient">
+<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">_get_posterior_linearcoregionalization_mo_efficient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#_get_posterior_linearcoregionalization_mo_efficient"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors._get_posterior_linearcoregionalization_mo_efficient" title="Permalink to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>) – </p></li>
+<li><p><strong>inducing_variable</strong> (<a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.InducingVariables" title="gpflow.inducing_variables.inducing_variables.InducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingVariables</span></code></a>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Type</span></code>[<a class="reference internal" href="#gpflow.posteriors.BasePosterior" title="gpflow.posteriors.BasePosterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">BasePosterior</span></code></a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-posteriors-get-precomputed-value-shape">
+<h3>gpflow.posteriors.get_precomputed_value_shape<a class="headerlink" href="#gpflow-posteriors-get-precomputed-value-shape" title="Permalink to this heading">#</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.posteriors.get_precomputed_value_shape">
+<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">get_precomputed_value_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shaped</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#get_precomputed_value_shape"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.get_precomputed_value_shape" title="Permalink to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shaped</strong> (<a class="reference internal" href="#gpflow.posteriors.PrecomputedValue" title="gpflow.posteriors.PrecomputedValue"><code class="xref py py-class docutils literal notranslate"><span class="pre">PrecomputedValue</span></code></a>) – </p></li>
+<li><p><strong>context</strong> (<a class="reference internal" href="../experimental/check_shapes/index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>], <code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+            </article>
+            
+            
+            
+          </div>
+          
+          
+          
+            <div class="bd-sidebar-secondary bd-toc">
+              
+<div class="toc-item">
+  
+<div class="tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+</div>
+<nav id="bd-toc-nav" class="page-toc">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#classes">
+   Classes
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-posteriors-abstractposterior">
+     gpflow.posteriors.AbstractPosterior
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.posteriors.AbstractPosterior">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         AbstractPosterior
+        </span>
+       </code>
+      </a>
+      <ul class="nav section-nav flex-column">
+       <li class="toc-h5 nav-item toc-entry">
+        <a class="reference internal nav-link" href="#gpflow.posteriors.AbstractPosterior.fused_predict_f">
+         <code class="docutils literal notranslate">
+          <span class="pre">
+           AbstractPosterior.fused_predict_f()
+          </span>
+         </code>
+        </a>
+       </li>
+       <li class="toc-h5 nav-item toc-entry">
+        <a class="reference internal nav-link" href="#gpflow.posteriors.AbstractPosterior.predict_f">
+         <code class="docutils literal notranslate">
+          <span class="pre">
+           AbstractPosterior.predict_f()
+          </span>
+         </code>
+        </a>
+       </li>
+       <li class="toc-h5 nav-item toc-entry">
+        <a class="reference internal nav-link" href="#gpflow.posteriors.AbstractPosterior.update_cache">
+         <code class="docutils literal notranslate">
+          <span class="pre">
+           AbstractPosterior.update_cache()
+          </span>
+         </code>
+        </a>
+       </li>
+      </ul>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-posteriors-baseposterior">
+     gpflow.posteriors.BasePosterior
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.posteriors.BasePosterior">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         BasePosterior
+        </span>
+       </code>
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-posteriors-fallbackindependentlatentposterior">
+     gpflow.posteriors.FallbackIndependentLatentPosterior
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.posteriors.FallbackIndependentLatentPosterior">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         FallbackIndependentLatentPosterior
+        </span>
+       </code>
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-posteriors-fullycorrelatedposterior">
+     gpflow.posteriors.FullyCorrelatedPosterior
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.posteriors.FullyCorrelatedPosterior">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         FullyCorrelatedPosterior
+        </span>
+       </code>
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-posteriors-gprposterior">
+     gpflow.posteriors.GPRPosterior
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.posteriors.GPRPosterior">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         GPRPosterior
+        </span>
+       </code>
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-posteriors-independentposterior">
+     gpflow.posteriors.IndependentPosterior
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.posteriors.IndependentPosterior">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         IndependentPosterior
+        </span>
+       </code>
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-posteriors-independentposteriormultioutput">
+     gpflow.posteriors.IndependentPosteriorMultiOutput
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.posteriors.IndependentPosteriorMultiOutput">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         IndependentPosteriorMultiOutput
+        </span>
+       </code>
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-posteriors-independentposteriorsingleoutput">
+     gpflow.posteriors.IndependentPosteriorSingleOutput
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.posteriors.IndependentPosteriorSingleOutput">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         IndependentPosteriorSingleOutput
+        </span>
+       </code>
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-posteriors-linearcoregionalizationposterior">
+     gpflow.posteriors.LinearCoregionalizationPosterior
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.posteriors.LinearCoregionalizationPosterior">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         LinearCoregionalizationPosterior
+        </span>
+       </code>
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-posteriors-precomputecachetype">
+     gpflow.posteriors.PrecomputeCacheType
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.posteriors.PrecomputeCacheType">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         PrecomputeCacheType
+        </span>
+       </code>
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-posteriors-precomputedvalue">
+     gpflow.posteriors.PrecomputedValue
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.posteriors.PrecomputedValue">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         PrecomputedValue
+        </span>
+       </code>
+      </a>
+      <ul class="nav section-nav flex-column">
+       <li class="toc-h5 nav-item toc-entry">
+        <a class="reference internal nav-link" href="#gpflow.posteriors.PrecomputedValue.axis_dynamic">
+         <code class="docutils literal notranslate">
+          <span class="pre">
+           PrecomputedValue.axis_dynamic
+          </span>
+         </code>
+        </a>
+       </li>
+       <li class="toc-h5 nav-item toc-entry">
+        <a class="reference internal nav-link" href="#gpflow.posteriors.PrecomputedValue.value">
+         <code class="docutils literal notranslate">
+          <span class="pre">
+           PrecomputedValue.value
+          </span>
+         </code>
+        </a>
+       </li>
+       <li class="toc-h5 nav-item toc-entry">
+        <a class="reference internal nav-link" href="#gpflow.posteriors.PrecomputedValue.wrap_alpha_Qinv">
+         <code class="docutils literal notranslate">
+          <span class="pre">
+           PrecomputedValue.wrap_alpha_Qinv()
+          </span>
+         </code>
+        </a>
+       </li>
+      </ul>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-posteriors-sgprposterior">
+     gpflow.posteriors.SGPRPosterior
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.posteriors.SGPRPosterior">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         SGPRPosterior
+        </span>
+       </code>
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-posteriors-vgpposterior">
+     gpflow.posteriors.VGPPosterior
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.posteriors.VGPPosterior">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         VGPPosterior
+        </span>
+       </code>
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#functions">
+   Functions
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-posteriors-create-posterior">
+     gpflow.posteriors.create_posterior
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.posteriors.create_posterior">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         create_posterior()
+        </span>
+       </code>
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-posteriors-get-posterior-class">
+     gpflow.posteriors.get_posterior_class
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.posteriors._get_posterior_base_case">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         _get_posterior_base_case()
+        </span>
+       </code>
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.posteriors._get_posterior_fully_correlated_mo">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         _get_posterior_fully_correlated_mo()
+        </span>
+       </code>
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.posteriors._get_posterior_independent_mo">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         _get_posterior_independent_mo()
+        </span>
+       </code>
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.posteriors._get_posterior_independentlatent_mo_fallback">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         _get_posterior_independentlatent_mo_fallback()
+        </span>
+       </code>
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.posteriors._get_posterior_linearcoregionalization_mo_efficient">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         _get_posterior_linearcoregionalization_mo_efficient()
+        </span>
+       </code>
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-posteriors-get-precomputed-value-shape">
+     gpflow.posteriors.get_precomputed_value_shape
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.posteriors.get_precomputed_value_shape">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         get_precomputed_value_shape()
+        </span>
+       </code>
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+</nav>
+</div>
+
+<div class="toc-item">
+  
+<div id="searchbox"></div>
+</div>
+
+<div class="toc-item">
+  
+</div>
+
+<div class="toc-item">
+  
+</div>
+
+            </div>
+          
+          
+        </div>
+        <footer class="bd-footer-content">
+          <div class="bd-footer-content__inner">
+            
+          </div>
+        </footer>
+        
+      </main>
+    </div>
+  </div>
+
+  
+    
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=1e1de1a1873e13ef5536"></script>
+
+  <footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    
+<p class="copyright">
+
+    &copy; Copyright 2022, The GPflow Contributors.<br>
+
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+<p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.2.3.<br>
+</p>
+
+  </div>
+  
+</div>
+  </footer>
+  </body>
+</html>
