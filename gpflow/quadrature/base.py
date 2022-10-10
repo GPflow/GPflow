@@ -39,9 +39,9 @@ class GaussianQuadrature:
         raise NotImplementedError
 
     @check_shapes(
-        "mean: [batch..., D]",
-        "var: [batch..., D]",
-        "return: [n_funs..., batch..., broadcast D]",
+        "mean: [in_batch..., D]",
+        "var: [in_batch..., D]",
+        "return: [n_funs..., out_batch..., broadcast D]",
     )
     def __call__(
         self,
@@ -83,9 +83,9 @@ class GaussianQuadrature:
         return tf.reduce_sum(fun(X, *args, **kwargs) * W, axis=0)
 
     @check_shapes(
-        "mean: [batch..., D]",
-        "var: [batch..., D]",
-        "return: [batch..., broadcast D]",
+        "mean: [in_batch..., D]",
+        "var: [in_batch..., D]",
+        "return: [n_fun..., out_batch..., broadcast D]",
     )
     def logspace(
         self,

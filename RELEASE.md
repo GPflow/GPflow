@@ -33,7 +33,7 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
-# Release 2.6.2 (next upcoming release in progress)
+# Release 2.6.3 (next upcoming release in progress)
 
 <INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
 
@@ -64,6 +64,23 @@ This release contains contributions from:
 This release contains contributions from:
 
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
+
+
+# Release 2.6.2
+
+This is a bug-fix release, for compatibility with GPflux.
+
+## Bug Fixes and Other Changes
+
+* Extract shapes of `tfp.python.layers.internal.distribution_tensor_coercible._TensorCoercible`.
+* Allow `FallbackSeparateIndependentInducingVariables` to have children with different shapes.
+* Allow input and output batches on `GaussianQuadrature` to be different.
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+jesnie
 
 
 # Release 2.6.1
