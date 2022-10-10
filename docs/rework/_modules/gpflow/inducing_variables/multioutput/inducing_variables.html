@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>gpflow.inducing_variables.multioutput.inducing_variables &#8212; GPflow 2.6.1 documentation</title>
+    <title>gpflow.inducing_variables.multioutput.inducing_variables &#8212; GPflow 2.6.2 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -373,7 +373,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="nd">@check_shapes</span><span class="p">(</span>
-        <span class="s2">&quot;inducing_variable_list[all]: [M, D, 1]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;inducing_variable_list[all]: [., D, 1]&quot;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inducing_variable_list</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">InducingVariables</span><span class="p">]):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -384,7 +384,15 @@ function checkPageExistsAndRedirect(event) {
         <span class="s2">&quot;return: []&quot;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">def</span> <span class="nf">num_inducing</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">num_inducing</span>
+        <span class="n">num_inducings</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">iv</span><span class="o">.</span><span class="n">num_inducing</span> <span class="k">for</span> <span class="n">iv</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable_list</span><span class="p">])</span>
+        <span class="n">num_inducing</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">num_inducings</span><span class="p">)</span>
+        <span class="n">tf</span><span class="o">.</span><span class="n">debugging</span><span class="o">.</span><span class="n">assert_equal</span><span class="p">(</span>
+            <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">num_inducing</span><span class="p">),</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+            <span class="n">message</span><span class="o">=</span><span class="s2">&quot;&#39;num_inducing&#39; does not make sense&quot;</span>
+            <span class="s2">&quot; when children have different numbers of inducing points.&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">num_inducing</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">inducing_variables</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">InducingVariables</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
@@ -396,6 +404,9 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">if</span> <span class="n">inner</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">inner</span>
         <span class="k">assert</span> <span class="n">inner</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">iv</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable_list</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+            <span class="k">if</span> <span class="n">inner</span> <span class="o">!=</span> <span class="n">iv</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="n">inner</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable_list</span><span class="p">),)</span></div>
 
 
@@ -441,7 +452,7 @@ function checkPageExistsAndRedirect(event) {
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.2.1.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.2.3.<br>
 </p>
   </div>
   

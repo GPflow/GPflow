@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>gpflow.experimental.check_shapes.shapes &#8212; GPflow 2.6.1 documentation</title>
+    <title>gpflow.experimental.check_shapes.shapes &#8212; GPflow 2.6.2 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -259,11 +259,12 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">Code for extracting shapes from object.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">inspect</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
 <span class="kn">import</span> <span class="nn">tensorflow_probability</span> <span class="k">as</span> <span class="nn">tfp</span>
+<span class="kn">from</span> <span class="nn">packaging.version</span> <span class="kn">import</span> <span class="n">Version</span>
 
 <span class="kn">from</span> <span class="nn">.base_types</span> <span class="kn">import</span> <span class="n">Shape</span>
 <span class="kn">from</span> <span class="nn">.error_contexts</span> <span class="kn">import</span> <span class="n">ErrorContext</span><span class="p">,</span> <span class="n">IndexContext</span><span class="p">,</span> <span class="n">ObjectTypeContext</span><span class="p">,</span> <span class="n">StackContext</span>
@@ -355,13 +356,25 @@ function checkPageExistsAndRedirect(event) {
 <div class="viewcode-block" id="get_tensorflow_shape"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/shapes/index.html#gpflow.experimental.check_shapes.get_tensorflow_shape">[docs]</a><span class="nd">@register_get_shape</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
 <span class="nd">@register_get_shape</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">)</span>
 <span class="nd">@register_get_shape</span><span class="p">(</span><span class="n">tfp</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">DeferredTensor</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">get_tensorflow_shape</span><span class="p">(</span>
-    <span class="n">shaped</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">,</span> <span class="n">tfp</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">DeferredTensor</span><span class="p">],</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">get_tensorflow_shape</span><span class="p">(</span><span class="n">shaped</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
     <span class="n">shape</span> <span class="o">=</span> <span class="n">shaped</span><span class="o">.</span><span class="n">shape</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">shape</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span>
     <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span></div>
+
+
+<span class="k">if</span> <span class="n">Version</span><span class="p">(</span><span class="n">tfp</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">Version</span><span class="p">(</span><span class="s2">&quot;0.14.0&quot;</span><span class="p">):</span>
+    <span class="n">register_get_shape</span><span class="p">(</span><span class="n">tfp</span><span class="o">.</span><span class="n">python</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">internal</span><span class="o">.</span><span class="n">distribution_tensor_coercible</span><span class="o">.</span><span class="n">_TensorCoercible</span><span class="p">)(</span>
+        <span class="n">get_tensorflow_shape</span>
+    <span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+
+<div class="viewcode-block" id="get_tensor_coercible_shape"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/shapes/index.html#gpflow.experimental.check_shapes.get_tensor_coercible_shape">[docs]</a>    <span class="nd">@register_get_shape</span><span class="p">(</span><span class="n">tfp</span><span class="o">.</span><span class="n">python</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">internal</span><span class="o">.</span><span class="n">distribution_tensor_coercible</span><span class="o">.</span><span class="n">_TensorCoercible</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">get_tensor_coercible_shape</span><span class="p">(</span><span class="n">shaped</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">shaped</span><span class="o">.</span><span class="n">shape</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">shape</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span></div>
 </pre></div>
 
               </article>
@@ -388,7 +401,7 @@ function checkPageExistsAndRedirect(event) {
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.2.1.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.2.3.<br>
 </p>
   </div>
   

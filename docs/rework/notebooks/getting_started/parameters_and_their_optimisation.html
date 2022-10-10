@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
-    <title>Parameters and Their Optimisation &#8212; GPflow 2.6.1 documentation</title>
+    <title>Parameters and Their Optimisation &#8212; GPflow 2.6.2 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -41,7 +41,7 @@
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Large Data" href="large_data.html" />
+    <link rel="next" title="Large Data with SGPR" href="large_data.html" />
     <link rel="prev" title="Mean Functions" href="mean_functions.html" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="docsearch:language" content="en">
@@ -231,7 +231,7 @@ function checkPageExistsAndRedirect(event) {
  </li>
  <li class="toctree-l1">
   <a class="reference internal" href="basic_usage.html">
-   Basic Usage
+   Basic Usage with GPR
   </a>
  </li>
  <li class="toctree-l1">
@@ -251,12 +251,12 @@ function checkPageExistsAndRedirect(event) {
  </li>
  <li class="toctree-l1">
   <a class="reference internal" href="large_data.html">
-   Large Data
+   Large Data with SGPR
   </a>
  </li>
  <li class="toctree-l1">
   <a class="reference internal" href="classification_and_other_data_distributions.html">
-   Classification and other data distributions
+   Classification, other data distributions, VGP and SVGP
   </a>
  </li>
  <li class="toctree-l1">
@@ -795,7 +795,7 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
-&lt;__main__.LinearModel object at 0x7ff82af320b0&gt;
+&lt;__main__.LinearModel object at 0x7fb4795538e0&gt;
 <table>
 <thead>
 <tr><th>name             </th><th>class    </th><th>transform  </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th>value  </th></tr>
@@ -1026,9 +1026,9 @@ div.rendered_html tbody tr:hover {
 <tr><th>name                   </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style="text-align: right;">      value</th></tr>
 </thead>
 <tbody>
-<tr><td>GPR.kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">92550.7    </td></tr>
-<tr><td>GPR.kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   48.048  </td></tr>
-<tr><td>GPR.likelihood.variance</td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    4.72417</td></tr>
+<tr><td>GPR.kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">92557.2    </td></tr>
+<tr><td>GPR.kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   48.0477 </td></tr>
+<tr><td>GPR.likelihood.variance</td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    4.72413</td></tr>
 </tbody>
 </table></div>
 </div>
@@ -1059,15 +1059,15 @@ div.rendered_html tbody tr:hover {
 <div class="output_area rendered_html docutils container">
 <table>
 <thead>
-<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style="text-align: right;">    value</th></tr>
+<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style="text-align: right;">      value</th></tr>
 </thead>
 <tbody>
-<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">23560.6  </td></tr>
-<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   42.137</td></tr>
-<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">36653.5  </td></tr>
-<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;"> 2507.71 </td></tr>
-<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;"> 3121.07 </td></tr>
-<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    4.722</td></tr>
+<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">17322.3    </td></tr>
+<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   39.6732 </td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">25061.4    </td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;"> 1523.59   </td></tr>
+<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   19.496  </td></tr>
+<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    4.69763</td></tr>
 </tbody>
 </table></div>
 </div>
@@ -1111,11 +1111,11 @@ div.rendered_html tbody tr:hover {
 </thead>
 <tbody>
 <tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">280000      </td></tr>
-<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   139.971  </td></tr>
-<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     1.21026</td></tr>
-<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.59362</td></tr>
-<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.99967</td></tr>
-<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.40952</td></tr>
+<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     7.06883</td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   197.808  </td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     1.7596 </td></tr>
+<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.99962</td></tr>
+<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.15958</td></tr>
 </tbody>
 </table></div>
 </div>
@@ -1177,15 +1177,15 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <div class="output_area rendered_html docutils container">
 <table>
 <thead>
-<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior    </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style="text-align: right;">     value</th></tr>
+<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior    </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style="text-align: right;">      value</th></tr>
 </thead>
 <tbody>
-<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>LogNormal</td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">1406.93   </td></tr>
-<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>LogNormal</td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;"> 104.982  </td></tr>
-<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>         </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">1204.02   </td></tr>
-<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>         </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   3.24878</td></tr>
-<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>LogNormal</td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   0.99961</td></tr>
-<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>         </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   0.63827</td></tr>
+<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>LogNormal</td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">2.24981e+08</td></tr>
+<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>LogNormal</td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">0          </td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>         </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">9.45992e+08</td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>         </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">0          </td></tr>
+<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>LogNormal</td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">0          </td></tr>
+<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>         </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">3.76695e+11</td></tr>
 </tbody>
 </table></div>
 </div>
@@ -1310,10 +1310,10 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <tbody>
 <tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>SoftClip        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">280000      </td></tr>
 <tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>SoftClip        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   100.002  </td></tr>
-<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    62.8789 </td></tr>
-<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     1.44412</td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    62.1363 </td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     1.44013</td></tr>
 <tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>SoftClip        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.99962</td></tr>
-<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.37432</td></tr>
+<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.37429</td></tr>
 </tbody>
 </table></div>
 </div>
@@ -1359,7 +1359,9 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <span class="p">)</span>
 <span class="n">gpflow</span><span class="o">.</span><span class="n">set_trainable</span><span class="p">(</span><span class="n">long_term_kernel</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 
-<span class="n">periodic_kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Periodic</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(),</span> <span class="n">period</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">periodic_kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Periodic</span><span class="p">(</span>
+    <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(),</span> <span class="n">period</span><span class="o">=</span><span class="mi">1</span>
+<span class="p">)</span>
 <span class="n">gpflow</span><span class="o">.</span><span class="n">set_trainable</span><span class="p">(</span><span class="n">periodic_kernel</span><span class="o">.</span><span class="n">period</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 
 <span class="n">plot_co2_kernel</span><span class="p">(</span><span class="n">long_term_kernel</span> <span class="o">+</span> <span class="n">periodic_kernel</span><span class="p">,</span> <span class="n">optimize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -1377,10 +1379,10 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <tbody>
 <tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>False      </td><td>()     </td><td>float64</td><td style="text-align: right;">280000      </td></tr>
 <tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>False      </td><td>()     </td><td>float64</td><td style="text-align: right;">   140      </td></tr>
-<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    44.4121 </td></tr>
-<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     1.32236</td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    44.4102 </td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     1.32234</td></tr>
 <tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>False      </td><td>()     </td><td>float64</td><td style="text-align: right;">     1      </td></tr>
-<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.46552</td></tr>
+<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.4655 </td></tr>
 </tbody>
 </table></div>
 </div>
@@ -1436,8 +1438,8 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style="text-align: right;">     value</th></tr>
 </thead>
 <tbody>
-<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">92550.7   </td></tr>
-<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   48.0432</td></tr>
+<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">92557.2   </td></tr>
+<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   48.0429</td></tr>
 <tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    1     </td></tr>
 <tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    1     </td></tr>
 <tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    1     </td></tr>
@@ -1492,26 +1494,26 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-0 991.6642452919384
-100 971.9969244437586
-200 955.9239211582623
-300 941.8268525762583
-400 929.5124969975786
-500 918.8366728936893
-600 909.6873235710906
-700 901.9652667585605
-800 895.5838013609218
-900 890.3854280193607
-1000 886.2786754486506
-1100 883.104920317619
-1200 880.7006179207016
-1300 878.9144299234766
-1400 877.580730360578
-1500 876.6684550608326
-1600 875.8133566526251
-1700 875.1903254968499
-1800 874.897354965005
-1900 874.187476325266
+0 991.6592914471702
+100 971.9912516998586
+200 955.9178588765474
+300 941.8203454419606
+400 929.5054956915064
+500 918.8291391537678
+600 909.6792282874909
+700 901.9565912515632
+800 895.5687375110715
+900 890.3758430925518
+1000 886.2684589819723
+1100 883.0947533908851
+1200 880.6899251124175
+1300 878.8977940903358
+1400 877.5696933724175
+1500 876.5717344080252
+1600 876.3631605932893
+1700 875.1785916711209
+1800 874.6484157315319
+1900 874.2196671861077
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -1526,7 +1528,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
 <tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">280002      </td></tr>
 <tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   137.551  </td></tr>
 <tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     1.80473</td></tr>
-<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.55247</td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.55248</td></tr>
 <tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.99962</td></tr>
 <tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     1      </td></tr>
 </tbody>
@@ -1568,7 +1570,7 @@ account. We use the <a class="reference external" href="https://www.tensorflow.o
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.2.1.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.2.3.<br>
 </p>
   </div>
   
