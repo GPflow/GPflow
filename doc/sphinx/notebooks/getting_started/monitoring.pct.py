@@ -72,7 +72,7 @@ def get_model() -> gpflow.models.GPModel:
 # %% [markdown]
 # ## Components of monitoring
 #
-# The most basic component of GPflow monitoring is the [MonitorTask](../../api/gpflow/monitor/index.rst#gpflow-monitor-monitortask). Sub-classes of the `MonitorTask` is responsible for actually doing the monitoring work.
+# The most basic component of GPflow monitoring is the [MonitorTask](../../api/gpflow/monitor/index.rst#gpflow-monitor-monitortask). Sub-classes of `MonitorTask` are responsible for actually doing the monitoring work.
 #
 # `MonitorTask`s are grouped into [MonitorTaskGroup](../../api/gpflow/monitor/index.rst#gpflow-monitor-monitortaskgroup)s, according to the frequency with which they are to be executed. So as not to impact training speed too much, `MonitorTask`s are generally not executed for every training iteration. Instead the `MonitorTaskGroup` is configured for how often the task should be executed.
 #
@@ -121,7 +121,7 @@ _ = opt.minimize(
 )
 
 # %% [markdown]
-# Notice how we need to provide TensorBoard with a log directory. Generally TensorBoard reads and writes files from directories, and directories are the primary way you identy your runs. To view the logs you run something like:
+# Notice how we need to provide TensorBoard with a log directory. Generally TensorBoard reads and writes files from directories, and directories are the primary way you identify your runs. To view the logs you run something like:
 #
 # ```bash
 # tensorboard --logdir . --reload_multifile=true

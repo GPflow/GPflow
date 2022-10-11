@@ -250,7 +250,7 @@ _ = plt.scatter(X, Y)
 # %% [markdown]
 # ## The Sparse Variational Gaussian Process
 #
-# The Sparse Variational Gaussian Process (SVGP) combines the sparsity we studied in the previous chapter, with the generic likelihoods we have seen in this chapter. It gets a separate section, because its API is slightly different from what we've seen before. All the other models we have seen uses the [InternalDataTrainingLossMixin](../../api/gpflow/models/index.rst#gpflow.models.InternalDataTrainingLossMixin) and internally stores their data. The SVGP uses the [ExternalDataTrainingLossMixin](../../api/gpflow/models/index.rst#gpflow-models-externaldatatraininglossmixin). This means it does not take its data in the constructor, and instead takes the data as parameters when training the model.
+# The Sparse Variational Gaussian Process (SVGP) combines the sparsity we studied in the previous chapter, with the generic likelihoods we have seen in this chapter. It gets a separate section, because its API is slightly different from what we've seen before. All the other models we have seen use the [InternalDataTrainingLossMixin](../../api/gpflow/models/index.rst#gpflow.models.InternalDataTrainingLossMixin) and internally store their data. The SVGP uses the [ExternalDataTrainingLossMixin](../../api/gpflow/models/index.rst#gpflow-models-externaldatatraininglossmixin). This means it does not take its data in the constructor, and instead takes the data as parameters when training the model.
 #
 # Let us try fitting a SVGP to our classification data:
 
@@ -283,7 +283,7 @@ _ = plt.scatter(X, Y)
 # %% [markdown]
 # ### Writing code that handles both internal and external data models
 #
-# Having some models store training data internally, while others take it as a parameter when training, can be frustrating if you are trying to write code that works with a generic model. The `gpflow.models` module contains [some functions that can help you write generic code]((../../api/gpflow/models/index.rst#functions).
+# Having some models store training data internally, while others take it as a parameter when training, can be frustrating if you are trying to write code that works with a generic model. The `gpflow.models` module contains [some functions that can help you write generic code](../../api/gpflow/models/index.rst#functions).
 #
 # Here is an example of how one might write a generic model training function:
 
