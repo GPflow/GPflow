@@ -264,7 +264,6 @@ function checkPageExistsAndRedirect(event) {
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
 <span class="kn">import</span> <span class="nn">tensorflow_probability</span> <span class="k">as</span> <span class="nn">tfp</span>
-<span class="kn">from</span> <span class="nn">packaging.version</span> <span class="kn">import</span> <span class="n">Version</span>
 
 <span class="kn">from</span> <span class="nn">.base_types</span> <span class="kn">import</span> <span class="n">Shape</span>
 <span class="kn">from</span> <span class="nn">.error_contexts</span> <span class="kn">import</span> <span class="n">ErrorContext</span><span class="p">,</span> <span class="n">IndexContext</span><span class="p">,</span> <span class="n">ObjectTypeContext</span><span class="p">,</span> <span class="n">StackContext</span>
@@ -363,18 +362,19 @@ function checkPageExistsAndRedirect(event) {
     <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span></div>
 
 
-<span class="k">if</span> <span class="n">Version</span><span class="p">(</span><span class="n">tfp</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">Version</span><span class="p">(</span><span class="s2">&quot;0.14.0&quot;</span><span class="p">):</span>
-    <span class="n">register_get_shape</span><span class="p">(</span><span class="n">tfp</span><span class="o">.</span><span class="n">python</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">internal</span><span class="o">.</span><span class="n">distribution_tensor_coercible</span><span class="o">.</span><span class="n">_TensorCoercible</span><span class="p">)(</span>
-        <span class="n">get_tensorflow_shape</span>
-    <span class="p">)</span>
-<span class="k">else</span><span class="p">:</span>
-
-<div class="viewcode-block" id="get_tensor_coercible_shape"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/shapes/index.html#gpflow.experimental.check_shapes.get_tensor_coercible_shape">[docs]</a>    <span class="nd">@register_get_shape</span><span class="p">(</span><span class="n">tfp</span><span class="o">.</span><span class="n">python</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">internal</span><span class="o">.</span><span class="n">distribution_tensor_coercible</span><span class="o">.</span><span class="n">_TensorCoercible</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">get_tensor_coercible_shape</span><span class="p">(</span><span class="n">shaped</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
-        <span class="n">shape</span> <span class="o">=</span> <span class="n">shaped</span><span class="o">.</span><span class="n">shape</span><span class="p">()</span>
+<div class="viewcode-block" id="get_tensor_coercible_shape"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/shapes/index.html#gpflow.experimental.check_shapes.get_tensor_coercible_shape">[docs]</a><span class="nd">@register_get_shape</span><span class="p">(</span><span class="n">tfp</span><span class="o">.</span><span class="n">python</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">internal</span><span class="o">.</span><span class="n">distribution_tensor_coercible</span><span class="o">.</span><span class="n">_TensorCoercible</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_tensor_coercible_shape</span><span class="p">(</span><span class="n">shaped</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
+    <span class="c1"># This one is unpleasant. Sometimes the `shape` is a `TensorShape`, but sometimes it&#39;s a</span>
+    <span class="c1"># function that returns a `TensorShape`. The version of TensorFlow probability seems to have</span>
+    <span class="c1"># something to do with it, but it also seems to be more complicated...</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="n">shaped</span><span class="o">.</span><span class="n">shape</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">shape</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">TensorShape</span><span class="p">):</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">shape</span><span class="p">()</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">shape</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
-        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span></div>
 </pre></div>
 
               </article>

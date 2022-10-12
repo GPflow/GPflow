@@ -622,7 +622,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <section id="Components-of-monitoring">
 <h2>Components of monitoring<a class="headerlink" href="#Components-of-monitoring" title="Permalink to this heading">#</a></h2>
-<p>The most basic component of GPflow monitoring is the <a class="reference internal" href="../../api/gpflow/monitor/index.html#gpflow-monitor-monitortask"><span class="std std-ref">MonitorTask</span></a>. Sub-classes of the <code class="docutils literal notranslate"><span class="pre">MonitorTask</span></code> is responsible for actually doing the monitoring work.</p>
+<p>The most basic component of GPflow monitoring is the <a class="reference internal" href="../../api/gpflow/monitor/index.html#gpflow-monitor-monitortask"><span class="std std-ref">MonitorTask</span></a>. Sub-classes of <code class="docutils literal notranslate"><span class="pre">MonitorTask</span></code> are responsible for actually doing the monitoring work.</p>
 <p><code class="docutils literal notranslate"><span class="pre">MonitorTask</span></code>s are grouped into <a class="reference internal" href="../../api/gpflow/monitor/index.html#gpflow-monitor-monitortaskgroup"><span class="std std-ref">MonitorTaskGroup</span></a>s, according to the frequency with which they are to be executed. So as not to impact training speed too much, <code class="docutils literal notranslate"><span class="pre">MonitorTask</span></code>s are generally not executed for every training iteration. Instead the <code class="docutils literal notranslate"><span class="pre">MonitorTaskGroup</span></code> is configured for how often the task should be executed.</p>
 <p>Finally <code class="docutils literal notranslate"><span class="pre">MonitorTaskGroup</span></code>s are grouped into one <a class="reference internal" href="../../api/gpflow/monitor/index.html#gpflow-monitor-monitor"><span class="std std-ref">Monitor</span></a>, which is the part that you pass to GPflow.</p>
 <section id="ExecuteCallback">
@@ -687,12 +687,12 @@ Hello, GPflow monitoring!
 </pre></div>
 </div>
 </div>
-<p>Notice how we need to provide TensorBoard with a log directory. Generally TensorBoard reads and writes files from directories, and directories are the primary way you identy your runs. To view the logs you run something like:</p>
+<p>Notice how we need to provide TensorBoard with a log directory. Generally TensorBoard reads and writes files from directories, and directories are the primary way you identify your runs. To view the logs you run something like:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>tensorboard --logdir . --reload_multifile<span class="o">=</span><span class="nb">true</span>
 </pre></div>
 </div>
 <p>The <code class="docutils literal notranslate"><span class="pre">--reload_multifile=true</span></code> is needed because the GPflow monitoring framework generally outputs multiple files.</p>
-<p>You can use <a class="reference internal" href="../../api/gpflow/monitor/index.html#gpflow-monitor-scalartotensorboard"><span class="std std-ref">ScalarToTensorBoard</span></a> to write arbitrary values to the logs. You need to provide a callback function that returns a <code class="docutils literal notranslate"><span class="pre">float</span></code>:</p>
+<p>You can use <a class="reference internal" href="../../api/gpflow/monitor/index.html#gpflow-monitor-scalartotensorboard"><span class="std std-ref">ScalarToTensorBoard</span></a> to write arbitrary values to the logs. You need to provide a callback function that returns a scalar value; either a <code class="docutils literal notranslate"><span class="pre">float</span></code>, or a scalar tensor:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>

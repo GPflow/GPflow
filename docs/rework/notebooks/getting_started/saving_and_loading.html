@@ -313,6 +313,11 @@ function checkPageExistsAndRedirect(event) {
    Copying (hyper)parameter values between models
   </a>
  </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Which-method-to-use">
+   Which method to use
+  </a>
+ </li>
 </ul>
 
 </nav>
@@ -812,9 +817,26 @@ Value of variable a after restore: 1.200
 <section id="TensorFlow-saved_model">
 <h2>TensorFlow <code class="docutils literal notranslate"><span class="pre">saved_model</span></code><a class="headerlink" href="#TensorFlow-saved_model" title="Permalink to this heading">#</a></h2>
 <p>Another TensorFlow mechanism for model saving is <a class="reference external" href="https://www.tensorflow.org/guide/saved_model">saved_model</a>.</p>
-<p><code class="docutils literal notranslate"><span class="pre">saved_model</span></code> only stores functions compiled with <code class="docutils literal notranslate"><span class="pre">tf.function</span></code> so we will have to compile anything we care about on our model.</p>
+<p><code class="docutils literal notranslate"><span class="pre">saved_model</span></code> only stores functions compiled with <code class="docutils literal notranslate"><span class="pre">tf.function</span></code> so we will have to compile anything we care about on our model. Notice that these “compiled” methods do not normally exist on our model, however in Python we can add any attributes we like to an object at any time:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">hasattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;compiled_predict_f&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+False
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">compiled_predict_f</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">function</span><span class="p">(</span>
@@ -831,20 +853,9 @@ Value of variable a after restore: 1.200
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-WARNING:tensorflow:From /home/jesper/src/GPflow/.venv/max310/lib/python3.10/site-packages/tensorflow/python/trackable/autotrackable.py:95: Bijector.has_static_min_event_ndims (from tensorflow_probability.python.bijectors.bijector) is deprecated and will be removed after 2021-08-01.
-Instructions for updating:
-`min_event_ndims` is now static for all bijectors; this property is no longer needed.
-INFO:tensorflow:Assets written to: saved_model_0/assets
-</pre></div></div>
-</div>
 <p>We can load the module back as a new instance and compare the prediction results:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">loaded_model</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">saved_model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">save_dir</span><span class="p">)</span>
@@ -858,15 +869,33 @@ INFO:tensorflow:Assets written to: saved_model_0/assets
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_getting_started_saving_and_loading_28_0.png" src="../../_images/notebooks_getting_started_saving_and_loading_28_0.png" />
+<img alt="../../_images/notebooks_getting_started_saving_and_loading_29_0.png" src="../../_images/notebooks_getting_started_saving_and_loading_29_0.png" />
 </div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_getting_started_saving_and_loading_28_1.png" src="../../_images/notebooks_getting_started_saving_and_loading_28_1.png" />
+<img alt="../../_images/notebooks_getting_started_saving_and_loading_29_1.png" src="../../_images/notebooks_getting_started_saving_and_loading_29_1.png" />
 </div>
+</div>
+<p>Again notice that the regular methods, that have not been compiled, do not exist on our restored object:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">hasattr</span><span class="p">(</span><span class="n">loaded_model</span><span class="p">,</span> <span class="s2">&quot;predict_f&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+False
+</pre></div></div>
 </div>
 </section>
 <section id="Copying-(hyper)parameter-values-between-models">
@@ -874,7 +903,7 @@ INFO:tensorflow:Assets written to: saved_model_0/assets
 <p>GPFlow comes with the functions <code class="docutils literal notranslate"><span class="pre">gpflow.utilities.parameter_dict</span></code> and <code class="docutils literal notranslate"><span class="pre">gpflow.utilities.multiple_assign</span></code> that allows you to get and set all parameters of a model. This makes it easy to copy all parameters from one model to another.</p>
 <p>We can get the parameters of our model with <code class="docutils literal notranslate"><span class="pre">parameter_dict</span></code>:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model_0</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">((</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">),</span> <span class="n">kernel</span><span class="o">=</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">())</span>
@@ -887,7 +916,7 @@ INFO:tensorflow:Assets written to: saved_model_0/assets
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -899,7 +928,7 @@ INFO:tensorflow:Assets written to: saved_model_0/assets
 </div>
 <p>And we can use <code class="docutils literal notranslate"><span class="pre">multiple_assign</span></code> to assign these parameters to a new model:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model_1</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">((</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">),</span> <span class="n">kernel</span><span class="o">=</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">())</span>
@@ -915,16 +944,31 @@ INFO:tensorflow:Assets written to: saved_model_0/assets
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_getting_started_saving_and_loading_33_0.png" src="../../_images/notebooks_getting_started_saving_and_loading_33_0.png" />
+<img alt="../../_images/notebooks_getting_started_saving_and_loading_36_0.png" src="../../_images/notebooks_getting_started_saving_and_loading_36_0.png" />
 </div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_getting_started_saving_and_loading_33_1.png" src="../../_images/notebooks_getting_started_saving_and_loading_33_1.png" />
+<img alt="../../_images/notebooks_getting_started_saving_and_loading_36_1.png" src="../../_images/notebooks_getting_started_saving_and_loading_36_1.png" />
 </div>
 </div>
+</section>
+<section id="Which-method-to-use">
+<h2>Which method to use<a class="headerlink" href="#Which-method-to-use" title="Permalink to this heading">#</a></h2>
+<p>We have presented three different ways to save and load a model:</p>
+<ul class="simple">
+<li><p>Checkpointing.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">saved_model</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">parameter_dict</span></code> + <code class="docutils literal notranslate"><span class="pre">multiple_assign</span></code>.</p></li>
+</ul>
+<p>So, which one should you use?</p>
+<p>Checkpointing should mostly be used for restarting / resuming training. Notice that checkpointing requires you to create a new model with exactly the same set-up as the old model, before you can restore your parameters. This means you must have access to the same Python code. Checkpointing also requires you to read / write files to disk.</p>
+<p><code class="docutils literal notranslate"><span class="pre">saved_model</span></code> is good when you want to create and train a model on one computer, but use it on another computer. With <code class="docutils literal notranslate"><span class="pre">saved_model</span></code> you do not need to create a model first, and then update parameters. Instead you are given a functioning model directly. This means you do not need to have access to the same Python code that created the model, on the computer that loads the model. The disadvantage is that a lot of the model will be lost in the process, so this is not useful if you want to make
+changes to your model later.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">parameter_dict</span></code> and <code class="docutils literal notranslate"><span class="pre">multiple_assign</span></code> method is recommended if you want to make changes to your model after loading it. Again the machine loading the model will need to have access to code that created the model, to be able to instantiate a new model with the same set-up. Notice that this approach does not actually store the model on disk, but only makes an in-memory copy of the parameters. This is an advantage if you want to create multiple copies of a model in memory, but it means you
+will have to write your own code to read / write the parameter dictionaries if you want to store them to disk.</p>
 </section>
 </section>
 
