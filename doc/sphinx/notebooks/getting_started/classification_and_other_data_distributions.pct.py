@@ -164,54 +164,64 @@ plot_model(model)
 # To do classification we start with our unknown function $f$. $f$ can have any (real) value, but we want to use it for probabilities, so we need to map it to the interval $[0; 1]$. We will use the cumulative density function of a standard normal for this. Other functions can be used for this "squishing", but the cumulative density function has nice analytical properties that simplifies some maths. We then use the mapped value as the probability in a [Bernoulli trial](https://en.wikipedia.org/wiki/Bernoulli_trial) to determine the output class ($Y$). All of this is encapsulated in the GPflow [Bernoulli](../../api/gpflow/likelihoods/index.rst#gpflow-likelihoods-bernoulli) class.
 
 # %% [markdown]
-# Let us define a small dataset:
+# Assume we have two sets of points:
 
 # %%
 # remove-cell
 
-rng = np.random.default_rng(1234)
-n = 20
-X = rng.random((n, 1))
-f = np.sin(X * 6.5)
-f = np.where(f > 0, np.sqrt(f), -np.sqrt(-f))
-p = 0.5 * f + 0.5
-Y = (rng.random(p.shape) < p).astype(np.float64)
+rng = np.random.default_rng(1235)
+n1 = 10
+n2 = 10
+X1 = rng.normal(0.4, 0.2, n1)
+X2 = rng.normal(0.8, 0.15, n2)
 
-plt.scatter(X, p)
-plt.scatter(X, Y)
+plt.scatter(X1, np.zeros_like(X1))
+plt.scatter(X2, np.zeros_like(X2))
 
 # %%
 # remove-cell
 
 print("----------------------------------------------")
-for x in X:
+for x in X1:
     print(f"[{float(x): .3f}],")
+
 print("----------------------------------------------")
-for y in Y:
-    print(f"[{float(y): .0f}.],")
+for x in X2:
+    print(f"[{float(x): .3f}],")
 
 # %%
 # hide: begin
 # fmt: off
 # hide: end
-X = np.array(
-    [
-        [0.977], [0.380], [0.923], [0.262], [0.319], [0.118], [0.242], [0.319],
-        [0.964], [0.264], [0.441], [0.610], [0.864], [0.864], [0.675], [0.660],
-        [0.736], [0.223], [0.172], [0.870],
-    ]
+X1 = np.array(
+    [[0.218], [0.453], [0.196], [0.638], [0.523], [0.541], [0.455], [0.632], [0.309], [0.330]]
 )
-Y = np.array(
-    [
-        [1.0], [1.0], [0.0], [1.0], [1.0], [0.0], [1.0], [1.0], [1.0], [1.0],
-        [0.0], [0.0], [0.0], [0.0], [0.0], [0.0], [0.0], [1.0], [1.0], [0.0],
-    ]
+X2 = np.array(
+    [[0.868], [0.706], [0.672], [0.742], [0.813], [0.617], [0.456], [0.838], [0.730], [0.841]]
 )
 # hide: begin
 # fmt: on
 # hide: end
 
+plt.scatter(X1, np.zeros_like(X1))
+_ = plt.scatter(X2, np.zeros_like(X2))
+
+# %% [markdown]
+# Given a new point, we want to predict which one of those two sets it should belong to.
+#
+# First we will massage our data into one $(X, Y)$ dataset, instead of two $X$ datasets.
+# Our $X$ will be all our points, and our $Y$ will be either 0 or 1, to signal which one of the two sets the corresponding $x$ belongs to.
+
+# %%
+Y1 = np.zeros_like(X1)
+Y2 = np.ones_like(X2)
+X = np.concatenate([X1, X2], axis=0)
+Y = np.concatenate([Y1, Y2], axis=0)
+
 _ = plt.scatter(X, Y)
+
+# %% [markdown]
+# Notice that these are the same points, but instead of using colours, we are using the Y-axis to separate the two sets.
 
 # %% [markdown]
 # We can train a model on this the usual way:
@@ -243,6 +253,28 @@ Psamples = model.likelihood.invlink(Fsamples)
 
 plt.plot(Xplot, Psamples, "C1", lw=0.5)
 _ = plt.scatter(X, Y)
+
+# %% [markdown]
+# We can use the mean, "squished" through our `invlink` to get a probability of a point being in group 0:
+
+# %%
+Fmean, _ = model.predict_f(Xplot)
+P = model.likelihood.invlink(Fmean)
+
+plt.plot(Xplot, P, "C1")
+_ = plt.scatter(X, Y)
+
+# %% [markdown]
+# So if we want to predict the class at $x=0.3$ we would do:
+
+# %%
+Xnew = np.array([[0.3]])
+Fmean, _ = model.predict_f(Xnew)
+P = model.likelihood.invlink(Fmean)
+P
+
+# %% [markdown]
+# Which mean a $\sim3.7\%$ chance of class 0, and $100\% - 3.7\% = 96.3\%$ chance of class 1.
 
 # %% [markdown]
 # You may also be interested in our advanced [tutorial on multiclass classification](../advanced/multiclass_classification.ipynb).

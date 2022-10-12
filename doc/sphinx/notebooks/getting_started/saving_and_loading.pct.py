@@ -46,6 +46,8 @@ import tensorflow as tf
 import gpflow
 
 # hide: begin
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+
 # %matplotlib inline
 plt.rcParams["figure.figsize"] = (12, 6)
 # hide: end
@@ -192,7 +194,10 @@ manager.checkpoints
 #
 # Another TensorFlow mechanism for model saving is [saved_model](https://www.tensorflow.org/guide/saved_model).
 #
-# `saved_model` only stores functions compiled with `tf.function` so we will have to compile anything we care about on our model.
+# `saved_model` only stores functions compiled with `tf.function` so we will have to compile anything we care about on our model. Notice that these "compiled" methods do not normally exist on our model, however in Python we can add any attributes we like to an object at any time:
+
+# %%
+hasattr(model, "compiled_predict_f")
 
 # %%
 model.compiled_predict_f = tf.function(
@@ -215,6 +220,12 @@ loaded_model = tf.saved_model.load(save_dir)
 
 plot_prediction(model.predict_y)
 plot_prediction(loaded_model.compiled_predict_y)
+
+# %% [markdown]
+# Again notice that the regular methods, that have not been compiled, do not exist on our restored object:
+
+# %%
+hasattr(loaded_model, "predict_f")
 
 # %% [markdown]
 # ## Copying (hyper)parameter values between models
@@ -242,3 +253,20 @@ gpflow.utilities.multiple_assign(model_1, params_0)
 
 plot_prediction(model_0.predict_y)
 plot_prediction(model_1.predict_y)
+
+# %% [markdown]
+# ## Which method to use
+#
+# We have presented three different ways to save and load a model:
+#
+# * Checkpointing.
+# * `saved_model`.
+# * `parameter_dict` + `multiple_assign`.
+#
+# So, which one should you use?
+#
+# Checkpointing should mostly be used for restarting / resuming training. Notice that checkpointing requires you to create a new model with exactly the same set-up as the old model, before you can restore your parameters. This means you must have access to the same Python code. Checkpointing also requires you to read / write files to disk.
+#
+# `saved_model` is good when you want to create and train a model on one computer, but use it on another computer. With `saved_model` you do not need to create a model first, and then update parameters. Instead you are given a functioning model directly. This means you do not need to have access to the same Python code that created the model, on the computer that loads the model. The disadvantage is that a lot of the model will be lost in the process, so this is not useful if you want to make changes to your model later.
+#
+# The `parameter_dict` and `multiple_assign` method is recommended if you want to make changes to your model after loading it. Again the machine loading the model will need to have access to code that created the model, to be able to instantiate a new model with the same set-up. Notice that this approach does not actually store the model on disk, but only makes an in-memory copy of the parameters. This is an advantage if you want to create multiple copies of a model in memory, but it means you will have to write your own code to read / write the parameter dictionaries if you want to store them to disk.

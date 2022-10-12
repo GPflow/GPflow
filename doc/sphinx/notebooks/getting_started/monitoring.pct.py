@@ -130,7 +130,7 @@ _ = opt.minimize(
 # The `--reload_multifile=true` is needed because the GPflow monitoring framework generally outputs multiple files.
 
 # %% [markdown]
-# You can use [ScalarToTensorBoard](../../api/gpflow/monitor/index.rst#gpflow-monitor-scalartotensorboard) to write arbitrary values to the logs. You need to provide a callback function that returns a `float`:
+# You can use [ScalarToTensorBoard](../../api/gpflow/monitor/index.rst#gpflow-monitor-scalartotensorboard) to write arbitrary values to the logs. You need to provide a callback function that returns a scalar value; either a `float`, or a scalar tensor:
 
 # %%
 model = get_model()
