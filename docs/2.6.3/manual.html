@@ -1,0 +1,533 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>GPflow manual &#8212; GPflow 2.6.3 documentation</title>
+  <script>
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=1e1de1a1873e13ef5536" rel="stylesheet">
+<link href="_static/styles/pydata-sphinx-theme.css?digest=1e1de1a1873e13ef5536" rel="stylesheet">
+
+  
+  <link rel="stylesheet"
+    href="_static/vendor/fontawesome/6.1.2/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/pydata-custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=1e1de1a1873e13ef5536">
+
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'manual';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://gpflow.github.io/GPflow/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.6.3';
+        </script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="GPflow with TensorFlow 2" href="notebooks/intro_to_gpflow2.html" />
+    <link rel="prev" title="Benchmark results" href="benchmarks.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="docsearch:language" content="en">
+  </head>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+
+  
+  <input type="checkbox" class="sidebar-toggle" name="__primary" id="__primary">
+  <label class="overlay overlay-primary" for="__primary"></label>
+
+  
+  <input type="checkbox" class="sidebar-toggle" name="__secondary" id="__secondary">
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+      
+<form class="bd-search d-flex align-items-center" action="search.html" method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+    </div>
+  </div>
+
+  
+  <nav class="bd-header navbar navbar-expand-lg bd-navbar" id="navbar-main"><div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+      <span class="fa-solid fa-bars"></span>
+  </label>
+  <div id="navbar-start">
+    
+    
+  
+
+
+<a class="navbar-brand logo" href="index.html">
+
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <img src="_static/gpflow_logo.svg" class="logo__image only-light" alt="Logo image">
+    <img src="_static/gpflow_logo.svg" class="logo__image only-dark" alt="Logo image">
+  
+  
+</a>
+    
+  </div>
+
+  
+  <div class="col-lg-9 navbar-header-items">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <nav class="navbar-nav">
+    <p class="sidebar-header-items__title" role="heading" aria-level="1" aria-label="Site Navigation">
+        Site Navigation
+    </p>
+    <ul id="navbar-main-elements" class="navbar-nav">
+        
+                <li class="nav-item">
+                    <a class="nav-link" href="intro.html">
+                        Introduction
+                    </a>
+                </li>
+                
+
+                <li class="nav-item current active">
+                    <a class="nav-link" href="#">
+                        GPflow manual
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="notebooks/intro_to_gpflow2.html">
+                        GPflow with TensorFlow 2
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="notebooks_file.html">
+                        Notebooks
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="derivations.html">
+                        Derivations
+                    </a>
+                </li>
+                
+            <div class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    More
+                </button>
+                <div class="dropdown-menu">
+                    
+                <li class="nav-item">
+                    <a class="nav-link" href="api/gpflow/index.html">
+                        API reference
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="bibliography.html">
+                        Bibliography
+                    </a>
+                </li>
+                
+                </div>
+            </div>
+            
+    </ul>
+</nav>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      <div class="navbar-end-item navbar-end__search-button-container">
+        
+<button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" data-toggle="tooltip">
+  <i class="fa-solid fa-magnifying-glass"></i>
+</button>
+      </div>
+      
+      <div class="navbar-end-item">
+        <div class="version-switcher__container dropdown">
+    <button type="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-toggle="dropdown">
+        2.6.3  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div class="version-switcher__menu dropdown-menu list-group-flush py-0">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+      </div>
+      
+    </div>
+  </div>
+
+
+  
+  <div class="search-button-container--mobile">
+<button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" data-toggle="tooltip">
+  <i class="fa-solid fa-magnifying-glass"></i>
+</button>
+  </div>
+
+  
+  <label class="sidebar-toggle secondary-toggle" for="__secondary">
+      <span class="fa-solid fa-outdent"></span>
+  </label>
+  
+
+</div>
+  </nav>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+      
+      <div class="navbar-center-item">
+        <nav class="navbar-nav">
+    <p class="sidebar-header-items__title" role="heading" aria-level="1" aria-label="Site Navigation">
+        Site Navigation
+    </p>
+    <ul id="navbar-main-elements" class="navbar-nav">
+        
+                <li class="nav-item">
+                    <a class="nav-link" href="intro.html">
+                        Introduction
+                    </a>
+                </li>
+                
+
+                <li class="nav-item current active">
+                    <a class="nav-link" href="#">
+                        GPflow manual
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="notebooks/intro_to_gpflow2.html">
+                        GPflow with TensorFlow 2
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="notebooks_file.html">
+                        Notebooks
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="derivations.html">
+                        Derivations
+                    </a>
+                </li>
+                
+            <div class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    More
+                </button>
+                <div class="dropdown-menu">
+                    
+                <li class="nav-item">
+                    <a class="nav-link" href="api/gpflow/index.html">
+                        API reference
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="bibliography.html">
+                        Bibliography
+                    </a>
+                </li>
+                
+                </div>
+            </div>
+            
+    </ul>
+</nav>
+      </div>
+      
+      </div>
+    
+
+    
+    
+    <div class="sidebar-header-items__end">
+      
+      <div class="navbar-end-item">
+        <div class="version-switcher__container dropdown">
+    <button type="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-toggle="dropdown">
+        2.6.3  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div class="version-switcher__menu dropdown-menu list-group-flush py-0">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+      </div>
+      
+    </div>
+    
+  </div>
+
+  
+
+  
+  <div class="sidebar-end-items sidebar-primary__section">
+    <div class="sidebar-end-items__item">
+    </div>
+  </div>
+
+      </div>
+      <main class="bd-main">
+        
+        
+        <div class="bd-content">
+          <div class="bd-article-container">
+            
+            <div class="bd-header-article">
+                
+            </div>
+            
+            
+            <article class="bd-article" role="main">
+              
+  <section id="gpflow-manual">
+<h1>GPflow manual<a class="headerlink" href="#gpflow-manual" title="Permalink to this heading">#</a></h1>
+<p>You can use this document to get familiar with GPflow. We’ve split up the material into four different categories: basics, understanding, advanced needs, and tailored models. We have also provided a <a class="reference external" href="_static/GPflows.png">flow diagram</a> to guide you to the relevant parts of GPflow for your specific problem.</p>
+<section id="basics">
+<h2>Basics<a class="headerlink" href="#basics" title="Permalink to this heading">#</a></h2>
+<p>This section covers the elementary uses of GPflow, and shows you how to use GPflow for your basic datasets with existing models.</p>
+<ul class="simple">
+<li><p>In <a class="reference internal" href="notebooks/basics/regression.html"><span class="doc">Basic (Gaussian likelihood) GP regression model</span></a> and <a class="reference internal" href="notebooks/basics/classification.html"><span class="doc">Basic (binary) GP classification model</span></a> we show how to use GPflow to fit simple regression and classification models <span id="id1">[<a class="reference internal" href="bibliography.html#id16" title="Carl Edward Rasmussen and Christopher K. I. Williams. Gaussian processes for machine learning. Adaptive computation and machine learning. MIT Press, 2006. ISBN 026218253X.">RW06</a>]</span>.</p></li>
+<li><p>In <a class="reference internal" href="notebooks/basics/GPLVM.html"><span class="doc">Bayesian Gaussian process latent variable model (Bayesian GPLVM)</span></a> we cover the unsupervised case, and showcase GPflow’s Bayesian Gaussian Process Latent Variable Model (GPLVM) <span id="id2">[<a class="reference internal" href="bibliography.html#id20" title="Michalis Titsias and Neil D Lawrence. Bayesian gaussian process latent variable model. In Proceedings of the thirteenth international conference on artificial intelligence and statistics, 844–851. JMLR Workshop and Conference Proceedings, 2010.">TL10</a>]</span>.</p></li>
+</ul>
+<p>In each notebook we go over the data format, model setup, model optimization, and prediction options.</p>
+</section>
+<section id="understanding">
+<h2>Understanding<a class="headerlink" href="#understanding" title="Permalink to this heading">#</a></h2>
+<p>This section covers the building blocks of GPflow from an implementation perspective, and shows how the different modules interact as a whole.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="notebooks/understanding/models.html"><span class="doc">Manipulating GPflow models</span></a></p></li>
+<li><p><a class="reference internal" href="notebooks/intro_to_gpflow2.html"><span class="doc">GPflow with TensorFlow 2</span></a> for handling datasets, training, monitoring, and checkpointing.</p></li>
+</ul>
+</section>
+<section id="advanced-needs">
+<h2>Advanced needs<a class="headerlink" href="#advanced-needs" title="Permalink to this heading">#</a></h2>
+<p>This section explains the more complex models and features that are available in GPflow.</p>
+<section id="models">
+<h3>Models<a class="headerlink" href="#models" title="Permalink to this heading">#</a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="notebooks/advanced/mcmc.html"><span class="doc">MCMC (Markov Chain Monte Carlo)</span></a>: using Hamiltonian Monte Carlo to sample the posterior GP and hyperparameters.</p></li>
+<li><p><a class="reference internal" href="notebooks/advanced/ordinal_regression.html"><span class="doc">Ordinal regression</span></a>: using GPflow to deal with ordinal variables.</p></li>
+<li><p><a class="reference internal" href="notebooks/advanced/varying_noise.html"><span class="doc">Gaussian process regression with varying output noise</span></a> for different data points, using a custom likelihood or the <cite>SwitchedLikelihood</cite>, and <a class="reference internal" href="notebooks/advanced/heteroskedastic.html"><span class="doc">Heteroskedastic Likelihood and Multi-Latent GP</span></a>.</p></li>
+<li><p><a class="reference internal" href="notebooks/advanced/multiclass_classification.html"><span class="doc">Multiclass classification</span></a> for non-binary examples.</p></li>
+<li><p><a class="reference internal" href="notebooks/advanced/gps_for_big_data.html"><span class="doc">Stochastic Variational Inference for scalability with SVGP</span></a>: using GPflow’s Sparse Variational Gaussian Process (SVGP) model <span id="id3">[<a class="reference internal" href="bibliography.html#id6" title="James Hensman, Alexander G. de G. Matthews, and Zoubin Ghahramani. Scalable variational gaussian process classification. In Proceedings of AISTATS. 2015.">HMG15</a>]</span> <span id="id4">[<a class="reference internal" href="bibliography.html#id5" title="James Hensman, Nicolo Fusi, and Neil D Lawrence. Gaussian processes for big data. arXiv preprint arXiv:1309.6835, 2013.">HFL13</a>]</span>. Use sparse methods when dealing with large datasets (more than around a thousand data points).</p></li>
+<li><p><a class="reference internal" href="notebooks/advanced/coregionalisation.html"><span class="doc">A simple demonstration of coregionalization</span></a>: for when not all outputs are observed at every data point.</p></li>
+<li><p><a class="reference internal" href="notebooks/advanced/multioutput.html"><span class="doc">Multi-output Gaussian processes in GPflow</span></a>: more efficient when all outputs are observed at all data points.</p></li>
+<li><p><a class="reference internal" href="notebooks/advanced/variational_fourier_features.html"><span class="doc">Variational Fourier Features in the GPflow framework</span></a>: how to add new inter-domain inducing variables, at the example of representing sparse GPs in the spectral domain.</p></li>
+<li><p><a class="reference internal" href="notebooks/advanced/kernels.html"><span class="doc">Manipulating kernels</span></a>: information on the covariances that are included in the library, and how you can combine them to create new ones.</p></li>
+<li><p><a class="reference internal" href="notebooks/advanced/convolutional.html"><span class="doc">Convolutional Gaussian Processes</span></a>: how we can use GPs with convolutional kernels for image classification.</p></li>
+<li><p><a class="reference internal" href="notebooks/advanced/fast_predictions.html"><span class="doc">Faster predictions by caching</span></a>: how to use caching to speed up repeated predictions.</p></li>
+</ul>
+</section>
+<section id="features">
+<h3>Features<a class="headerlink" href="#features" title="Permalink to this heading">#</a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="notebooks/advanced/natural_gradients.html"><span class="doc">Natural gradients</span></a>: how to optimize the variational approximate posterior’s parameters.</p></li>
+<li><p><a class="reference internal" href="notebooks/basics/monitoring.html"><span class="doc">Monitoring Optimisation</span></a>: how to monitor the model during optimisation: running custom callbacks and writing images and model parameters to TensorBoards.</p></li>
+</ul>
+</section>
+</section>
+<section id="tailored-models">
+<h2>Tailored models<a class="headerlink" href="#tailored-models" title="Permalink to this heading">#</a></h2>
+<p>This section shows how to use GPflow’s utilities and codebase to build new probabilistic models.
+These can be seen as complete examples.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="notebooks/tailor/kernel_design.html"><span class="doc">Kernel Design</span></a>: how to implement a covariance function that is not available by default in GPflow. For this example, we look at the Brownian motion covariance.</p></li>
+<li><p><a class="reference internal" href="notebooks/tailor/gp_nn.html"><span class="doc">Mixing TensorFlow models with GPflow</span></a>: two ways to combine TensorFlow neural networks with GPflow models.</p></li>
+<li><p><a class="reference internal" href="notebooks/tailor/external-mean-function.html"><span class="doc">Custom mean functions: metalearning with GPs</span></a>: how to use a neural network as a mean function.</p></li>
+<li><p><a class="reference internal" href="notebooks/tailor/mixture_density_network.html"><span class="doc">Mixture Density Networks in GPflow</span></a>: how GPflow’s utilities make it easy to build other, non-GP probabilistic models.</p></li>
+</ul>
+</section>
+<section id="theoretical-notes">
+<h2>Theoretical notes<a class="headerlink" href="#theoretical-notes" title="Permalink to this heading">#</a></h2>
+<p>The following notebooks relate to the theory of Gaussian processes and approximations. These are not required reading for using GPflow, but are included for those interested in the theoretical underpinning and technical details.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="notebooks/theory/vgp_notes.html"><span class="doc">Derivation of VGP equations</span></a></p></li>
+<li><p><a class="reference internal" href="notebooks/theory/SGPR_notes.html"><span class="doc">Derivation of SGPR equations</span></a></p></li>
+<li><p><a class="reference internal" href="notebooks/theory/upper_bound.html"><span class="doc">Discussion of the GP marginal likelihood upper bound</span></a></p></li>
+<li><p><a class="reference internal" href="notebooks/theory/FITCvsVFE.html"><span class="doc">Comparing FITC approximation to VFE approximation</span></a>: why we like the Variational Free Energy (VFE) objective rather than the Fully Independent Training Conditional (FITC) approximation for our sparse approximations.</p></li>
+<li><p>A <a class="reference internal" href="notebooks/theory/Sanity_check.html"><span class="doc">Sanity checking when model behaviours should overlap</span></a> that demonstrates the overlapping behaviour of many of the GPflow model classes in special cases (specifically, with a Gaussian likelihood and, for sparse approximations, inducing points fixed to the data points).</p></li>
+</ul>
+</section>
+</section>
+
+
+            </article>
+            
+            
+            
+          </div>
+          
+          
+          
+            <div class="bd-sidebar-secondary bd-toc">
+              
+<div class="toc-item">
+  
+<div class="tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+</div>
+<nav id="bd-toc-nav" class="page-toc">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#basics">
+   Basics
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#understanding">
+   Understanding
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#advanced-needs">
+   Advanced needs
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#models">
+     Models
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#features">
+     Features
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#tailored-models">
+   Tailored models
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#theoretical-notes">
+   Theoretical notes
+  </a>
+ </li>
+</ul>
+
+</nav>
+</div>
+
+<div class="toc-item">
+  
+<div id="searchbox"></div>
+</div>
+
+<div class="toc-item">
+  
+</div>
+
+<div class="toc-item">
+  
+</div>
+
+            </div>
+          
+          
+        </div>
+        <footer class="bd-footer-content">
+          <div class="bd-footer-content__inner">
+            
+          </div>
+        </footer>
+        
+      </main>
+    </div>
+  </div>
+
+  
+    
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/pydata-sphinx-theme.js?digest=1e1de1a1873e13ef5536"></script>
+
+  <footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    
+<p class="copyright">
+
+    &copy; Copyright 2022, The GPflow Contributors.<br>
+
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+<p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.2.3.<br>
+</p>
+
+  </div>
+  
+</div>
+  </footer>
+  </body>
+</html>

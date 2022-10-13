@@ -1,0 +1,1520 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>gpflow.posteriors &#8212; GPflow 2.6.3 documentation</title>
+  <script>
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=1e1de1a1873e13ef5536" rel="stylesheet">
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=1e1de1a1873e13ef5536" rel="stylesheet">
+
+  
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1e1de1a1873e13ef5536">
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/gpflow/posteriors';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://gpflow.github.io/GPflow/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.6.3';
+        </script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="docsearch:language" content="en">
+  </head>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+
+  
+  <input type="checkbox" class="sidebar-toggle" name="__primary" id="__primary">
+  <label class="overlay overlay-primary" for="__primary"></label>
+
+  
+  <input type="checkbox" class="sidebar-toggle" name="__secondary" id="__secondary">
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+      
+<form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+    </div>
+  </div>
+
+  
+  <nav class="bd-header navbar navbar-expand-lg bd-navbar" id="navbar-main"><div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+      <span class="fa-solid fa-bars"></span>
+  </label>
+  <div id="navbar-start">
+    
+    
+  
+
+
+<a class="navbar-brand logo" href="../../index.html">
+
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <img src="../../_static/gpflow_logo.svg" class="logo__image only-light" alt="Logo image">
+    <img src="../../_static/gpflow_logo.svg" class="logo__image only-dark" alt="Logo image">
+  
+  
+</a>
+    
+  </div>
+
+  
+  <div class="col-lg-9 navbar-header-items">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <nav class="navbar-nav">
+    <p class="sidebar-header-items__title" role="heading" aria-level="1" aria-label="Site Navigation">
+        Site Navigation
+    </p>
+    <ul id="navbar-main-elements" class="navbar-nav">
+        
+                <li class="nav-item">
+                    <a class="nav-link" href="../../intro.html">
+                        Introduction
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../manual.html">
+                        GPflow manual
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../notebooks/intro_to_gpflow2.html">
+                        GPflow with TensorFlow 2
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../notebooks_file.html">
+                        Notebooks
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../derivations.html">
+                        Derivations
+                    </a>
+                </li>
+                
+            <div class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    More
+                </button>
+                <div class="dropdown-menu">
+                    
+                <li class="nav-item">
+                    <a class="nav-link" href="../../api/gpflow/index.html">
+                        API reference
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../bibliography.html">
+                        Bibliography
+                    </a>
+                </li>
+                
+                </div>
+            </div>
+            
+    </ul>
+</nav>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      <div class="navbar-end-item navbar-end__search-button-container">
+        
+<button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" data-toggle="tooltip">
+  <i class="fa-solid fa-magnifying-glass"></i>
+</button>
+      </div>
+      
+      <div class="navbar-end-item">
+        <div class="version-switcher__container dropdown">
+    <button type="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-toggle="dropdown">
+        2.6.3  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div class="version-switcher__menu dropdown-menu list-group-flush py-0">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+      </div>
+      
+    </div>
+  </div>
+
+
+  
+  <div class="search-button-container--mobile">
+<button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" data-toggle="tooltip">
+  <i class="fa-solid fa-magnifying-glass"></i>
+</button>
+  </div>
+
+  
+  <label class="sidebar-toggle secondary-toggle" for="__secondary">
+      <span class="fa-solid fa-outdent"></span>
+  </label>
+  
+
+</div>
+  </nav>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+      
+      <div class="navbar-center-item">
+        <nav class="navbar-nav">
+    <p class="sidebar-header-items__title" role="heading" aria-level="1" aria-label="Site Navigation">
+        Site Navigation
+    </p>
+    <ul id="navbar-main-elements" class="navbar-nav">
+        
+                <li class="nav-item">
+                    <a class="nav-link" href="../../intro.html">
+                        Introduction
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../manual.html">
+                        GPflow manual
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../notebooks/intro_to_gpflow2.html">
+                        GPflow with TensorFlow 2
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../notebooks_file.html">
+                        Notebooks
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../derivations.html">
+                        Derivations
+                    </a>
+                </li>
+                
+            <div class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    More
+                </button>
+                <div class="dropdown-menu">
+                    
+                <li class="nav-item">
+                    <a class="nav-link" href="../../api/gpflow/index.html">
+                        API reference
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../bibliography.html">
+                        Bibliography
+                    </a>
+                </li>
+                
+                </div>
+            </div>
+            
+    </ul>
+</nav>
+      </div>
+      
+      </div>
+    
+
+    
+    
+    <div class="sidebar-header-items__end">
+      
+      <div class="navbar-end-item">
+        <div class="version-switcher__container dropdown">
+    <button type="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-toggle="dropdown">
+        2.6.3  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div class="version-switcher__menu dropdown-menu list-group-flush py-0">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+      </div>
+      
+    </div>
+    
+  </div>
+
+  
+
+  
+  <div class="sidebar-end-items sidebar-primary__section">
+    <div class="sidebar-end-items__item">
+    </div>
+  </div>
+
+      </div>
+      <main class="bd-main">
+        
+        
+        <div class="bd-content">
+          <div class="bd-article-container">
+            
+            <div class="bd-header-article">
+                
+            </div>
+            
+            
+            <article class="bd-article" role="main">
+              
+  <h1>Source code for gpflow.posteriors</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2016-2020 The GPflow Contributors. All Rights Reserved.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="kn">import</span> <span class="nn">enum</span>
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">cast</span>
+
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">covariances</span><span class="p">,</span> <span class="n">kernels</span><span class="p">,</span> <span class="n">mean_functions</span>
+<span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="n">MeanAndVariance</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">RegressionData</span><span class="p">,</span> <span class="n">TensorType</span>
+<span class="kn">from</span> <span class="nn">.conditionals.util</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">base_conditional</span><span class="p">,</span>
+    <span class="n">base_conditional_with_lm</span><span class="p">,</span>
+    <span class="n">expand_independent_outputs</span><span class="p">,</span>
+    <span class="n">fully_correlated_conditional</span><span class="p">,</span>
+    <span class="n">independent_interdomain_conditional</span><span class="p">,</span>
+    <span class="n">mix_latent_gp</span><span class="p">,</span>
+    <span class="n">separate_independent_conditional_implementation</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.config</span> <span class="kn">import</span> <span class="n">default_float</span><span class="p">,</span> <span class="n">default_jitter</span>
+<span class="kn">from</span> <span class="nn">.covariances</span> <span class="kn">import</span> <span class="n">Kuf</span><span class="p">,</span> <span class="n">Kuu</span>
+<span class="kn">from</span> <span class="nn">.experimental.check_shapes</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ErrorContext</span><span class="p">,</span>
+    <span class="n">Shape</span><span class="p">,</span>
+    <span class="n">check_shapes</span><span class="p">,</span>
+    <span class="n">get_shape</span><span class="p">,</span>
+    <span class="n">inherit_check_shapes</span><span class="p">,</span>
+    <span class="n">register_get_shape</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.inducing_variables</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FallbackSeparateIndependentInducingVariables</span><span class="p">,</span>
+    <span class="n">FallbackSharedIndependentInducingVariables</span><span class="p">,</span>
+    <span class="n">InducingPoints</span><span class="p">,</span>
+    <span class="n">InducingVariables</span><span class="p">,</span>
+    <span class="n">SeparateIndependentInducingVariables</span><span class="p">,</span>
+    <span class="n">SharedIndependentInducingVariables</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.kernels</span> <span class="kn">import</span> <span class="n">Kernel</span>
+<span class="kn">from</span> <span class="nn">.likelihoods</span> <span class="kn">import</span> <span class="n">Gaussian</span>
+<span class="kn">from</span> <span class="nn">.mean_functions</span> <span class="kn">import</span> <span class="n">MeanFunction</span>
+<span class="kn">from</span> <span class="nn">.utilities</span> <span class="kn">import</span> <span class="n">Dispatcher</span><span class="p">,</span> <span class="n">add_likelihood_noise_cov</span><span class="p">,</span> <span class="n">assert_params_false</span>
+<span class="kn">from</span> <span class="nn">.utilities.ops</span> <span class="kn">import</span> <span class="n">eye</span>
+
+
+<span class="k">class</span> <span class="nc">_QDistribution</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Base class for our parametrization of q(u) in the `AbstractPosterior`.</span>
+<span class="sd">    Internal - do not rely on this outside of GPflow.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">_DeltaDist</span><span class="p">(</span><span class="n">_QDistribution</span><span class="p">):</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;q_mu: [M, L]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q_mu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q_mu</span> <span class="o">=</span> <span class="n">q_mu</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">q_sqrt</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+
+<span class="k">class</span> <span class="nc">_DiagNormal</span><span class="p">(</span><span class="n">_QDistribution</span><span class="p">):</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;q_mu: [M, L]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;q_sqrt: [M, L]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q_mu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">q_sqrt</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q_mu</span> <span class="o">=</span> <span class="n">q_mu</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q_sqrt</span> <span class="o">=</span> <span class="n">q_sqrt</span>
+
+
+<span class="k">class</span> <span class="nc">_MvNormal</span><span class="p">(</span><span class="n">_QDistribution</span><span class="p">):</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;q_mu: [M, L]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;q_sqrt: [L, M, M]  # lower-triangular&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q_mu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">q_sqrt</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q_mu</span> <span class="o">=</span> <span class="n">q_mu</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q_sqrt</span> <span class="o">=</span> <span class="n">q_sqrt</span>
+
+
+<div class="viewcode-block" id="PrecomputeCacheType"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.PrecomputeCacheType">[docs]</a><span class="k">class</span> <span class="nc">PrecomputeCacheType</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    - `PrecomputeCacheType.TENSOR` (or `&quot;tensor&quot;`): Precomputes the cached</span>
+<span class="sd">      quantities and stores them as tensors (which allows differentiating</span>
+<span class="sd">      through the prediction). This is the default.</span>
+<span class="sd">    - `PrecomputeCacheType.VARIABLE` (or `&quot;variable&quot;`): Precomputes the cached</span>
+<span class="sd">      quantities and stores them as variables, which allows for updating</span>
+<span class="sd">      their values without changing the compute graph (relevant for AOT</span>
+<span class="sd">      compilation).</span>
+<span class="sd">    - `PrecomputeCacheType.NOCACHE` (or `&quot;nocache&quot;` or `None`): Avoids</span>
+<span class="sd">      immediate cache computation. This is useful for avoiding extraneous</span>
+<span class="sd">      computations when you only want to call the posterior&#39;s</span>
+<span class="sd">      `fused_predict_f` method.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">TENSOR</span> <span class="o">=</span> <span class="s2">&quot;tensor&quot;</span>
+    <span class="n">VARIABLE</span> <span class="o">=</span> <span class="s2">&quot;variable&quot;</span>
+    <span class="n">NOCACHE</span> <span class="o">=</span> <span class="s2">&quot;nocache&quot;</span></div>
+
+
+<div class="viewcode-block" id="PrecomputedValue"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.PrecomputedValue">[docs]</a><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">PrecomputedValue</span><span class="p">:</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The precomputed value itself.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">axis_dynamic</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A tuple with one element per dimension of `value`. That element is `True` if that dimension</span>
+<span class="sd">    of `value` might change size.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tf</span><span class="o">.</span><span class="n">debugging</span><span class="o">.</span><span class="n">assert_rank</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+            <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">axis_dynamic</span><span class="p">),</span>
+            <span class="s2">&quot;axis_dynamic must have one element per dimension of value.&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="PrecomputedValue.wrap_alpha_Qinv"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.PrecomputedValue.wrap_alpha_Qinv">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;alpha: [M_L_or_L_M_M...]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Qinv: [M_M_or_L_M_M...]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wrap_alpha_Qinv</span><span class="p">(</span><span class="n">alpha</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Qinv</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="s2">&quot;PrecomputedValue&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Wraps `alpha` and `Qinv` in `PrecomputedValue`\ s.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">one_dynamic</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">L_dynamic</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">M_dynamic</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># TODO(jesper): Support variable number of inducing points?</span>
+
+        <span class="n">alpha_rank</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">rank</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">alpha_rank</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">alpha_dynamic</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">M_dynamic</span><span class="p">,</span> <span class="n">L_dynamic</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">alpha_rank</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">alpha_dynamic</span> <span class="o">=</span> <span class="p">(</span><span class="n">L_dynamic</span><span class="p">,</span> <span class="n">M_dynamic</span><span class="p">,</span> <span class="n">one_dynamic</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown rank of alpha </span><span class="si">{</span><span class="n">alpha_rank</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+        <span class="n">Qinv_rank</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">rank</span><span class="p">(</span><span class="n">Qinv</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">Qinv_rank</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">Qinv_dynamic</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">M_dynamic</span><span class="p">,</span> <span class="n">M_dynamic</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">Qinv_rank</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">Qinv_dynamic</span> <span class="o">=</span> <span class="p">(</span><span class="n">L_dynamic</span><span class="p">,</span> <span class="n">M_dynamic</span><span class="p">,</span> <span class="n">M_dynamic</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown rank of Qinv </span><span class="si">{</span><span class="n">Qinv_rank</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">PrecomputedValue</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">alpha_dynamic</span><span class="p">),</span>
+            <span class="n">PrecomputedValue</span><span class="p">(</span><span class="n">Qinv</span><span class="p">,</span> <span class="n">Qinv_dynamic</span><span class="p">),</span>
+        <span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="get_precomputed_value_shape"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.get_precomputed_value_shape">[docs]</a><span class="nd">@register_get_shape</span><span class="p">(</span><span class="n">PrecomputedValue</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_precomputed_value_shape</span><span class="p">(</span><span class="n">shaped</span><span class="p">:</span> <span class="n">PrecomputedValue</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">get_shape</span><span class="p">(</span><span class="n">shaped</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_validate_precompute_cache_type</span><span class="p">(</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">PrecomputeCacheType</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PrecomputeCacheType</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">PrecomputeCacheType</span><span class="o">.</span><span class="n">NOCACHE</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">PrecomputeCacheType</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">value</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">PrecomputeCacheType</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2"> is not a valid PrecomputeCacheType.&quot;</span>
+            <span class="s2">&quot; Valid options: &#39;tensor&#39;, &#39;variable&#39;, &#39;nocache&#39; (or None).&quot;</span>
+        <span class="p">)</span>
+
+
+<div class="viewcode-block" id="AbstractPosterior"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.AbstractPosterior">[docs]</a><span class="k">class</span> <span class="nc">AbstractPosterior</span><span class="p">(</span><span class="n">Module</span><span class="p">,</span> <span class="n">ABC</span><span class="p">):</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;X_data: [N_D_or_M_D_P...]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">kernel</span><span class="p">:</span> <span class="n">Kernel</span><span class="p">,</span>
+        <span class="n">X_data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">InducingVariables</span><span class="p">],</span>
+        <span class="n">cache</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">mean_function</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">mean_functions</span><span class="o">.</span><span class="n">MeanFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Users should use `create_posterior` to create instances of concrete</span>
+<span class="sd">        subclasses of this AbstractPosterior class instead of calling this</span>
+<span class="sd">        constructor directly. For `create_posterior` to be able to correctly</span>
+<span class="sd">        instantiate subclasses, developers need to ensure their subclasses</span>
+<span class="sd">        don&#39;t change the constructor signature.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span> <span class="o">=</span> <span class="n">kernel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">X_data</span> <span class="o">=</span> <span class="n">X_data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">cache</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mean_function</span> <span class="o">=</span> <span class="n">mean_function</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_precompute_cache</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PrecomputeCacheType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;Xnew: [batch..., D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;mean: [batch..., Q]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: [batch..., Q]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_add_mean_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">mean</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_function</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">mean</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">mean</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_function</span><span class="p">(</span><span class="n">Xnew</span><span class="p">)</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_precompute</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">PrecomputedValue</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Precompute a cache.</span>
+
+<span class="sd">        The result of this method will later be passed to `_conditional_with_precompute` as the</span>
+<span class="sd">        `cache` argument.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="AbstractPosterior.fused_predict_f"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.AbstractPosterior.fused_predict_f">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[0]: [batch..., N, P]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">fused_predict_f</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes predictive mean and (co)variance at Xnew, including mean_function</span>
+<span class="sd">        Does not make use of caching</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_conditional_fused</span><span class="p">(</span>
+            <span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="o">=</span><span class="n">full_output_cov</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_mean_function</span><span class="p">(</span><span class="n">Xnew</span><span class="p">,</span> <span class="n">mean</span><span class="p">),</span> <span class="n">cov</span></div>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[0]: [batch..., N, P]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_conditional_fused</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes predictive mean and (co)variance at Xnew, *excluding* mean_function</span>
+<span class="sd">        Does not make use of caching</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="AbstractPosterior.predict_f"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.AbstractPosterior.predict_f">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[0]: [batch..., N, P]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">predict_f</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes predictive mean and (co)variance at Xnew, including mean_function.</span>
+<span class="sd">        Relies on precomputed alpha and Qinv (see _precompute method)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Cache has not been precomputed yet. Call update_cache first or use fused_predict_f&quot;</span>
+            <span class="p">)</span>
+        <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_conditional_with_precompute</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="o">=</span><span class="n">full_output_cov</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_mean_function</span><span class="p">(</span><span class="n">Xnew</span><span class="p">,</span> <span class="n">mean</span><span class="p">),</span> <span class="n">cov</span></div>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[0]: [batch..., N, P]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_conditional_with_precompute</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cache</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+        <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
+        <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes predictive mean and (co)variance at Xnew, *excluding* mean_function.</span>
+<span class="sd">        Relies on cached alpha and Qinv.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="AbstractPosterior.update_cache"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.AbstractPosterior.update_cache">[docs]</a>    <span class="k">def</span> <span class="nf">update_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">precompute_cache</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PrecomputeCacheType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the cache depending on the value of `precompute_cache` to a</span>
+<span class="sd">        `tf.Tensor`, `tf.Variable`, or clears the cache. If `precompute_cache`</span>
+<span class="sd">        is not given, the setting defaults to the most-recently-used one.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">precompute_cache</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_precompute_cache</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;You must pass precompute_cache explicitly&quot;</span>
+                    <span class="s2">&quot; (the cache had not been updated before).&quot;</span>
+                <span class="p">)</span>
+            <span class="n">precompute_cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_precompute_cache</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_precompute_cache</span> <span class="o">=</span> <span class="n">precompute_cache</span>
+
+        <span class="k">if</span> <span class="n">precompute_cache</span> <span class="ow">is</span> <span class="n">PrecomputeCacheType</span><span class="o">.</span><span class="n">NOCACHE</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">elif</span> <span class="n">precompute_cache</span> <span class="ow">is</span> <span class="n">PrecomputeCacheType</span><span class="o">.</span><span class="n">TENSOR</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_precompute</span><span class="p">())</span>
+
+        <span class="k">elif</span> <span class="n">precompute_cache</span> <span class="ow">is</span> <span class="n">PrecomputeCacheType</span><span class="o">.</span><span class="n">VARIABLE</span><span class="p">:</span>
+            <span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_precompute</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">):</span>
+                <span class="c1"># re-use existing variables</span>
+                <span class="k">for</span> <span class="n">cache_var</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">,</span> <span class="n">cache</span><span class="p">):</span>
+                    <span class="n">cache_var</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>  <span class="c1"># create variables</span>
+                <span class="n">shapes</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="p">[</span><span class="kc">None</span> <span class="k">if</span> <span class="n">d</span> <span class="k">else</span> <span class="n">s</span> <span class="k">for</span> <span class="n">d</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">axis_dynamic</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">value</span><span class="p">))]</span>
+                    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cache</span>
+                <span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+                    <span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">trainable</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">shapes</span><span class="p">)</span>
+                <span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="GPRPosterior"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.GPRPosterior">[docs]</a><span class="k">class</span> <span class="nc">GPRPosterior</span><span class="p">(</span><span class="n">AbstractPosterior</span><span class="p">):</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;data[0]: [N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;data[1]: [N, Q]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">kernel</span><span class="p">:</span> <span class="n">Kernel</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">RegressionData</span><span class="p">,</span>
+        <span class="n">likelihood</span><span class="p">:</span> <span class="n">Gaussian</span><span class="p">,</span>
+        <span class="n">mean_function</span><span class="p">:</span> <span class="n">MeanFunction</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">precompute_cache</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PrecomputeCacheType</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">mean_function</span><span class="o">=</span><span class="n">mean_function</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Y_data</span> <span class="o">=</span> <span class="n">Y</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">likelihood</span> <span class="o">=</span> <span class="n">likelihood</span>
+
+        <span class="k">if</span> <span class="n">precompute_cache</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_cache</span><span class="p">(</span><span class="n">precompute_cache</span><span class="p">)</span>
+
+    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">_conditional_with_precompute</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cache</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+        <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
+        <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes predictive mean and (co)variance at Xnew, *excluding* mean_function.</span>
+<span class="sd">        Relies on cached alpha and Qinv.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">assert_params_false</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_conditional_with_precompute</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="o">=</span><span class="n">full_output_cov</span><span class="p">)</span>
+        <span class="n">err</span><span class="p">,</span> <span class="n">Lm</span> <span class="o">=</span> <span class="n">cache</span>
+
+        <span class="n">Knn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">)</span>
+        <span class="n">Kmn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_data</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">base_conditional_with_lm</span><span class="p">(</span>
+            <span class="n">Kmn</span><span class="o">=</span><span class="n">Kmn</span><span class="p">,</span>
+            <span class="n">Lm</span><span class="o">=</span><span class="n">Lm</span><span class="p">,</span>
+            <span class="n">Knn</span><span class="o">=</span><span class="n">Knn</span><span class="p">,</span>
+            <span class="n">f</span><span class="o">=</span><span class="n">err</span><span class="p">,</span>
+            <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">,</span>
+            <span class="n">q_sqrt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">white</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;return[0]: [M, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [M, M]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_precompute</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">PrecomputedValue</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_function</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="n">X_data</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">X_data</span><span class="p">)</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Y_data</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_function</span><span class="p">(</span><span class="n">X_data</span><span class="p">)</span>
+
+        <span class="n">Kmm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="n">X_data</span><span class="p">)</span>
+        <span class="n">Kmm_plus_s</span> <span class="o">=</span> <span class="n">add_likelihood_noise_cov</span><span class="p">(</span><span class="n">Kmm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">likelihood</span><span class="p">,</span> <span class="n">X_data</span><span class="p">)</span>
+        <span class="n">Lm</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">Kmm_plus_s</span><span class="p">)</span>
+
+        <span class="n">D</span> <span class="o">=</span> <span class="n">err</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="n">X_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">D_dynamic</span> <span class="o">=</span> <span class="n">D</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="n">M_dynamic</span> <span class="o">=</span> <span class="n">M</span> <span class="ow">is</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">PrecomputedValue</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="p">(</span><span class="n">M_dynamic</span><span class="p">,</span> <span class="n">D_dynamic</span><span class="p">)),</span>
+            <span class="n">PrecomputedValue</span><span class="p">(</span><span class="n">Lm</span><span class="p">,</span> <span class="p">(</span><span class="n">M_dynamic</span><span class="p">,</span> <span class="n">M_dynamic</span><span class="p">)),</span>
+        <span class="p">)</span>
+
+    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">_conditional_fused</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes predictive mean and (co)variance at Xnew, *excluding* mean_function</span>
+<span class="sd">        Does not make use of caching</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">temp_cache</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_precompute</span><span class="p">())</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_conditional_with_precompute</span><span class="p">(</span><span class="n">temp_cache</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SGPRPosterior"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.SGPRPosterior">[docs]</a><span class="k">class</span> <span class="nc">SGPRPosterior</span><span class="p">(</span><span class="n">AbstractPosterior</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class represents posteriors which can be derived from SGPR</span>
+<span class="sd">    models to compute faster predictions on unseen points.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;data[0]: [N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;data[1]: [N, Q]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;inducing_variable: [M, D, 1]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">kernel</span><span class="p">:</span> <span class="n">Kernel</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">RegressionData</span><span class="p">,</span>
+        <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">InducingPoints</span><span class="p">,</span>
+        <span class="n">likelihood</span><span class="p">:</span> <span class="n">Gaussian</span><span class="p">,</span>
+        <span class="n">num_latent_gps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">mean_function</span><span class="p">:</span> <span class="n">MeanFunction</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">precompute_cache</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PrecomputeCacheType</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">mean_function</span><span class="o">=</span><span class="n">mean_function</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Y_data</span> <span class="o">=</span> <span class="n">Y</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">likelihood</span> <span class="o">=</span> <span class="n">likelihood</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable</span> <span class="o">=</span> <span class="n">inducing_variable</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_latent_gps</span> <span class="o">=</span> <span class="n">num_latent_gps</span>
+
+        <span class="k">if</span> <span class="n">precompute_cache</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_cache</span><span class="p">(</span><span class="n">precompute_cache</span><span class="p">)</span>
+
+    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">_conditional_with_precompute</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cache</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+        <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
+        <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes predictive mean and (co)variance at Xnew, *excluding* mean_function.</span>
+<span class="sd">        Relies on cached alpha and Qinv.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">assert_params_false</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_conditional_with_precompute</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="o">=</span><span class="n">full_output_cov</span><span class="p">)</span>
+
+        <span class="n">L</span><span class="p">,</span> <span class="n">LB</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">cache</span>
+
+        <span class="n">Kus</span> <span class="o">=</span> <span class="n">Kuf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">)</span>
+        <span class="n">tmp1</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">triangular_solve</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">Kus</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">tmp2</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">triangular_solve</span><span class="p">(</span><span class="n">LB</span><span class="p">,</span> <span class="n">tmp1</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">mean</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">tmp2</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">transpose_a</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">full_cov</span><span class="p">:</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="n">Xnew</span><span class="p">)</span>
+                <span class="o">+</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">tmp2</span><span class="p">,</span> <span class="n">tmp2</span><span class="p">,</span> <span class="n">transpose_a</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="o">-</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">tmp1</span><span class="p">,</span> <span class="n">tmp1</span><span class="p">,</span> <span class="n">transpose_a</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">var</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">num_latent_gps</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>  <span class="c1"># [P, N, N]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="o">+</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">tmp2</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="o">-</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">tmp1</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">var</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_latent_gps</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">mean</span><span class="p">,</span> <span class="n">var</span>
+
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;return[0]: [M, M]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [M, M]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[2]: [M, D]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_precompute</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">PrecomputedValue</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_function</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+        <span class="n">X_data</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">X_data</span><span class="p">)</span>
+        <span class="n">num_inducing</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable</span><span class="o">.</span><span class="n">num_inducing</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Y_data</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_function</span><span class="p">(</span><span class="n">X_data</span><span class="p">)</span>
+
+        <span class="n">kuf</span> <span class="o">=</span> <span class="n">Kuf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="n">X_data</span><span class="p">)</span>
+        <span class="n">kuu</span> <span class="o">=</span> <span class="n">Kuu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="n">jitter</span><span class="o">=</span><span class="n">default_jitter</span><span class="p">())</span>
+
+        <span class="n">sigma_sq</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">variance_at</span><span class="p">(</span><span class="n">X_data</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">sigma</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sigma_sq</span><span class="p">)</span>
+
+        <span class="n">L</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">kuu</span><span class="p">)</span>  <span class="c1"># cache alpha, qinv</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">triangular_solve</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">kuf</span> <span class="o">/</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">B</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">transpose_b</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">+</span> <span class="n">tf</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span>
+            <span class="n">num_inducing</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">default_float</span><span class="p">()</span>
+        <span class="p">)</span>  <span class="c1"># cache qinv</span>
+        <span class="n">LB</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">B</span><span class="p">)</span>  <span class="c1"># cache alpha</span>
+        <span class="n">Aerr</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">err</span> <span class="o">/</span> <span class="n">sigma</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">triangular_solve</span><span class="p">(</span><span class="n">LB</span><span class="p">,</span> <span class="n">Aerr</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">D</span> <span class="o">=</span> <span class="n">err</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="n">X_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">D_dynamic</span> <span class="o">=</span> <span class="n">D</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="n">M_dynamic</span> <span class="o">=</span> <span class="n">M</span> <span class="ow">is</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">PrecomputedValue</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="p">(</span><span class="n">M_dynamic</span><span class="p">,</span> <span class="n">M_dynamic</span><span class="p">)),</span>
+            <span class="n">PrecomputedValue</span><span class="p">(</span><span class="n">LB</span><span class="p">,</span> <span class="p">(</span><span class="n">M_dynamic</span><span class="p">,</span> <span class="n">M_dynamic</span><span class="p">)),</span>
+            <span class="n">PrecomputedValue</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="p">(</span><span class="n">M_dynamic</span><span class="p">,</span> <span class="n">D_dynamic</span><span class="p">)),</span>
+        <span class="p">)</span>
+
+    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">_conditional_fused</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the mean and variance of the latent function at some new points</span>
+<span class="sd">        Xnew. Does not make use of caching</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">temp_cache</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_precompute</span><span class="p">())</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_conditional_with_precompute</span><span class="p">(</span><span class="n">temp_cache</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="VGPPosterior"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.VGPPosterior">[docs]</a><span class="k">class</span> <span class="nc">VGPPosterior</span><span class="p">(</span><span class="n">AbstractPosterior</span><span class="p">):</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;X: [N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;q_mu: [N, P]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;q_sqrt: [N_P_or_P_N_N...]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">kernel</span><span class="p">:</span> <span class="n">Kernel</span><span class="p">,</span>
+        <span class="n">X</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">q_mu</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">q_sqrt</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">mean_function</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">mean_functions</span><span class="o">.</span><span class="n">MeanFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">white</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">precompute_cache</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PrecomputeCacheType</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">mean_function</span><span class="o">=</span><span class="n">mean_function</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q_mu</span> <span class="o">=</span> <span class="n">q_mu</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q_sqrt</span> <span class="o">=</span> <span class="n">q_sqrt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">white</span> <span class="o">=</span> <span class="n">white</span>
+
+        <span class="k">if</span> <span class="n">precompute_cache</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_cache</span><span class="p">(</span><span class="n">precompute_cache</span><span class="p">)</span>
+
+    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">_conditional_with_precompute</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cache</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+        <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
+        <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
+        <span class="n">assert_params_false</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_conditional_with_precompute</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="o">=</span><span class="n">full_output_cov</span><span class="p">)</span>
+
+        <span class="p">(</span><span class="n">Lm</span><span class="p">,)</span> <span class="o">=</span> <span class="n">cache</span>
+        <span class="n">Kmn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_data</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">)</span>  <span class="c1"># [M, ..., N]</span>
+        <span class="n">Knn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span>
+            <span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span>
+        <span class="p">)</span>  <span class="c1"># [..., N] (full_cov = False) or [..., N, N] (True)</span>
+
+        <span class="k">return</span> <span class="n">base_conditional_with_lm</span><span class="p">(</span>
+            <span class="n">Kmn</span><span class="o">=</span><span class="n">Kmn</span><span class="p">,</span>
+            <span class="n">Lm</span><span class="o">=</span><span class="n">Lm</span><span class="p">,</span>
+            <span class="n">Knn</span><span class="o">=</span><span class="n">Knn</span><span class="p">,</span>
+            <span class="n">f</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q_mu</span><span class="p">,</span>
+            <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">,</span>
+            <span class="n">q_sqrt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q_sqrt</span><span class="p">,</span>
+            <span class="n">white</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">white</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;return[0]: [M, M]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_precompute</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">PrecomputedValue</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="n">X_data</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">X_data</span><span class="p">)</span>
+        <span class="n">Kmm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="n">X_data</span><span class="p">)</span> <span class="o">+</span> <span class="n">eye</span><span class="p">(</span>
+            <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">X_data</span><span class="p">)[</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="n">value</span><span class="o">=</span><span class="n">default_jitter</span><span class="p">(),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">X_data</span><span class="o">.</span><span class="n">dtype</span>
+        <span class="p">)</span>  <span class="c1"># [..., M, M]</span>
+        <span class="n">Lm</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">Kmm</span><span class="p">)</span>
+
+        <span class="n">M</span> <span class="o">=</span> <span class="n">X_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">M_dynamic</span> <span class="o">=</span> <span class="n">M</span> <span class="ow">is</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">PrecomputedValue</span><span class="p">(</span><span class="n">Lm</span><span class="p">,</span> <span class="p">(</span><span class="n">M_dynamic</span><span class="p">,</span> <span class="n">M_dynamic</span><span class="p">)),)</span>
+
+    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">_conditional_fused</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
+        <span class="n">temp_cache</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_precompute</span><span class="p">())</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_conditional_with_precompute</span><span class="p">(</span><span class="n">temp_cache</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BasePosterior"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.BasePosterior">[docs]</a><span class="k">class</span> <span class="nc">BasePosterior</span><span class="p">(</span><span class="n">AbstractPosterior</span><span class="p">):</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;inducing_variable: [M, D, broadcast P]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;q_mu: [N, P]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;q_sqrt: [N_P_or_P_N_N...]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">kernel</span><span class="p">:</span> <span class="n">Kernel</span><span class="p">,</span>
+        <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">InducingVariables</span><span class="p">,</span>
+        <span class="n">q_mu</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">q_sqrt</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">whiten</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">mean_function</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">mean_functions</span><span class="o">.</span><span class="n">MeanFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">precompute_cache</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PrecomputeCacheType</span><span class="p">],</span>
+    <span class="p">):</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">inducing_variable</span><span class="p">,</span> <span class="n">mean_function</span><span class="o">=</span><span class="n">mean_function</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">whiten</span> <span class="o">=</span> <span class="n">whiten</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_qdist</span><span class="p">(</span><span class="n">q_mu</span><span class="p">,</span> <span class="n">q_sqrt</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">precompute_cache</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_cache</span><span class="p">(</span><span class="n">precompute_cache</span><span class="p">)</span>
+
+    <span class="nd">@property</span>  <span class="c1"># type: ignore[misc]</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;return: [N, P]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">q_mu</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_q_dist</span><span class="o">.</span><span class="n">q_mu</span>
+
+    <span class="nd">@property</span>  <span class="c1"># type: ignore[misc]</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;return: [N_P_or_P_N_N...]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">q_sqrt</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_q_dist</span><span class="o">.</span><span class="n">q_sqrt</span>
+
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;q_mu: [N, P]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;q_sqrt: [N_P_or_P_N_N...]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_set_qdist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q_mu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">q_sqrt</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">q_sqrt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_q_dist</span> <span class="o">=</span> <span class="n">_DeltaDist</span><span class="p">(</span><span class="n">q_mu</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">q_sqrt</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>  <span class="c1"># q_diag</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_q_dist</span> <span class="o">=</span> <span class="n">_DiagNormal</span><span class="p">(</span><span class="n">q_mu</span><span class="p">,</span> <span class="n">q_sqrt</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_q_dist</span> <span class="o">=</span> <span class="n">_MvNormal</span><span class="p">(</span><span class="n">q_mu</span><span class="p">,</span> <span class="n">q_sqrt</span><span class="p">)</span>
+
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;return[0]: [M_L_or_L_M_M...]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [L, M, M]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_precompute</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">PrecomputedValue</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="n">Kuu</span> <span class="o">=</span> <span class="n">covariances</span><span class="o">.</span><span class="n">Kuu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="n">jitter</span><span class="o">=</span><span class="n">default_jitter</span><span class="p">())</span>  <span class="c1"># [(R), M, M]</span>
+        <span class="n">q_mu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_q_dist</span><span class="o">.</span><span class="n">q_mu</span>
+
+        <span class="k">if</span> <span class="n">Kuu</span><span class="o">.</span><span class="n">shape</span><span class="o">.</span><span class="n">ndims</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="n">ML</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_prod</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Kuu</span><span class="p">)[:</span><span class="mi">2</span><span class="p">])</span>
+            <span class="n">Kuu</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">Kuu</span><span class="p">,</span> <span class="p">[</span><span class="n">ML</span><span class="p">,</span> <span class="n">ML</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">Kuu</span><span class="o">.</span><span class="n">shape</span><span class="o">.</span><span class="n">ndims</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">q_mu</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">adjoint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_q_dist</span><span class="o">.</span><span class="n">q_mu</span><span class="p">)[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>  <span class="c1"># [..., R, M, 1]</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">Kuu</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">whiten</span><span class="p">:</span>
+            <span class="c1"># alpha = Kuu⁻¹ q_mu</span>
+            <span class="n">alpha</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky_solve</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">q_mu</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># alpha = L⁻ᵀ q_mu</span>
+            <span class="n">alpha</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">triangular_solve</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">q_mu</span><span class="p">,</span> <span class="n">adjoint</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># predictive mean = Kfu alpha</span>
+        <span class="c1"># predictive variance = Kff - Kfu Qinv Kuf</span>
+        <span class="c1"># S = q_sqrt q_sqrtᵀ</span>
+        <span class="n">I</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">L</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">L</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_q_dist</span><span class="p">,</span> <span class="n">_DeltaDist</span><span class="p">):</span>
+            <span class="n">B</span> <span class="o">=</span> <span class="n">I</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">whiten</span><span class="p">:</span>
+                <span class="c1"># Qinv = Kuu⁻¹ - Kuu⁻¹ S Kuu⁻¹</span>
+                <span class="c1">#      = Kuu⁻¹ - L⁻ᵀ L⁻¹ S L⁻ᵀ L⁻¹</span>
+                <span class="c1">#      = L⁻ᵀ (I - L⁻¹ S L⁻ᵀ) L⁻¹</span>
+                <span class="c1">#      = L⁻ᵀ B L⁻¹</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_q_dist</span><span class="p">,</span> <span class="n">_DiagNormal</span><span class="p">):</span>
+                    <span class="n">q_sqrt</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">adjoint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_q_dist</span><span class="o">.</span><span class="n">q_sqrt</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_q_dist</span><span class="p">,</span> <span class="n">_MvNormal</span><span class="p">):</span>
+                    <span class="n">q_sqrt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_q_dist</span><span class="o">.</span><span class="n">q_sqrt</span>
+                <span class="n">Linv_qsqrt</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">triangular_solve</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">q_sqrt</span><span class="p">)</span>
+                <span class="n">Linv_cov_u_LinvT</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">Linv_qsqrt</span><span class="p">,</span> <span class="n">Linv_qsqrt</span><span class="p">,</span> <span class="n">transpose_b</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_q_dist</span><span class="p">,</span> <span class="n">_DiagNormal</span><span class="p">):</span>
+                    <span class="n">Linv_cov_u_LinvT</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">adjoint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_q_dist</span><span class="o">.</span><span class="n">q_sqrt</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_q_dist</span><span class="p">,</span> <span class="n">_MvNormal</span><span class="p">):</span>
+                    <span class="n">q_sqrt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_q_dist</span><span class="o">.</span><span class="n">q_sqrt</span>
+                    <span class="n">Linv_cov_u_LinvT</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">q_sqrt</span><span class="p">,</span> <span class="n">q_sqrt</span><span class="p">,</span> <span class="n">transpose_b</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="c1"># Qinv = Kuu⁻¹ - L⁻ᵀ S L⁻¹</span>
+                <span class="c1"># Linv = (L⁻¹ I) = solve(L, I)</span>
+                <span class="c1"># Kinv = Linvᵀ @ Linv</span>
+            <span class="n">B</span> <span class="o">=</span> <span class="n">I</span> <span class="o">-</span> <span class="n">Linv_cov_u_LinvT</span>
+        <span class="n">LinvT_B</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">triangular_solve</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">adjoint</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">B_Linv</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">adjoint</span><span class="p">(</span><span class="n">LinvT_B</span><span class="p">)</span>
+        <span class="n">Qinv</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">triangular_solve</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">B_Linv</span><span class="p">,</span> <span class="n">adjoint</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">M</span><span class="p">,</span> <span class="n">L</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">unstack</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_q_dist</span><span class="o">.</span><span class="n">q_mu</span><span class="p">),</span> <span class="n">num</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">Qinv</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">Qinv</span><span class="p">,</span> <span class="p">[</span><span class="n">L</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">M</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">PrecomputedValue</span><span class="o">.</span><span class="n">wrap_alpha_Qinv</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">Qinv</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="IndependentPosterior"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.IndependentPosterior">[docs]</a><span class="k">class</span> <span class="nc">IndependentPosterior</span><span class="p">(</span><span class="n">BasePosterior</span><span class="p">):</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;mean: [batch..., N, P]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cov: [batch..., P, N, N] if full_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cov: [batch..., N, P] if not full_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[0]: [batch..., N, P]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_post_process_mean_and_cov</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">mean</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">cov</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">mean</span><span class="p">,</span> <span class="n">expand_independent_outputs</span><span class="p">(</span><span class="n">cov</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">)</span>
+
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;Xnew: [N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: [broadcast P, N, N] if full_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: [broadcast P, N] if (not full_cov)&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_get_Kff</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+
+        <span class="c1"># TODO: this assumes that Xnew has shape [N, D] and no leading dims</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="p">(</span><span class="n">kernels</span><span class="o">.</span><span class="n">SeparateIndependent</span><span class="p">,</span> <span class="n">kernels</span><span class="o">.</span><span class="n">IndependentLatent</span><span class="p">)):</span>
+            <span class="c1"># NOTE calling kernel(Xnew, full_cov=full_cov, full_output_cov=False) directly would</span>
+            <span class="c1"># return</span>
+            <span class="c1"># if full_cov: [P, N, N] -- this is what we want</span>
+            <span class="c1"># else: [N, P] instead of [P, N] as we get from the explicit stack below</span>
+            <span class="n">Kff</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">k</span><span class="p">(</span><span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">kernels</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="n">kernels</span><span class="o">.</span><span class="n">MultioutputKernel</span><span class="p">):</span>
+            <span class="c1"># effectively, SharedIndependent path</span>
+            <span class="n">Kff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">)</span>
+            <span class="c1"># NOTE calling kernel(Xnew, full_cov=full_cov, full_output_cov=False) directly would</span>
+            <span class="c1"># return</span>
+            <span class="c1"># if full_cov: [P, N, N] instead of [N, N]</span>
+            <span class="c1"># else: [N, P] instead of [N]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># standard (&quot;single-output&quot;) kernels</span>
+            <span class="n">Kff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">)</span>  <span class="c1"># [N, N] if full_cov else [N]</span>
+
+        <span class="k">return</span> <span class="n">Kff</span>
+
+    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">_conditional_with_precompute</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cache</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+        <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
+        <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
+        <span class="c1"># Qinv: [L, M, M]</span>
+        <span class="c1"># alpha: [M, L]</span>
+        <span class="n">alpha</span><span class="p">,</span> <span class="n">Qinv</span> <span class="o">=</span> <span class="n">cache</span>
+
+        <span class="n">Kuf</span> <span class="o">=</span> <span class="n">covariances</span><span class="o">.</span><span class="n">Kuf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">)</span>  <span class="c1"># [(R), M, N]</span>
+        <span class="n">Kff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_Kff</span><span class="p">(</span><span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">)</span>
+
+        <span class="n">mean</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">Kuf</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">transpose_a</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">Kuf</span><span class="o">.</span><span class="n">shape</span><span class="o">.</span><span class="n">ndims</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">mean</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">adjoint</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">full_cov</span><span class="p">:</span>
+            <span class="n">Kfu_Qinv_Kuf</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">Kuf</span><span class="p">,</span> <span class="n">Qinv</span> <span class="o">@</span> <span class="n">Kuf</span><span class="p">,</span> <span class="n">transpose_a</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">cov</span> <span class="o">=</span> <span class="n">Kff</span> <span class="o">-</span> <span class="n">Kfu_Qinv_Kuf</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># [Aᵀ B]_ij = Aᵀ_ik B_kj = A_ki B_kj</span>
+            <span class="c1"># TODO check whether einsum is faster now?</span>
+            <span class="n">Kfu_Qinv_Kuf</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">Kuf</span> <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">Qinv</span><span class="p">,</span> <span class="n">Kuf</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">cov</span> <span class="o">=</span> <span class="n">Kff</span> <span class="o">-</span> <span class="n">Kfu_Qinv_Kuf</span>
+            <span class="n">cov</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">adjoint</span><span class="p">(</span><span class="n">cov</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_post_process_mean_and_cov</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="IndependentPosteriorSingleOutput"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.IndependentPosteriorSingleOutput">[docs]</a><span class="k">class</span> <span class="nc">IndependentPosteriorSingleOutput</span><span class="p">(</span><span class="n">IndependentPosterior</span><span class="p">):</span>
+    <span class="c1"># could almost be the same as IndependentPosteriorMultiOutput ...</span>
+    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">_conditional_fused</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
+        <span class="c1"># same as IndependentPosteriorMultiOutput, Shared~/Shared~ branch, except for following</span>
+        <span class="c1"># line:</span>
+        <span class="n">Knn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">)</span>
+
+        <span class="n">Kmm</span> <span class="o">=</span> <span class="n">covariances</span><span class="o">.</span><span class="n">Kuu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="n">jitter</span><span class="o">=</span><span class="n">default_jitter</span><span class="p">())</span>  <span class="c1"># [M, M]</span>
+        <span class="n">Kmn</span> <span class="o">=</span> <span class="n">covariances</span><span class="o">.</span><span class="n">Kuf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">)</span>  <span class="c1"># [M, N]</span>
+
+        <span class="n">fmean</span><span class="p">,</span> <span class="n">fvar</span> <span class="o">=</span> <span class="n">base_conditional</span><span class="p">(</span>
+            <span class="n">Kmn</span><span class="p">,</span> <span class="n">Kmm</span><span class="p">,</span> <span class="n">Knn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_mu</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">,</span> <span class="n">q_sqrt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q_sqrt</span><span class="p">,</span> <span class="n">white</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">whiten</span>
+        <span class="p">)</span>  <span class="c1"># [N, P],  [P, N, N] or [N, P]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_post_process_mean_and_cov</span><span class="p">(</span><span class="n">fmean</span><span class="p">,</span> <span class="n">fvar</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="IndependentPosteriorMultiOutput"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.IndependentPosteriorMultiOutput">[docs]</a><span class="k">class</span> <span class="nc">IndependentPosteriorMultiOutput</span><span class="p">(</span><span class="n">IndependentPosterior</span><span class="p">):</span>
+    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">_conditional_fused</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_data</span><span class="p">,</span> <span class="n">SharedIndependentInducingVariables</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="n">kernels</span><span class="o">.</span><span class="n">SharedIndependent</span>
+        <span class="p">):</span>
+            <span class="c1"># same as IndependentPosteriorSingleOutput except for following line</span>
+            <span class="n">Knn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">)</span>
+            <span class="c1"># we don&#39;t call self.kernel() directly as that would do unnecessary tiling</span>
+
+            <span class="n">Kmm</span> <span class="o">=</span> <span class="n">covariances</span><span class="o">.</span><span class="n">Kuu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="n">jitter</span><span class="o">=</span><span class="n">default_jitter</span><span class="p">())</span>  <span class="c1"># [M, M]</span>
+            <span class="n">Kmn</span> <span class="o">=</span> <span class="n">covariances</span><span class="o">.</span><span class="n">Kuf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">)</span>  <span class="c1"># [M, N]</span>
+
+            <span class="n">fmean</span><span class="p">,</span> <span class="n">fvar</span> <span class="o">=</span> <span class="n">base_conditional</span><span class="p">(</span>
+                <span class="n">Kmn</span><span class="p">,</span> <span class="n">Kmm</span><span class="p">,</span> <span class="n">Knn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_mu</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">,</span> <span class="n">q_sqrt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q_sqrt</span><span class="p">,</span> <span class="n">white</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">whiten</span>
+            <span class="p">)</span>  <span class="c1"># [N, P],  [P, N, N] or [N, P]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># this is the messy thing with tf.map_fn, cleaned up by the</span>
+            <span class="c1"># st/clean_up_broadcasting_conditionals branch</span>
+
+            <span class="c1"># Following are: [P, M, M]  -  [P, M, N]  -  [P, N](x N)</span>
+            <span class="n">Kmms</span> <span class="o">=</span> <span class="n">covariances</span><span class="o">.</span><span class="n">Kuu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="n">jitter</span><span class="o">=</span><span class="n">default_jitter</span><span class="p">())</span>  <span class="c1"># [P, M, M]</span>
+            <span class="n">Kmns</span> <span class="o">=</span> <span class="n">covariances</span><span class="o">.</span><span class="n">Kuf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">)</span>  <span class="c1"># [P, M, N]</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="n">kernels</span><span class="o">.</span><span class="n">Combination</span><span class="p">):</span>
+                <span class="n">kernel_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">kernels</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">kernel_list</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">kernel</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_data</span><span class="o">.</span><span class="n">inducing_variable_list</span><span class="p">)</span>
+            <span class="n">Knns</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">k</span><span class="o">.</span><span class="n">K</span><span class="p">(</span><span class="n">Xnew</span><span class="p">)</span> <span class="k">if</span> <span class="n">full_cov</span> <span class="k">else</span> <span class="n">k</span><span class="o">.</span><span class="n">K_diag</span><span class="p">(</span><span class="n">Xnew</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">kernel_list</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span>
+            <span class="p">)</span>
+
+            <span class="n">fmean</span><span class="p">,</span> <span class="n">fvar</span> <span class="o">=</span> <span class="n">separate_independent_conditional_implementation</span><span class="p">(</span>
+                <span class="n">Kmns</span><span class="p">,</span>
+                <span class="n">Kmms</span><span class="p">,</span>
+                <span class="n">Knns</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">q_mu</span><span class="p">,</span>
+                <span class="n">q_sqrt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q_sqrt</span><span class="p">,</span>
+                <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">,</span>
+                <span class="n">white</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">whiten</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_post_process_mean_and_cov</span><span class="p">(</span><span class="n">fmean</span><span class="p">,</span> <span class="n">fvar</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LinearCoregionalizationPosterior"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.LinearCoregionalizationPosterior">[docs]</a><span class="k">class</span> <span class="nc">LinearCoregionalizationPosterior</span><span class="p">(</span><span class="n">IndependentPosteriorMultiOutput</span><span class="p">):</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;mean: [batch..., N, L]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cov: [batch..., L, N, N] if full_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cov: [batch..., N, L] if not full_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[0]: [batch..., N, P]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_post_process_mean_and_cov</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">mean</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">cov</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
+        <span class="n">cov</span> <span class="o">=</span> <span class="n">expand_independent_outputs</span><span class="p">(</span><span class="n">cov</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span> <span class="o">=</span> <span class="n">mix_latent_gp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">W</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span></div>
+
+
+<div class="viewcode-block" id="FullyCorrelatedPosterior"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.FullyCorrelatedPosterior">[docs]</a><span class="k">class</span> <span class="nc">FullyCorrelatedPosterior</span><span class="p">(</span><span class="n">BasePosterior</span><span class="p">):</span>
+    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">_conditional_with_precompute</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cache</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+        <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
+        <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
+        <span class="c1"># TODO: this assumes that Xnew has shape [N, D] and no leading dims</span>
+
+        <span class="c1"># Qinv: [L, M, M]</span>
+        <span class="c1"># alpha: [M, L]</span>
+        <span class="n">alpha</span><span class="p">,</span> <span class="n">Qinv</span> <span class="o">=</span> <span class="n">cache</span>
+
+        <span class="n">Kuf</span> <span class="o">=</span> <span class="n">covariances</span><span class="o">.</span><span class="n">Kuf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">Kuf</span><span class="o">.</span><span class="n">shape</span><span class="o">.</span><span class="n">ndims</span> <span class="o">==</span> <span class="mi">4</span>
+        <span class="n">M</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">K</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">unstack</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Kuf</span><span class="p">),</span> <span class="n">num</span><span class="o">=</span><span class="n">Kuf</span><span class="o">.</span><span class="n">shape</span><span class="o">.</span><span class="n">ndims</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">Kuf</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">Kuf</span><span class="p">,</span> <span class="p">(</span><span class="n">M</span> <span class="o">*</span> <span class="n">L</span><span class="p">,</span> <span class="n">N</span> <span class="o">*</span> <span class="n">K</span><span class="p">))</span>
+
+        <span class="n">kernel</span><span class="p">:</span> <span class="n">kernels</span><span class="o">.</span><span class="n">MultioutputKernel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span>
+        <span class="n">Kff</span> <span class="o">=</span> <span class="n">kernel</span><span class="p">(</span><span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="o">=</span><span class="n">full_output_cov</span><span class="p">)</span>
+        <span class="c1"># full_cov=True and full_output_cov=True: [N, P, N, P]</span>
+        <span class="c1"># full_cov=True and full_output_cov=False: [P, N, N]</span>
+        <span class="c1"># full_cov=False and full_output_cov=True: [N, P, P]</span>
+        <span class="c1"># full_cov=False and full_output_cov=False: [N, P]</span>
+        <span class="k">if</span> <span class="n">full_cov</span> <span class="o">==</span> <span class="n">full_output_cov</span><span class="p">:</span>
+            <span class="n">new_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">N</span> <span class="o">*</span> <span class="n">K</span><span class="p">,</span> <span class="n">N</span> <span class="o">*</span> <span class="n">K</span><span class="p">)</span> <span class="k">if</span> <span class="n">full_cov</span> <span class="k">else</span> <span class="p">(</span><span class="n">N</span> <span class="o">*</span> <span class="n">K</span><span class="p">,)</span>
+            <span class="n">Kff</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">Kff</span><span class="p">,</span> <span class="n">new_shape</span><span class="p">)</span>
+
+        <span class="n">N</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Xnew</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">K</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Kuf</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="n">N</span>
+
+        <span class="n">mean</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">Kuf</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">transpose_a</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">Kuf</span><span class="o">.</span><span class="n">shape</span><span class="o">.</span><span class="n">ndims</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">mean</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">adjoint</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">full_cov</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">full_output_cov</span><span class="p">:</span>
+            <span class="c1"># fully diagonal case in both inputs and outputs</span>
+            <span class="c1"># [Aᵀ B]_ij = Aᵀ_ik B_kj = A_ki B_kj</span>
+            <span class="c1"># TODO check whether einsum is faster now?</span>
+            <span class="n">Kfu_Qinv_Kuf</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">Kuf</span> <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">Qinv</span><span class="p">,</span> <span class="n">Kuf</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">Kfu_Qinv_Kuf</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">Kuf</span><span class="p">,</span> <span class="n">Qinv</span> <span class="o">@</span> <span class="n">Kuf</span><span class="p">,</span> <span class="n">transpose_a</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">full_cov</span> <span class="ow">and</span> <span class="n">full_output_cov</span><span class="p">):</span>
+                <span class="c1"># diagonal in either inputs or outputs</span>
+                <span class="n">new_shape</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Kfu_Qinv_Kuf</span><span class="p">)[:</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">K</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">Kfu_Qinv_Kuf</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">Kfu_Qinv_Kuf</span><span class="p">,</span> <span class="n">new_shape</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">full_cov</span><span class="p">:</span>
+                    <span class="c1"># diagonal in outputs: move outputs to end</span>
+                    <span class="n">tmp</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">diag_part</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...ijkl-&gt;...ikjl&quot;</span><span class="p">,</span> <span class="n">Kfu_Qinv_Kuf</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="n">full_output_cov</span><span class="p">:</span>
+                    <span class="c1"># diagonal in inputs: move inputs to end</span>
+                    <span class="n">tmp</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">diag_part</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...ijkl-&gt;...jlik&quot;</span><span class="p">,</span> <span class="n">Kfu_Qinv_Kuf</span><span class="p">))</span>
+                <span class="n">Kfu_Qinv_Kuf</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...ijk-&gt;...kij&quot;</span><span class="p">,</span> <span class="n">tmp</span><span class="p">)</span>  <span class="c1"># move diagonal dim to [-3]</span>
+        <span class="n">cov</span> <span class="o">=</span> <span class="n">Kff</span> <span class="o">-</span> <span class="n">Kfu_Qinv_Kuf</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">full_cov</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">full_output_cov</span><span class="p">:</span>
+            <span class="n">cov</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">adjoint</span><span class="p">(</span><span class="n">cov</span><span class="p">)</span>
+
+        <span class="n">mean</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">K</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">full_cov</span> <span class="o">==</span> <span class="n">full_output_cov</span><span class="p">:</span>
+            <span class="n">cov_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">K</span><span class="p">)</span> <span class="k">if</span> <span class="n">full_cov</span> <span class="k">else</span> <span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">K</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cov_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span> <span class="k">if</span> <span class="n">full_cov</span> <span class="k">else</span> <span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">K</span><span class="p">)</span>
+        <span class="n">cov</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">cov</span><span class="p">,</span> <span class="n">cov_shape</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span>
+
+    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">_conditional_fused</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
+        <span class="n">Kmm</span> <span class="o">=</span> <span class="n">covariances</span><span class="o">.</span><span class="n">Kuu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="n">jitter</span><span class="o">=</span><span class="n">default_jitter</span><span class="p">())</span>  <span class="c1"># [M, L, M, L]</span>
+        <span class="n">Kmn</span> <span class="o">=</span> <span class="n">covariances</span><span class="o">.</span><span class="n">Kuf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">)</span>  <span class="c1"># [M, L, N, P]</span>
+        <span class="n">kernel</span><span class="p">:</span> <span class="n">kernels</span><span class="o">.</span><span class="n">MultioutputKernel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span>
+        <span class="n">Knn</span> <span class="o">=</span> <span class="n">kernel</span><span class="p">(</span>
+            <span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="o">=</span><span class="n">full_output_cov</span>
+        <span class="p">)</span>  <span class="c1"># [N, P](x N)x P  or  [N, P](x P)</span>
+
+        <span class="n">M</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">K</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">unstack</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Kmn</span><span class="p">),</span> <span class="n">num</span><span class="o">=</span><span class="n">Kmn</span><span class="o">.</span><span class="n">shape</span><span class="o">.</span><span class="n">ndims</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">Kmm</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">Kmm</span><span class="p">,</span> <span class="p">(</span><span class="n">M</span> <span class="o">*</span> <span class="n">L</span><span class="p">,</span> <span class="n">M</span> <span class="o">*</span> <span class="n">L</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">full_cov</span> <span class="o">==</span> <span class="n">full_output_cov</span><span class="p">:</span>
+            <span class="n">Kmn</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">Kmn</span><span class="p">,</span> <span class="p">(</span><span class="n">M</span> <span class="o">*</span> <span class="n">L</span><span class="p">,</span> <span class="n">N</span> <span class="o">*</span> <span class="n">K</span><span class="p">))</span>
+            <span class="n">Knn</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">Knn</span><span class="p">,</span> <span class="p">(</span><span class="n">N</span> <span class="o">*</span> <span class="n">K</span><span class="p">,</span> <span class="n">N</span> <span class="o">*</span> <span class="n">K</span><span class="p">))</span> <span class="k">if</span> <span class="n">full_cov</span> <span class="k">else</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">Knn</span><span class="p">,</span> <span class="p">(</span><span class="n">N</span> <span class="o">*</span> <span class="n">K</span><span class="p">,))</span>
+            <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span> <span class="o">=</span> <span class="n">base_conditional</span><span class="p">(</span>
+                <span class="n">Kmn</span><span class="p">,</span> <span class="n">Kmm</span><span class="p">,</span> <span class="n">Knn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_mu</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">,</span> <span class="n">q_sqrt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q_sqrt</span><span class="p">,</span> <span class="n">white</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">whiten</span>
+            <span class="p">)</span>  <span class="c1"># [K, 1], [1, K](x NK)</span>
+            <span class="n">mean</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">K</span><span class="p">))</span>
+            <span class="n">cov</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">cov</span><span class="p">,</span> <span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">K</span><span class="p">)</span> <span class="k">if</span> <span class="n">full_cov</span> <span class="k">else</span> <span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">K</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">Kmn</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">Kmn</span><span class="p">,</span> <span class="p">(</span><span class="n">M</span> <span class="o">*</span> <span class="n">L</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">K</span><span class="p">))</span>
+            <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span> <span class="o">=</span> <span class="n">fully_correlated_conditional</span><span class="p">(</span>
+                <span class="n">Kmn</span><span class="p">,</span>
+                <span class="n">Kmm</span><span class="p">,</span>
+                <span class="n">Knn</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">q_mu</span><span class="p">,</span>
+                <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">,</span>
+                <span class="n">full_output_cov</span><span class="o">=</span><span class="n">full_output_cov</span><span class="p">,</span>
+                <span class="n">q_sqrt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q_sqrt</span><span class="p">,</span>
+                <span class="n">white</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">whiten</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span></div>
+
+
+<div class="viewcode-block" id="FallbackIndependentLatentPosterior"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.FallbackIndependentLatentPosterior">[docs]</a><span class="k">class</span> <span class="nc">FallbackIndependentLatentPosterior</span><span class="p">(</span><span class="n">FullyCorrelatedPosterior</span><span class="p">):</span>  <span class="c1"># XXX</span>
+    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">_conditional_fused</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
+        <span class="n">Kmm</span> <span class="o">=</span> <span class="n">covariances</span><span class="o">.</span><span class="n">Kuu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="n">jitter</span><span class="o">=</span><span class="n">default_jitter</span><span class="p">())</span>  <span class="c1"># [L, M, M]</span>
+        <span class="n">Kmn</span> <span class="o">=</span> <span class="n">covariances</span><span class="o">.</span><span class="n">Kuf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">)</span>  <span class="c1"># [M, L, N, P]</span>
+        <span class="n">kernel</span><span class="p">:</span> <span class="n">kernels</span><span class="o">.</span><span class="n">IndependentLatent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span>
+        <span class="n">Knn</span> <span class="o">=</span> <span class="n">kernel</span><span class="p">(</span>
+            <span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="o">=</span><span class="n">full_output_cov</span>
+        <span class="p">)</span>  <span class="c1"># [N, P](x N)x P  or  [N, P](x P)</span>
+
+        <span class="k">return</span> <span class="n">independent_interdomain_conditional</span><span class="p">(</span>
+            <span class="n">Kmn</span><span class="p">,</span>
+            <span class="n">Kmm</span><span class="p">,</span>
+            <span class="n">Knn</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">q_mu</span><span class="p">,</span>
+            <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">,</span>
+            <span class="n">full_output_cov</span><span class="o">=</span><span class="n">full_output_cov</span><span class="p">,</span>
+            <span class="n">q_sqrt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q_sqrt</span><span class="p">,</span>
+            <span class="n">white</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">whiten</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<span class="n">get_posterior_class</span> <span class="o">=</span> <span class="n">Dispatcher</span><span class="p">(</span><span class="s2">&quot;get_posterior_class&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="_get_posterior_base_case"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors._get_posterior_base_case">[docs]</a><span class="nd">@get_posterior_class</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">kernels</span><span class="o">.</span><span class="n">Kernel</span><span class="p">,</span> <span class="n">InducingVariables</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">_get_posterior_base_case</span><span class="p">(</span>
+    <span class="n">kernel</span><span class="p">:</span> <span class="n">Kernel</span><span class="p">,</span> <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">InducingVariables</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">[</span><span class="n">BasePosterior</span><span class="p">]:</span>
+    <span class="c1"># independent single output</span>
+    <span class="k">return</span> <span class="n">IndependentPosteriorSingleOutput</span></div>
+
+
+<div class="viewcode-block" id="_get_posterior_fully_correlated_mo"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors._get_posterior_fully_correlated_mo">[docs]</a><span class="nd">@get_posterior_class</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">kernels</span><span class="o">.</span><span class="n">MultioutputKernel</span><span class="p">,</span> <span class="n">InducingPoints</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">_get_posterior_fully_correlated_mo</span><span class="p">(</span>
+    <span class="n">kernel</span><span class="p">:</span> <span class="n">Kernel</span><span class="p">,</span> <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">InducingVariables</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">[</span><span class="n">BasePosterior</span><span class="p">]:</span>
+    <span class="k">return</span> <span class="n">FullyCorrelatedPosterior</span></div>
+
+
+<div class="viewcode-block" id="_get_posterior_independent_mo"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors._get_posterior_independent_mo">[docs]</a><span class="nd">@get_posterior_class</span><span class="o">.</span><span class="n">register</span><span class="p">(</span>
+    <span class="p">(</span><span class="n">kernels</span><span class="o">.</span><span class="n">SharedIndependent</span><span class="p">,</span> <span class="n">kernels</span><span class="o">.</span><span class="n">SeparateIndependent</span><span class="p">),</span>
+    <span class="p">(</span><span class="n">SeparateIndependentInducingVariables</span><span class="p">,</span> <span class="n">SharedIndependentInducingVariables</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">_get_posterior_independent_mo</span><span class="p">(</span>
+    <span class="n">kernel</span><span class="p">:</span> <span class="n">Kernel</span><span class="p">,</span> <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">InducingVariables</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">[</span><span class="n">BasePosterior</span><span class="p">]:</span>
+    <span class="c1"># independent multi-output</span>
+    <span class="k">return</span> <span class="n">IndependentPosteriorMultiOutput</span></div>
+
+
+<div class="viewcode-block" id="_get_posterior_independentlatent_mo_fallback"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors._get_posterior_independentlatent_mo_fallback">[docs]</a><span class="nd">@get_posterior_class</span><span class="o">.</span><span class="n">register</span><span class="p">(</span>
+    <span class="n">kernels</span><span class="o">.</span><span class="n">IndependentLatent</span><span class="p">,</span>
+    <span class="p">(</span><span class="n">FallbackSeparateIndependentInducingVariables</span><span class="p">,</span> <span class="n">FallbackSharedIndependentInducingVariables</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">_get_posterior_independentlatent_mo_fallback</span><span class="p">(</span>
+    <span class="n">kernel</span><span class="p">:</span> <span class="n">Kernel</span><span class="p">,</span> <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">InducingVariables</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">[</span><span class="n">BasePosterior</span><span class="p">]:</span>
+    <span class="k">return</span> <span class="n">FallbackIndependentLatentPosterior</span></div>
+
+
+<div class="viewcode-block" id="_get_posterior_linearcoregionalization_mo_efficient"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors._get_posterior_linearcoregionalization_mo_efficient">[docs]</a><span class="nd">@get_posterior_class</span><span class="o">.</span><span class="n">register</span><span class="p">(</span>
+    <span class="n">kernels</span><span class="o">.</span><span class="n">LinearCoregionalization</span><span class="p">,</span>
+    <span class="p">(</span><span class="n">SeparateIndependentInducingVariables</span><span class="p">,</span> <span class="n">SharedIndependentInducingVariables</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">_get_posterior_linearcoregionalization_mo_efficient</span><span class="p">(</span>
+    <span class="n">kernel</span><span class="p">:</span> <span class="n">Kernel</span><span class="p">,</span> <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">InducingVariables</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">[</span><span class="n">BasePosterior</span><span class="p">]:</span>
+    <span class="c1"># Linear mixing---efficient multi-output</span>
+    <span class="k">return</span> <span class="n">LinearCoregionalizationPosterior</span></div>
+
+
+<div class="viewcode-block" id="create_posterior"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.create_posterior">[docs]</a><span class="k">def</span> <span class="nf">create_posterior</span><span class="p">(</span>
+    <span class="n">kernel</span><span class="p">:</span> <span class="n">Kernel</span><span class="p">,</span>
+    <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">InducingVariables</span><span class="p">,</span>
+    <span class="n">q_mu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
+    <span class="n">q_sqrt</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
+    <span class="n">whiten</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">mean_function</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MeanFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">precompute_cache</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">PrecomputeCacheType</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">PrecomputeCacheType</span><span class="o">.</span><span class="n">TENSOR</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BasePosterior</span><span class="p">:</span>
+    <span class="n">posterior_class</span> <span class="o">=</span> <span class="n">get_posterior_class</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">inducing_variable</span><span class="p">)</span>
+    <span class="n">precompute_cache</span> <span class="o">=</span> <span class="n">_validate_precompute_cache_type</span><span class="p">(</span><span class="n">precompute_cache</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">posterior_class</span><span class="p">(</span>  <span class="c1"># type: ignore[no-any-return]</span>
+        <span class="n">kernel</span><span class="p">,</span>
+        <span class="n">inducing_variable</span><span class="p">,</span>
+        <span class="n">q_mu</span><span class="p">,</span>
+        <span class="n">q_sqrt</span><span class="p">,</span>
+        <span class="n">whiten</span><span class="p">,</span>
+        <span class="n">mean_function</span><span class="p">,</span>
+        <span class="n">precompute_cache</span><span class="o">=</span><span class="n">precompute_cache</span><span class="p">,</span>
+    <span class="p">)</span></div>
+</pre></div>
+
+            </article>
+            
+            
+            
+          </div>
+          
+          
+          
+            <div class="bd-sidebar-secondary bd-toc">
+              
+<div class="toc-item">
+  
+<div id="searchbox"></div>
+</div>
+
+<div class="toc-item">
+  
+</div>
+
+<div class="toc-item">
+  
+</div>
+
+            </div>
+          
+          
+        </div>
+        <footer class="bd-footer-content">
+          <div class="bd-footer-content__inner">
+            
+          </div>
+        </footer>
+        
+      </main>
+    </div>
+  </div>
+
+  
+    
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1e1de1a1873e13ef5536"></script>
+
+  <footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    
+<p class="copyright">
+
+    &copy; Copyright 2022, The GPflow Contributors.<br>
+
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+<p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.2.3.<br>
+</p>
+
+  </div>
+  
+</div>
+  </footer>
+  </body>
+</html>
