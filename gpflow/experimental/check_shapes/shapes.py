@@ -20,7 +20,6 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Sequence, Tuple, Type
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
-from packaging.version import Version
 
 from .base_types import Shape
 from .error_contexts import ErrorContext, IndexContext, ObjectTypeContext, StackContext
@@ -119,15 +118,16 @@ def get_tensorflow_shape(shaped: Any, context: ErrorContext) -> Shape:
     return tuple(shape)
 
 
-if Version(tfp.__version__) < Version("0.14.0"):
-    register_get_shape(tfp.python.layers.internal.distribution_tensor_coercible._TensorCoercible)(
-        get_tensorflow_shape
-    )
-else:
-
-    @register_get_shape(tfp.python.layers.internal.distribution_tensor_coercible._TensorCoercible)
-    def get_tensor_coercible_shape(shaped: Any, context: ErrorContext) -> Shape:
-        shape = shaped.shape()
+@register_get_shape(tfp.python.layers.internal.distribution_tensor_coercible._TensorCoercible)
+def get_tensor_coercible_shape(shaped: Any, context: ErrorContext) -> Shape:
+    # This one is unpleasant. Sometimes the `shape` is a `TensorShape`, but sometimes it's a
+    # function that returns a `TensorShape`. The version of TensorFlow probability seems to have
+    # something to do with it, but it also seems to be more complicated...
+    shape = shaped.shape
+    if not shape:
+        return None
+    if not isinstance(shape, tf.TensorShape):
+        shape = shape()
         if not shape:
             return None
-        return tuple(shape)
+    return tuple(shape)
