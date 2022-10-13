@@ -33,7 +33,7 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
-# Release 2.6.3 (next upcoming release in progress)
+# Release 2.6.4 (next upcoming release in progress)
 
 <INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
 
@@ -64,6 +64,21 @@ This release contains contributions from:
 This release contains contributions from:
 
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
+
+
+# Release 2.6.3 (next upcoming release in progress)
+
+This is yet another bug-fix release.
+
+## Bug Fixes and Other Changes
+
+* Fix to `check_shapes` handling of `tfp..._TensorCoercible`.
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+jesnie
 
 
 # Release 2.6.2
