@@ -16,9 +16,9 @@ from typing import Optional
 
 import tensorflow as tf
 import tensorflow_probability as tfp
+from check_shapes import check_shapes
 
 from .. import config
-from ..experimental.check_shapes import check_shapes
 from .misc import to_default_float
 
 __all__ = ["positive", "triangular", "triangular_size"]

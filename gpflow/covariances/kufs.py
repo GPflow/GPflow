@@ -14,9 +14,9 @@
 
 import numpy as np  # pylint: disable=unused-import  # Used by Sphinx to generate documentation.
 import tensorflow as tf
+from check_shapes import check_shapes
 
 from ..base import TensorLike, TensorType
-from ..experimental.check_shapes import check_shapes
 from ..inducing_variables import InducingPatches, InducingPoints, Multiscale
 from ..kernels import Convolutional, Kernel, SquaredExponential
 from .dispatch import Kuf

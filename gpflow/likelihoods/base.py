@@ -15,9 +15,9 @@ import abc
 from typing import Any, Callable, Iterable, Optional, Sequence, Union
 
 import tensorflow as tf
+from check_shapes import check_shapes, inherit_check_shapes
 
 from ..base import MeanAndVariance, Module, TensorType
-from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..quadrature import GaussianQuadrature, NDiagGHQuadrature, ndiag_mc
 
 DEFAULT_NUM_GAUSS_HERMITE_POINTS = 20

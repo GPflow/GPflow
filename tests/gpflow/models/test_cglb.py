@@ -16,10 +16,10 @@ from typing import Tuple, cast
 
 import numpy as np
 import tensorflow as tf
+from check_shapes import check_shapes
 
 from gpflow.base import AnyNDArray, RegressionData
 from gpflow.config import default_float
-from gpflow.experimental.check_shapes import check_shapes
 from gpflow.kernels import SquaredExponential
 from gpflow.models import CGLB, GPR, SGPR
 from gpflow.models.cglb import NystromPreconditioner, cglb_conjugate_gradient

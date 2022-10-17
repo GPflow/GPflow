@@ -16,10 +16,10 @@ from typing import Callable, Iterable, List, Optional, Union
 
 import tensorflow as tf
 import tensorflow_probability as tfp
+from check_shapes import check_shapes
 
 from ..base import TensorData
 from ..config import default_float, default_int
-from ..experimental.check_shapes import check_shapes
 
 __all__ = [
     "is_variable",

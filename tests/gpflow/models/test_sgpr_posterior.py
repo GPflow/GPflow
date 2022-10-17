@@ -18,10 +18,10 @@ from typing import Tuple
 import numpy as np
 import pytest
 import tensorflow as tf
+from check_shapes import check_shapes
 
 import gpflow
 from gpflow.base import InputData, OutputData
-from gpflow.experimental.check_shapes import check_shapes
 from gpflow.inducing_variables import InducingPoints
 from gpflow.models.sgpr import SGPR, SGPR_deprecated
 from gpflow.posteriors import PrecomputeCacheType

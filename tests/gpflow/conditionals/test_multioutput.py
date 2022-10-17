@@ -5,6 +5,7 @@ import pytest
 import scipy
 import tensorflow as tf
 from _pytest.fixtures import SubRequest
+from check_shapes import ShapeChecker, check_shapes
 
 import gpflow
 import gpflow.inducing_variables.multioutput as mf
@@ -19,7 +20,6 @@ from gpflow.conditionals.util import (
     sample_mvn,
 )
 from gpflow.config import default_float, default_jitter
-from gpflow.experimental.check_shapes import ShapeChecker, check_shapes
 from gpflow.inducing_variables import InducingPoints
 from gpflow.kernels import SquaredExponential
 from gpflow.likelihoods import Gaussian

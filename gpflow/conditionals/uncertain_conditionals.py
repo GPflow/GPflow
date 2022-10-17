@@ -15,12 +15,12 @@
 from typing import Optional
 
 import tensorflow as tf
+from check_shapes import check_shapes
 
 from .. import covariances, mean_functions
 from ..base import MeanAndVariance
 from ..config import default_float, default_jitter
 from ..expectations import expectation
-from ..experimental.check_shapes import check_shapes
 from ..inducing_variables import InducingPoints, InducingVariables
 from ..kernels import Kernel
 from ..probability_distributions import Gaussian

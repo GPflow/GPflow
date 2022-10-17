@@ -15,10 +15,10 @@
 from typing import Optional, Sequence
 
 import tensorflow as tf
+from check_shapes import check_shape as cs
+from check_shapes import check_shapes, inherit_check_shapes
 
 from ..base import Parameter, TensorType
-from ..experimental.check_shapes import check_shape as cs
-from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..utilities import positive
 from .base import Combination, Kernel
 

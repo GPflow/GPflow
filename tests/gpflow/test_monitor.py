@@ -5,12 +5,12 @@ import numpy as np
 import pytest
 import tensorflow as tf
 from _pytest.capture import CaptureFixture
+from check_shapes import check_shape as cs
+from check_shapes import check_shapes
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 import gpflow
-from gpflow.experimental.check_shapes import check_shape as cs
-from gpflow.experimental.check_shapes import check_shapes
 from gpflow.models import GPR, GPModel
 from gpflow.monitor import (
     ExecuteCallback,

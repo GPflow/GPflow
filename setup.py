@@ -8,8 +8,8 @@ from setuptools import find_packages, setup
 ##### Dependencies of GPflow
 
 requirements = [
+    "check_shapes>=1.0.0",
     "deprecated",
-    "lark>=1.1.0",
     "multipledispatch>=0.6",
     "numpy",
     "packaging",

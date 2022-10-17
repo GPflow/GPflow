@@ -16,12 +16,12 @@ from typing import Optional
 
 import numpy as np
 import tensorflow as tf
+from check_shapes import check_shapes, inherit_check_shapes
 
 from .. import kullback_leiblers, posteriors
 from ..base import AnyNDArray, InputData, MeanAndVariance, Parameter, RegressionData
 from ..conditionals import conditional
 from ..config import default_float
-from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..inducing_variables import InducingVariables
 from ..kernels import Kernel
 from ..likelihoods import Likelihood

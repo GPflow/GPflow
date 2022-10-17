@@ -14,8 +14,7 @@
 
 import numpy as np
 import tensorflow as tf
-
-from ..experimental.check_shapes import check_shapes
+from check_shapes import check_shapes
 
 
 @check_shapes(

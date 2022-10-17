@@ -19,12 +19,12 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 import tensorflow as tf
+from check_shapes import ShapeChecker, check_shapes
 from numpy.testing import assert_allclose, assert_almost_equal
 
 import gpflow
 from gpflow import Parameter, default_float, default_jitter
 from gpflow.base import AnyNDArray, TensorType
-from gpflow.experimental.check_shapes import ShapeChecker, check_shapes
 from gpflow.inducing_variables import InducingPoints
 from gpflow.kernels import Kernel
 from gpflow.kullback_leiblers import gauss_kl, prior_kl

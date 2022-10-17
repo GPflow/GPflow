@@ -12,16 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from dataclasses import dataclass
 from typing import Callable, Optional, Tuple
 
 import numpy as np
 import pytest
 import tensorflow as tf
+from check_shapes import get_shape
+from check_shapes.error_contexts import ErrorContext, MessageBuilder
 
 import gpflow
 import gpflow.inducing_variables as giv
-from gpflow.experimental.check_shapes import get_shape
-from tests.gpflow.experimental.check_shapes.utils import TestContext
+
+
+@dataclass(frozen=True)
+class TestContext(ErrorContext):
+
+    message: str = "Fake test error context."
+
+    def print(self, builder: MessageBuilder) -> None:
+        builder.add_line(self.message)
 
 
 def test_inducing_points_with_variable_shape() -> None:

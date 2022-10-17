@@ -19,10 +19,10 @@ from typing import Callable, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 import tensorflow as tf
+from check_shapes import check_shapes
 
 from ..base import AnyNDArray, TensorType
 from ..config import default_float
-from ..experimental.check_shapes import check_shapes
 from ..utilities import to_default_float
 from .gauss_hermite import NDiagGHQuadrature
 
