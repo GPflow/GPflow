@@ -15,9 +15,11 @@ import abc
 from typing import Any, Callable, Iterable, Optional, Sequence, Union
 
 import tensorflow as tf
+import tensorflow_probability as tfp
 from check_shapes import check_shapes, inherit_check_shapes
+from tensorflow_probability.python.internal.samplers import sanitize_seed
 
-from ..base import MeanAndVariance, Module, TensorType
+from ..base import MeanAndVariance, Module, Seed, TensorType
 from ..quadrature import GaussianQuadrature, NDiagGHQuadrature, ndiag_mc
 
 DEFAULT_NUM_GAUSS_HERMITE_POINTS = 20
@@ -26,6 +28,9 @@ The number of Gauss-Hermite points to use for quadrature (fallback when a
 likelihood method does not have an analytic method) if quadrature object is not
 explicitly passed to likelihood constructor.
 """
+
+
+_SEED_NOT_NEEDED = object()
 
 
 class Likelihood(Module, abc.ABC):
@@ -139,7 +144,7 @@ class Likelihood(Module, abc.ABC):
         "return[1]: [batch..., observation_dim]",
     )
     def predict_mean_and_var(
-        self, X: TensorType, Fmu: TensorType, Fvar: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, seed: Seed = None
     ) -> MeanAndVariance:
         """
         Given a Normal distribution for the latent function,
@@ -163,9 +168,11 @@ class Likelihood(Module, abc.ABC):
         :param X: input tensor
         :param Fmu: mean function evaluation tensor
         :param Fvar: variance of function evaluation tensor
+        :param seed: Random seed. Interpreted as by
+            `tfp.random.sanitize_seed <https://www.tensorflow.org/probability/api_docs/python/tfp/random/sanitize_seed>`_\.
         :returns: mean and variance
         """
-        return self._predict_mean_and_var(X, Fmu, Fvar)
+        return self._predict_mean_and_var(X, Fmu, Fvar, seed)
 
     @abc.abstractmethod
     @check_shapes(
@@ -176,7 +183,7 @@ class Likelihood(Module, abc.ABC):
         "return[1]: [batch..., observation_dim]",
     )
     def _predict_mean_and_var(
-        self, X: TensorType, Fmu: TensorType, Fvar: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, seed: Seed
     ) -> MeanAndVariance:
         raise NotImplementedError
 
@@ -188,7 +195,7 @@ class Likelihood(Module, abc.ABC):
         "return: [batch...]",
     )
     def predict_log_density(
-        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType, seed: Seed = None
     ) -> tf.Tensor:
         r"""
         Given a Normal distribution for the latent function, and a datum Y,
@@ -209,9 +216,11 @@ class Likelihood(Module, abc.ABC):
         :param Fmu: mean function evaluation tensor
         :param Fvar: variance of function evaluation tensor
         :param Y: observation tensor
+        :param seed: Random seed. Interpreted as by
+            `tfp.random.sanitize_seed <https://www.tensorflow.org/probability/api_docs/python/tfp/random/sanitize_seed>`_\.
         :returns: log predictive density
         """
-        return self._predict_log_density(X, Fmu, Fvar, Y)
+        return self._predict_log_density(X, Fmu, Fvar, Y, seed)
 
     @abc.abstractmethod
     @check_shapes(
@@ -222,7 +231,7 @@ class Likelihood(Module, abc.ABC):
         "return: [batch...]",
     )
     def _predict_log_density(
-        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType, seed: Seed
     ) -> tf.Tensor:
         raise NotImplementedError
 
@@ -234,7 +243,7 @@ class Likelihood(Module, abc.ABC):
         "return: [batch...]",
     )
     def variational_expectations(
-        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType, seed: Seed = None
     ) -> tf.Tensor:
         r"""
         Compute the expected log density of the data, given a Gaussian
@@ -258,9 +267,11 @@ class Likelihood(Module, abc.ABC):
         :param Fmu: mean function evaluation tensor
         :param Fvar: variance of function evaluation tensor
         :param Y: observation tensor
+        :param seed: Random seed. Interpreted as by
+            `tfp.random.sanitize_seed <https://www.tensorflow.org/probability/api_docs/python/tfp/random/sanitize_seed>`_\.
         :returns: expected log density of the data given q(F)
         """
-        return self._variational_expectations(X, Fmu, Fvar, Y)
+        return self._variational_expectations(X, Fmu, Fvar, Y, seed)
 
     @abc.abstractmethod
     @check_shapes(
@@ -271,7 +282,7 @@ class Likelihood(Module, abc.ABC):
         "return: [batch...]",
     )
     def _variational_expectations(
-        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType, seed: Seed
     ) -> tf.Tensor:
         raise NotImplementedError
 
@@ -343,7 +354,7 @@ class QuadratureLikelihood(Likelihood, abc.ABC):
 
     @inherit_check_shapes
     def _predict_log_density(
-        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType, seed: Seed
     ) -> tf.Tensor:
         r"""
         Here, we implement a default Gauss-Hermite quadrature routine, but some
@@ -352,6 +363,8 @@ class QuadratureLikelihood(Likelihood, abc.ABC):
         :param Fmu: mean function evaluation tensor
         :param Fvar: variance of function evaluation tensor
         :param Y: observation tensor
+        :param seed: Random seed. Interpreted as by
+            `tfp.random.sanitize_seed <https://www.tensorflow.org/probability/api_docs/python/tfp/random/sanitize_seed>`_\.
         :returns: log predictive density
         """
         return self._quadrature_reduction(
@@ -360,7 +373,7 @@ class QuadratureLikelihood(Likelihood, abc.ABC):
 
     @inherit_check_shapes
     def _variational_expectations(
-        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType, seed: Seed
     ) -> tf.Tensor:
         r"""
         Here, we implement a default Gauss-Hermite quadrature routine, but some
@@ -369,6 +382,8 @@ class QuadratureLikelihood(Likelihood, abc.ABC):
         :param Fmu: mean function evaluation tensor
         :param Fvar: variance of function evaluation tensor
         :param Y: observation tensor
+        :param seed: Random seed. Interpreted as by
+            `tfp.random.sanitize_seed <https://www.tensorflow.org/probability/api_docs/python/tfp/random/sanitize_seed>`_\.
         :returns: variational expectations
         """
         return self._quadrature_reduction(
@@ -377,7 +392,7 @@ class QuadratureLikelihood(Likelihood, abc.ABC):
 
     @inherit_check_shapes
     def _predict_mean_and_var(
-        self, X: TensorType, Fmu: TensorType, Fvar: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, seed: Seed
     ) -> MeanAndVariance:
         r"""
         Here, we implement a default Gauss-Hermite quadrature routine, but some
@@ -386,6 +401,8 @@ class QuadratureLikelihood(Likelihood, abc.ABC):
         :param X: input tensor
         :param Fmu: mean function evaluation tensor
         :param Fvar: variance of function evaluation tensor
+        :param seed: Random seed. Interpreted as by
+            `tfp.random.sanitize_seed <https://www.tensorflow.org/probability/api_docs/python/tfp/random/sanitize_seed>`_\.
         :returns: mean and variance of Y
         """
 
@@ -496,7 +513,9 @@ class SwitchedLikelihood(ScalarLikelihood):
         "args[all]: [batch..., .]",
         "return: [batch..., ...]",
     )
-    def _partition_and_stitch(self, args: Sequence[TensorType], func_name: str) -> tf.Tensor:
+    def _partition_and_stitch(
+        self, args: Sequence[TensorType], seed: Seed, func_name: str
+    ) -> tf.Tensor:
         """
         args is a list of tensors, to be passed to self.likelihoods.<func_name>
 
@@ -514,11 +533,18 @@ class SwitchedLikelihood(ScalarLikelihood):
         args_list[-1] = Y
 
         # split up the arguments into chunks corresponding to the relevant likelihoods
-        args_chunks = zip(*[tf.dynamic_partition(X, ind, len(self.likelihoods)) for X in args_list])
+        args_chunks: Iterable[Any] = zip(
+            *[tf.dynamic_partition(X, ind, len(self.likelihoods)) for X in args_list]
+        )
 
         # apply the likelihood-function to each section of the data
         funcs = [getattr(lik, func_name) for lik in self.likelihoods]
-        results = [f(*args_i) for f, args_i in zip(funcs, args_chunks)]
+        if seed is _SEED_NOT_NEEDED:
+            results = [f(*args_i) for f, args_i in zip(funcs, args_chunks)]
+        else:
+            seed = sanitize_seed(seed)
+            seeds = tfp.random.split_seed(seed, n=len(self.likelihoods))
+            results = [f(*args_i, seed=seed) for f, args_i, s in zip(funcs, args_chunks, seeds)]
 
         # stitch the results back together
         partitions = tf.dynamic_partition(tf.range(0, tf.size(ind)), ind, len(self.likelihoods))
@@ -528,25 +554,31 @@ class SwitchedLikelihood(ScalarLikelihood):
 
     @inherit_check_shapes
     def _scalar_log_prob(self, X: TensorType, F: TensorType, Y: TensorType) -> tf.Tensor:
-        return self._partition_and_stitch([X, F, Y], "_scalar_log_prob")
+        return self._partition_and_stitch([X, F, Y], _SEED_NOT_NEEDED, "_scalar_log_prob")
 
     @inherit_check_shapes
     def _predict_log_density(
-        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType, seed: Seed
     ) -> tf.Tensor:
-        return self._partition_and_stitch([X, Fmu, Fvar, Y], "predict_log_density")
+        return self._partition_and_stitch([X, Fmu, Fvar, Y], seed, "predict_log_density")
 
     @inherit_check_shapes
     def _variational_expectations(
-        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType, seed: Seed
     ) -> tf.Tensor:
-        return self._partition_and_stitch([X, Fmu, Fvar, Y], "variational_expectations")
+        return self._partition_and_stitch(
+            [X, Fmu, Fvar, Y],
+            seed,
+            "variational_expectations",
+        )
 
     @inherit_check_shapes
     def _predict_mean_and_var(
-        self, X: TensorType, Fmu: TensorType, Fvar: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, seed: Seed
     ) -> MeanAndVariance:
-        mvs = [lik.predict_mean_and_var(X, Fmu, Fvar) for lik in self.likelihoods]
+        seed = sanitize_seed(seed)
+        seeds = tfp.random.split_seed(seed, n=len(self.likelihoods))
+        mvs = [lik.predict_mean_and_var(X, Fmu, Fvar, s) for lik, s in zip(self.likelihoods, seeds)]
         mu_list, var_list = zip(*mvs)
         mu = tf.concat(mu_list, axis=1)
         var = tf.concat(var_list, axis=1)
@@ -579,13 +611,21 @@ class MonteCarloLikelihood(Likelihood):
         Fvar: TensorType,
         logspace: bool = False,
         epsilon: Optional[TensorType] = None,
+        seed: Seed = None,
         **Ys: TensorType,
     ) -> tf.Tensor:
-        return ndiag_mc(funcs, self.num_monte_carlo_points, Fmu, Fvar, logspace, epsilon, **Ys)
+        return ndiag_mc(
+            funcs, self.num_monte_carlo_points, Fmu, Fvar, logspace, epsilon, seed, **Ys
+        )
 
     @inherit_check_shapes
     def _predict_mean_and_var(
-        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, epsilon: Optional[TensorType] = None
+        self,
+        X: TensorType,
+        Fmu: TensorType,
+        Fvar: TensorType,
+        seed: Seed,
+        epsilon: Optional[TensorType] = None,
     ) -> MeanAndVariance:
         r"""
         Given a Normal distribution for the latent function,
@@ -621,6 +661,7 @@ class MonteCarloLikelihood(Likelihood):
             Fvar,
             epsilon=epsilon,
             X_=X,
+            seed=seed,
         )
         V_y = E_y2 - tf.square(E_y)
         return E_y, V_y  # [N, D]
@@ -632,6 +673,7 @@ class MonteCarloLikelihood(Likelihood):
         Fmu: TensorType,
         Fvar: TensorType,
         Y: TensorType,
+        seed: Seed,
         epsilon: Optional[TensorType] = None,
     ) -> tf.Tensor:
         r"""
@@ -656,7 +698,9 @@ class MonteCarloLikelihood(Likelihood):
             return self.log_prob(X_, F, Y_)
 
         return tf.reduce_sum(
-            self._mc_quadrature(log_prob, Fmu, Fvar, logspace=True, epsilon=epsilon, X_=X, Y_=Y),
+            self._mc_quadrature(
+                log_prob, Fmu, Fvar, logspace=True, epsilon=epsilon, seed=seed, X_=X, Y_=Y
+            ),
             axis=-1,
         )
 
@@ -667,6 +711,7 @@ class MonteCarloLikelihood(Likelihood):
         Fmu: TensorType,
         Fvar: TensorType,
         Y: TensorType,
+        seed: Seed,
         epsilon: Optional[TensorType] = None,
     ) -> tf.Tensor:
         r"""
@@ -692,5 +737,6 @@ class MonteCarloLikelihood(Likelihood):
             return self.log_prob(X_, F, Y_)
 
         return tf.reduce_sum(
-            self._mc_quadrature(log_prob, Fmu, Fvar, epsilon=epsilon, X_=X, Y_=Y), axis=-1
+            self._mc_quadrature(log_prob, Fmu, Fvar, epsilon=epsilon, seed=seed, X_=X, Y_=Y),
+            axis=-1,
         )

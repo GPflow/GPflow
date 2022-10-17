@@ -75,6 +75,13 @@ This section explains the more complex models and features that are available in
 .. toctree::
    :maxdepth: 1
 
+   notebooks/advanced/random_state
+
+How to manage GPflow's random state, and how to get deterministic randomness.
+
+.. toctree::
+   :maxdepth: 1
+
    notebooks/advanced/mcmc
 
 Using Hamiltonian Monte Carlo to sample the posterior GP and hyperparameters.

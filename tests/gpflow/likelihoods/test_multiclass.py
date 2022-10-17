@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import Callable
 
 import numpy as np
 import pytest
@@ -50,7 +51,9 @@ def test_softmax_y_shape_assert(num: int, dimX: int, dimF: int, dimY: int) -> No
 @pytest.mark.parametrize("dimX", [3])
 @pytest.mark.parametrize("num", [10, 3])
 @pytest.mark.parametrize("dimF, dimY", [[2, 1]])
-def test_softmax_bernoulli_equivalence(num: int, dimX: int, dimF: int, dimY: int) -> None:
+def test_softmax_bernoulli_equivalence(
+    num: int, dimX: int, dimF: int, dimY: int, mk_seed: Callable[[], tf.Tensor]
+) -> None:
     X = tf.random.normal((num, dimX))
     dF: AnyNDArray = np.vstack(
         (np.random.randn(num - 3, dimF), np.array([[-3.0, 0.0], [3, 0.0], [0.0, 0.0]]))
@@ -84,21 +87,23 @@ def test_softmax_bernoulli_equivalence(num: int, dimX: int, dimF: int, dimY: int
         bernoulli_likelihood.log_prob(X, F[:, :1], Y.numpy()),
     )
 
-    mean1, var1 = softmax_likelihood.predict_mean_and_var(X, F, Fvar)
-    mean2, var2 = bernoulli_likelihood.predict_mean_and_var(X, F[:, :1], Fvar[:, :1])
+    mean1, var1 = softmax_likelihood.predict_mean_and_var(X, F, Fvar, mk_seed())
+    mean2, var2 = bernoulli_likelihood.predict_mean_and_var(X, F[:, :1], Fvar[:, :1], mk_seed())
 
     assert_allclose(mean1[:, 0, None], mean2, rtol=2e-3)
     assert_allclose(var1[:, 0, None], var2, rtol=2e-3)
 
-    ls_ve = softmax_likelihood.variational_expectations(X, F, Fvar, Ylabel)
-    lb_ve = bernoulli_likelihood.variational_expectations(X, F[:, :1], Fvar[:, :1], Y.numpy())
+    ls_ve = softmax_likelihood.variational_expectations(X, F, Fvar, Ylabel, mk_seed())
+    lb_ve = bernoulli_likelihood.variational_expectations(
+        X, F[:, :1], Fvar[:, :1], Y.numpy(), mk_seed()
+    )
     assert_allclose(ls_ve, lb_ve, rtol=5e-3)
 
 
 @pytest.mark.parametrize("num_classes, num_points", [[10, 3]])
 @pytest.mark.parametrize("tol, epsilon", [[1e-4, 1e-3]])
 def test_robust_max_multiclass_symmetric(
-    num_classes: int, num_points: int, tol: float, epsilon: float
+    num_classes: int, num_points: int, tol: float, epsilon: float, mk_seed: Callable[[], tf.Tensor]
 ) -> None:
     """
     This test is based on the observation that for
@@ -113,9 +118,9 @@ def test_robust_max_multiclass_symmetric(
     likelihood = MultiClass(num_classes)
     likelihood.invlink.epsilon = tf.convert_to_tensor(epsilon, dtype=default_float())
 
-    mu, _ = likelihood.predict_mean_and_var(X, F, F)
-    pred = likelihood.predict_log_density(X, F, F, Y)
-    variational_expectations = likelihood.variational_expectations(X, F, F, Y)
+    mu, _ = likelihood.predict_mean_and_var(X, F, F, mk_seed())
+    pred = likelihood.predict_log_density(X, F, F, Y, mk_seed())
+    variational_expectations = likelihood.variational_expectations(X, F, F, Y, mk_seed())
 
     expected_mu: AnyNDArray = (
         p * (1.0 - epsilon) + (1.0 - p) * epsilon / (num_classes - 1)
@@ -153,6 +158,7 @@ def test_robust_max_multiclass_predict_log_density(
     expected_prediction: float,
     tol: float,
     epsilon: float,
+    seed: tf.Tensor,
 ) -> None:
     class MockRobustMax(RobustMax):
         @inherit_check_shapes
@@ -171,7 +177,7 @@ def test_robust_max_multiclass_predict_log_density(
     F = tf.ones((num_points, num_classes))
     rng = np.random.RandomState(1)
     Y = to_default_int(rng.randint(num_classes, size=(num_points, 1)))
-    prediction = likelihood.predict_log_density(X, F, F, Y)
+    prediction = likelihood.predict_log_density(X, F, F, Y, seed)
 
     assert_allclose(prediction, expected_prediction, tol, tol)
 

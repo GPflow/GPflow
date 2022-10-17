@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import Callable
 
 import numpy as np
 import tensorflow as tf
@@ -20,7 +21,7 @@ import gpflow
 from gpflow.config import default_float
 
 
-def test_sparse_mcmc_likelihoods_and_gradients() -> None:
+def test_sparse_mcmc_likelihoods_and_gradients(mk_seed: Callable[[], tf.Tensor]) -> None:
     """
     This test makes sure that when the inducing points are the same as the data
     points, the sparse mcmc is the same as full mcmc
@@ -47,5 +48,8 @@ def test_sparse_mcmc_likelihoods_and_gradients() -> None:
     model_2.kernel.variance.assign(4.2)
 
     assert_allclose(
-        model_1.log_posterior_density(), model_2.log_posterior_density(), rtol=1e-5, atol=1e-5
+        model_1.log_posterior_density(seed=mk_seed()),
+        model_2.log_posterior_density(seed=mk_seed()),
+        rtol=1e-5,
+        atol=1e-5,
     )

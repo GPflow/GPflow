@@ -41,6 +41,18 @@ else:
     else:
         AnyNDArray = Union[np.ndarray]  # type: ignore[misc]
 
+Seed = Union[None, int, tf.Tensor]
+"""
+Type of optional random seeds.
+
+Use a tensor of shape ``[2]`` to use that as a deterministic seed.
+Alternatively use an integer or ``None`` to use the TensorFlow global random seed.
+
+See also:
+* https://www.tensorflow.org/probability/api_docs/python/tfp/random/sanitize_seed
+* https://www.tensorflow.org/api_docs/python/tf/random/create_rng_state
+"""
+
 VariableData = Union[List[Any], Tuple[Any], AnyNDArray, int, float]  # deprecated
 Transform = Union[tfp.bijectors.Bijector]
 Prior = Union[tfp.distributions.Distribution]

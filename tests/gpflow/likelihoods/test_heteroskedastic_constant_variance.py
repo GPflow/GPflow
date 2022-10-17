@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple, Type
+from typing import Callable, Tuple, Type
 
 import numpy as np
 import pytest
@@ -97,22 +97,30 @@ def test_log_prob(equivalent_likelihoods: EquivalentLikelihoods) -> None:
     )
 
 
-def test_variational_expectations(equivalent_likelihoods: EquivalentLikelihoods) -> None:
+def test_variational_expectations(
+    equivalent_likelihoods: EquivalentLikelihoods, mk_seed: Callable[[], tf.Tensor]
+) -> None:
     homoskedastic_likelihood, heteroskedastic_likelihood = equivalent_likelihoods
     np.testing.assert_array_almost_equal(
-        homoskedastic_likelihood.variational_expectations(Data.X, Data.f_mean, Data.f_var, Data.Y),
+        homoskedastic_likelihood.variational_expectations(
+            Data.X, Data.f_mean, Data.f_var, Data.Y, mk_seed()
+        ),
         heteroskedastic_likelihood.variational_expectations(
-            Data.X, Data.F2_mean, Data.F2_var, Data.Y
+            Data.X, Data.F2_mean, Data.F2_var, Data.Y, mk_seed()
         ),
         decimal=2,  # student-t case has a max absolute difference of 0.0034
     )
 
 
-def test_predict_mean_and_var(equivalent_likelihoods: EquivalentLikelihoods) -> None:
+def test_predict_mean_and_var(
+    equivalent_likelihoods: EquivalentLikelihoods, mk_seed: Callable[[], tf.Tensor]
+) -> None:
     homoskedastic_likelihood, heteroskedastic_likelihood = equivalent_likelihoods
     np.testing.assert_allclose(
-        homoskedastic_likelihood.predict_mean_and_var(Data.X, Data.f_mean, Data.f_var),
-        heteroskedastic_likelihood.predict_mean_and_var(Data.X, Data.F2_mean, Data.F2_var),
+        homoskedastic_likelihood.predict_mean_and_var(Data.X, Data.f_mean, Data.f_var, mk_seed()),
+        heteroskedastic_likelihood.predict_mean_and_var(
+            Data.X, Data.F2_mean, Data.F2_var, mk_seed()
+        ),
     )
 
 
@@ -132,10 +140,16 @@ def test_conditional_variance(equivalent_likelihoods: EquivalentLikelihoods) -> 
     )
 
 
-def test_predict_log_density(equivalent_likelihoods: EquivalentLikelihoods) -> None:
+def test_predict_log_density(
+    equivalent_likelihoods: EquivalentLikelihoods, mk_seed: Callable[[], tf.Tensor]
+) -> None:
     homoskedastic_likelihood, heteroskedastic_likelihood = equivalent_likelihoods
     np.testing.assert_array_almost_equal(
-        homoskedastic_likelihood.predict_log_density(Data.X, Data.f_mean, Data.f_var, Data.Y),
-        heteroskedastic_likelihood.predict_log_density(Data.X, Data.F2_mean, Data.F2_var, Data.Y),
+        homoskedastic_likelihood.predict_log_density(
+            Data.X, Data.f_mean, Data.f_var, Data.Y, mk_seed()
+        ),
+        heteroskedastic_likelihood.predict_log_density(
+            Data.X, Data.F2_mean, Data.F2_var, Data.Y, mk_seed()
+        ),
         decimal=1,  # student-t has a max absolute difference of 0.025
     )

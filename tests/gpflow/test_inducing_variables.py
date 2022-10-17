@@ -34,7 +34,7 @@ class TestContext(ErrorContext):
         builder.add_line(self.message)
 
 
-def test_inducing_points_with_variable_shape() -> None:
+def test_inducing_points_with_variable_shape(seed: tf.Tensor) -> None:
     N, M1, D, P = 50, 13, 3, 1
     X, Y = np.random.randn(N, D), np.random.randn(N, P)
 
@@ -48,13 +48,14 @@ def test_inducing_points_with_variable_shape() -> None:
     # TensorFlow optimizers expect shape to be known at construction time.
 
     m = gpflow.models.SGPR(data=(X, Y), kernel=gpflow.kernels.Matern32(), inducing_variable=iv)
+    loss = m.training_loss_closure(seed=seed)
 
     # Check 1: that we can still optimize with None shape
     opt = tf.optimizers.Adam()
 
     @tf.function
     def optimization_step() -> None:
-        opt.minimize(m.training_loss, m.trainable_variables)
+        opt.minimize(loss, m.trainable_variables)
 
     optimization_step()
 

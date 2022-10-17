@@ -16,6 +16,7 @@ from typing import Tuple, cast
 
 import numpy as np
 import pytest
+import tensorflow as tf
 from check_shapes import check_shapes
 from numpy.testing import assert_allclose
 
@@ -190,7 +191,7 @@ def test_variational_univariate_prior_KL(diag: bool, whiten: bool) -> None:
 
 @pytest.mark.parametrize("diag", [True, False])
 @pytest.mark.parametrize("whiten", [True, False])
-def test_variational_univariate_log_likelihood(diag: bool, whiten: bool) -> None:
+def test_variational_univariate_log_likelihood(diag: bool, whiten: bool, seed: tf.Tensor) -> None:
     # reference marginal likelihood estimate
     reference_log_marginal_likelihood = univariate_log_marginal_likelihood(
         y=Datum.y_data, K=Datum.K, noise_var=Datum.noise_var
@@ -208,7 +209,7 @@ def test_variational_univariate_log_likelihood(diag: bool, whiten: bool) -> None
         q_mu=q_mu,
         q_sqrt=q_sqrt,
     )
-    model_likelihood = model.elbo(Datum.data).numpy()
+    model_likelihood = model.elbo(Datum.data, seed=seed).numpy()
     assert_allclose(model_likelihood, reference_log_marginal_likelihood, atol=4)
 
 

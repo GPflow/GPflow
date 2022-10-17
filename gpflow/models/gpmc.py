@@ -19,7 +19,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 from check_shapes import check_shapes, inherit_check_shapes
 
-from ..base import InputData, MeanAndVariance, Parameter, RegressionData
+from ..base import InputData, MeanAndVariance, Parameter, RegressionData, Seed
 from ..conditionals import conditional
 from ..config import default_float, default_jitter
 from ..kernels import Kernel
@@ -72,17 +72,17 @@ class GPMC(GPModel, InternalDataTrainingLossMixin):
 
     # type-ignore is because of changed method signature:
     @inherit_check_shapes
-    def log_posterior_density(self) -> tf.Tensor:  # type: ignore[override]
+    def log_posterior_density(self, seed: Seed = None) -> tf.Tensor:  # type: ignore[override]
         return self.log_likelihood() + self.log_prior_density()
 
     # type-ignore is because of changed method signature:
     @inherit_check_shapes
-    def _training_loss(self) -> tf.Tensor:  # type: ignore[override]
-        return -self.log_posterior_density()
+    def _training_loss(self, seed: Seed = None) -> tf.Tensor:  # type: ignore[override]
+        return -self.log_posterior_density(seed)
 
     # type-ignore is because of changed method signature:
     @inherit_check_shapes
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore[override]
+    def maximum_log_likelihood_objective(self, seed: Seed = None) -> tf.Tensor:  # type: ignore[override]
         return self.log_likelihood()
 
     @check_shapes(

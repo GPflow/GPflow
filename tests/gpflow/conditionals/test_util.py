@@ -113,7 +113,12 @@ def test_rollaxis_idempotent(rolls: int) -> None:
 @pytest.mark.parametrize("num_samples", [None, 1, 5])
 @pytest.mark.parametrize("full_cov", [True, False])
 def test_sample_mvn_shapes(
-    leading_dims: Tuple[int, ...], n: int, d: int, num_samples: Optional[int], full_cov: bool
+    leading_dims: Tuple[int, ...],
+    n: int,
+    d: int,
+    num_samples: Optional[int],
+    full_cov: bool,
+    seed: tf.Tensor,
 ) -> None:
     mean_shape = leading_dims + (n, d)
     means = tf.zeros(mean_shape, dtype=default_float())
@@ -126,7 +131,7 @@ def test_sample_mvn_shapes(
         covariance_shape = leading_dims + (n, d)
         covariances = tf.random.normal(covariance_shape, dtype=default_float())
 
-    samples = sample_mvn(means, covariances, full_cov, num_samples)
+    samples = sample_mvn(means, covariances, full_cov, num_samples, seed=seed)
 
     if num_samples:
         expected_shape = leading_dims + (num_samples, n, d)

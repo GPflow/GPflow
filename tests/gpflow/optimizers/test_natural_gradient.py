@@ -95,14 +95,15 @@ def assert_different(value1: tf.Tensor, value2: tf.Tensor, rtol: float = 0.07) -
 def assert_gpr_vs_vgp(
     m1: BayesianModel,
     m2: BayesianModel,
+    seed: tf.Tensor,
     gamma: float = 1.0,
     maxiter: int = 1,
     xi_transform: Optional[gpflow.optimizers.natgrad.XiTransform] = None,
 ) -> None:
     assert maxiter >= 1
 
-    m1_ll_before = m1.training_loss()
-    m2_ll_before = m2.training_loss()
+    m1_ll_before = m1.training_loss(seed=seed)
+    m2_ll_before = m2.training_loss(seed=seed)
 
     assert_different(m2_ll_before, m1_ll_before)
 
@@ -114,13 +115,13 @@ def assert_gpr_vs_vgp(
 
     @tf.function
     def minimize_step() -> None:
-        opt.minimize(m2.training_loss, var_list=[params])  # type: ignore[list-item]
+        opt.minimize(m2.training_loss_closure(seed=seed), var_list=[params])  # type: ignore[list-item]
 
     for _ in range(maxiter):
         minimize_step()
 
-    m1_ll_after = m1.training_loss()
-    m2_ll_after = m2.training_loss()
+    m1_ll_after = m1.training_loss(seed=seed)
+    m2_ll_after = m2.training_loss(seed=seed)
 
     np.testing.assert_allclose(m1_ll_after, m2_ll_after, atol=1e-4)
 
@@ -128,35 +129,36 @@ def assert_gpr_vs_vgp(
 def assert_sgpr_vs_svgp(
     m1: BayesianModel,
     m2: BayesianModel,
+    seed: tf.Tensor,
 ) -> None:
     data = m1.data
 
-    m1_ll_before = m1.training_loss()
-    m2_ll_before = m2.training_loss(data)
+    m1_ll_before = m1.training_loss(seed=seed)
+    m2_ll_before = m2.training_loss(data, seed=seed)
 
     assert_different(m2_ll_before, m1_ll_before)
 
     params = [(m2.q_mu, m2.q_sqrt)]
     opt = NaturalGradient(1.0)
-    opt.minimize(m2.training_loss_closure(data), var_list=params)
+    opt.minimize(m2.training_loss_closure(data, seed=seed), var_list=params)
 
-    m1_ll_after = m1.training_loss()
-    m2_ll_after = m2.training_loss(data)
+    m1_ll_after = m1.training_loss(seed=seed)
+    m2_ll_after = m2.training_loss(data, seed=seed)
 
     np.testing.assert_allclose(m1_ll_after, m2_ll_after, atol=1e-4)
 
 
-def test_vgp_vs_gpr(gpr_and_vgp: Tuple[GPR, VGP]) -> None:
+def test_vgp_vs_gpr(gpr_and_vgp: Tuple[GPR, VGP], seed: tf.Tensor) -> None:
     """
     With a Gaussian likelihood the Gaussian variational (VGP) model should be equivalent to the
     exact regression model (GPR) after a single nat grad step of size 1
     """
     gpr, vgp = gpr_and_vgp
-    assert_gpr_vs_vgp(gpr, vgp)
+    assert_gpr_vs_vgp(gpr, vgp, seed=seed)
 
 
 def test_small_q_sqrt_handeled_correctly(
-    gpr_and_vgp: Tuple[GPR, VGP], data: Tuple[tf.Tensor, tf.Tensor]
+    gpr_and_vgp: Tuple[GPR, VGP], data: Tuple[tf.Tensor, tf.Tensor], seed: tf.Tensor
 ) -> None:
     """
     This is an extra test to make sure things still work when q_sqrt is small.
@@ -165,17 +167,17 @@ def test_small_q_sqrt_handeled_correctly(
     gpr, vgp = gpr_and_vgp
     vgp.q_mu.assign(np.random.randn(data[0].shape[0], 1))
     vgp.q_sqrt.assign(np.eye(data[0].shape[0])[None, :, :] * 1e-3)
-    assert_gpr_vs_vgp(gpr, vgp)
+    assert_gpr_vs_vgp(gpr, vgp, seed=seed)
 
 
-def test_svgp_vs_sgpr(sgpr_and_svgp: Tuple[SGPR, SVGP]) -> None:
+def test_svgp_vs_sgpr(sgpr_and_svgp: Tuple[SGPR, SVGP], seed: tf.Tensor) -> None:
     """
     With a Gaussian likelihood the sparse Gaussian variational (SVGP) model
     should be equivalent to the analytically optimial sparse regression model (SGPR)
     after a single nat grad step of size 1.0
     """
     sgpr, svgp = sgpr_and_svgp
-    assert_sgpr_vs_svgp(sgpr, svgp)
+    assert_sgpr_vs_svgp(sgpr, svgp, seed=seed)
 
 
 class XiEta(gpflow.optimizers.XiTransform):
@@ -212,11 +214,11 @@ class XiEta(gpflow.optimizers.XiTransform):
 
 @pytest.mark.parametrize("xi_transform", [gpflow.optimizers.XiSqrtMeanVar(), XiEta()])
 def test_xi_transform_vgp_vs_gpr(
-    gpr_and_vgp: Tuple[GPR, VGP], xi_transform: gpflow.optimizers.XiTransform
+    gpr_and_vgp: Tuple[GPR, VGP], xi_transform: gpflow.optimizers.XiTransform, seed: tf.Tensor
 ) -> None:
     """
     With other transforms the solution is not given in a single step, but it should still give the same answer
     after a number of smaller steps.
     """
     gpr, vgp = gpr_and_vgp
-    assert_gpr_vs_vgp(gpr, vgp, gamma=0.01, xi_transform=xi_transform, maxiter=500)
+    assert_gpr_vs_vgp(gpr, vgp, seed=seed, gamma=0.01, xi_transform=xi_transform, maxiter=500)

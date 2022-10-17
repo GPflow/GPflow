@@ -29,7 +29,7 @@ class Datum:
     Z: AnyNDArray = rng.randn(20, 2)
 
 
-def test_sgpr_qu() -> None:
+def test_sgpr_qu(seed: tf.Tensor) -> None:
     rng = np.random.RandomState(1)
     X = to_default_float(Datum.X)
     Z = to_default_float(Datum.Z)
@@ -38,7 +38,9 @@ def test_sgpr_qu() -> None:
         (X, Y), kernel=gpflow.kernels.SquaredExponential(), inducing_variable=Z
     )
 
-    gpflow.optimizers.Scipy().minimize(model.training_loss, variables=model.trainable_variables)
+    gpflow.optimizers.Scipy().minimize(
+        model.training_loss_closure(seed=seed), variables=model.trainable_variables
+    )
 
     qu_mean, qu_cov = model.compute_qu()
     f_at_Z_mean, f_at_Z_cov = model.predict_f(model.inducing_variable.Z, full_cov=True)

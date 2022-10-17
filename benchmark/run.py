@@ -32,6 +32,7 @@ from typing import Mapping, Optional
 
 import numpy as np
 import pandas as pd
+import tensorflow_probability as tfp
 from tabulate import tabulate
 
 import benchmark.benchmarks  # pylint: disable=unused-import  # Make sure registry is loaded.
@@ -63,19 +64,22 @@ def _collect_metrics(
     test_data = dataset.test
 
     rng = np.random.default_rng(random_seed)
+    mk_tf_seed = tfp.util.SeedStream(seed=rng.integers(1_000_000, size=2), salt="_collect_metrics")
     model_fac = MODEL_FACTORIES.get(task.model_name)
     model = model_fac.create_model(train_data, rng)
 
     metrics = {}
 
-    model.predict_y(test_data.X)  # Warm-up TF.
+    model.predict_y(test_data.X, seed=mk_tf_seed())  # Warm-up TF.
 
     print("Model before training:")
     gpflow.utilities.print_summary(model)
 
     if task.do_optimise:
         t_before = perf_counter()
-        loss_fn = gpflow.models.training_loss_closure(model, train_data.XY, compile=task.do_compile)
+        loss_fn = gpflow.models.training_loss_closure(
+            model, train_data.XY, seed=mk_tf_seed(), compile=task.do_compile
+        )
         opt_log = gpflow.optimizers.Scipy().minimize(
             loss_fn,
             variables=model.trainable_variables,
@@ -101,10 +105,10 @@ def _collect_metrics(
         metrics[mt.prediction_time] = t_after - t_before
 
         metrics[mt.nlpd] = -np.sum(
-            likelihood.predict_log_density(test_data.X, f_m, f_v, test_data.Y)
+            likelihood.predict_log_density(test_data.X, f_m, f_v, test_data.Y, seed=mk_tf_seed())
         )
 
-        y_m, _y_v = likelihood.predict_mean_and_var(test_data.X, f_m, f_v)
+        y_m, _y_v = likelihood.predict_mean_and_var(test_data.X, f_m, f_v, seed=mk_tf_seed())
         error = test_data.Y - y_m
         metrics[mt.mae] = np.average(np.abs(error))
         metrics[mt.rmse] = np.average(error ** 2) ** 0.5
@@ -122,10 +126,10 @@ def _collect_metrics(
         metrics[mt.posterior_prediction_time] = t_after - t_before
 
         metrics[mt.posterior_nlpd] = -np.sum(
-            likelihood.predict_log_density(test_data.X, f_m, f_v, test_data.Y)
+            likelihood.predict_log_density(test_data.X, f_m, f_v, test_data.Y, seed=mk_tf_seed())
         )
 
-        y_m, _y_v = likelihood.predict_mean_and_var(test_data.X, f_m, f_v)
+        y_m, _y_v = likelihood.predict_mean_and_var(test_data.X, f_m, f_v, seed=mk_tf_seed())
         error = test_data.Y - y_m
         metrics[mt.posterior_mae] = np.average(np.abs(error))
         metrics[mt.posterior_rmse] = np.average(error ** 2) ** 0.5

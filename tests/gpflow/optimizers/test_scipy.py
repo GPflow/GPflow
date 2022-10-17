@@ -45,7 +45,7 @@ def _create_full_gp_model() -> GPModel:
     )
 
 
-def test_scipy_jit() -> None:
+def test_scipy_jit(seed: tf.Tensor) -> None:
     m1 = _create_full_gp_model()
     m2 = _create_full_gp_model()
 
@@ -53,13 +53,13 @@ def test_scipy_jit() -> None:
     opt2 = gpflow.optimizers.Scipy()
 
     opt1.minimize(
-        m1.training_loss,
+        m1.training_loss_closure(seed=seed),
         variables=m1.trainable_variables,
         options=dict(maxiter=50),
         compile=False,
     )
     opt2.minimize(
-        m2.training_loss,
+        m2.training_loss_closure(seed=seed),
         variables=m2.trainable_variables,
         options=dict(maxiter=50),
         compile=True,

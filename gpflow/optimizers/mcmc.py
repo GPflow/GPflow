@@ -15,10 +15,25 @@
 from typing import Callable, Optional, Sequence, Tuple
 
 import tensorflow as tf
+import tensorflow_probability as tfp
+from tensorflow_probability.python.internal.samplers import sanitize_seed
+from typing_extensions import Protocol
 
-from gpflow.base import Parameter
+from gpflow.base import Parameter, Seed
 
 __all__ = ["SamplingHelper"]
+
+
+class TargetLogProbFn(Protocol):
+    """
+    A callable which returns the log-density of the model under the target distribution; needs to
+    implicitly depend on the `parameters` of some model.
+
+    E.g. `model.log_posterior_density`.
+    """
+
+    def __call__(self, seed: Seed = None) -> tf.Tensor:
+        """Get model log-density."""
 
 
 class SamplingHelper:
@@ -47,7 +62,10 @@ class SamplingHelper:
     """
 
     def __init__(
-        self, target_log_prob_fn: Callable[[], tf.Tensor], parameters: Sequence[Parameter]
+        self,
+        target_log_prob_fn: TargetLogProbFn,
+        parameters: Sequence[Parameter],
+        seed: Seed = None,
     ) -> None:
         """
         :param target_log_prob_fn: a callable which returns the log-density of the model
@@ -62,6 +80,7 @@ class SamplingHelper:
                 "`parameters` should only contain gpflow.Parameter objects with priors"
             )
 
+        self._seed = tf.Variable(sanitize_seed(seed), trainable=False)
         self._parameters = parameters
         self._target_log_prob_fn = target_log_prob_fn
         self._variables = [p.unconstrained_variable for p in parameters]
@@ -91,7 +110,9 @@ class SamplingHelper:
 
             with tf.GradientTape(watch_accessed_variables=False) as tape:
                 tape.watch(variables_list)
-                log_prob = self._target_log_prob_fn()
+                seed, s = tfp.random.split_seed(self._seed)
+                self._seed.assign(seed)
+                log_prob = self._target_log_prob_fn(seed=s)
                 # Now need to correct for the fact that the prob fn is evaluated on the
                 # constrained space while we wish to evaluate it in the unconstrained space
                 for param in self._parameters:

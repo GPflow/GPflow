@@ -11,9 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Iterable
+from typing import Callable, Iterable
 
 import pytest
+import tensorflow as tf
+import tensorflow_probability as tfp
 from _pytest.logging import LogCaptureFixture
 from check_shapes.config import (
     DocstringFormat,
@@ -25,6 +27,21 @@ from check_shapes.config import (
     set_enable_function_call_precompute,
     set_rewrite_docstrings,
 )
+
+
+@pytest.fixture
+def seed() -> tf.Tensor:
+    return tf.constant([123, 456], dtype=tf.int32)
+
+
+@pytest.fixture
+def mk_seed(seed: tf.Tensor) -> Callable[[], tf.Tensor]:
+    def next_seed() -> tf.Tensor:
+        nonlocal seed
+        seed, s = tfp.random.split_seed(seed)
+        return s
+
+    return next_seed
 
 
 @pytest.fixture(autouse=True)

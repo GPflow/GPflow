@@ -17,7 +17,7 @@ from typing import Any, List, NamedTuple, Optional, Tuple
 import tensorflow as tf
 from check_shapes import check_shapes, inherit_check_shapes
 
-from ..base import InputData, MeanAndVariance, Parameter, RegressionData, TensorType
+from ..base import InputData, MeanAndVariance, Parameter, RegressionData, Seed, TensorType
 from ..config import default_float, default_int
 from ..covariances import Kuf
 from ..utilities import add_noise_cov, assert_params_false, to_default_float
@@ -258,6 +258,7 @@ class CGLB(SGPR):
         Xnew: InputData,
         full_cov: bool = False,
         full_output_cov: bool = False,
+        seed: Seed = None,
         cg_tolerance: Optional[float] = 1e-3,
     ) -> MeanAndVariance:
         """
@@ -269,7 +270,7 @@ class CGLB(SGPR):
         f_mean, f_var = self.predict_f(
             Xnew, full_cov=full_cov, full_output_cov=full_output_cov, cg_tolerance=cg_tolerance
         )
-        return self.likelihood.predict_mean_and_var(Xnew, f_mean, f_var)
+        return self.likelihood.predict_mean_and_var(Xnew, f_mean, f_var, seed=seed)
 
     @inherit_check_shapes
     def predict_log_density(
@@ -277,6 +278,7 @@ class CGLB(SGPR):
         data: RegressionData,
         full_cov: bool = False,
         full_output_cov: bool = False,
+        seed: Seed = None,
         cg_tolerance: Optional[float] = 1e-3,
     ) -> tf.Tensor:
         """
@@ -290,7 +292,7 @@ class CGLB(SGPR):
         f_mean, f_var = self.predict_f(
             x, full_cov=full_cov, full_output_cov=full_output_cov, cg_tolerance=cg_tolerance
         )
-        return self.likelihood.predict_log_density(x, f_mean, f_var, y)
+        return self.likelihood.predict_log_density(x, f_mean, f_var, y, seed=seed)
 
 
 class NystromPreconditioner:

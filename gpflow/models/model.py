@@ -18,7 +18,7 @@ from typing import Any, Optional
 import tensorflow as tf
 from check_shapes import check_shapes
 
-from ..base import InputData, MeanAndVariance, Module, RegressionData
+from ..base import InputData, MeanAndVariance, Module, RegressionData, Seed
 from ..conditionals.util import sample_mvn
 from ..kernels import Kernel, MultioutputKernel
 from ..likelihoods import Likelihood, SwitchedLikelihood
@@ -44,35 +44,52 @@ class BayesianModel(Module, metaclass=abc.ABCMeta):
     @check_shapes(
         "return: []",
     )
-    def log_posterior_density(self, *args: Any, **kwargs: Any) -> tf.Tensor:
+    def log_posterior_density(self, *args: Any, seed: Seed = None, **kwargs: Any) -> tf.Tensor:
         """
         This may be the posterior with respect to the hyperparameters (e.g. for
         GPR) or the posterior with respect to the function (e.g. for GPMC and
         SGPMC). It assumes that maximum_log_likelihood_objective() is defined
         sensibly.
+
+        :param seed: Random seed. Interpreted as by
+            `tfp.random.sanitize_seed <https://www.tensorflow.org/probability/api_docs/python/tfp/random/sanitize_seed>`_\.
         """
-        return self.maximum_log_likelihood_objective(*args, **kwargs) + self.log_prior_density()
+        return (
+            self.maximum_log_likelihood_objective(*args, seed=seed, **kwargs)
+            + self.log_prior_density()
+        )
 
     @check_shapes(
         "return: []",
     )
-    def _training_loss(self, *args: Any, **kwargs: Any) -> tf.Tensor:
+    def _training_loss(self, *args: Any, seed: Seed = None, **kwargs: Any) -> tf.Tensor:
         """
         Training loss definition. To allow MAP (maximum a-posteriori) estimation,
         adds the log density of all priors to maximum_log_likelihood_objective().
+
+        :param seed: Random seed. Interpreted as by
+            `tfp.random.sanitize_seed <https://www.tensorflow.org/probability/api_docs/python/tfp/random/sanitize_seed>`_\.
         """
-        return -(self.maximum_log_likelihood_objective(*args, **kwargs) + self.log_prior_density())
+        return -(
+            self.maximum_log_likelihood_objective(*args, seed=seed, **kwargs)
+            + self.log_prior_density()
+        )
 
     @abc.abstractmethod
     @check_shapes(
         "return: []",
     )
-    def maximum_log_likelihood_objective(self, *args: Any, **kwargs: Any) -> tf.Tensor:
+    def maximum_log_likelihood_objective(
+        self, *args: Any, seed: Seed = None, **kwargs: Any
+    ) -> tf.Tensor:
         """
         Objective for maximum likelihood estimation. Should be maximized. E.g.
         log-marginal likelihood (hyperparameter likelihood) for GPR, or lower
         bound to the log-marginal likelihood (ELBO) for sparse and variational
         GPs.
+
+        :param seed: Random seed. Interpreted as by
+            `tfp.random.sanitize_seed <https://www.tensorflow.org/probability/api_docs/python/tfp/random/sanitize_seed>`_\.
         """
         raise NotImplementedError
 
@@ -174,7 +191,10 @@ class GPModel(BayesianModel):
         "return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)",
     )
     def predict_f(
-        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
+        self,
+        Xnew: InputData,
+        full_cov: bool = False,
+        full_output_cov: bool = False,
     ) -> MeanAndVariance:
         raise NotImplementedError
 
@@ -189,6 +209,7 @@ class GPModel(BayesianModel):
         num_samples: Optional[int] = None,
         full_cov: bool = True,
         full_output_cov: bool = False,
+        seed: Seed = None,
     ) -> tf.Tensor:
         """
         Produce samples from the posterior latent function(s) at the input points.
@@ -209,6 +230,8 @@ class GPModel(BayesianModel):
         :param full_output_cov:
             If True, draw correlated samples over the outputs.
             If False, draw samples that are uncorrelated over the outputs.
+        :param seed: Random seed. Interpreted as by
+            `tfp.random.sanitize_seed <https://www.tensorflow.org/probability/api_docs/python/tfp/random/sanitize_seed>`_\.
         """
         if full_cov and full_output_cov:
             raise NotImplementedError(
@@ -222,14 +245,14 @@ class GPModel(BayesianModel):
             # cov: [..., P, N, N]
             mean_for_sample = tf.linalg.adjoint(mean)  # [..., P, N]
             samples = sample_mvn(
-                mean_for_sample, cov, full_cov, num_samples=num_samples
+                mean_for_sample, cov, full_cov, num_samples=num_samples, seed=seed
             )  # [..., (S), P, N]
             samples = tf.linalg.adjoint(samples)  # [..., (S), N, P]
         else:
             # mean: [..., N, P]
             # cov: [..., N, P] or [..., N, P, P]
             samples = sample_mvn(
-                mean, cov, full_output_cov, num_samples=num_samples
+                mean, cov, full_output_cov, num_samples=num_samples, seed=seed
             )  # [..., (S), N, P]
         return samples  # [..., (S), N, P]
 
@@ -242,16 +265,23 @@ class GPModel(BayesianModel):
         "return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)",
     )
     def predict_y(
-        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
+        self,
+        Xnew: InputData,
+        full_cov: bool = False,
+        full_output_cov: bool = False,
+        seed: Seed = None,
     ) -> MeanAndVariance:
         """
         Compute the mean and variance of the held-out data at the input points.
+
+        :param seed: Random seed. Interpreted as by
+            `tfp.random.sanitize_seed <https://www.tensorflow.org/probability/api_docs/python/tfp/random/sanitize_seed>`_\.
         """
         # See https://github.com/GPflow/GPflow/issues/1461
         assert_params_false(self.predict_y, full_cov=full_cov, full_output_cov=full_output_cov)
 
         f_mean, f_var = self.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
-        return self.likelihood.predict_mean_and_var(Xnew, f_mean, f_var)
+        return self.likelihood.predict_mean_and_var(Xnew, f_mean, f_var, seed=seed)
 
     @check_shapes(
         "data[0]: [batch..., N, D]",
@@ -259,14 +289,21 @@ class GPModel(BayesianModel):
         "return: [batch..., N]",
     )
     def predict_log_density(
-        self, data: RegressionData, full_cov: bool = False, full_output_cov: bool = False
+        self,
+        data: RegressionData,
+        full_cov: bool = False,
+        full_output_cov: bool = False,
+        seed: Seed = None,
     ) -> tf.Tensor:
         """
         Compute the log density of the data at the new data points.
+
+        :param seed: Random seed. Interpreted as by
+            `tfp.random.sanitize_seed <https://www.tensorflow.org/probability/api_docs/python/tfp/random/sanitize_seed>`_\.
         """
         # See https://github.com/GPflow/GPflow/issues/1461
         assert_params_false(self.predict_y, full_cov=full_cov, full_output_cov=full_output_cov)
 
         X, Y = data
         f_mean, f_var = self.predict_f(X, full_cov=full_cov, full_output_cov=full_output_cov)
-        return self.likelihood.predict_log_density(X, f_mean, f_var, Y)
+        return self.likelihood.predict_log_density(X, f_mean, f_var, Y, seed=seed)

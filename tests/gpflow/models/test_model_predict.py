@@ -12,12 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Dict, Optional, Type
+from typing import Any, Callable, Dict, Optional, Type
 
 import numpy as np
 import pytest
+import tensorflow as tf
 
 import gpflow
+from gpflow.base import Seed
 from gpflow.inducing_variables import InducingPoints
 from gpflow.kernels import Kernel, Matern32
 from gpflow.models.util import InducingPointsLike
@@ -103,29 +105,31 @@ model_setups = [
 
 
 @pytest.mark.parametrize("Ntrain, Ntest, D", [[100, 10, 2]])
-def test_gaussian_mean_and_variance(Ntrain: int, Ntest: int, D: int) -> None:
+def test_gaussian_mean_and_variance(Ntrain: int, Ntest: int, D: int, seed: tf.Tensor) -> None:
     data = rng.randn(Ntrain, D), rng.randn(Ntrain, 1)
     Xtest, _ = rng.randn(Ntest, D), rng.randn(Ntest, 1)
     kernel = Matern32() + gpflow.kernels.White()
     model_gp = gpflow.models.GPR(data, kernel=kernel)
 
     mu_f, var_f = model_gp.predict_f(Xtest)
-    mu_y, var_y = model_gp.predict_y(Xtest)
+    mu_y, var_y = model_gp.predict_y(Xtest, seed=seed)
 
     assert np.allclose(mu_f, mu_y)
     assert np.allclose(var_f, var_y - 1.0)
 
 
 @pytest.mark.parametrize("Ntrain, Ntest, D", [[100, 10, 2]])
-def test_gaussian_log_density(Ntrain: int, Ntest: int, D: int) -> None:
+def test_gaussian_log_density(
+    Ntrain: int, Ntest: int, D: int, mk_seed: Callable[[], tf.Tensor]
+) -> None:
     data = rng.randn(Ntrain, D), rng.randn(Ntrain, 1)
     Xtest, Ytest = rng.randn(Ntest, D), rng.randn(Ntest, 1)
     kernel = Matern32() + gpflow.kernels.White()
     model_gp = gpflow.models.GPR(data, kernel=kernel)
 
-    mu_y, var_y = model_gp.predict_y(Xtest)
+    mu_y, var_y = model_gp.predict_y(Xtest, seed=mk_seed())
     data = Xtest, Ytest
-    log_density = model_gp.predict_log_density(data)
+    log_density = model_gp.predict_log_density(data, seed=mk_seed())
     log_density_hand = np.squeeze(
         -0.5 * np.log(2 * np.pi) - 0.5 * np.log(var_y) - 0.5 * np.square(mu_y - Ytest) / var_y,
         axis=-1,
@@ -153,8 +157,18 @@ def test_gaussian_full_cov(input_dim: int, output_dim: int, N: int, Ntest: int) 
 
 
 @pytest.mark.parametrize("input_dim, output_dim, N, Ntest, M, num_samples", [[3, 2, 20, 30, 5, 5]])
-def test_gaussian_full_cov_samples(
-    input_dim: int, output_dim: int, N: int, Ntest: int, M: int, num_samples: int
+@pytest.mark.parametrize(
+    "seed,expect_deterministic", [(None, False), (5, False), (tf.constant([123, 456]), True)]
+)
+def test_gaussian_samples(
+    input_dim: int,
+    output_dim: int,
+    N: int,
+    Ntest: int,
+    M: int,
+    num_samples: int,
+    seed: Seed,
+    expect_deterministic: bool,
 ) -> None:
     samples_shape = (num_samples, Ntest, output_dim)
     X, Y, _ = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(M, input_dim)
@@ -162,11 +176,15 @@ def test_gaussian_full_cov_samples(
     kernel = Matern32()
     model_gp = gpflow.models.GPR((X, Y), kernel=kernel)
 
-    samples = model_gp.predict_f_samples(Xtest, num_samples)
-    assert samples.shape == samples_shape
+    samples_1 = model_gp.predict_f_samples(Xtest, num_samples, seed=seed)
+    assert samples_1.shape == samples_shape
+    samples_2 = model_gp.predict_f_samples(Xtest, num_samples, seed=seed)
+    assert expect_deterministic == (samples_1 == samples_2).numpy().all()
 
-    samples = model_gp.predict_f_samples(Xtest, num_samples, full_cov=False)
-    assert samples.shape == samples_shape
+    samples_1 = model_gp.predict_f_samples(Xtest, num_samples, full_cov=False, seed=seed)
+    assert samples_1.shape == samples_shape
+    samples_2 = model_gp.predict_f_samples(Xtest, num_samples, full_cov=False, seed=seed)
+    assert expect_deterministic == (samples_1 == samples_2).numpy().all()
 
 
 @pytest.mark.parametrize("model_setup", model_setups)
@@ -201,6 +219,9 @@ def test_other_models_full_cov(
 @pytest.mark.parametrize("Ntest", [30])
 @pytest.mark.parametrize("M", [5])
 @pytest.mark.parametrize("num_samples", [5])
+@pytest.mark.parametrize(
+    "seed,expect_deterministic", [(None, False), (5, False), (tf.constant([123, 456]), True)]
+)
 def test_other_models_full_cov_samples(
     model_setup: ModelSetup,
     input_dim: int,
@@ -209,11 +230,15 @@ def test_other_models_full_cov_samples(
     Ntest: int,
     M: int,
     num_samples: int,
+    seed: Seed,
+    expect_deterministic: bool,
 ) -> None:
     samples_shape = (num_samples, Ntest, output_dim)
     X, Y, Z = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(M, input_dim)
     Xtest = rng.randn(Ntest, input_dim)
     model_gp = model_setup.get_model(Z, num_latent_gps=output_dim, data=(X, Y))
 
-    samples = model_gp.predict_f_samples(Xtest, num_samples)
-    assert samples.shape == samples_shape
+    samples_1 = model_gp.predict_f_samples(Xtest, num_samples, seed=seed)
+    assert samples_1.shape == samples_shape
+    samples_2 = model_gp.predict_f_samples(Xtest, num_samples, seed=seed)
+    assert expect_deterministic == (samples_1 == samples_2).numpy().all()

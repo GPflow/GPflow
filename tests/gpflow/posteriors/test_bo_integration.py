@@ -344,10 +344,10 @@ def _X_new(_data: Tuple[tf.Variable, tf.Variable]) -> tf.Tensor:
 
 
 @pytest.fixture
-def _optimize(_data: Tuple[tf.Variable, tf.Variable]) -> Callable[[GPModel], None]:
+def _optimize(_data: Tuple[tf.Variable, tf.Variable], seed: tf.Tensor) -> Callable[[GPModel], None]:
     def optimize(model: GPModel) -> None:
         gpflow.optimizers.Scipy().minimize(
-            training_loss_closure(model, _data, compile=_COMPILE),
+            training_loss_closure(model, _data, seed=seed, compile=_COMPILE),
             variables=model.trainable_variables,
             options=dict(maxiter=_MAXITER),
             method="BFGS",

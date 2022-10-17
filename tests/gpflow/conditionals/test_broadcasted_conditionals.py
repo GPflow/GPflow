@@ -16,7 +16,7 @@ This test suite will check if the conditionals broadcast correctly
 when the input tensors have leading dimensions.
 """
 
-from typing import cast
+from typing import Callable, cast
 
 import numpy as np
 import pytest
@@ -58,7 +58,9 @@ class Data:
 @pytest.mark.parametrize("full_cov", [False, True])
 @pytest.mark.parametrize("white", [True, False])
 @pytest.mark.parametrize("conditional_type", ["mixing", "Z", "inducing_points"])
-def test_conditional_broadcasting(full_cov: bool, white: bool, conditional_type: str) -> None:
+def test_conditional_broadcasting(
+    full_cov: bool, white: bool, conditional_type: str, mk_seed: Callable[[], tf.Tensor]
+) -> None:
     """
     Test that the `conditional` and `sample_conditional` broadcasts correctly
     over leading dimensions of Xnew. Xnew can be shape [..., N, D],
@@ -104,6 +106,7 @@ def test_conditional_broadcasting(full_cov: bool, white: bool, conditional_type:
                 white=white,
                 full_cov=full_cov,
                 num_samples=num_samples,
+                seed=mk_seed(),
             ),
         )
 
@@ -120,6 +123,7 @@ def test_conditional_broadcasting(full_cov: bool, white: bool, conditional_type:
         white=white,
         full_cov=full_cov,
         num_samples=num_samples,
+        seed=mk_seed(),
     )
 
     samples_S1_S2, means_S1_S2, vars_S1_S2 = sample_conditional(
@@ -131,6 +135,7 @@ def test_conditional_broadcasting(full_cov: bool, white: bool, conditional_type:
         white=white,
         full_cov=full_cov,
         num_samples=num_samples,
+        seed=mk_seed(),
     )
 
     assert_allclose(samples_S12.shape, samples.shape)

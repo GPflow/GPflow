@@ -17,8 +17,9 @@ from typing import Optional, Tuple
 import tensorflow as tf
 from check_shapes import check_shape as cs
 from check_shapes import check_shapes
+from tensorflow_probability.python.internal.samplers import sanitize_seed
 
-from ..base import MeanAndVariance
+from ..base import MeanAndVariance, Seed
 from ..config import default_float, default_jitter
 from ..utilities.ops import leading_transpose
 
@@ -177,13 +178,21 @@ def base_conditional_with_lm(
     "return: [batch..., S, N, D] if num_samples is not None",
 )
 def sample_mvn(
-    mean: tf.Tensor, cov: tf.Tensor, full_cov: bool, num_samples: Optional[int] = None
+    mean: tf.Tensor,
+    cov: tf.Tensor,
+    full_cov: bool,
+    num_samples: Optional[int] = None,
+    seed: Seed = None,
 ) -> tf.Tensor:
     """
     Returns a sample from a D-dimensional Multivariate Normal distribution.
 
+    :param seed: Random seed. Interpreted as by
+        `tfp.random.sanitize_seed <https://www.tensorflow.org/probability/api_docs/python/tfp/random/sanitize_seed>`_\.
     :return: sample from the MVN
     """
+    seed = sanitize_seed(seed)
+
     mean_shape = tf.shape(mean)
     S = num_samples if num_samples is not None else 1
     D = mean_shape[-1]
@@ -192,7 +201,7 @@ def sample_mvn(
     if not full_cov:
         # mean: [..., N, D] and cov [..., N, D]
         eps_shape = tf.concat([leading_dims, [S], mean_shape[-2:]], 0)
-        eps = tf.random.normal(eps_shape, dtype=default_float())  # [..., S, N, D]
+        eps = tf.random.stateless_normal(eps_shape, seed, dtype=default_float())  # [..., S, N, D]
         samples = mean[..., None, :, :] + tf.sqrt(cov)[..., None, :, :] * eps  # [..., S, N, D]
 
     else:
@@ -201,7 +210,7 @@ def sample_mvn(
             tf.eye(D, batch_shape=mean_shape[:-1], dtype=default_float()) * default_jitter()
         )  # [..., N, D, D]
         eps_shape = tf.concat([mean_shape, [S]], 0)
-        eps = tf.random.normal(eps_shape, dtype=default_float())  # [..., N, D, S]
+        eps = tf.random.stateless_normal(eps_shape, seed, dtype=default_float())  # [..., N, D, S]
         chol = tf.linalg.cholesky(cov + jittermat)  # [..., N, D, D]
         samples = mean[..., None] + tf.linalg.matmul(chol, eps)  # [..., N, D, S]
         samples = leading_transpose(samples, [..., -1, -3, -2])  # [..., S, N, D]

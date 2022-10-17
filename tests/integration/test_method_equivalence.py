@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional, Tuple
+from typing import Callable, Optional, Tuple
 
 import numpy as np
 import pytest
+import tensorflow as tf
 from check_shapes import ShapeChecker
 from numpy.testing import assert_allclose
 
@@ -179,7 +180,7 @@ def _create_svgp_model(
 
 
 @pytest.mark.parametrize("approximate_model", _create_approximate_models())
-def test_equivalence(approximate_model: GPModel) -> None:
+def test_equivalence(approximate_model: GPModel, mk_seed: Callable[[], tf.Tensor]) -> None:
     """
     With a Gaussian likelihood, and inducing points (where appropriate)
     positioned at the data, many of the gpflow methods are equivalent (perhaps
@@ -188,7 +189,7 @@ def test_equivalence(approximate_model: GPModel) -> None:
 
     def optimize(model: GPModel) -> None:
         opt = gpflow.optimizers.Scipy()
-        loss = training_loss_closure(model, Datum.data)
+        loss = training_loss_closure(model, Datum.data, seed=mk_seed())
         opt.minimize(loss, model.trainable_variables, options=dict(maxiter=3000))
         if isinstance(model, gpflow.models.SVGP) and not model.whiten:
             # The (S)VGP model in non-whitened representation has significantly
@@ -204,7 +205,9 @@ def test_equivalence(approximate_model: GPModel) -> None:
     optimize(approximate_model)
 
     gpr_likelihood = gpr_model.log_marginal_likelihood()
-    approximate_likelihood = maximum_log_likelihood_objective(approximate_model, Datum.data)
+    approximate_likelihood = maximum_log_likelihood_objective(
+        approximate_model, Datum.data, seed=mk_seed()
+    )
     assert_allclose(approximate_likelihood, gpr_likelihood, rtol=1e-6)
 
     gpr_kernel_ls = gpr_model.kernel.lengthscales.numpy()
@@ -216,22 +219,22 @@ def test_equivalence(approximate_model: GPModel) -> None:
     assert_allclose(gpr_kernel_ls, approximate_kernel_ls, 1e-4)
     assert_allclose(gpr_kernel_var, approximate_kernel_var, 1e-3)
 
-    gpr_mu, gpr_var = gpr_model.predict_y(Datum.Xtest)
-    approximate_mu, approximate_var = approximate_model.predict_y(Datum.Xtest)
+    gpr_mu, gpr_var = gpr_model.predict_y(Datum.Xtest, seed=mk_seed())
+    approximate_mu, approximate_var = approximate_model.predict_y(Datum.Xtest, seed=mk_seed())
 
     assert_allclose(gpr_mu, approximate_mu, 1e-3)
     assert_allclose(gpr_var, approximate_var, 1e-4)
 
 
-def test_equivalence_vgp_and_svgp() -> None:
+def test_equivalence_vgp_and_svgp(mk_seed: Callable[[], tf.Tensor]) -> None:
     kernel = gpflow.kernels.Matern52()
     likelihood = gpflow.likelihoods.StudentT()
 
     svgp_model = _create_svgp_model(kernel, likelihood, DatumVGP.q_mu, DatumVGP.q_sqrt, whiten=True)
     vgp_model = _create_vgp_model(kernel, likelihood, DatumVGP.q_mu, DatumVGP.q_sqrt)
 
-    likelihood_svgp = svgp_model.elbo(DatumVGP.data)
-    likelihood_vgp = vgp_model.elbo()
+    likelihood_svgp = svgp_model.elbo(DatumVGP.data, seed=mk_seed())
+    likelihood_vgp = vgp_model.elbo(seed=mk_seed())
     assert_allclose(likelihood_svgp, likelihood_vgp, rtol=1e-2)
 
     svgp_mu, svgp_var = svgp_model.predict_f(DatumVGP.Xs)
@@ -241,7 +244,7 @@ def test_equivalence_vgp_and_svgp() -> None:
     assert_allclose(svgp_var, vgp_var)
 
 
-def test_equivalence_vgp_and_opper_archambeau() -> None:
+def test_equivalence_vgp_and_opper_archambeau(mk_seed: Callable[[], tf.Tensor]) -> None:
     kernel = gpflow.kernels.Matern52()
     likelihood = gpflow.likelihoods.StudentT()
 
@@ -267,9 +270,9 @@ def test_equivalence_vgp_and_opper_archambeau() -> None:
 
     vgp_model = _create_vgp_model(kernel, likelihood, mean_white_nd, q_sqrt_nnd)
 
-    likelihood_vgp = vgp_model.elbo()
-    likelihood_vgp_oa = vgp_oa_model.elbo()
-    likelihood_svgp_unwhitened = svgp_model_unwhitened.elbo(DatumVGP.data)
+    likelihood_vgp = vgp_model.elbo(seed=mk_seed())
+    likelihood_vgp_oa = vgp_oa_model.elbo(seed=mk_seed())
+    likelihood_svgp_unwhitened = svgp_model_unwhitened.elbo(DatumVGP.data, seed=mk_seed())
 
     assert_allclose(likelihood_vgp, likelihood_vgp_oa, rtol=1e-2)
     assert_allclose(likelihood_vgp, likelihood_svgp_unwhitened, rtol=1e-2)
@@ -294,7 +297,7 @@ class DatumUpper:
     data = (X, Y)
 
 
-def test_upper_bound_few_inducing_points() -> None:
+def test_upper_bound_few_inducing_points(mk_seed: Callable[[], tf.Tensor]) -> None:
     """
     Test for upper bound for regression marginal likelihood
     """
@@ -308,7 +311,7 @@ def test_upper_bound_few_inducing_points() -> None:
     opt = gpflow.optimizers.Scipy()
 
     opt.minimize(
-        model_vfe.training_loss,
+        model_vfe.training_loss_closure(seed=mk_seed()),
         variables=model_vfe.trainable_variables,
         options=dict(maxiter=500),
     )
@@ -321,7 +324,7 @@ def test_upper_bound_few_inducing_points() -> None:
     )
 
     lml_upper = model_vfe.upper_bound()
-    lml_vfe = model_vfe.elbo()
+    lml_vfe = model_vfe.elbo(seed=mk_seed())
     lml_full_gp = full_gp.log_marginal_likelihood()
 
     assert lml_vfe < lml_full_gp

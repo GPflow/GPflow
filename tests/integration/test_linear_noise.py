@@ -16,6 +16,7 @@ from typing import Callable
 
 import numpy as np
 import pytest
+import tensorflow as tf
 from check_shapes import ShapeChecker
 
 import gpflow
@@ -112,10 +113,10 @@ CREATE_MODELS = (
 
 
 @pytest.mark.parametrize("create_model", CREATE_MODELS)
-def test_infer_noise(create_model: Callable[[RegressionData], GPModel]) -> None:
+def test_infer_noise(create_model: Callable[[RegressionData], GPModel], seed: tf.Tensor) -> None:
     model = create_model(Datum.data)
     gpflow.optimizers.Scipy().minimize(
-        training_loss_closure(model, Datum.data),
+        training_loss_closure(model, Datum.data, seed=seed),
         variables=model.trainable_variables,
     )
 

@@ -19,7 +19,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 from check_shapes import check_shapes, inherit_check_shapes
 
-from ..base import MeanAndVariance, Module, Parameter, TensorType
+from ..base import MeanAndVariance, Module, Parameter, Seed, TensorType
 from ..config import default_float
 from ..quadrature import hermgauss
 from ..utilities import to_default_float, to_default_int
@@ -188,7 +188,7 @@ class MultiClass(Likelihood):
 
     @inherit_check_shapes
     def _variational_expectations(
-        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType, seed: Seed
     ) -> tf.Tensor:
         gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
         p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
@@ -199,7 +199,7 @@ class MultiClass(Likelihood):
 
     @inherit_check_shapes
     def _predict_mean_and_var(
-        self, X: TensorType, Fmu: TensorType, Fvar: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, seed: Seed
     ) -> MeanAndVariance:
         possible_outputs = [
             tf.fill(tf.stack([tf.shape(Fmu)[0], 1]), np.array(i, dtype=np.int64))
@@ -211,7 +211,7 @@ class MultiClass(Likelihood):
 
     @inherit_check_shapes
     def _predict_log_density(
-        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType, seed: Seed
     ) -> tf.Tensor:
         return tf.reduce_sum(
             tf.math.log(self._predict_non_logged_density(X, Fmu, Fvar, Y)), axis=-1

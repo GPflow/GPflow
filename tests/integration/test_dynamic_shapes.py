@@ -42,7 +42,7 @@ class Datum:
     cdata = (X, Yc)
 
 
-def test_vgp() -> None:
+def test_vgp(seed: tf.Tensor) -> None:
     X = tf.Variable(
         tf.zeros((1, Datum.n_inputs), dtype=default_float()), shape=(None, None), trainable=False
     )
@@ -59,7 +59,7 @@ def test_vgp() -> None:
 
     @tf.function
     def model_closure() -> tf.Tensor:
-        return -model.elbo()
+        return -model.elbo(seed=seed)
 
     model_closure()  # Trigger compilation.
 
@@ -77,7 +77,7 @@ def test_vgp() -> None:
 
 @pytest.mark.parametrize("whiten", [True, False])
 @pytest.mark.parametrize("q_diag", [True, False])
-def test_svgp(whiten: bool, q_diag: bool) -> None:
+def test_svgp(whiten: bool, q_diag: bool, seed: tf.Tensor) -> None:
     model = gpflow.models.SVGP(
         gpflow.kernels.SquaredExponential(),
         gpflow.likelihoods.Gaussian(),
@@ -91,18 +91,19 @@ def test_svgp(whiten: bool, q_diag: bool) -> None:
 
     # test with explicitly unknown shapes:
     tensor_spec = tf.TensorSpec(shape=None, dtype=default_float())
+    seed_spec = tf.TensorSpec(shape=None, dtype=tf.int32)
 
     # lambda because: https://github.com/GPflow/GPflow/issues/1929
-    elbo_lambda = lambda data: model.elbo(data)
+    elbo_lambda = lambda data, seed: model.elbo(data, seed=seed)
 
     elbo = tf.function(
         elbo_lambda,
-        input_signature=[(tensor_spec, tensor_spec)],
+        input_signature=[(tensor_spec, tensor_spec), seed_spec],
     )
 
     @tf.function
     def model_closure() -> tf.Tensor:
-        return -elbo(Datum.data)
+        return -elbo(Datum.data, seed=seed)
 
     model_closure()  # Trigger compilation.
 
@@ -117,7 +118,7 @@ def test_svgp(whiten: bool, q_diag: bool) -> None:
     )
 
 
-def test_vgp_multiclass() -> None:
+def test_vgp_multiclass(seed: tf.Tensor) -> None:
     X = tf.Variable(
         tf.zeros((1, Datum.n_inputs), dtype=default_float()), shape=(None, None), trainable=False
     )
@@ -135,7 +136,7 @@ def test_vgp_multiclass() -> None:
 
     @tf.function
     def model_closure() -> tf.Tensor:
-        return -model.elbo()
+        return -model.elbo(seed=seed)
 
     model_closure()  # Trigger compilation.
 
@@ -151,7 +152,7 @@ def test_vgp_multiclass() -> None:
     )
 
 
-def test_svgp_multiclass() -> None:
+def test_svgp_multiclass(seed: tf.Tensor) -> None:
     num_classes = 3
     model = gpflow.models.SVGP(
         gpflow.kernels.SquaredExponential(),
@@ -162,18 +163,19 @@ def test_svgp_multiclass() -> None:
     gpflow.set_trainable(model.inducing_variable, False)
 
     # lambda because: https://github.com/GPflow/GPflow/issues/1929
-    elbo_lambda = lambda data: model.elbo(data)
+    elbo_lambda = lambda data, seed: model.elbo(data, seed=seed)
 
     # test with explicitly unknown shapes:
     tensor_spec = tf.TensorSpec(shape=None, dtype=default_float())
+    seed_spec = tf.TensorSpec(shape=None, dtype=tf.int32)
     elbo = tf.function(
         elbo_lambda,
-        input_signature=[(tensor_spec, tensor_spec)],
+        input_signature=[(tensor_spec, tensor_spec), seed_spec],
     )
 
     @tf.function
     def model_closure() -> tf.Tensor:
-        return -elbo(Datum.cdata)
+        return -elbo(Datum.cdata, seed=seed)
 
     model_closure()  # Trigger compilation.
 

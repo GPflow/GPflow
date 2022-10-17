@@ -11,9 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Sequence, Tuple
+from typing import Callable, Sequence, Tuple
 
 import numpy as np
+import tensorflow as tf
 from check_shapes import ShapeChecker
 from numpy.testing import assert_allclose
 
@@ -56,7 +57,7 @@ class Datum:
     Ytest_augmented1: AnyNDArray = cs(np.hstack([Ytest, np.ones((N, 1))]), "[N, 2]")
 
 
-def _prepare_models() -> Tuple[VGP, VGP, VGP]:
+def _prepare_models(mk_seed: Callable[[], tf.Tensor]) -> Tuple[VGP, VGP, VGP]:
     """
     Prepare models to make sure the coregionalized model with diagonal coregion kernel and
     with fixed lengthscales is equivalent with normal GP regression.
@@ -105,19 +106,19 @@ def _prepare_models() -> Tuple[VGP, VGP, VGP]:
 
     opt = gpflow.optimizers.Scipy()
     opt.minimize(
-        vgp0.training_loss,
+        vgp0.training_loss_closure(seed=mk_seed()),
         variables=vgp0.trainable_variables,
         options=dict(maxiter=1000),
         method="BFGS",
     )
     opt.minimize(
-        vgp1.training_loss,
+        vgp1.training_loss_closure(seed=mk_seed()),
         variables=vgp1.trainable_variables,
         options=dict(maxiter=1000),
         method="BFGS",
     )
     opt.minimize(
-        cvgp.training_loss,
+        cvgp.training_loss_closure(seed=mk_seed()),
         variables=cvgp.trainable_variables,
         options=dict(maxiter=1000),
         method="BFGS",
@@ -131,8 +132,8 @@ def _prepare_models() -> Tuple[VGP, VGP, VGP]:
 # ------------------------------------------
 
 
-def test_likelihood_variance() -> None:
-    vgp0, vgp1, cvgp = _prepare_models()
+def test_likelihood_variance(mk_seed: Callable[[], tf.Tensor]) -> None:
+    vgp0, vgp1, cvgp = _prepare_models(mk_seed)
     assert_allclose(
         vgp0.likelihood.variance.numpy(),
         cvgp.likelihood.likelihoods[0].variance.numpy(),
@@ -145,8 +146,8 @@ def test_likelihood_variance() -> None:
     )
 
 
-def test_kernel_variance() -> None:
-    vgp0, vgp1, cvgp = _prepare_models()
+def test_kernel_variance(mk_seed: Callable[[], tf.Tensor]) -> None:
+    vgp0, vgp1, cvgp = _prepare_models(mk_seed)
     assert_allclose(
         vgp0.kernel.variance.numpy(),
         cvgp.kernel.kernels[1].kappa.numpy()[0],
@@ -159,8 +160,8 @@ def test_kernel_variance() -> None:
     )
 
 
-def test_mean_values() -> None:
-    vgp0, vgp1, cvgp = _prepare_models()
+def test_mean_values(mk_seed: Callable[[], tf.Tensor]) -> None:
+    vgp0, vgp1, cvgp = _prepare_models(mk_seed)
     assert_allclose(
         vgp0.mean_function.c.numpy(),
         cvgp.mean_function.meanfunctions[0].c.numpy(),
@@ -173,8 +174,8 @@ def test_mean_values() -> None:
     )
 
 
-def test_predict_f() -> None:
-    vgp0, vgp1, cvgp = _prepare_models()
+def test_predict_f(mk_seed: Callable[[], tf.Tensor]) -> None:
+    vgp0, vgp1, cvgp = _prepare_models(mk_seed)
 
     pred_f0 = vgp0.predict_f(Datum.Xtest)
     pred_fc0 = cvgp.predict_f(Datum.Xtest_augmented0)
@@ -190,36 +191,44 @@ def test_predict_f() -> None:
     cvgp.predict_f(Datum.Xtest_augmented1, full_cov=True)
 
 
-def test_predict_y() -> None:
-    vgp0, vgp1, cvgp = _prepare_models()
-    mu1, var1 = vgp0.predict_y(Datum.Xtest)
-    c_mu1, c_var1 = cvgp.predict_y(np.hstack([Datum.Xtest, np.zeros((Datum.Xtest.shape[0], 1))]))
+def test_predict_y(mk_seed: Callable[[], tf.Tensor]) -> None:
+    vgp0, vgp1, cvgp = _prepare_models(mk_seed)
+    mu1, var1 = vgp0.predict_y(Datum.Xtest, seed=mk_seed())
+    c_mu1, c_var1 = cvgp.predict_y(
+        np.hstack([Datum.Xtest, np.zeros((Datum.Xtest.shape[0], 1))]), seed=mk_seed()
+    )
 
     # predict_y returns results for all the likelihoods in multi_likelihood
     assert_allclose(mu1, c_mu1[:, :1], atol=1.0e-4)
     assert_allclose(var1, c_var1[:, :1], atol=1.0e-4)
 
-    mu2, var2 = vgp1.predict_y(Datum.Xtest)
-    c_mu2, c_var2 = cvgp.predict_y(np.hstack([Datum.Xtest, np.ones((Datum.Xtest.shape[0], 1))]))
+    mu2, var2 = vgp1.predict_y(Datum.Xtest, seed=mk_seed())
+    c_mu2, c_var2 = cvgp.predict_y(
+        np.hstack([Datum.Xtest, np.ones((Datum.Xtest.shape[0], 1))]), seed=mk_seed()
+    )
 
     # predict_y returns results for all the likelihoods in multi_likelihood
     assert_allclose(mu2, c_mu2[:, 1:2], atol=1.0e-4)
     assert_allclose(var2, c_var2[:, 1:2], atol=1.0e-4)
 
 
-def test_predict_log_density() -> None:
-    vgp0, vgp1, cvgp = _prepare_models()
+def test_predict_log_density(mk_seed: Callable[[], tf.Tensor]) -> None:
+    vgp0, vgp1, cvgp = _prepare_models(mk_seed)
 
-    pred_ydensity0 = vgp0.predict_log_density((Datum.Xtest, Datum.Ytest))
-    pred_ydensity_c0 = cvgp.predict_log_density((Datum.Xtest_augmented0, Datum.Ytest_augmented0))
+    pred_ydensity0 = vgp0.predict_log_density((Datum.Xtest, Datum.Ytest), seed=mk_seed())
+    pred_ydensity_c0 = cvgp.predict_log_density(
+        (Datum.Xtest_augmented0, Datum.Ytest_augmented0), seed=mk_seed()
+    )
     assert_allclose(pred_ydensity0, pred_ydensity_c0, atol=1e-2)
-    pred_ydensity1 = vgp1.predict_log_density((Datum.Xtest, Datum.Ytest))
-    pred_ydensity_c1 = cvgp.predict_log_density((Datum.Xtest_augmented1, Datum.Ytest_augmented1))
+    pred_ydensity1 = vgp1.predict_log_density((Datum.Xtest, Datum.Ytest), seed=mk_seed())
+    pred_ydensity_c1 = cvgp.predict_log_density(
+        (Datum.Xtest_augmented1, Datum.Ytest_augmented1), seed=mk_seed()
+    )
     assert_allclose(pred_ydensity1, pred_ydensity_c1, atol=1e-2)
 
 
-def test_predict_f_samples() -> None:
-    vgp0, vgp1, cvgp = _prepare_models()
+def test_predict_f_samples(mk_seed: Callable[[], tf.Tensor]) -> None:
+    vgp0, vgp1, cvgp = _prepare_models(mk_seed)
     # just check predict_f_samples(self) works
-    cvgp.predict_f_samples(Datum.X_augmented0, 1)
-    cvgp.predict_f_samples(Datum.X_augmented1, 1)
+    cvgp.predict_f_samples(Datum.X_augmented0, 1, seed=mk_seed())
+    cvgp.predict_f_samples(Datum.X_augmented1, 1, seed=mk_seed())

@@ -18,7 +18,7 @@ import numpy as np
 import tensorflow as tf
 from check_shapes import check_shapes
 
-from ..base import AnyNDArray
+from ..base import AnyNDArray, Seed
 from ..config import default_float
 from ..inducing_variables import InducingPoints, InducingVariables
 from .model import BayesianModel
@@ -53,13 +53,13 @@ def _assert_equal_data(
     "data[1]: [N, P]",
 )
 def training_loss_closure(
-    model: BayesianModel, data: Data, **closure_kwargs: Any
+    model: BayesianModel, data: Data, seed: Seed = None, **closure_kwargs: Any
 ) -> Callable[[], tf.Tensor]:
     if isinstance(model, ExternalDataTrainingLossMixin):
-        return model.training_loss_closure(data, **closure_kwargs)  # type: ignore[no-any-return]
+        return model.training_loss_closure(data, seed=seed, **closure_kwargs)  # type: ignore[no-any-return]
     else:
         _assert_equal_data(model.data, data)
-        return model.training_loss_closure(**closure_kwargs)  # type: ignore[no-any-return]
+        return model.training_loss_closure(seed=seed, **closure_kwargs)  # type: ignore[no-any-return]
 
 
 @check_shapes(
@@ -67,12 +67,12 @@ def training_loss_closure(
     "data[1]: [N, P]",
     "return: []",
 )
-def training_loss(model: BayesianModel, data: Data) -> tf.Tensor:
+def training_loss(model: BayesianModel, data: Data, seed: Seed = None) -> tf.Tensor:
     if isinstance(model, ExternalDataTrainingLossMixin):
-        return model.training_loss(data)
+        return model.training_loss(data, seed=seed)
     else:
         _assert_equal_data(model.data, data)
-        return model.training_loss()
+        return model.training_loss(seed=seed)
 
 
 @check_shapes(
@@ -80,12 +80,14 @@ def training_loss(model: BayesianModel, data: Data) -> tf.Tensor:
     "data[1]: [N, P]",
     "return: []",
 )
-def maximum_log_likelihood_objective(model: BayesianModel, data: Data) -> tf.Tensor:
+def maximum_log_likelihood_objective(
+    model: BayesianModel, data: Data, seed: Seed = None
+) -> tf.Tensor:
     if isinstance(model, ExternalDataTrainingLossMixin):
-        return model.maximum_log_likelihood_objective(data)
+        return model.maximum_log_likelihood_objective(data, seed=seed)
     else:
         _assert_equal_data(model.data, data)
-        return model.maximum_log_likelihood_objective()
+        return model.maximum_log_likelihood_objective(seed=seed)
 
 
 def data_input_to_tensor(structure: Any) -> Any:
