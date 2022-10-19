@@ -19,7 +19,7 @@ import tensorflow as tf
 from check_shapes import check_shapes, inherit_check_shapes
 
 from .. import posteriors
-from ..base import InputData, MeanAndVariance, RegressionData, TensorData
+from ..base import InputData, MeanAndVariance, RegressionData, Seed, TensorData
 from ..config import default_float, default_jitter
 from ..covariances.dispatch import Kuf, Kuu
 from ..inducing_variables import InducingPoints
@@ -165,8 +165,8 @@ class SGPR_deprecated(SGPRBase_deprecated):
 
     # type-ignore is because of changed method signature:
     @inherit_check_shapes
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore[override]
-        return self.elbo()
+    def maximum_log_likelihood_objective(self, seed: Seed = None) -> tf.Tensor:  # type: ignore[override]
+        return self.elbo(seed=seed)
 
     @check_shapes(
         "return.sigma_sq: [N]",
@@ -271,7 +271,7 @@ class SGPR_deprecated(SGPRBase_deprecated):
     @check_shapes(
         "return: []",
     )
-    def elbo(self) -> tf.Tensor:
+    def elbo(self, seed: Seed = None) -> tf.Tensor:
         """
         Construct a tensorflow function to compute the bound on the marginal
         likelihood. For a derivation of the terms in here, see the associated
@@ -425,7 +425,7 @@ class GPRFITC(SGPRBase_deprecated):
 
     # type-ignore is because of changed method signature:
     @inherit_check_shapes
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore[override]
+    def maximum_log_likelihood_objective(self, seed: Seed = None) -> tf.Tensor:  # type: ignore[override]
         return self.fitc_log_marginal_likelihood()
 
     @check_shapes(

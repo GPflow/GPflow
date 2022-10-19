@@ -294,7 +294,7 @@ def test_periodicity_group(capsys: CaptureFixture[str]) -> None:
     assert "a b X"
 
 
-def test_logdir_created(monitor: Monitor, model: GPModel, tmp_path: Path) -> None:
+def test_logdir_created(monitor: Monitor, model: GPModel, tmp_path: Path, seed: tf.Tensor) -> None:
     """
     Check that TensorFlow summaries are written.
     """
@@ -303,43 +303,53 @@ def test_logdir_created(monitor: Monitor, model: GPModel, tmp_path: Path) -> Non
     size_before = _get_size_directory(tmp_path)
     assert size_before > 0
 
+    loss = model.training_loss_closure(seed=seed)
     opt = tf.optimizers.Adam()
     for step in range(Data.num_steps):
-        opt.minimize(model.training_loss, model.trainable_variables)
+        opt.minimize(loss, model.trainable_variables)
         monitor(step)
 
     size_after = _get_size_directory(tmp_path)
     assert size_after > size_before
 
 
-def test_compile_monitor(monitor: Monitor, model: GPModel) -> None:
+def test_compile_monitor(monitor: Monitor, model: GPModel, seed: tf.Tensor) -> None:
+    loss = model.training_loss_closure(seed=seed)
     opt = tf.optimizers.Adam()
 
     @tf.function
     def tf_func(step: tf.Tensor) -> None:
-        opt.minimize(model.training_loss, model.trainable_variables)
+        opt.minimize(loss, model.trainable_variables)
         monitor(step)
 
     for step in tf.range(100):
         tf_func(step)
 
 
-def test_scipy_monitor(monitor: Monitor, model: GPModel) -> None:
+def test_scipy_monitor(monitor: Monitor, model: GPModel, seed: tf.Tensor) -> None:
     opt = gpflow.optimizers.Scipy()
 
-    opt.minimize(model.training_loss, model.trainable_variables, step_callback=monitor)
+    opt.minimize(
+        model.training_loss_closure(seed=seed), model.trainable_variables, step_callback=monitor
+    )
 
 
-def test_scipy_monitor_called(model: GPModel) -> None:
+def test_scipy_monitor_called(model: GPModel, seed: tf.Tensor) -> None:
     task = DummyTask()
     monitor = Monitor(MonitorTaskGroup(task, period=1))
     opt = gpflow.optimizers.Scipy()
-    opt.minimize(model.training_loss, model.trainable_variables, step_callback=monitor)
+    opt.minimize(
+        model.training_loss_closure(seed=seed), model.trainable_variables, step_callback=monitor
+    )
     assert task.current_step > 1
 
 
-def test_scipy_step_callback_called(model: GPModel) -> None:
+def test_scipy_step_callback_called(model: GPModel, seed: tf.Tensor) -> None:
     dsc = DummyStepCallback()
     opt = gpflow.optimizers.Scipy()
-    opt.minimize(model.training_loss, model.trainable_variables, step_callback=dsc.callback)
+    opt.minimize(
+        model.training_loss_closure(seed=seed),
+        model.trainable_variables,
+        step_callback=dsc.callback,
+    )
     assert dsc.current_step > 1

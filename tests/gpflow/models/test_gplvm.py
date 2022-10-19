@@ -12,13 +12,58 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional
+from typing import AbstractSet, Any, Callable, Optional
 
 import numpy as np
 import pytest
+import tensorflow as tf
 
 import gpflow
 from gpflow.utilities.ops import pca_reduce
+
+
+@pytest.mark.parametrize(
+    "X,expect_change",
+    [
+        ([], False),
+        ([1], False),
+        (range(5), True),
+        (
+            [
+                [1.0, 2.0],
+                [3.0, 4.0],
+                [5.0, 6.0],
+                [7.0, 8.0],
+            ],
+            True,
+        ),
+    ],
+)
+def test_stateless_shuffle(X: Any, expect_change: bool, mk_seed: Callable[[], tf.Tensor]) -> None:
+    def _to_tuple(a: Any) -> Any:
+        try:
+            return tuple(_to_tuple(aa) for aa in a)
+        except TypeError:
+            return a
+
+    def _to_set(a: tf.Tensor) -> AbstractSet[Any]:
+        return set(_to_tuple(a.numpy()))
+
+    s1 = mk_seed()
+    shuffle = gpflow.models.gplvm._stateless_shuffle
+    tf_X = tf.constant(X)
+    v11 = shuffle(tf_X, s1)
+    assert v11.shape == tf_X.shape
+    assert len(tf_X) == len(v11)
+    assert _to_set(tf_X) == _to_set(v11)
+    v12 = shuffle(tf_X, s1)
+
+    assert (v11 == v12).numpy().all()
+
+    if expect_change:
+        s2 = mk_seed()
+        v2 = shuffle(tf_X, s2)
+        assert not (v11 == v2).numpy().all()
 
 
 class Data:
@@ -38,15 +83,15 @@ class Data:
         gpflow.kernels.Periodic(base_kernel=gpflow.kernels.SquaredExponential()),
     ],
 )
-def test_gplvm_with_kernels(kernel: Optional[gpflow.kernels.Kernel]) -> None:
+def test_gplvm_with_kernels(kernel: Optional[gpflow.kernels.Kernel], seed: tf.Tensor) -> None:
     m = gpflow.models.GPLVM(Data.Y, Data.Q, kernel=kernel)
     lml_initial = m.log_marginal_likelihood()
     opt = gpflow.optimizers.Scipy()
-    opt.minimize(m.training_loss, m.trainable_variables, options=dict(maxiter=2))
+    opt.minimize(m.training_loss_closure(seed=seed), m.trainable_variables, options=dict(maxiter=2))
     assert m.log_marginal_likelihood() > lml_initial
 
 
-def test_bayesian_gplvm_1d() -> None:
+def test_bayesian_gplvm_1d(mk_seed: Callable[[], tf.Tensor]) -> None:
     Q = 1
     kernel = gpflow.kernels.SquaredExponential()
     inducing_variable = np.linspace(0, 1, Data.M)[:, None]
@@ -56,28 +101,38 @@ def test_bayesian_gplvm_1d() -> None:
         np.ones((Data.N, Q)),
         kernel,
         inducing_variable=inducing_variable,
+        seed=mk_seed(),
     )
     assert m.inducing_variable.num_inducing == Data.M
 
-    elbo_initial = m.elbo()
+    elbo_initial = m.elbo(seed=mk_seed())
     opt = gpflow.optimizers.Scipy()
-    opt.minimize(m.training_loss, m.trainable_variables, options=dict(maxiter=2))
-    assert m.elbo() > elbo_initial
+    opt.minimize(
+        m.training_loss_closure(seed=mk_seed()), m.trainable_variables, options=dict(maxiter=2)
+    )
+    assert m.elbo(seed=mk_seed()) > elbo_initial
 
 
-def test_bayesian_gplvm_2d() -> None:
+def test_bayesian_gplvm_2d(mk_seed: Callable[[], tf.Tensor]) -> None:
     Q = 2  # latent dimensions
     X_data_mean = pca_reduce(Data.Y, Q)
     kernel = gpflow.kernels.SquaredExponential()
 
     m = gpflow.models.BayesianGPLVM(
-        Data.Y, X_data_mean, np.ones((Data.N, Q)), kernel, num_inducing_variables=Data.M
+        Data.Y,
+        X_data_mean,
+        np.ones((Data.N, Q)),
+        kernel,
+        num_inducing_variables=Data.M,
+        seed=mk_seed(),
     )
 
-    elbo_initial = m.elbo()
+    elbo_initial = m.elbo(seed=mk_seed())
     opt = gpflow.optimizers.Scipy()
-    opt.minimize(m.training_loss, m.trainable_variables, options=dict(maxiter=2))
-    assert m.elbo() > elbo_initial
+    opt.minimize(
+        m.training_loss_closure(seed=mk_seed()), m.trainable_variables, options=dict(maxiter=2)
+    )
+    assert m.elbo(seed=mk_seed()) > elbo_initial
 
     # test prediction
     Xtest = Data.rng.randn(10, Q)
@@ -102,7 +157,7 @@ def test_gplvm_constructor_checks() -> None:
         gpflow.models.GPLVM(observations_wrong_shape, Data.Q, X_data_mean=Data.X)
 
 
-def test_bayesian_gplvm_constructor_check() -> None:
+def test_bayesian_gplvm_constructor_check(seed: tf.Tensor) -> None:
     Q = 1
     kernel = gpflow.kernels.SquaredExponential()
     inducing_variable = np.linspace(0, 1, Data.M)[:, None]
@@ -114,4 +169,5 @@ def test_bayesian_gplvm_constructor_check() -> None:
             kernel,
             inducing_variable=inducing_variable,
             num_inducing_variables=len(inducing_variable),
+            seed=seed,
         )

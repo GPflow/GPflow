@@ -23,8 +23,6 @@ from gpflow import logdensities
 from gpflow.base import AnyNDArray
 from gpflow.utilities import to_default_float
 
-rng = np.random.RandomState(1)
-
 
 @pytest.mark.parametrize("x, mu, var", [(0.9, 0.5, 1.3)])
 def test_gaussian(x: float, mu: float, var: float) -> None:
@@ -100,7 +98,7 @@ def test_student_t(x: float, mean: float, scale: float, df: int) -> None:
 def test_beta(x: float, alpha: float, beta: float) -> None:
     gpf = logdensities.beta(x, alpha, beta).numpy()
     sps = scipy.stats.beta(a=alpha, b=beta).logpdf(x)
-    np.testing.assert_allclose(gpf, sps)
+    np.testing.assert_allclose(gpf, sps, rtol=1e-6)
 
 
 @pytest.mark.parametrize("x, mu, sigma", [(0.9, 0.5, 1.3)])

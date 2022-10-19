@@ -17,9 +17,18 @@ from typing import Optional
 import numpy as np
 import tensorflow as tf
 from check_shapes import check_shapes, inherit_check_shapes
+from tensorflow_probability.python.internal.samplers import sanitize_seed
 
 from .. import covariances, kernels, likelihoods
-from ..base import InputData, MeanAndVariance, OutputData, Parameter, RegressionData, TensorType
+from ..base import (
+    InputData,
+    MeanAndVariance,
+    OutputData,
+    Parameter,
+    RegressionData,
+    Seed,
+    TensorType,
+)
 from ..config import default_float, default_jitter
 from ..expectations import expectation
 from ..inducing_variables import InducingPoints
@@ -32,6 +41,20 @@ from .gpr import GPR
 from .model import GPModel
 from .training_mixins import InternalDataTrainingLossMixin
 from .util import InducingVariablesLike, data_input_to_tensor, inducingpoint_wrapper
+
+
+@check_shapes(
+    "X: [n, inner...]",
+    "return: [n, inner...]",
+)
+def _stateless_shuffle(X: TensorType, seed: Seed) -> tf.Tensor:
+    # Not the most efficient implementation, but it's easy to understand...
+    # TODO: Replace this with tf.random.experimental.stateless_shuffle when we no longer need to
+    # support TensorFlow 2.4.
+    n = tf.shape(X)[0]
+    values = tf.random.stateless_uniform([n], seed)
+    permutation = tf.argsort(values)
+    return tf.gather(X, permutation)
 
 
 class GPLVM(GPR):
@@ -99,6 +122,7 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
         inducing_variable: Optional[InducingVariablesLike] = None,
         X_prior_mean: Optional[TensorType] = None,
         X_prior_var: Optional[TensorType] = None,
+        seed: Seed = None,
     ):
         """
         Initialise Bayesian GPLVM object. This method only works with a Gaussian likelihood.
@@ -115,6 +139,8 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
         :param X_prior_mean: prior mean used in KL term of bound. By default 0.
             Same size as X_data_mean.
         :param X_prior_var: prior variance used in KL term of bound. By default 1.
+        :param seed: Random seed. Interpreted as by
+            `tfp.random.sanitize_seed <https://www.tensorflow.org/probability/api_docs/python/tfp/random/sanitize_seed>`_\.
         """
         num_data, num_latent_gps = X_data_mean.shape
         super().__init__(kernel, likelihoods.Gaussian(), num_latent_gps=num_latent_gps)
@@ -135,7 +161,8 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
         if inducing_variable is None:
             # By default we initialize by subset of initial latent points
             # Note that tf.random.shuffle returns a copy, it does not shuffle in-place
-            Z = tf.random.shuffle(X_data_mean)[:num_inducing_variables]
+            seed = sanitize_seed(seed)
+            Z = _stateless_shuffle(X_data_mean, seed)[:num_inducing_variables]
             inducing_variable = InducingPoints(Z)
 
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
@@ -153,13 +180,13 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
 
     # type-ignore is because of changed method signature:
     @inherit_check_shapes
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore[override]
-        return self.elbo()
+    def maximum_log_likelihood_objective(self, seed: Seed = None) -> tf.Tensor:  # type: ignore[override]
+        return self.elbo(seed=seed)
 
     @check_shapes(
         "return: []",
     )
-    def elbo(self) -> tf.Tensor:
+    def elbo(self, seed: Seed = None) -> tf.Tensor:
         """
         Construct a tensorflow function to compute the bound on the marginal
         likelihood.
@@ -275,6 +302,10 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
 
     @inherit_check_shapes
     def predict_log_density(
-        self, data: RegressionData, full_cov: bool = False, full_output_cov: bool = False
+        self,
+        data: RegressionData,
+        full_cov: bool = False,
+        full_output_cov: bool = False,
+        seed: Seed = None,
     ) -> tf.Tensor:
         raise NotImplementedError

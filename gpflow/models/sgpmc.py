@@ -19,7 +19,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 from check_shapes import check_shapes, inherit_check_shapes
 
-from ..base import InputData, MeanAndVariance, Parameter, RegressionData
+from ..base import InputData, MeanAndVariance, Parameter, RegressionData, Seed
 from ..conditionals import conditional
 from ..kernels import Kernel
 from ..likelihoods import Likelihood
@@ -86,27 +86,29 @@ class SGPMC(GPModel, InternalDataTrainingLossMixin):
 
     # type-ignore is because of changed method signature:
     @inherit_check_shapes
-    def log_posterior_density(self) -> tf.Tensor:  # type: ignore[override]
-        return self.log_likelihood_lower_bound() + self.log_prior_density()
+    def log_posterior_density(self, seed: Seed = None) -> tf.Tensor:  # type: ignore[override]
+        return self.log_likelihood_lower_bound(seed) + self.log_prior_density()
 
     # type-ignore is because of changed method signature:
     @inherit_check_shapes
-    def _training_loss(self) -> tf.Tensor:  # type: ignore[override]
-        return -self.log_posterior_density()
+    def _training_loss(self, seed: Seed = None) -> tf.Tensor:  # type: ignore[override]
+        return -self.log_posterior_density(seed)
 
     # type-ignore is because of changed method signature:
     @inherit_check_shapes
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore[override]
-        return self.log_likelihood_lower_bound()
+    def maximum_log_likelihood_objective(self, seed: Seed = None) -> tf.Tensor:  # type: ignore[override]
+        return self.log_likelihood_lower_bound(seed)
 
-    def log_likelihood_lower_bound(self) -> tf.Tensor:
+    def log_likelihood_lower_bound(self, seed: Seed = None) -> tf.Tensor:
         """
         This function computes the optimal density for v, q*(v), up to a constant
         """
         # get the (marginals of) q(f): exactly predicting!
         X_data, Y_data = self.data
         fmean, fvar = self.predict_f(X_data, full_cov=False)
-        return tf.reduce_sum(self.likelihood.variational_expectations(X_data, fmean, fvar, Y_data))
+        return tf.reduce_sum(
+            self.likelihood.variational_expectations(X_data, fmean, fvar, Y_data, seed)
+        )
 
     @inherit_check_shapes
     def predict_f(

@@ -178,44 +178,52 @@ def test_conditional_variance__negative(setup: LikelihoodSetup) -> None:
 
 
 @pytest.mark.parametrize("setup", LIKELIHOODS)
-def test_predict_mean_and_var__positive(setup: LikelihoodSetup) -> None:
-    mu, var = setup.likelihood.predict_mean_and_var(Datum.X_positive, Datum.Fmu, Datum.Fvar)
+def test_predict_mean_and_var__positive(setup: LikelihoodSetup, seed: tf.Tensor) -> None:
+    mu, var = setup.likelihood.predict_mean_and_var(Datum.X_positive, Datum.Fmu, Datum.Fvar, seed)
     setup.mean_assert(mu, axis=-2)
     setup.variance_assert(var, axis=-2)
 
 
 @pytest.mark.parametrize("setup", LIKELIHOODS)
-def test_predict_mean_and_var__negative(setup: LikelihoodSetup) -> None:
+def test_predict_mean_and_var__negative(setup: LikelihoodSetup, seed: tf.Tensor) -> None:
     # We expect the negative parameter values to be clamped to the same value, so output should be
     # constant:
-    mu, var = setup.likelihood.predict_mean_and_var(Datum.X_negative, Datum.Fmu, Datum.Fvar)
+    mu, var = setup.likelihood.predict_mean_and_var(Datum.X_negative, Datum.Fmu, Datum.Fvar, seed)
     assert_constant(mu, axis=-2)
     assert_constant(var, axis=-2)
 
 
 @pytest.mark.parametrize("setup", LIKELIHOODS)
-def test_predict_log_density__positive(setup: LikelihoodSetup) -> None:
-    ld = setup.likelihood.predict_log_density(Datum.X_positive, Datum.Fmu, Datum.Fvar, Datum.Y)
+def test_predict_log_density__positive(setup: LikelihoodSetup, seed: tf.Tensor) -> None:
+    ld = setup.likelihood.predict_log_density(
+        Datum.X_positive, Datum.Fmu, Datum.Fvar, Datum.Y, seed
+    )
     setup.likelihood_assert(ld, axis=-1)
 
 
 @pytest.mark.parametrize("setup", LIKELIHOODS)
-def test_predict_log_density__negative(setup: LikelihoodSetup) -> None:
+def test_predict_log_density__negative(setup: LikelihoodSetup, seed: tf.Tensor) -> None:
     # We expect the negative parameter values to be clamped to the same value, so output should be
     # constant:
-    ld = setup.likelihood.predict_log_density(Datum.X_negative, Datum.Fmu, Datum.Fvar, Datum.Y)
+    ld = setup.likelihood.predict_log_density(
+        Datum.X_negative, Datum.Fmu, Datum.Fvar, Datum.Y, seed
+    )
     assert_constant(ld, axis=-2)
 
 
 @pytest.mark.parametrize("setup", LIKELIHOODS)
-def test_variational_expectation__positive(setup: LikelihoodSetup) -> None:
-    ve = setup.likelihood.variational_expectations(Datum.X_positive, Datum.Fmu, Datum.Fvar, Datum.Y)
+def test_variational_expectation__positive(setup: LikelihoodSetup, seed: tf.Tensor) -> None:
+    ve = setup.likelihood.variational_expectations(
+        Datum.X_positive, Datum.Fmu, Datum.Fvar, Datum.Y, seed
+    )
     setup.variational_expectations_assert(ve, axis=-1)
 
 
 @pytest.mark.parametrize("setup", LIKELIHOODS)
-def test_variational_expectation__negative(setup: LikelihoodSetup) -> None:
+def test_variational_expectation__negative(setup: LikelihoodSetup, seed: tf.Tensor) -> None:
     # We expect the negative parameter values to be clamped to the same value, so output should be
     # constant:
-    ve = setup.likelihood.variational_expectations(Datum.X_negative, Datum.Fmu, Datum.Fvar, Datum.Y)
+    ve = setup.likelihood.variational_expectations(
+        Datum.X_negative, Datum.Fmu, Datum.Fvar, Datum.Y, seed
+    )
     assert_constant(ve, axis=-2)

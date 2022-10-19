@@ -8,7 +8,7 @@ from tensorflow_probability.python.bijectors import Exp
 from tensorflow_probability.python.distributions import Uniform
 
 import gpflow
-from gpflow.base import AnyNDArray, PriorOn
+from gpflow.base import AnyNDArray, PriorOn, Seed
 from gpflow.config import set_default_float
 from gpflow.utilities import to_default_float
 
@@ -109,17 +109,20 @@ class DummyModel(gpflow.models.BayesianModel):
 
         self.theta = gpflow.Parameter(self.value, prior=prior, transform=transform)
 
-    def maximum_log_likelihood_objective(self, *args: Any, **kwargs: Any) -> tf.Tensor:
+    def maximum_log_likelihood_objective(
+        self, *args: Any, seed: Seed = None, **kwargs: Any
+    ) -> tf.Tensor:
         assert not args
+        assert isinstance(seed, tf.Tensor)
         assert not kwargs
         return (self.theta + 5) ** 2
 
 
-def test_map_invariance_to_transform() -> None:
+def test_map_invariance_to_transform(seed: tf.Tensor) -> None:
     m1 = DummyModel(with_transform=True)
     m2 = DummyModel(with_transform=False)
     assert np.allclose(
-        m1.log_posterior_density().numpy(), m2.log_posterior_density().numpy()
+        m1.log_posterior_density(seed=seed).numpy(), m2.log_posterior_density(seed=seed).numpy()
     ), "log posterior density should not be affected by a transform"
 
 

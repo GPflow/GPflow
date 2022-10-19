@@ -21,7 +21,7 @@ from check_shapes import check_shapes, inherit_check_shapes
 import gpflow
 
 from .. import posteriors
-from ..base import InputData, MeanAndVariance, Parameter, RegressionData
+from ..base import InputData, MeanAndVariance, Parameter, RegressionData, Seed
 from ..conditionals import conditional
 from ..config import default_float, default_jitter
 from ..kernels import Kernel
@@ -100,13 +100,13 @@ class VGP_deprecated(GPModel, InternalDataTrainingLossMixin):
 
     # type-ignore is because of changed method signature:
     @inherit_check_shapes
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore[override]
-        return self.elbo()
+    def maximum_log_likelihood_objective(self, seed: Seed = None) -> tf.Tensor:  # type: ignore[override]
+        return self.elbo(seed)
 
     @check_shapes(
         "return: []",
     )
-    def elbo(self) -> tf.Tensor:
+    def elbo(self, seed: Seed = None) -> tf.Tensor:
         r"""
         This method computes the variational lower bound on the likelihood,
         which is:
@@ -136,7 +136,7 @@ class VGP_deprecated(GPModel, InternalDataTrainingLossMixin):
         fvar = tf.transpose(fvar)
 
         # Get variational expectations.
-        var_exp = self.likelihood.variational_expectations(X_data, fmean, fvar, Y_data)
+        var_exp = self.likelihood.variational_expectations(X_data, fmean, fvar, Y_data, seed)
 
         return tf.reduce_sum(var_exp) - KL
 
@@ -313,13 +313,13 @@ class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
 
     # type-ignore is because of changed method signature:
     @inherit_check_shapes
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore[override]
-        return self.elbo()
+    def maximum_log_likelihood_objective(self, seed: Seed = None) -> tf.Tensor:  # type: ignore[override]
+        return self.elbo(seed)
 
     @check_shapes(
         "return: []",
     )
-    def elbo(self) -> tf.Tensor:
+    def elbo(self, seed: Seed = None) -> tf.Tensor:
         r"""
         q_alpha, q_lambda are variational parameters, size [N, R]
         This method computes the variational lower bound on the likelihood,
@@ -369,7 +369,7 @@ class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
             + tf.reduce_sum(K_alpha * self.q_alpha)
         )
 
-        v_exp = self.likelihood.variational_expectations(X_data, f_mean, f_var, Y_data)
+        v_exp = self.likelihood.variational_expectations(X_data, f_mean, f_var, Y_data, seed)
         return tf.reduce_sum(v_exp) - KL
 
     @inherit_check_shapes

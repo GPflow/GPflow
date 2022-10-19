@@ -19,7 +19,7 @@ import tensorflow as tf
 from check_shapes import check_shapes, inherit_check_shapes
 
 from .. import logdensities
-from ..base import AnyNDArray, MeanAndVariance, Parameter, TensorType
+from ..base import AnyNDArray, MeanAndVariance, Parameter, Seed, TensorType
 from ..config import default_float
 from ..utilities import positive, to_default_int
 from .base import ScalarLikelihood
@@ -65,7 +65,7 @@ class Poisson(ScalarLikelihood):
 
     @inherit_check_shapes
     def _variational_expectations(
-        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType, seed: Seed
     ) -> tf.Tensor:
         if self.invlink is tf.exp:
             return tf.reduce_sum(
@@ -75,7 +75,7 @@ class Poisson(ScalarLikelihood):
                 + Y * tf.math.log(self.binsize),
                 axis=-1,
             )
-        return super()._variational_expectations(X, Fmu, Fvar, Y)
+        return super()._variational_expectations(X, Fmu, Fvar, Y, seed)
 
 
 class Bernoulli(ScalarLikelihood):
@@ -91,20 +91,20 @@ class Bernoulli(ScalarLikelihood):
 
     @inherit_check_shapes
     def _predict_mean_and_var(
-        self, X: TensorType, Fmu: TensorType, Fvar: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, seed: Seed
     ) -> MeanAndVariance:
         if self.invlink is inv_probit:
             p = inv_probit(Fmu / tf.sqrt(1 + Fvar))
             return p, p - tf.square(p)
         else:
             # for other invlink, use quadrature
-            return super()._predict_mean_and_var(X, Fmu, Fvar)
+            return super()._predict_mean_and_var(X, Fmu, Fvar, seed)
 
     @inherit_check_shapes
     def _predict_log_density(
-        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType, seed: Seed
     ) -> tf.Tensor:
-        p = self.predict_mean_and_var(X, Fmu, Fvar)[0]
+        p = self.predict_mean_and_var(X, Fmu, Fvar, seed)[0]
         return tf.reduce_sum(logdensities.bernoulli(Y, p), axis=-1)
 
     @inherit_check_shapes

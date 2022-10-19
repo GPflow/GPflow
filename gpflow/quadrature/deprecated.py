@@ -20,8 +20,9 @@ from typing import Callable, Iterable, List, Optional, Tuple, Union
 import numpy as np
 import tensorflow as tf
 from check_shapes import check_shapes
+from tensorflow_probability.python.internal.samplers import sanitize_seed
 
-from ..base import AnyNDArray, TensorType
+from ..base import AnyNDArray, Seed, TensorType
 from ..config import default_float
 from ..utilities import to_default_float
 from .gauss_hermite import NDiagGHQuadrature
@@ -228,6 +229,7 @@ def ndiag_mc(
     Fvar: TensorType,
     logspace: bool = False,
     epsilon: Optional[TensorType] = None,
+    seed: Seed = None,
     **Ys: TensorType,
 ) -> tf.Tensor:
     """
@@ -243,13 +245,16 @@ def ndiag_mc(
     :param Fvar: array/tensor
     :param logspace: if True, funcs are the log-integrands and this calculates
         the log-expectation of exp(funcs)
+    :param seed: Random seed. Interpreted as by
+        `tfp.random.sanitize_seed <https://www.tensorflow.org/probability/api_docs/python/tfp/random/sanitize_seed>`_\.
     :param Ys: arrays/tensors; deterministic arguments to be passed by name
     :return: shape is the same as that of the first Fmu
     """
     N, D = tf.shape(Fmu)[0], tf.shape(Fvar)[1]
 
     if epsilon is None:
-        epsilon = tf.random.normal(shape=[S, N, D], dtype=default_float())
+        seed = sanitize_seed(seed)
+        epsilon = tf.random.stateless_normal(shape=[S, N, D], seed=seed, dtype=default_float())
 
     mc_x = Fmu[None, :, :] + tf.sqrt(Fvar[None, :, :]) * epsilon
     mc_Xr = tf.reshape(mc_x, (S * N, D))

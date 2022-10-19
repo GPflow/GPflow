@@ -17,7 +17,7 @@ from typing import Optional
 import tensorflow as tf
 from check_shapes import check_shapes
 
-from ..base import SamplesMeanAndVariance
+from ..base import SamplesMeanAndVariance, Seed
 from ..inducing_variables import InducingVariables
 from ..kernels import Kernel
 from .dispatch import conditional, sample_conditional
@@ -48,6 +48,7 @@ def _sample_conditional(
     q_sqrt: Optional[tf.Tensor] = None,
     white: bool = False,
     num_samples: Optional[int] = None,
+    seed: Seed = None,
 ) -> SamplesMeanAndVariance:
     """
     `sample_conditional` will return a sample from the conditional distribution.
@@ -56,6 +57,8 @@ def _sample_conditional(
     However, for some combinations of Mok and Mof more efficient sampling routines exists.
     The dispatcher will make sure that we use the most efficient one.
 
+    :param seed: Random seed. Interpreted as by
+        `tfp.random.sanitize_seed <https://www.tensorflow.org/probability/api_docs/python/tfp/random/sanitize_seed>`_\.
     :return: samples, mean, cov
     """
 
@@ -78,14 +81,14 @@ def _sample_conditional(
         # cov: [..., P, N, N]
         mean_for_sample = tf.linalg.adjoint(mean)  # [..., P, N]
         samples = sample_mvn(
-            mean_for_sample, cov, full_cov=True, num_samples=num_samples
+            mean_for_sample, cov, full_cov=True, num_samples=num_samples, seed=seed
         )  # [..., (S), P, N]
         samples = tf.linalg.adjoint(samples)  # [..., (S), N, P]
     else:
         # mean: [..., N, P]
         # cov: [..., N, P] or [..., N, P, P]
         samples = sample_mvn(
-            mean, cov, full_cov=full_output_cov, num_samples=num_samples
+            mean, cov, full_cov=full_output_cov, num_samples=num_samples, seed=seed
         )  # [..., (S), N, P]
 
     return samples, mean, cov

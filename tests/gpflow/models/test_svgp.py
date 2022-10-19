@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from dataclasses import dataclass
-from typing import Sequence
+from typing import Callable, Sequence
 
 import numpy as np
 import pytest
@@ -59,7 +59,7 @@ def test_svgp_fixing_q_sqrt() -> None:
     assert len(model.trainable_variables) == default_num_trainable_variables - 1
 
 
-def test_svgp_white() -> None:
+def test_svgp_white(seed: tf.Tensor) -> None:
     """
     Tests that the SVGP bound on the likelihood is the same when using
     with and without diagonals when whitening.
@@ -92,10 +92,13 @@ def test_svgp_white() -> None:
         )
     )
     model_2.q_mu.assign(default_datum_svgp.qmean)
-    assert_allclose(model_1.elbo(default_datum_svgp.data), model_2.elbo(default_datum_svgp.data))
+    assert_allclose(
+        model_1.elbo(default_datum_svgp.data, seed=seed),
+        model_2.elbo(default_datum_svgp.data, seed=seed),
+    )
 
 
-def test_svgp_non_white() -> None:
+def test_svgp_non_white(seed: tf.Tensor) -> None:
     """
     Tests that the SVGP bound on the likelihood is the same when using
     with and without diagonals when whitening is not used.
@@ -128,7 +131,10 @@ def test_svgp_non_white() -> None:
         )
     )
     model_2.q_mu.assign(default_datum_svgp.qmean)
-    assert_allclose(model_1.elbo(default_datum_svgp.data), model_2.elbo(default_datum_svgp.data))
+    assert_allclose(
+        model_1.elbo(default_datum_svgp.data, seed=seed),
+        model_2.elbo(default_datum_svgp.data, seed=seed),
+    )
 
 
 def _check_models_close(m1: SVGP, m2: SVGP, tolerance: float = 1e-2) -> bool:
@@ -158,6 +164,7 @@ def test_stochastic_gradients(
     num_data1: int,
     num_data2: int,
     max_iter: int,
+    mk_seed: Callable[[], tf.Tensor],
 ) -> None:
     """
     In response to bug #281, we need to make sure stochastic update
@@ -191,7 +198,7 @@ def test_stochastic_gradients(
         data = X[indices], Y[indices]
         for _ in range(max_iter):
             with tf.GradientTape() as tape:
-                loss = model.training_loss(data)
+                loss = model.training_loss(data, seed=mk_seed())
             grads = tape.gradient(loss, model.trainable_variables)
             opt.apply_gradients(zip(grads, model.trainable_variables))
         return model

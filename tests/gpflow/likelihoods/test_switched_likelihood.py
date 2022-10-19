@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Sequence
+from typing import Callable, Sequence
 
 import numpy as np
 import pytest
@@ -69,6 +69,7 @@ def test_switched_likelihood_predict_log_density(
     F_list: Sequence[TensorType],
     Fvar_list: Sequence[TensorType],
     Y_label: Sequence[TensorType],
+    mk_seed: Callable[[], tf.Tensor],
 ) -> None:
     Y_perm = list(range(3 + 4 + 5))
     np.random.shuffle(Y_perm)
@@ -83,10 +84,10 @@ def test_switched_likelihood_predict_log_density(
         lik.variance = Parameter(np.exp(np.random.randn()), dtype=np.float32)
     switched_likelihood = SwitchedLikelihood(likelihoods)
 
-    switched_results = switched_likelihood.predict_log_density(X_sw, F_sw, Fvar_sw, Y_sw)
+    switched_results = switched_likelihood.predict_log_density(X_sw, F_sw, Fvar_sw, Y_sw, mk_seed())
     # likelihood
     results = [
-        lik.predict_log_density(x, f, fvar, y)
+        lik.predict_log_density(x, f, fvar, y, mk_seed())
         for lik, x, y, f, fvar in zip(likelihoods, X_list, Y_list, F_list, Fvar_list)
     ]
     assert_allclose(switched_results, np.concatenate(results)[Y_perm])
@@ -103,6 +104,7 @@ def test_switched_likelihood_variational_expectations(
     F_list: Sequence[TensorType],
     Fvar_list: Sequence[TensorType],
     Y_label: Sequence[TensorType],
+    mk_seed: Callable[[], tf.Tensor],
 ) -> None:
     Y_perm = list(range(3 + 4 + 5))
     np.random.shuffle(Y_perm)
@@ -117,15 +119,17 @@ def test_switched_likelihood_variational_expectations(
         lik.variance = Parameter(np.exp(np.random.randn()), dtype=np.float32)
     switched_likelihood = SwitchedLikelihood(likelihoods)
 
-    switched_results = switched_likelihood.variational_expectations(X_sw, F_sw, Fvar_sw, Y_sw)
+    switched_results = switched_likelihood.variational_expectations(
+        X_sw, F_sw, Fvar_sw, Y_sw, mk_seed()
+    )
     results = [
-        lik.variational_expectations(x, f, fvar, y)
+        lik.variational_expectations(x, f, fvar, y, mk_seed())
         for lik, x, y, f, fvar in zip(likelihoods, X_list, Y_list, F_list, Fvar_list)
     ]
     assert_allclose(switched_results, np.concatenate(results)[Y_perm])
 
 
-def test_switched_likelihood_with_vgp() -> None:
+def test_switched_likelihood_with_vgp(seed: tf.Tensor) -> None:
     """
     Reproduces the bug in https://github.com/GPflow/GPflow/issues/951
     """
@@ -140,11 +144,15 @@ def test_switched_likelihood_with_vgp() -> None:
     model = gpflow.models.VGP((X, Y_aug), kernel=kernel, likelihood=likelihood)
     # without bugfix, optimization errors out
     opt = gpflow.optimizers.Scipy()
-    opt.minimize(model.training_loss, model.trainable_variables, options=dict(maxiter=1))
+    opt.minimize(
+        model.training_loss_closure(seed), model.trainable_variables, options=dict(maxiter=1)
+    )
 
 
 @pytest.mark.parametrize("num_latent_gps", [1])
-def test_switched_likelihood_regression_valid_num_latent_gps(num_latent_gps: int) -> None:
+def test_switched_likelihood_regression_valid_num_latent_gps(
+    num_latent_gps: int, seed: tf.Tensor
+) -> None:
     """
     A Regression test when using Switched likelihood: the number of latent
     functions in a GP model must be equal to the number of columns in Y minus
@@ -164,4 +172,4 @@ def test_switched_likelihood_regression_valid_num_latent_gps(num_latent_gps: int
         likelihood=switched_likelihood,
         num_latent_gps=num_latent_gps,
     )
-    m.training_loss(data)
+    m.training_loss(data, seed)

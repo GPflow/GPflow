@@ -88,7 +88,7 @@ from typing import Callable, Optional, Tuple
 
 import tensorflow as tf
 
-from gpflow.base import Parameter
+from gpflow.base import Parameter, Seed
 from gpflow.models import BayesianModel, ExternalDataTrainingLossMixin
 
 # %% [markdown]
@@ -140,7 +140,7 @@ class MDN(BayesianModel, ExternalDataTrainingLossMixin):
         return pis, mus, sigmas
 
     def maximum_log_likelihood_objective(
-        self, data: Tuple[tf.Tensor, tf.Tensor]
+        self, data: Tuple[tf.Tensor, tf.Tensor], seed: Seed = None
     ):
         x, y = data
         pis, mus, sigmas = self.eval_network(x)

@@ -67,12 +67,12 @@ def build_model_with_uniform_prior_no_transforms(
     return m
 
 
-def test_mcmc_helper_parameters() -> None:
+def test_mcmc_helper_parameters(seed: tf.Tensor) -> None:
     data = build_data()
     model = build_model(data)
 
     hmc_helper = gpflow.optimizers.SamplingHelper(
-        model.log_posterior_density, model.trainable_parameters
+        model.log_posterior_density, model.trainable_parameters, seed=seed
     )
 
     for i in range(len(model.trainable_parameters)):
@@ -81,7 +81,7 @@ def test_mcmc_helper_parameters() -> None:
         assert model.trainable_parameters[i].unconstrained_variable == hmc_helper.current_state[i]
 
 
-def test_mcmc_helper_target_function_constrained() -> None:
+def test_mcmc_helper_target_function_constrained(seed: tf.Tensor) -> None:
     """Set up priors on the model parameters such that we can
     readily compute their expected values."""
     config = gpflow.config.Config(positive_bijector="exp")
@@ -92,7 +92,7 @@ def test_mcmc_helper_target_function_constrained() -> None:
     prior_width = 200.0
 
     hmc_helper = gpflow.optimizers.SamplingHelper(
-        model.log_posterior_density, model.trainable_parameters
+        model.log_posterior_density, model.trainable_parameters, seed=seed
     )
     target_log_prob_fn = hmc_helper.target_log_prob_fn
 
@@ -120,7 +120,7 @@ def test_mcmc_helper_target_function_constrained() -> None:
     np.testing.assert_allclose(target_log_prob_fn(), expected_log_prob, rtol=1e-6)
 
 
-def test_mcmc_helper_target_function_unconstrained() -> None:
+def test_mcmc_helper_target_function_unconstrained(seed: tf.Tensor) -> None:
     """
     Verifies the objective for a set of priors which are defined on the unconstrained space.
     """
@@ -132,7 +132,7 @@ def test_mcmc_helper_target_function_unconstrained() -> None:
     model = build_model_with_uniform_prior_no_transforms(data, PriorOn.UNCONSTRAINED, prior_width)
 
     hmc_helper = gpflow.optimizers.SamplingHelper(
-        model.log_posterior_density, model.trainable_parameters
+        model.log_posterior_density, model.trainable_parameters, seed=seed
     )
 
     for _ in model.trainable_parameters:
@@ -146,7 +146,7 @@ def test_mcmc_helper_target_function_unconstrained() -> None:
 
 
 @pytest.mark.parametrize("prior_on", [PriorOn.CONSTRAINED, PriorOn.UNCONSTRAINED])
-def test_mcmc_helper_target_function_no_transforms(prior_on: PriorOn) -> None:
+def test_mcmc_helper_target_function_no_transforms(prior_on: PriorOn, seed: tf.Tensor) -> None:
     """Verifies the objective for a set of priors where no transforms are set."""
     expected_log_prior = 0.0
     prior_width = 200.0
@@ -155,7 +155,7 @@ def test_mcmc_helper_target_function_no_transforms(prior_on: PriorOn) -> None:
     model = build_model_with_uniform_prior_no_transforms(data, prior_on, prior_width)
 
     hmc_helper = gpflow.optimizers.SamplingHelper(
-        model.log_posterior_density, model.trainable_parameters
+        model.log_posterior_density, model.trainable_parameters, seed=seed
     )
 
     for _ in model.trainable_parameters:
@@ -175,12 +175,12 @@ def test_mcmc_helper_target_function_no_transforms(prior_on: PriorOn) -> None:
     assert nones == [None] * len(model.trainable_parameters)
 
 
-def test_mcmc_sampler_integration() -> None:
+def test_mcmc_sampler_integration(seed: tf.Tensor) -> None:
     data = build_data()
     model = build_model(data)
 
     hmc_helper = gpflow.optimizers.SamplingHelper(
-        model.log_posterior_density, model.trainable_parameters
+        model.log_posterior_density, model.trainable_parameters, seed=seed
     )
 
     hmc = tfp.mcmc.HamiltonianMonteCarlo(
@@ -220,9 +220,9 @@ def test_mcmc_sampler_integration() -> None:
         assert hmc_helper._parameters[i].numpy() == parameter_samples[i][-1]
 
 
-def test_helper_with_variables_fails() -> None:
+def test_helper_with_variables_fails(seed: tf.Tensor) -> None:
     variable = tf.Variable(0.1)
     with pytest.raises(
         ValueError, match=r"`parameters` should only contain gpflow.Parameter objects with priors"
     ):
-        gpflow.optimizers.SamplingHelper(lambda: variable ** 2, (variable,))
+        gpflow.optimizers.SamplingHelper(lambda seed=None: variable ** 2, (variable,), seed=seed)

@@ -18,7 +18,7 @@ import gpflow
 from gpflow.config import default_float
 
 
-def test_update_vgp_data() -> None:
+def test_update_vgp_data(seed: tf.Tensor) -> None:
     rng = np.random.default_rng(20220223)
     sample = lambda *shape: tf.convert_to_tensor(rng.standard_normal(shape), dtype=default_float())
 
@@ -37,7 +37,7 @@ def test_update_vgp_data() -> None:
         num_latent_gps=n_outputs,
     )
     gpflow.optimizers.Scipy().minimize(
-        model.training_loss_closure(),
+        model.training_loss_closure(seed=seed, compile=False),
         variables=model.trainable_variables,
         options=dict(maxiter=25),
         compile=True,

@@ -17,7 +17,7 @@ from typing import Optional
 import tensorflow as tf
 from check_shapes import check_shapes
 
-from ...base import SamplesMeanAndVariance
+from ...base import SamplesMeanAndVariance, Seed
 from ...inducing_variables import (
     SeparateIndependentInducingVariables,
     SharedIndependentInducingVariables,
@@ -50,6 +50,7 @@ def _sample_conditional(
     q_sqrt: Optional[tf.Tensor] = None,
     white: bool = False,
     num_samples: Optional[int] = None,
+    seed: Seed = None,
 ) -> SamplesMeanAndVariance:
     """
      `sample_conditional` will return a sample from the conditional distribution.
@@ -58,6 +59,8 @@ def _sample_conditional(
      However, for some combinations of Mok and Mof, more efficient sampling routines exist.
      The dispatcher will make sure that we use the most efficent one.
 
+    :param seed: Random seed. Interpreted as by
+        `tfp.random.sanitize_seed <https://www.tensorflow.org/probability/api_docs/python/tfp/random/sanitize_seed>`_\.
     :return: samples, mean, cov
     """
     if full_cov:
@@ -71,7 +74,9 @@ def _sample_conditional(
     g_mu, g_var = ind_conditional(
         Xnew, inducing_variable, kernel, f, white=white, q_sqrt=q_sqrt
     )  # [..., N, L], [..., N, L]
-    g_sample = sample_mvn(g_mu, g_var, full_cov, num_samples=num_samples)  # [..., (S), N, L]
+    g_sample = sample_mvn(
+        g_mu, g_var, full_cov, num_samples=num_samples, seed=seed
+    )  # [..., (S), N, L]
     f_mu, f_var = mix_latent_gp(kernel.W, g_mu, g_var, full_cov, full_output_cov)
     f_sample = tf.tensordot(g_sample, kernel.W, [[-1], [-1]])  # [..., N, P]
     return f_sample, f_mu, f_var

@@ -34,8 +34,9 @@ from typing import Callable, TypeVar, Union
 import tensorflow as tf
 from check_shapes import check_shapes
 from tensorflow.python.data.ops.iterator_ops import OwnedIterator as DatasetOwnedIterator
+from tensorflow_probability.python.internal.samplers import sanitize_seed
 
-from ..base import InputData, OutputData, RegressionData
+from ..base import InputData, OutputData, RegressionData, Seed
 
 Data = TypeVar("Data", RegressionData, InputData, OutputData)
 
@@ -56,23 +57,36 @@ class InternalDataTrainingLossMixin:
     @check_shapes(
         "return: []",
     )
-    def training_loss(self) -> tf.Tensor:
+    def training_loss(self, seed: Seed = None) -> tf.Tensor:
         """
         Returns the training loss for this model.
+
+        :param seed: Random seed. Interpreted as by
+            `tfp.random.sanitize_seed <https://www.tensorflow.org/probability/api_docs/python/tfp/random/sanitize_seed>`_\.
         """
         # Type-ignore is because _training_loss should be added by implementing class.
-        return self._training_loss()  # type: ignore[attr-defined]
+        return self._training_loss(seed=seed)  # type: ignore[attr-defined]
 
-    def training_loss_closure(self, *, compile: bool = True) -> Callable[[], tf.Tensor]:
+    def training_loss_closure(
+        self, seed: Seed = None, *, compile: bool = True
+    ) -> Callable[[], tf.Tensor]:
         """
         Convenience method. Returns a closure which itself returns the training loss. This closure
         can be passed to the minimize methods on :class:`gpflow.optimizers.Scipy` and subclasses of
         `tf.optimizers.Optimizer`.
 
+        :param seed: Random seed. The same random seed is used for all calls to the closure, to
+            ensure a deterministic loss. Interpreted as by
+            `tfp.random.sanitize_seed <https://www.tensorflow.org/probability/api_docs/python/tfp/random/sanitize_seed>`_\.
         :param compile: If `True` (default), compile the training loss function in a TensorFlow
             graph by wrapping it in tf.function()
         """
-        closure = self.training_loss
+        # Fix seed and reuse the same seed on every iteration to get a deterministic loss.
+        fixed_seed = sanitize_seed(seed)
+
+        def closure() -> tf.Tensor:
+            return self.training_loss(seed=fixed_seed)
+
         if compile:
             closure = tf.function(closure)
         return closure
@@ -97,18 +111,21 @@ class ExternalDataTrainingLossMixin:
         "data[1]: [N, P]",
         "return: []",
     )
-    def training_loss(self, data: Data) -> tf.Tensor:
+    def training_loss(self, data: Data, seed: Seed = None) -> tf.Tensor:
         """
         Returns the training loss for this model.
 
         :param data: the data to be used for computing the model objective.
+        :param seed: Random seed. Interpreted as by
+            `tfp.random.sanitize_seed <https://www.tensorflow.org/probability/api_docs/python/tfp/random/sanitize_seed>`_\.
         """
         # Type-ignore is because _training_loss should be added by implementing class.
-        return self._training_loss(data)  # type: ignore[attr-defined]
+        return self._training_loss(data, seed=seed)  # type: ignore[attr-defined]
 
     def training_loss_closure(
         self,
         data: Union[Data, DatasetOwnedIterator],
+        seed: Seed = None,
         *,
         compile: bool = True,
     ) -> Callable[[], tf.Tensor]:
@@ -120,26 +137,32 @@ class ExternalDataTrainingLossMixin:
             objective. Can be the full dataset or an iterator, e.g.
             `iter(dataset.batch(batch_size))`, where dataset is an instance of
             tf.data.Dataset.
+        :param seed: Random seed. The same random seed is used for all calls to the closure, to
+            ensure a deterministic loss. Interpreted as by
+            `tfp.random.sanitize_seed <https://www.tensorflow.org/probability/api_docs/python/tfp/random/sanitize_seed>`_\.
         :param compile: if True, wrap training loss in tf.function()
         """
+        # Fix seed and reuse the same seed on every iteration to get a deterministic loss.
+        fixed_seed = sanitize_seed(seed)
+
         training_loss = self.training_loss
 
         if isinstance(data, DatasetOwnedIterator):
             if compile:
                 # lambda because: https://github.com/GPflow/GPflow/issues/1929
-                training_loss_lambda = lambda d: self.training_loss(d)
-                input_signature = [data.element_spec]
+                training_loss_lambda = lambda d, seed: self.training_loss(d, seed=seed)
+                input_signature = [data.element_spec, tf.TensorSpec(shape=[2], dtype=tf.int32)]
                 training_loss = tf.function(training_loss_lambda, input_signature=input_signature)
 
             def closure() -> tf.Tensor:
                 assert isinstance(data, DatasetOwnedIterator)  # Hint for mypy.
                 batch = next(data)
-                return training_loss(batch)
+                return training_loss(batch, seed=fixed_seed)
 
         else:
 
             def closure() -> tf.Tensor:
-                return training_loss(data)
+                return training_loss(data, seed=fixed_seed)
 
             if compile:
                 closure = tf.function(closure)

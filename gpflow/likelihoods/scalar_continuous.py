@@ -20,7 +20,7 @@ import tensorflow as tf
 from check_shapes import check_shapes, inherit_check_shapes
 
 from .. import logdensities
-from ..base import MeanAndVariance, TensorType
+from ..base import MeanAndVariance, Seed, TensorType
 from ..utilities.parameter_or_function import (
     ConstantOrFunction,
     ParameterOrFunction,
@@ -120,19 +120,19 @@ class Gaussian(ScalarLikelihood):
 
     @inherit_check_shapes
     def _predict_mean_and_var(
-        self, X: TensorType, Fmu: TensorType, Fvar: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, seed: Seed
     ) -> MeanAndVariance:
         return tf.identity(Fmu), Fvar + self._variance(X)
 
     @inherit_check_shapes
     def _predict_log_density(
-        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType, seed: Seed
     ) -> tf.Tensor:
         return tf.reduce_sum(logdensities.gaussian(Y, Fmu, Fvar + self._variance(X)), axis=-1)
 
     @inherit_check_shapes
     def _variational_expectations(
-        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType, seed: Seed
     ) -> tf.Tensor:
         variance = self._variance(X)
         return tf.reduce_sum(
@@ -162,11 +162,11 @@ class Exponential(ScalarLikelihood):
 
     @inherit_check_shapes
     def _variational_expectations(
-        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType, seed: Seed
     ) -> tf.Tensor:
         if self.invlink is tf.exp:
             return tf.reduce_sum(-tf.exp(-Fmu + Fvar / 2) * Y - Fmu, axis=-1)
-        return super()._variational_expectations(X, Fmu, Fvar, Y)
+        return super()._variational_expectations(X, Fmu, Fvar, Y, seed)
 
 
 class StudentT(ScalarLikelihood):
@@ -247,7 +247,7 @@ class Gamma(ScalarLikelihood):
 
     @inherit_check_shapes
     def _variational_expectations(
-        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType, seed: Seed
     ) -> tf.Tensor:
         if self.invlink is tf.exp:
             shape = self._shape(X)
@@ -259,7 +259,7 @@ class Gamma(ScalarLikelihood):
                 axis=-1,
             )
         else:
-            return super()._variational_expectations(X, Fmu, Fvar, Y)
+            return super()._variational_expectations(X, Fmu, Fvar, Y, seed)
 
 
 class Beta(ScalarLikelihood):

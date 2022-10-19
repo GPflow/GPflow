@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Sequence, Tuple
+from typing import Callable, Sequence, Tuple
 
 import numpy as np
 import pytest
@@ -175,7 +175,11 @@ def test_no_missing_likelihoods() -> None:
 @pytest.mark.parametrize("likelihood_setup", likelihood_setups)
 @pytest.mark.parametrize("X, mu, var", [[Datum.X, Datum.Fmu, tf.zeros_like(Datum.Fmu)]])
 def test_conditional_mean_and_variance(
-    likelihood_setup: LikelihoodSetup, X: TensorType, mu: TensorType, var: TensorType
+    likelihood_setup: LikelihoodSetup,
+    X: TensorType,
+    mu: TensorType,
+    var: TensorType,
+    seed: tf.Tensor,
 ) -> None:
     """
     Here we make sure that the conditional_mean and conditional_var functions
@@ -184,13 +188,13 @@ def test_conditional_mean_and_variance(
     """
     mu1 = likelihood_setup.likelihood.conditional_mean(X, mu)
     var1 = likelihood_setup.likelihood.conditional_variance(X, mu)
-    mu2, var2 = likelihood_setup.likelihood.predict_mean_and_var(X, mu, var)
+    mu2, var2 = likelihood_setup.likelihood.predict_mean_and_var(X, mu, var, seed)
     assert_allclose(mu1, mu2, rtol=likelihood_setup.rtol, atol=likelihood_setup.atol)
     assert_allclose(var1, var2, rtol=likelihood_setup.rtol, atol=likelihood_setup.atol)
 
 
 @pytest.mark.parametrize("likelihood_setup", likelihood_setups)
-def test_variational_expectations(likelihood_setup: LikelihoodSetup) -> None:
+def test_variational_expectations(likelihood_setup: LikelihoodSetup, seed: tf.Tensor) -> None:
     """
     Here we make sure that the variational_expectations gives the same result
     as log_prob if the latent function has no uncertainty.
@@ -200,7 +204,7 @@ def test_variational_expectations(likelihood_setup: LikelihoodSetup) -> None:
     F = Datum.F
     Y = likelihood_setup.Y
     r1 = likelihood.log_prob(X, F, Y)
-    r2 = likelihood.variational_expectations(X, F, tf.zeros_like(F), Y)
+    r2 = likelihood.variational_expectations(X, F, tf.zeros_like(F), Y, seed)
     assert_allclose(r1, r2, atol=likelihood_setup.atol, rtol=likelihood_setup.rtol)
 
 
@@ -209,7 +213,10 @@ def test_variational_expectations(likelihood_setup: LikelihoodSetup) -> None:
 )
 @pytest.mark.parametrize("mu, var", [[Datum.Fmu, Datum.Fvar]])
 def test_scalar_likelihood_quadrature_variational_expectation(
-    likelihood_setup: LikelihoodSetup, mu: TensorType, var: TensorType
+    likelihood_setup: LikelihoodSetup,
+    mu: TensorType,
+    var: TensorType,
+    mk_seed: Callable[[], tf.Tensor],
 ) -> None:
     """
     Where quadrature methods have been overwritten, make sure the new code
@@ -217,8 +224,8 @@ def test_scalar_likelihood_quadrature_variational_expectation(
     """
     x = Datum.X
     likelihood, y = likelihood_setup.likelihood, likelihood_setup.Y
-    F1 = likelihood.variational_expectations(x, mu, var, y)
-    F2 = ScalarLikelihood.variational_expectations(likelihood, x, mu, var, y)
+    F1 = likelihood.variational_expectations(x, mu, var, y, mk_seed())
+    F2 = ScalarLikelihood.variational_expectations(likelihood, x, mu, var, y, mk_seed())
     assert_allclose(F1, F2, rtol=likelihood_setup.rtol, atol=likelihood_setup.atol)
 
 
@@ -227,12 +234,15 @@ def test_scalar_likelihood_quadrature_variational_expectation(
 )
 @pytest.mark.parametrize("mu, var", [[Datum.Fmu, Datum.Fvar]])
 def test_scalar_likelihood_quadrature_predict_log_density(
-    likelihood_setup: LikelihoodSetup, mu: TensorType, var: TensorType
+    likelihood_setup: LikelihoodSetup,
+    mu: TensorType,
+    var: TensorType,
+    mk_seed: Callable[[], tf.Tensor],
 ) -> None:
     x = Datum.X
     likelihood, y = likelihood_setup.likelihood, likelihood_setup.Y
-    F1 = likelihood.predict_log_density(x, mu, var, y)
-    F2 = ScalarLikelihood.predict_log_density(likelihood, x, mu, var, y)
+    F1 = likelihood.predict_log_density(x, mu, var, y, mk_seed())
+    F2 = ScalarLikelihood.predict_log_density(likelihood, x, mu, var, y, mk_seed())
     assert_allclose(F1, F2, rtol=likelihood_setup.rtol, atol=likelihood_setup.atol)
 
 
@@ -241,11 +251,15 @@ def test_scalar_likelihood_quadrature_predict_log_density(
 )
 @pytest.mark.parametrize("X, mu, var", [[Datum.X, Datum.Fmu, Datum.Fvar]])
 def test_scalar_likelihood_quadrature_predict_mean_and_var(
-    likelihood_setup: LikelihoodSetup, X: TensorType, mu: TensorType, var: TensorType
+    likelihood_setup: LikelihoodSetup,
+    X: TensorType,
+    mu: TensorType,
+    var: TensorType,
+    mk_seed: Callable[[], tf.Tensor],
 ) -> None:
     likelihood = likelihood_setup.likelihood
-    F1m, F1v = likelihood.predict_mean_and_var(X, mu, var)
-    F2m, F2v = ScalarLikelihood.predict_mean_and_var(likelihood, X, mu, var)
+    F1m, F1v = likelihood.predict_mean_and_var(X, mu, var, mk_seed())
+    F2m, F2v = ScalarLikelihood.predict_mean_and_var(likelihood, X, mu, var, mk_seed())
     assert_allclose(F1m, F2m, rtol=likelihood_setup.rtol, atol=likelihood_setup.atol)
     assert_allclose(F1v, F2v, rtol=likelihood_setup.rtol, atol=likelihood_setup.atol)
 
@@ -265,12 +279,17 @@ def _make_montecarlo_likelihoods(var: float) -> Tuple[GaussianMC, Gaussian]:
 @pytest.mark.parametrize("likelihood_var", [0.3, 0.5, 1])
 @pytest.mark.parametrize("x, mu, var, y", [_make_montecarlo_x_mu_var_y()])
 def test_montecarlo_variational_expectation(
-    likelihood_var: float, x: TensorType, mu: TensorType, var: TensorType, y: TensorType
+    likelihood_var: float,
+    x: TensorType,
+    mu: TensorType,
+    var: TensorType,
+    y: TensorType,
+    mk_seed: Callable[[], tf.Tensor],
 ) -> None:
     likelihood_gaussian_mc, likelihood_gaussian = _make_montecarlo_likelihoods(likelihood_var)
     assert_allclose(
-        likelihood_gaussian_mc.variational_expectations(x, mu, var, y),
-        likelihood_gaussian.variational_expectations(x, mu, var, y),
+        likelihood_gaussian_mc.variational_expectations(x, mu, var, y, mk_seed()),
+        likelihood_gaussian.variational_expectations(x, mu, var, y, mk_seed()),
         rtol=5e-4,
         atol=1e-4,
     )
@@ -279,12 +298,17 @@ def test_montecarlo_variational_expectation(
 @pytest.mark.parametrize("likelihood_var", [0.3, 0.5, 1.0])
 @pytest.mark.parametrize("x, mu, var, y", [_make_montecarlo_x_mu_var_y()])
 def test_montecarlo_predict_log_density(
-    likelihood_var: float, x: TensorType, mu: TensorType, var: TensorType, y: TensorType
+    likelihood_var: float,
+    x: TensorType,
+    mu: TensorType,
+    var: TensorType,
+    y: TensorType,
+    mk_seed: Callable[[], tf.Tensor],
 ) -> None:
     likelihood_gaussian_mc, likelihood_gaussian = _make_montecarlo_likelihoods(likelihood_var)
     assert_allclose(
-        likelihood_gaussian_mc.predict_log_density(x, mu, var, y),
-        likelihood_gaussian.predict_log_density(x, mu, var, y),
+        likelihood_gaussian_mc.predict_log_density(x, mu, var, y, mk_seed()),
+        likelihood_gaussian.predict_log_density(x, mu, var, y, mk_seed()),
         rtol=5e-4,
         atol=1e-4,
     )
@@ -293,10 +317,15 @@ def test_montecarlo_predict_log_density(
 @pytest.mark.parametrize("likelihood_var", [0.3, 0.5, 1.0])
 @pytest.mark.parametrize("x, mu, var, y", [_make_montecarlo_x_mu_var_y()])
 def test_montecarlo_predict_mean_and_var(
-    likelihood_var: float, x: TensorType, mu: TensorType, var: TensorType, y: TensorType
+    likelihood_var: float,
+    x: TensorType,
+    mu: TensorType,
+    var: TensorType,
+    y: TensorType,
+    mk_seed: Callable[[], tf.Tensor],
 ) -> None:
     likelihood_gaussian_mc, likelihood_gaussian = _make_montecarlo_likelihoods(likelihood_var)
-    mean1, var1 = likelihood_gaussian_mc.predict_mean_and_var(x, mu, var)
-    mean2, var2 = likelihood_gaussian.predict_mean_and_var(x, mu, var)
+    mean1, var1 = likelihood_gaussian_mc.predict_mean_and_var(x, mu, var, mk_seed())
+    mean2, var2 = likelihood_gaussian.predict_mean_and_var(x, mu, var, mk_seed())
     assert_allclose(mean1, mean2, rtol=5e-4, atol=1e-4)
     assert_allclose(var1, var2, rtol=5e-4, atol=1e-4)

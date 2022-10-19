@@ -41,6 +41,10 @@ This release contains contributions from:
 
 * `gpflow.experimental.check_shapes` has been removed, in favour of an independent release. Use
   `pip install check_shapes` and `import check_shapes` instead.
+* Many model methods now take an extra parameter, `seed`, and any custom models you have will need
+  to be updated to accept this parameter.
+* Many likelihood methods now take an extra parameter, `seed`, and any custom likelihoods you have
+  will need to be updated to accept this parameter.
 
 ## Known Caveats
 
@@ -51,6 +55,10 @@ This release contains contributions from:
 ## Major Features and Improvements
 
 * Major rework of documentation landing page and "getting started" section.
+* Deterministic randomness. Many model and likelihood methods now take a `seed` parameter that can
+  be used to get deterministic randomness. Seed the
+  [new notebook](https://gpflow.github.io/GPflow/2.7.0/notebooks/advanced/random_state.html) for
+  details.
 
 ## Bug Fixes and Other Changes
 

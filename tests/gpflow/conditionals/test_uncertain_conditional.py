@@ -178,7 +178,7 @@ MEANS: Collection[Optional[str]] = ["Constant", "Linear", "Zero", None]
 
 @pytest.mark.parametrize("white", [True, False])
 @pytest.mark.parametrize("mean", MEANS)
-def test_no_uncertainty(white: bool, mean: Optional[str]) -> None:
+def test_no_uncertainty(white: bool, mean: Optional[str], seed: tf.Tensor) -> None:
     mean_function = mean_function_factory(mean, Data.D_in, Data.D_out)
     kernel = gpflow.kernels.SquaredExponential(variance=rng.rand())
     model = MomentMatchingSVGP(
@@ -192,7 +192,7 @@ def test_no_uncertainty(white: bool, mean: Optional[str]) -> None:
     model.full_output_cov = False
 
     training_loop(
-        model.training_loss_closure(Data.data),
+        model.training_loss_closure(Data.data, seed=seed),
         optimizer=tf.optimizers.Adam(),
         var_list=model.trainable_variables,
         maxiter=100,
@@ -211,7 +211,7 @@ def test_no_uncertainty(white: bool, mean: Optional[str]) -> None:
 
 @pytest.mark.parametrize("white", [True, False])
 @pytest.mark.parametrize("mean", MEANS)
-def test_monte_carlo_1_din(white: bool, mean: Optional[str]) -> None:
+def test_monte_carlo_1_din(white: bool, mean: Optional[str], seed: tf.Tensor) -> None:
     kernel = gpflow.kernels.SquaredExponential(variance=rng.rand())
     mean_function = mean_function_factory(mean, DataMC1.D_in, DataMC1.D_out)
     model = MomentMatchingSVGP(
@@ -225,7 +225,7 @@ def test_monte_carlo_1_din(white: bool, mean: Optional[str]) -> None:
     model.full_output_cov = True
 
     training_loop(
-        model.training_loss_closure(DataMC1.data),
+        model.training_loss_closure(DataMC1.data, seed=seed),
         optimizer=tf.optimizers.Adam(),
         var_list=model.trainable_variables,
         maxiter=200,
@@ -246,7 +246,7 @@ def test_monte_carlo_1_din(white: bool, mean: Optional[str]) -> None:
 
 @pytest.mark.parametrize("white", [True, False])
 @pytest.mark.parametrize("mean", MEANS)
-def test_monte_carlo_2_din(white: bool, mean: Optional[str]) -> None:
+def test_monte_carlo_2_din(white: bool, mean: Optional[str], seed: tf.Tensor) -> None:
     kernel = gpflow.kernels.SquaredExponential(variance=rng.rand())
     mean_function = mean_function_factory(mean, DataMC2.D_in, DataMC2.D_out)
     model = MomentMatchingSVGP(
@@ -260,7 +260,7 @@ def test_monte_carlo_2_din(white: bool, mean: Optional[str]) -> None:
     model.full_output_cov = True
 
     training_loop(
-        model.training_loss_closure(DataMC2.data),
+        model.training_loss_closure(DataMC2.data, seed=seed),
         optimizer=tf.optimizers.Adam(),
         var_list=model.trainable_variables,
         maxiter=100,

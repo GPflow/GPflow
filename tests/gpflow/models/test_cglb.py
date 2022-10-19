@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple, cast
+from typing import Callable, Tuple, cast
 
 import numpy as np
 import tensorflow as tf
@@ -163,7 +163,7 @@ def test_cglb_quad_term_guarantees() -> None:
     assert np.abs(cglb_quad_term - cholesky_quad_term) <= max_error
 
 
-def test_cglb_predict() -> None:
+def test_cglb_predict(mk_seed: Callable[[], tf.Tensor]) -> None:
     """
     Test that 1.) The predict method returns the same variance estimate as SGPR.
               2.) The predict method returns the same mean as SGPR for v=0.
@@ -183,15 +183,15 @@ def test_cglb_predict() -> None:
         noise_variance=noise,
     )
 
-    gpr_mean, _ = gpr.predict_y(xs, full_cov=False)
-    sgpr_mean, sgpr_cov = sgpr.predict_y(xs, full_cov=False)
+    gpr_mean, _ = gpr.predict_y(xs, full_cov=False, seed=mk_seed())
+    sgpr_mean, sgpr_cov = sgpr.predict_y(xs, full_cov=False, seed=mk_seed())
     cglb_mean, cglb_cov = cglb.predict_y(
-        xs, full_cov=False, cg_tolerance=1e6
+        xs, full_cov=False, seed=mk_seed(), cg_tolerance=1e6
     )  # set tolerance high so v stays at 0.
 
     assert np.allclose(sgpr_cov, cglb_cov)
     assert np.allclose(sgpr_mean, cglb_mean)
 
-    cglb_mean, _ = cglb.predict_y(xs, full_cov=False, cg_tolerance=1e-12)
+    cglb_mean, _ = cglb.predict_y(xs, full_cov=False, seed=mk_seed(), cg_tolerance=1e-12)
 
     assert np.allclose(gpr_mean, cglb_mean)

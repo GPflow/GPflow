@@ -19,7 +19,7 @@ import tensorflow as tf
 from check_shapes import check_shapes, inherit_check_shapes
 
 from .. import kullback_leiblers, posteriors
-from ..base import AnyNDArray, InputData, MeanAndVariance, Parameter, RegressionData
+from ..base import AnyNDArray, InputData, MeanAndVariance, Parameter, RegressionData, Seed
 from ..conditionals import conditional
 from ..config import default_float
 from ..inducing_variables import InducingVariables
@@ -154,13 +154,13 @@ class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
 
     # type-ignore is because of changed method signature:
     @inherit_check_shapes
-    def maximum_log_likelihood_objective(self, data: RegressionData) -> tf.Tensor:  # type: ignore[override]
-        return self.elbo(data)
+    def maximum_log_likelihood_objective(self, data: RegressionData, seed: Seed = None) -> tf.Tensor:  # type: ignore[override]
+        return self.elbo(data, seed)
 
     @check_shapes(
         "return: []",
     )
-    def elbo(self, data: RegressionData) -> tf.Tensor:
+    def elbo(self, data: RegressionData, seed: Seed = None) -> tf.Tensor:
         """
         This gives a variational bound (the evidence lower bound or ELBO) on
         the log marginal likelihood of the model.
@@ -168,7 +168,7 @@ class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
         X, Y = data
         kl = self.prior_kl()
         f_mean, f_var = self.predict_f(X, full_cov=False, full_output_cov=False)
-        var_exp = self.likelihood.variational_expectations(X, f_mean, f_var, Y)
+        var_exp = self.likelihood.variational_expectations(X, f_mean, f_var, Y, seed)
         if self.num_data is not None:
             num_data = tf.cast(self.num_data, kl.dtype)
             minibatch_size = tf.cast(tf.shape(X)[0], kl.dtype)

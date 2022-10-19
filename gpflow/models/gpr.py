@@ -20,7 +20,7 @@ from check_shapes import check_shapes, inherit_check_shapes
 import gpflow
 
 from .. import posteriors
-from ..base import InputData, MeanAndVariance, RegressionData, TensorData
+from ..base import InputData, MeanAndVariance, RegressionData, Seed, TensorData
 from ..kernels import Kernel
 from ..likelihoods import Gaussian
 from ..logdensities import multivariate_normal
@@ -80,7 +80,7 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
 
     # type-ignore is because of changed method signature:
     @inherit_check_shapes
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore[override]
+    def maximum_log_likelihood_objective(self, seed: Seed = None) -> tf.Tensor:  # type: ignore[override]
         return self.log_marginal_likelihood()
 
     @check_shapes(

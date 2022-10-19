@@ -17,6 +17,7 @@ from typing import List
 
 import numpy as np
 import pytest
+import tensorflow as tf
 from numpy.testing import assert_array_equal, assert_array_less
 
 import gpflow
@@ -77,16 +78,16 @@ def test_methods_predict_f(model: gpflow.models.GPModel) -> None:
 
 
 @pytest.mark.parametrize("model", _state_less_gp_models + _gp_models)
-def test_methods_predict_y(model: gpflow.models.GPModel) -> None:
-    mf, vf = model.predict_y(default_datum.Xs)
+def test_methods_predict_y(model: gpflow.models.GPModel, seed: tf.Tensor) -> None:
+    mf, vf = model.predict_y(default_datum.Xs, seed=seed)
     assert_array_equal(mf.shape, vf.shape)
     assert_array_equal(mf.shape, (10, 1))
     assert_array_less(np.full_like(vf, -1e-6), vf)
 
 
 @pytest.mark.parametrize("model", _state_less_gp_models + _gp_models)
-def test_methods_predict_log_density(model: gpflow.models.GPModel) -> None:
+def test_methods_predict_log_density(model: gpflow.models.GPModel, seed: tf.Tensor) -> None:
     rng = Datum().rng
     Ys = rng.randn(10, 1)
-    d = model.predict_log_density((default_datum.Xs, Ys))
+    d = model.predict_log_density((default_datum.Xs, Ys), seed=seed)
     assert_array_equal(d.shape, (10,))

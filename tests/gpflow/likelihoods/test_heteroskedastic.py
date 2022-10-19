@@ -30,7 +30,7 @@ class Data:
     f_var: AnyNDArray = rng.randn(N, 2) ** 2
 
 
-def test_analytic_mean_and_var() -> None:
+def test_analytic_mean_and_var(seed: tf.Tensor) -> None:
     """
     Test that quadrature computation used in HeteroskedasticTFPConditional
     of the predictive mean and variance is close to the analytical version,
@@ -41,7 +41,7 @@ def test_analytic_mean_and_var() -> None:
     analytic_variance = np.exp(Data.f_mean[:, [1]] + Data.f_var[:, [1]]) ** 2 + Data.f_var[:, [0]]
 
     likelihood = HeteroskedasticTFPConditional()
-    y_mean, y_var = likelihood.predict_mean_and_var(Data.X, Data.f_mean, Data.f_var)
+    y_mean, y_var = likelihood.predict_mean_and_var(Data.X, Data.f_mean, Data.f_var, seed)
 
     np.testing.assert_allclose(y_mean, analytic_mean)
     np.testing.assert_allclose(y_var, analytic_variance, rtol=1.5e-6)

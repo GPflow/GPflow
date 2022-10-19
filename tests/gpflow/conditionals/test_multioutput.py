@@ -71,7 +71,7 @@ def assert_all_array_elements_almost_equal(arr: Sequence[tf.Tensor]) -> None:
     "data[1]: [N, R]",
 )
 def check_equality_predictions(
-    data: RegressionData, models: Sequence[SVGP], decimal: int = 3
+    data: RegressionData, models: Sequence[SVGP], mk_seed: Callable[[], tf.Tensor], decimal: int = 3
 ) -> None:
     """
     Executes a couple of checks to compare the equality of predictions
@@ -86,7 +86,7 @@ def check_equality_predictions(
       matrices should overlap, and this is tested.
     """
 
-    elbos = [m.elbo(data) for m in models]
+    elbos = [m.elbo(data, seed=mk_seed()) for m in models]
 
     # Check equality of log likelihood
     assert_all_array_elements_almost_equal(elbos)
@@ -239,7 +239,7 @@ class DataMixedKernel(Data):
 # ------------------------------------------
 
 
-def test_sample_mvn(full_cov: bool) -> None:
+def test_sample_mvn(full_cov: bool, seed: tf.Tensor) -> None:
     """
     Draws 10,000 samples from a distribution
     with known mean and covariance. The test checks
@@ -253,7 +253,7 @@ def test_sample_mvn(full_cov: bool) -> None:
     else:
         covs = tf.ones((N, D), dtype=float_type)
 
-    samples = sample_mvn(means, covs, full_cov)
+    samples = sample_mvn(means, covs, full_cov, seed=seed)
     samples_mean = np.mean(samples, axis=0)
     samples_cov = np.cov(samples, rowvar=False)
 
@@ -261,7 +261,9 @@ def test_sample_mvn(full_cov: bool) -> None:
     np.testing.assert_array_almost_equal(samples_cov, [[1.0, 0.0], [0.0, 1.0]], decimal=1)
 
 
-def test_sample_conditional(whiten: bool, full_cov: bool, full_output_cov: bool) -> None:
+def test_sample_conditional(
+    whiten: bool, full_cov: bool, full_output_cov: bool, mk_seed: Callable[[], tf.Tensor]
+) -> None:
     if full_cov and full_output_cov:
         return
 
@@ -287,6 +289,7 @@ def test_sample_conditional(whiten: bool, full_cov: bool, full_output_cov: bool)
         full_cov=full_cov,
         full_output_cov=full_output_cov,
         num_samples=int(1e5),
+        seed=mk_seed(),
     )
     value_f = value_f.numpy().reshape((-1,) + value_f.numpy().shape[2:])
 
@@ -306,6 +309,7 @@ def test_sample_conditional(whiten: bool, full_cov: bool, full_output_cov: bool)
         full_cov=full_cov,
         full_output_cov=full_output_cov,
         num_samples=int(1e5),
+        seed=mk_seed(),
     )
     value_x = value_x.numpy().reshape((-1,) + value_x.numpy().shape[2:])
 
@@ -320,7 +324,7 @@ def test_sample_conditional(whiten: bool, full_cov: bool, full_output_cov: bool)
     np.testing.assert_allclose(var_x, var_f)
 
 
-def test_sample_conditional_mixedkernel() -> None:
+def test_sample_conditional_mixedkernel(mk_seed: Callable[[], tf.Tensor]) -> None:
     q_mu = tf.random.uniform((Data.M, Data.L), dtype=tf.float64)  # M x L
     q_sqrt = tf.convert_to_tensor(
         [np.tril(tf.random.uniform((Data.M, Data.M), dtype=tf.float64)) for _ in range(Data.L)]
@@ -336,7 +340,7 @@ def test_sample_conditional_mixedkernel() -> None:
     optimal_inducing_variable = mf.SharedIndependentInducingVariables(InducingPoints(Z))
 
     value, mean, var = sample_conditional(
-        Xs, optimal_inducing_variable, mixed_kernel, q_mu, q_sqrt=q_sqrt, white=True
+        Xs, optimal_inducing_variable, mixed_kernel, q_mu, q_sqrt=q_sqrt, white=True, seed=mk_seed()
     )
 
     # Path 2: independent kernels, mixed later
@@ -344,7 +348,13 @@ def test_sample_conditional_mixedkernel() -> None:
     fallback_inducing_variable = mf.SharedIndependentInducingVariables(InducingPoints(Z))
 
     value2, mean2, var2 = sample_conditional(
-        Xs, fallback_inducing_variable, separate_kernel, q_mu, q_sqrt=q_sqrt, white=True
+        Xs,
+        fallback_inducing_variable,
+        separate_kernel,
+        q_mu,
+        q_sqrt=q_sqrt,
+        white=True,
+        seed=mk_seed(),
     )
     value2 = np.matmul(value2, W.T)
     # check if mean and covariance of samples are similar
@@ -531,7 +541,7 @@ def test_MixedMok_Kgg() -> None:
 # ------------------------------------------
 
 
-def test_shared_independent_mok() -> None:
+def test_shared_independent_mok(mk_seed: Callable[[], tf.Tensor]) -> None:
     """
     In this test we use the same kernel and the same inducing inducing
     for each of the outputs. The outputs are considered to be uncorrelated.
@@ -563,7 +573,7 @@ def test_shared_independent_mok() -> None:
     set_trainable(model_1.q_sqrt, True)
 
     gpflow.optimizers.Scipy().minimize(
-        model_1.training_loss_closure(Data.data),
+        model_1.training_loss_closure(Data.data, seed=mk_seed()),
         variables=model_1.trainable_variables,
         options=dict(maxiter=500),
         method="BFGS",
@@ -589,7 +599,7 @@ def test_shared_independent_mok() -> None:
     set_trainable(model_2.q_sqrt, True)
 
     gpflow.optimizers.Scipy().minimize(
-        model_2.training_loss_closure(Data.data),
+        model_2.training_loss_closure(Data.data, seed=mk_seed()),
         variables=model_2.trainable_variables,
         options=dict(maxiter=500),
         method="BFGS",
@@ -617,17 +627,17 @@ def test_shared_independent_mok() -> None:
     set_trainable(model_3.q_sqrt, True)
 
     gpflow.optimizers.Scipy().minimize(
-        model_3.training_loss_closure(Data.data),
+        model_3.training_loss_closure(Data.data, seed=mk_seed()),
         variables=model_3.trainable_variables,
         options=dict(maxiter=500),
         method="BFGS",
         compile=True,
     )
 
-    check_equality_predictions(Data.data, [model_1, model_2, model_3])
+    check_equality_predictions(Data.data, [model_1, model_2, model_3], mk_seed)
 
 
-def test_separate_independent_mok() -> None:
+def test_separate_independent_mok(mk_seed: Callable[[], tf.Tensor]) -> None:
     """
     We use different independent kernels for each of the output dimensions.
     We can achieve this in two ways:
@@ -656,7 +666,7 @@ def test_separate_independent_mok() -> None:
     set_trainable(model_1.q_mu, True)
 
     gpflow.optimizers.Scipy().minimize(
-        model_1.training_loss_closure(Data.data),
+        model_1.training_loss_closure(Data.data, seed=mk_seed()),
         variables=model_1.trainable_variables,
         method="BFGS",
         compile=True,
@@ -685,16 +695,16 @@ def test_separate_independent_mok() -> None:
     set_trainable(model_2.q_mu, True)
 
     gpflow.optimizers.Scipy().minimize(
-        model_2.training_loss_closure(Data.data),
+        model_2.training_loss_closure(Data.data, seed=mk_seed()),
         variables=model_2.trainable_variables,
         method="BFGS",
         compile=True,
     )
 
-    check_equality_predictions(Data.data, [model_1, model_2])
+    check_equality_predictions(Data.data, [model_1, model_2], mk_seed)
 
 
-def test_separate_independent_mof() -> None:
+def test_separate_independent_mof(mk_seed: Callable[[], tf.Tensor]) -> None:
     """
     Same test as above but we use different (i.e. separate) inducing inducing
     for each of the output dimensions.
@@ -713,7 +723,7 @@ def test_separate_independent_mof() -> None:
     set_trainable(model_1.q_mu, True)
 
     gpflow.optimizers.Scipy().minimize(
-        model_1.training_loss_closure(Data.data),
+        model_1.training_loss_closure(Data.data, seed=mk_seed()),
         variables=model_1.trainable_variables,
         method="BFGS",
         compile=True,
@@ -733,7 +743,7 @@ def test_separate_independent_mof() -> None:
     set_trainable(model_2.q_mu, True)
 
     gpflow.optimizers.Scipy().minimize(
-        model_2.training_loss_closure(Data.data),
+        model_2.training_loss_closure(Data.data, seed=mk_seed()),
         variables=model_2.trainable_variables,
         method="BFGS",
         compile=True,
@@ -755,16 +765,16 @@ def test_separate_independent_mof() -> None:
     set_trainable(model_3.q_mu, True)
 
     gpflow.optimizers.Scipy().minimize(
-        model_3.training_loss_closure(Data.data),
+        model_3.training_loss_closure(Data.data, seed=mk_seed()),
         variables=model_3.trainable_variables,
         method="BFGS",
         compile=True,
     )
 
-    check_equality_predictions(Data.data, [model_1, model_2, model_3])
+    check_equality_predictions(Data.data, [model_1, model_2, model_3], mk_seed)
 
 
-def test_mixed_mok_with_Id_vs_independent_mok() -> None:
+def test_mixed_mok_with_Id_vs_independent_mok(mk_seed: Callable[[], tf.Tensor]) -> None:
     data = DataMixedKernelWithEye
     # Independent model
     k1 = mk.SharedIndependent(SquaredExponential(variance=0.5, lengthscales=1.2), data.L)
@@ -774,7 +784,7 @@ def test_mixed_mok_with_Id_vs_independent_mok() -> None:
     set_trainable(model_1.q_sqrt, True)
 
     gpflow.optimizers.Scipy().minimize(
-        model_1.training_loss_closure(Data.data),
+        model_1.training_loss_closure(Data.data, seed=mk_seed()),
         variables=model_1.trainable_variables,
         method="BFGS",
         compile=True,
@@ -789,16 +799,16 @@ def test_mixed_mok_with_Id_vs_independent_mok() -> None:
     set_trainable(model_2.q_sqrt, True)
 
     gpflow.optimizers.Scipy().minimize(
-        model_2.training_loss_closure(Data.data),
+        model_2.training_loss_closure(Data.data, seed=mk_seed()),
         variables=model_2.trainable_variables,
         method="BFGS",
         compile=True,
     )
 
-    check_equality_predictions(Data.data, [model_1, model_2])
+    check_equality_predictions(Data.data, [model_1, model_2], mk_seed)
 
 
-def test_compare_mixed_kernel() -> None:
+def test_compare_mixed_kernel(mk_seed: Callable[[], tf.Tensor]) -> None:
     data = DataMixedKernel
 
     kern_list = [SquaredExponential() for _ in range(data.L)]
@@ -811,10 +821,10 @@ def test_compare_mixed_kernel() -> None:
     f2 = mf.SharedIndependentInducingVariables(InducingPoints(data.X[: data.M, ...]))
     model_2 = SVGP(k2, Gaussian(), inducing_variable=f2, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
 
-    check_equality_predictions(Data.data, [model_1, model_2])
+    check_equality_predictions(Data.data, [model_1, model_2], mk_seed)
 
 
-def test_multioutput_with_diag_q_sqrt() -> None:
+def test_multioutput_with_diag_q_sqrt(mk_seed: Callable[[], tf.Tensor]) -> None:
     data = DataMixedKernel
 
     q_sqrt_diag: AnyNDArray = np.ones((data.M, data.L)) * 2
@@ -844,10 +854,10 @@ def test_multioutput_with_diag_q_sqrt() -> None:
         q_diag=False,
     )
 
-    check_equality_predictions(Data.data, [model_1, model_2])
+    check_equality_predictions(Data.data, [model_1, model_2], mk_seed)
 
 
-def test_MixedKernelSeparateMof() -> None:
+def test_MixedKernelSeparateMof(mk_seed: Callable[[], tf.Tensor]) -> None:
     data = DataMixedKernel
 
     kern_list = [SquaredExponential() for _ in range(data.L)]
@@ -862,7 +872,7 @@ def test_MixedKernelSeparateMof() -> None:
     f2 = mf.SeparateIndependentInducingVariables(inducing_variable_list)
     model_2 = SVGP(k2, Gaussian(), inducing_variable=f2, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
 
-    check_equality_predictions(Data.data, [model_1, model_2])
+    check_equality_predictions(Data.data, [model_1, model_2], mk_seed)
 
 
 def test_separate_independent_conditional_with_q_sqrt_none() -> None:
