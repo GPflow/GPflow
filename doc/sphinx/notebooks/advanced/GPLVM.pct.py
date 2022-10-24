@@ -156,8 +156,6 @@ for i in np.unique(labels):
     ax[0].set_title("PCA")
     ax[1].set_title("Bayesian GPLVM")
 
-# %%
-
 # %% [markdown]
 # ## References
 # \[1\] Lawrence, Neil D. 'Gaussian process latent variable models for visualization of high dimensional data'. *Advances in Neural Information Processing Systems*. 2004.
