@@ -20,7 +20,7 @@ with a Gaussian process.  For flexibility this fixed function could be both
 input dependent and parameterised function, μ(x; θ),
 with some unknown parameters θ, resulting in f ~ GP(μ(x;θ), k(x,x')).
 
-The GPflow :class:`MeanFunction <gpflow.mean_functions.MeanFunction>` class
+The GPflow :class:`MeanFunction` class
 allows this to be done whilst additionally learning parameters of the
 parametric function.
 """
@@ -40,8 +40,11 @@ class Function(Module):
     The base function class.
     To implement a function, write the ``__call__`` method. This takes a
     tensor X and returns a tensor f(X). In accordance with the GPflow
-    standard, each row of X represents one datum, and each row of Y is computed
+    standard, each row of X represents one datum, and each row of f(X) is computed
     independently for each row of X.
+    
+    This class is not only used for mean functions.  For example, the variance of a
+    heteroskedastic model is specified using a Function.
 
     :class:`Function` classes can have parameters, see the :class:`Linear` class for an
     example.
