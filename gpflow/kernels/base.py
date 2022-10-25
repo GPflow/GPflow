@@ -224,6 +224,9 @@ class Combination(Kernel):
     """
     Combine a list of kernels, e.g. by adding or multiplying (see inheriting
     classes).
+    
+    Note that kernel composition can be done easily by using the + and * operators
+    defined in :class:`Kernel` .
 
     The names of the kernels to be combined are generated from their class
     names.
