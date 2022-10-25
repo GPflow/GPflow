@@ -51,6 +51,8 @@ class VGP_deprecated(GPModel, InternalDataTrainingLossMixin):
 
        q(\mathbf f) = N(\mathbf f \,|\, \boldsymbol \mu, \boldsymbol \Sigma)
 
+    For a use example see
+    :doc:`../../../../notebooks/getting_started/classification_and_other_data_distributions`.
     """
 
     @check_shapes(
@@ -215,7 +217,8 @@ class VGP_with_posterior(VGP_deprecated):
 
 class VGP(VGP_with_posterior):
     # subclassed to ensure __class__ == "VGP"
-    pass
+
+    __doc__ = VGP_deprecated.__doc__  # Use documentation from VGP_deprecated.
 
 
 @check_shapes(

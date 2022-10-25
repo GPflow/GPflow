@@ -149,9 +149,11 @@ class SGPRBase_deprecated(GPModel, InternalDataTrainingLossMixin):
 
 class SGPR_deprecated(SGPRBase_deprecated):
     """
-    Sparse Variational GP regression.
+    Sparse GP regression.
 
     The key reference is :cite:t:`titsias2009variational`.
+
+    For a use example see :doc:`../../../../notebooks/getting_started/large_data`.
     """
 
     class CommonTensors(NamedTuple):
@@ -581,4 +583,5 @@ class SGPR_with_posterior(SGPR_deprecated):
 
 class SGPR(SGPR_with_posterior):
     # subclassed to ensure __class__ == "SGPR"
-    pass
+
+    __doc__ = SGPR_deprecated.__doc__  # Use documentation from SGPR_deprecated.

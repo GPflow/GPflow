@@ -37,6 +37,9 @@ class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
     This is the Sparse Variational GP (SVGP).
 
     The key reference is :cite:t:`hensman2014scalable`.
+
+    For a use example see
+    :doc:`../../../../notebooks/getting_started/classification_and_other_data_distributions`.
     """
 
     @check_shapes(
@@ -254,4 +257,5 @@ class SVGP_with_posterior(SVGP_deprecated):
 
 class SVGP(SVGP_with_posterior):
     # subclassed to ensure __class__ == "SVGP"
-    pass
+
+    __doc__ = SVGP_deprecated.__doc__  # Use documentation from SVGP_deprecated.
