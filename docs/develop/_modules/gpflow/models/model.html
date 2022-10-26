@@ -327,7 +327,19 @@
 
 
 <div class="viewcode-block" id="BayesianModel"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.BayesianModel">[docs]</a><span class="k">class</span> <span class="nc">BayesianModel</span><span class="p">(</span><span class="n">Module</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; Bayesian model. &quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Bayesian model.</span>
+
+<span class="sd">    This is a base class for all GPflow models. See also :class:`GPModel`.</span>
+
+<span class="sd">    A bayesian model provides methods for computing prior- and posterior densities, and a maximum</span>
+<span class="sd">    likelihood objective; allowing you to use generic code to optimise model parameters to fit data.</span>
+
+<span class="sd">    Most bayesian models are expected to hold their data internally, but the methods take ``*args``</span>
+<span class="sd">    and ``**kwargs`` allowing you to write implementations that take data as parameters.</span>
+<span class="sd">    See also :class:`gpflow.models.training_mixins.InternalDataTrainingLossMixin`,</span>
+<span class="sd">    :class:`gpflow.models.training_mixins.ExternalDataTrainingLossMixin`,</span>
+<span class="sd">    and :func:`gpflow.models.training_loss`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="BayesianModel.log_prior_density"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.BayesianModel.log_prior_density">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
         <span class="s2">&quot;return: []&quot;</span><span class="p">,</span>
@@ -404,6 +416,14 @@
 
 <span class="sd">    It is also possible to draw samples from the latent GPs using</span>
 <span class="sd">    self.predict_f_samples.</span>
+
+<span class="sd">    If you are new to GPflow, see our :doc:`../../../../getting_started` for examples on how to use</span>
+<span class="sd">    a model.</span>
+
+<span class="sd">    :param kernel: Covariance function. $k$ above.</span>
+<span class="sd">    :param likelihood: The likelihood of $y_i$, given $f_i$.</span>
+<span class="sd">    :param mean_function: Mean of $f$.</span>
+<span class="sd">    :param num_latent_gps: The number of latent GPs - the output dimension of $f$.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
@@ -464,7 +484,7 @@
 
         <span class="k">return</span> <span class="n">num_latent_gps</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="GPModel.predict_f"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.GPModel.predict_f">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="nd">@check_shapes</span><span class="p">(</span>
         <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
         <span class="s2">&quot;return[0]: [batch..., N, P]&quot;</span><span class="p">,</span>
@@ -476,7 +496,33 @@
     <span class="k">def</span> <span class="nf">predict_f</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">InputData</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the mean and variance of the posterior latent function(s) at the input points.</span>
+
+<span class="sd">        Given $x_i$ this computes $f_i$, for:</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">           :nowrap:</span>
+
+<span class="sd">           \begin{align}</span>
+<span class="sd">               \theta        &amp; \sim p(\theta) \\</span>
+<span class="sd">               f             &amp; \sim \mathcal{GP}(m(x), k(x, x&#39;; \theta)) \\</span>
+<span class="sd">               f_i           &amp; = f(x_i) \\</span>
+<span class="sd">           \end{align}</span>
+
+<span class="sd">        For an example of how to use ``predict_f``, see</span>
+<span class="sd">        :doc:`../../../../notebooks/getting_started/basic_usage`.</span>
+
+<span class="sd">        :param Xnew:</span>
+<span class="sd">            Input locations at which to compute mean and variance.</span>
+<span class="sd">        :param full_cov:</span>
+<span class="sd">            If ``True``, compute the full covariance between the inputs.</span>
+<span class="sd">            If ``False``, only returns the point-wise variance.</span>
+<span class="sd">        :param full_output_cov:</span>
+<span class="sd">            If ``True``, compute the full covariance between the outputs.</span>
+<span class="sd">            If ``False``, assumes outputs are independent.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 <div class="viewcode-block" id="GPModel.predict_f_samples"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.GPModel.predict_f_samples">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
         <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
@@ -544,8 +590,33 @@
     <span class="k">def</span> <span class="nf">predict_y</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">InputData</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute the mean and variance of the held-out data at the input points.</span>
+
+<span class="sd">        Given $x_i$ this computes $y_i$, for:</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">           :nowrap:</span>
+
+<span class="sd">           \begin{align}</span>
+<span class="sd">               \theta        &amp; \sim p(\theta) \\</span>
+<span class="sd">               f             &amp; \sim \mathcal{GP}(m(x), k(x, x&#39;; \theta)) \\</span>
+<span class="sd">               f_i           &amp; = f(x_i) \\</span>
+<span class="sd">               y_i \,|\, f_i &amp; \sim p(y_i|f_i)</span>
+<span class="sd">           \end{align}</span>
+
+
+<span class="sd">        For an example of how to use ``predict_y``, see</span>
+<span class="sd">        :doc:`../../../../notebooks/getting_started/basic_usage`.</span>
+
+<span class="sd">        :param Xnew:</span>
+<span class="sd">            Input locations at which to compute mean and variance.</span>
+<span class="sd">        :param full_cov:</span>
+<span class="sd">            If ``True``, compute the full covariance between the inputs.</span>
+<span class="sd">            If ``False``, only returns the point-wise variance.</span>
+<span class="sd">        :param full_output_cov:</span>
+<span class="sd">            If ``True``, compute the full covariance between the outputs.</span>
+<span class="sd">            If ``False``, assumes outputs are independent.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># See https://github.com/GPflow/GPflow/issues/1461</span>
         <span class="n">assert_params_false</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predict_y</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="o">=</span><span class="n">full_output_cov</span><span class="p">)</span>

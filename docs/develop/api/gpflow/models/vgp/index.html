@@ -391,6 +391,8 @@ The whitened representation is used to aid optimization.</p>
 <p>The posterior approximation is</p>
 <div class="math notranslate nohighlight">
 \[q(\mathbf f) = N(\mathbf f \,|\, \boldsymbol \mu, \boldsymbol \Sigma)\]</div>
+<p>For a use example see
+<a class="reference internal" href="../../../../notebooks/getting_started/classification_and_other_data_distributions.html"><span class="doc">Classification, other data distributions, VGP and SVGP</span></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -441,6 +443,48 @@ GPs.</p>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><ul class="simple">
 <li><p><strong>return</strong> has shape [].</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.models.vgp.VGP_deprecated.predict_f">
+<span class="sig-name descname"><span class="pre">predict_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/vgp.html#VGP_deprecated.predict_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.vgp.VGP_deprecated.predict_f" title="Permalink to this definition">#</a></dt>
+<dd><p>Compute the mean and variance of the posterior latent function(s) at the input points.</p>
+<p>Given $x_i$ this computes $f_i$, for:</p>
+<div class="math notranslate nohighlight">
+\begin{align}
+    \theta        &amp; \sim p(\theta) \\
+    f             &amp; \sim \mathcal{GP}(m(x), k(x, x'; \theta)) \\
+    f_i           &amp; = f(x_i) \\
+\end{align}</div><p>For an example of how to use <code class="docutils literal notranslate"><span class="pre">predict_f</span></code>, see
+<a class="reference internal" href="../../../../notebooks/getting_started/basic_usage.html"><span class="doc">Basic Usage with GPR</span></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Xnew</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – <ul>
+<li><p><strong>Xnew</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>Input locations at which to compute mean and variance.</p>
+</p></li>
+<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, compute the full covariance between the inputs.
+If <code class="docutils literal notranslate"><span class="pre">False</span></code>, only returns the point-wise variance.</p></li>
+<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, compute the full covariance between the outputs.
+If <code class="docutils literal notranslate"><span class="pre">False</span></code>, assumes outputs are independent.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>N</em>, <em>P</em>] if <em>full_cov</em> and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>P</em>] if (not <em>full_cov</em>) and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>] if (not <em>full_cov</em>) and (not <em>full_output_cov</em>).</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>P</em>, <em>N</em>, <em>N</em>] if <em>full_cov</em> and (not <em>full_output_cov</em>).</p></li>
 </ul>
 </p>
 </dd>
@@ -623,6 +667,15 @@ the variational parameters to fit.</p>
          <code class="docutils literal notranslate">
           <span class="pre">
            VGP_deprecated.maximum_log_likelihood_objective()
+          </span>
+         </code>
+        </a>
+       </li>
+       <li class="toc-h5 nav-item toc-entry">
+        <a class="reference internal nav-link" href="#gpflow.models.vgp.VGP_deprecated.predict_f">
+         <code class="docutils literal notranslate">
+          <span class="pre">
+           VGP_deprecated.predict_f()
           </span>
          </code>
         </a>

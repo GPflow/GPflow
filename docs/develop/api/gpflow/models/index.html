@@ -374,7 +374,11 @@
               
   <section id="gpflow-models">
 <h1>gpflow.models<a class="headerlink" href="#gpflow-models" title="Permalink to this heading">#</a></h1>
-<span class="target" id="module-gpflow.models"></span><section id="modules">
+<span class="target" id="module-gpflow.models"></span><p>Sub-package containing the GPflow model implementations.</p>
+<p>All our models derive from <a class="reference internal" href="#gpflow.models.GPModel" title="gpflow.models.GPModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">GPModel</span></code></a>, which itself derives from <a class="reference internal" href="#gpflow.models.BayesianModel" title="gpflow.models.BayesianModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">BayesianModel</span></code></a>.</p>
+<p>For an overview of the implemented model see <a class="reference internal" href="../../../index.html#implemented-models"><span class="std std-ref">What models are implemented?</span></a>, and for a basic example of
+how to use one see <a class="reference internal" href="../../../notebooks/getting_started/basic_usage.html"><span class="doc">Basic Usage with GPR</span></a>.</p>
+<section id="modules">
 <h2>Modules<a class="headerlink" href="#modules" title="Permalink to this heading">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
@@ -520,6 +524,14 @@ there are notes in the SGPR notebook.</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">BayesianModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/model.html#BayesianModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.BayesianModel" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="../index.html#gpflow.Module" title="gpflow.base.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></a></p>
 <p>Bayesian model.</p>
+<p>This is a base class for all GPflow models. See also <a class="reference internal" href="#gpflow.models.GPModel" title="gpflow.models.GPModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">GPModel</span></code></a>.</p>
+<p>A bayesian model provides methods for computing prior- and posterior densities, and a maximum
+likelihood objective; allowing you to use generic code to optimise model parameters to fit data.</p>
+<p>Most bayesian models are expected to hold their data internally, but the methods take <code class="docutils literal notranslate"><span class="pre">*args</span></code>
+and <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> allowing you to write implementations that take data as parameters.
+See also <a class="reference internal" href="#gpflow.models.InternalDataTrainingLossMixin" title="gpflow.models.training_mixins.InternalDataTrainingLossMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.training_mixins.InternalDataTrainingLossMixin</span></code></a>,
+<a class="reference internal" href="#gpflow.models.ExternalDataTrainingLossMixin" title="gpflow.models.training_mixins.ExternalDataTrainingLossMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.training_mixins.ExternalDataTrainingLossMixin</span></code></a>,
+and <a class="reference internal" href="#gpflow.models.training_loss" title="gpflow.models.training_loss"><code class="xref py py-func docutils literal notranslate"><span class="pre">gpflow.models.training_loss()</span></code></a>.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.BayesianModel.log_posterior_density">
 <span class="sig-name descname"><span class="pre">log_posterior_density</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/model.html#BayesianModel.log_posterior_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.BayesianModel.log_posterior_density" title="Permalink to this definition">#</a></dt>
@@ -1012,13 +1024,15 @@ and variances of held out data, self.predict_y.</p>
 data via self.predict_log_density.</p>
 <p>It is also possible to draw samples from the latent GPs using
 self.predict_f_samples.</p>
+<p>If you are new to GPflow, see our <a class="reference internal" href="../../../getting_started.html"><span class="doc">Getting Started</span></a> for examples on how to use
+a model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>) – </p></li>
-<li><p><strong>likelihood</strong> (<a class="reference internal" href="../likelihoods/index.html#gpflow.likelihoods.Likelihood" title="gpflow.likelihoods.base.Likelihood"><code class="xref py py-class docutils literal notranslate"><span class="pre">Likelihood</span></code></a>) – </p></li>
-<li><p><strong>mean_function</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="../functions/index.html#gpflow.functions.MeanFunction" title="gpflow.functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeanFunction</span></code></a>]) – </p></li>
-<li><p><strong>num_latent_gps</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]) – </p></li>
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>) – Covariance function. $k$ above.</p></li>
+<li><p><strong>likelihood</strong> (<a class="reference internal" href="../likelihoods/index.html#gpflow.likelihoods.Likelihood" title="gpflow.likelihoods.base.Likelihood"><code class="xref py py-class docutils literal notranslate"><span class="pre">Likelihood</span></code></a>) – The likelihood of $y_i$, given $f_i$.</p></li>
+<li><p><strong>mean_function</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="../functions/index.html#gpflow.functions.MeanFunction" title="gpflow.functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeanFunction</span></code></a>]) – Mean of $f$.</p></li>
+<li><p><strong>num_latent_gps</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]) – The number of latent GPs - the output dimension of $f$.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1065,6 +1079,48 @@ as the type of kernel and likelihood.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.models.GPModel.predict_f">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">predict_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/model.html#GPModel.predict_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPModel.predict_f" title="Permalink to this definition">#</a></dt>
+<dd><p>Compute the mean and variance of the posterior latent function(s) at the input points.</p>
+<p>Given $x_i$ this computes $f_i$, for:</p>
+<div class="math notranslate nohighlight">
+\begin{align}
+    \theta        &amp; \sim p(\theta) \\
+    f             &amp; \sim \mathcal{GP}(m(x), k(x, x'; \theta)) \\
+    f_i           &amp; = f(x_i) \\
+\end{align}</div><p>For an example of how to use <code class="docutils literal notranslate"><span class="pre">predict_f</span></code>, see
+<a class="reference internal" href="../../../notebooks/getting_started/basic_usage.html"><span class="doc">Basic Usage with GPR</span></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Xnew</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – <ul>
+<li><p><strong>Xnew</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>Input locations at which to compute mean and variance.</p>
+</p></li>
+<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, compute the full covariance between the inputs.
+If <code class="docutils literal notranslate"><span class="pre">False</span></code>, only returns the point-wise variance.</p></li>
+<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, compute the full covariance between the outputs.
+If <code class="docutils literal notranslate"><span class="pre">False</span></code>, assumes outputs are independent.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>N</em>, <em>P</em>] if <em>full_cov</em> and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>P</em>] if (not <em>full_cov</em>) and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>] if (not <em>full_cov</em>) and (not <em>full_output_cov</em>).</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>P</em>, <em>N</em>, <em>N</em>] if <em>full_cov</em> and (not <em>full_output_cov</em>).</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1138,15 +1194,27 @@ If False, draw samples that are uncorrelated over the outputs.</p></li>
 <dt class="sig sig-object py" id="gpflow.models.GPModel.predict_y">
 <span class="sig-name descname"><span class="pre">predict_y</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/model.html#GPModel.predict_y"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPModel.predict_y" title="Permalink to this definition">#</a></dt>
 <dd><p>Compute the mean and variance of the held-out data at the input points.</p>
+<p>Given $x_i$ this computes $y_i$, for:</p>
+<div class="math notranslate nohighlight">
+\begin{align}
+    \theta        &amp; \sim p(\theta) \\
+    f             &amp; \sim \mathcal{GP}(m(x), k(x, x'; \theta)) \\
+    f_i           &amp; = f(x_i) \\
+    y_i \,|\, f_i &amp; \sim p(y_i|f_i)
+\end{align}</div><p>For an example of how to use <code class="docutils literal notranslate"><span class="pre">predict_y</span></code>, see
+<a class="reference internal" href="../../../notebooks/getting_started/basic_usage.html"><span class="doc">Basic Usage with GPR</span></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>Xnew</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – <ul>
 <li><p><strong>Xnew</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>].</p></li>
 </ul>
+<p>Input locations at which to compute mean and variance.</p>
 </p></li>
-<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
-<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, compute the full covariance between the inputs.
+If <code class="docutils literal notranslate"><span class="pre">False</span></code>, only returns the point-wise variance.</p></li>
+<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, compute the full covariance between the outputs.
+If <code class="docutils literal notranslate"><span class="pre">False</span></code>, assumes outputs are independent.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -1174,6 +1242,21 @@ If False, draw samples that are uncorrelated over the outputs.</p></li>
 <dt class="sig sig-object py" id="gpflow.models.GPR">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">GPR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_variance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/gpr.html#GPR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPR" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="gpr/index.html#gpflow.models.gpr.GPR_with_posterior" title="gpflow.models.gpr.GPR_with_posterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">GPR_with_posterior</span></code></a></p>
+<p>Gaussian Process Regression.</p>
+<p>This is a vanilla implementation of GP regression with a Gaussian
+likelihood.  Multiple columns of Y are treated independently.</p>
+<p>The log likelihood of this model is given by</p>
+<div class="math notranslate nohighlight">
+\[\log p(Y \,|\, \mathbf f) =
+     \mathcal N(Y \,|\, 0, \sigma_n^2 \mathbf{I})\]</div>
+<p>To train the model, we maximise the log _marginal_ likelihood
+w.r.t. the likelihood variance and kernel hyperparameters theta.
+The marginal likelihood is found by integrating the likelihood
+over the prior, and has the form</p>
+<div class="math notranslate nohighlight">
+\[\log p(Y \,|\, \sigma_n, \theta) =
+     \mathcal N(Y \,|\, 0, \mathbf{K} + \sigma_n^2 \mathbf{I})\]</div>
+<p>For a use example see <a class="reference internal" href="../../../notebooks/getting_started/basic_usage.html"><span class="doc">Basic Usage with GPR</span></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1463,6 +1546,9 @@ GPs.</p>
 <dt class="sig sig-object py" id="gpflow.models.SGPR">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">SGPR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_variance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/sgpr.html#SGPR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.SGPR" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="sgpr/index.html#gpflow.models.sgpr.SGPR_with_posterior" title="gpflow.models.sgpr.SGPR_with_posterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">SGPR_with_posterior</span></code></a></p>
+<p>Sparse GP regression.</p>
+<p>The key reference is <span id="id4">Titsias [<a class="reference internal" href="../../../bibliography.html#id19" title="Michalis K Titsias. Variational learning of inducing variables in sparse gaussian processes. In International Conference on Artificial Intelligence and Statistics, 567–574. 2009.">Tit09</a>]</span>.</p>
+<p>For a use example see <a class="reference internal" href="../../../notebooks/getting_started/large_data.html"><span class="doc">Large Data with SGPR</span></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1485,6 +1571,10 @@ GPs.</p>
 <dt class="sig sig-object py" id="gpflow.models.SVGP">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">SVGP</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_diag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whiten</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/svgp.html#SVGP"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.SVGP" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="svgp/index.html#gpflow.models.svgp.SVGP_with_posterior" title="gpflow.models.svgp.SVGP_with_posterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">SVGP_with_posterior</span></code></a></p>
+<p>This is the Sparse Variational GP (SVGP).</p>
+<p>The key reference is <span id="id5">Hensman <em>et al.</em> [<a class="reference internal" href="../../../bibliography.html#id6" title="James Hensman, Alexander G. de G. Matthews, and Zoubin Ghahramani. Scalable variational gaussian process classification. In Proceedings of AISTATS. 2015.">HMG15</a>]</span>.</p>
+<p>For a use example see
+<a class="reference internal" href="../../../notebooks/getting_started/classification_and_other_data_distributions.html"><span class="doc">Classification, other data distributions, VGP and SVGP</span></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1510,6 +1600,17 @@ GPs.</p>
 <dt class="sig sig-object py" id="gpflow.models.VGP">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">VGP</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/vgp.html#VGP"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.VGP" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="vgp/index.html#gpflow.models.vgp.VGP_with_posterior" title="gpflow.models.vgp.VGP_with_posterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">VGP_with_posterior</span></code></a></p>
+<p>This method approximates the Gaussian process posterior using a multivariate Gaussian.</p>
+<p>The idea is that the posterior over the function-value vector F is
+approximated by a Gaussian, and the KL divergence is minimised between
+the approximation and the posterior.</p>
+<p>This implementation is equivalent to SVGP with X=Z, but is more efficient.
+The whitened representation is used to aid optimization.</p>
+<p>The posterior approximation is</p>
+<div class="math notranslate nohighlight">
+\[q(\mathbf f) = N(\mathbf f \,|\, \boldsymbol \mu, \boldsymbol \Sigma)\]</div>
+<p>For a use example see
+<a class="reference internal" href="../../../notebooks/getting_started/classification_and_other_data_distributions.html"><span class="doc">Classification, other data distributions, VGP and SVGP</span></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1531,7 +1632,7 @@ GPs.</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">VGPOpperArchambeau</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/vgp.html#VGPOpperArchambeau"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.VGPOpperArchambeau" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.models.GPModel" title="gpflow.models.model.GPModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">GPModel</span></code></a>, <a class="reference internal" href="#gpflow.models.InternalDataTrainingLossMixin" title="gpflow.models.training_mixins.InternalDataTrainingLossMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">InternalDataTrainingLossMixin</span></code></a></p>
 <p>This method approximates the Gaussian process posterior using a multivariate Gaussian.</p>
-<p>The key reference is <span id="id4">Opper and Archambeau [<a class="reference internal" href="../../../bibliography.html#id14" title="Manfred Opper and Cedric Archambeau. The variational gaussian approximation revisited. Neural Comput., pages 786–792, 2009.">OA09</a>]</span>.</p>
+<p>The key reference is <span id="id6">Opper and Archambeau [<a class="reference internal" href="../../../bibliography.html#id14" title="Manfred Opper and Cedric Archambeau. The variational gaussian approximation revisited. Neural Comput., pages 786–792, 2009.">OA09</a>]</span>.</p>
 <p>The idea is that the posterior over the function-value vector F is
 approximated by a Gaussian, and the KL divergence is minimised between
 the approximation and the posterior. It turns out that the optimal
@@ -2031,6 +2132,15 @@ by</p>
          <code class="docutils literal notranslate">
           <span class="pre">
            GPModel.calc_num_latent_gps_from_data()
+          </span>
+         </code>
+        </a>
+       </li>
+       <li class="toc-h5 nav-item toc-entry">
+        <a class="reference internal nav-link" href="#gpflow.models.GPModel.predict_f">
+         <code class="docutils literal notranslate">
+          <span class="pre">
+           GPModel.predict_f()
           </span>
          </code>
         </a>
