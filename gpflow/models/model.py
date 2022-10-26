@@ -27,7 +27,19 @@ from ..utilities import assert_params_false, to_default_float
 
 
 class BayesianModel(Module, metaclass=abc.ABCMeta):
-    """ Bayesian model. """
+    """Bayesian model.
+
+    This is a base class for all GPflow models. See also :class:`GPModel`.
+
+    A bayesian model provides methods for computing prior- and posterior densities, and a maximum
+    likelihood objective; allowing you to use generic code to optimise model parameters to fit data.
+
+    Most bayesian models are expected to hold their data internally, but the methods take ``*args``
+    and ``**kwargs`` allowing you to write implementations that take data as parameters.
+    See also :class:`gpflow.models.training_mixins.InternalDataTrainingLossMixin`,
+    :class:`gpflow.models.training_mixins.ExternalDataTrainingLossMixin`,
+    and :func:`gpflow.models.training_loss`.
+    """
 
     @check_shapes(
         "return: []",
@@ -104,6 +116,14 @@ class GPModel(BayesianModel):
 
     It is also possible to draw samples from the latent GPs using
     self.predict_f_samples.
+
+    If you are new to GPflow, see our :doc:`../../../../getting_started` for examples on how to use
+    a model.
+
+    :param kernel: Covariance function. $k$ above.
+    :param likelihood: The likelihood of $y_i$, given $f_i$.
+    :param mean_function: Mean of $f$.
+    :param num_latent_gps: The number of latent GPs - the output dimension of $f$.
     """
 
     def __init__(
@@ -176,6 +196,32 @@ class GPModel(BayesianModel):
     def predict_f(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
+        r"""
+        Compute the mean and variance of the posterior latent function(s) at the input points.
+
+        Given $x_i$ this computes $f_i$, for:
+
+        .. math::
+           :nowrap:
+
+           \begin{align}
+               \theta        & \sim p(\theta) \\
+               f             & \sim \mathcal{GP}(m(x), k(x, x'; \theta)) \\
+               f_i           & = f(x_i) \\
+           \end{align}
+
+        For an example of how to use ``predict_f``, see
+        :doc:`../../../../notebooks/getting_started/basic_usage`.
+
+        :param Xnew:
+            Input locations at which to compute mean and variance.
+        :param full_cov:
+            If ``True``, compute the full covariance between the inputs.
+            If ``False``, only returns the point-wise variance.
+        :param full_output_cov:
+            If ``True``, compute the full covariance between the outputs.
+            If ``False``, assumes outputs are independent.
+        """
         raise NotImplementedError
 
     @check_shapes(
@@ -244,8 +290,33 @@ class GPModel(BayesianModel):
     def predict_y(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
-        """
+        r"""
         Compute the mean and variance of the held-out data at the input points.
+
+        Given $x_i$ this computes $y_i$, for:
+
+        .. math::
+           :nowrap:
+
+           \begin{align}
+               \theta        & \sim p(\theta) \\
+               f             & \sim \mathcal{GP}(m(x), k(x, x'; \theta)) \\
+               f_i           & = f(x_i) \\
+               y_i \,|\, f_i & \sim p(y_i|f_i)
+           \end{align}
+
+
+        For an example of how to use ``predict_y``, see
+        :doc:`../../../../notebooks/getting_started/basic_usage`.
+
+        :param Xnew:
+            Input locations at which to compute mean and variance.
+        :param full_cov:
+            If ``True``, compute the full covariance between the inputs.
+            If ``False``, only returns the point-wise variance.
+        :param full_output_cov:
+            If ``True``, compute the full covariance between the outputs.
+            If ``False``, assumes outputs are independent.
         """
         # See https://github.com/GPflow/GPflow/issues/1461
         assert_params_false(self.predict_y, full_cov=full_cov, full_output_cov=full_output_cov)

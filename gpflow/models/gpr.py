@@ -52,6 +52,8 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
     .. math::
        \log p(Y \,|\, \sigma_n, \theta) =
             \mathcal N(Y \,|\, 0, \mathbf{K} + \sigma_n^2 \mathbf{I})
+
+    For a use example see :doc:`../../../../notebooks/getting_started/basic_usage`.
     """
 
     @check_shapes(
@@ -190,4 +192,5 @@ class GPR_with_posterior(GPR_deprecated):
 
 class GPR(GPR_with_posterior):
     # subclassed to ensure __class__ == "GPR"
-    pass
+
+    __doc__ = GPR_deprecated.__doc__  # Use documentation from GPR_deprecated.
