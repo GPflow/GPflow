@@ -31,7 +31,7 @@ class Kernel(Module, metaclass=abc.ABCMeta):
     The basic kernel class. Management of active dimensions is implemented here.
 
     :param active_dims: active dimensions, either a slice or list of
-    indices into the columns of X.
+        indices into the columns of X.
     :param name: optional kernel name.
     """
 
