@@ -83,5 +83,6 @@ Because GitHub's [graph of contributors](http://github.com/GPflow/GPflow/graphs/
 [@tmct](https://github.com/tmct)
 [@ltiao](https://github.com/ltiao)
 [@corwinpro](https://github.com/corwinpro)
+[@sc336](https://github.com/sc336)
 
 Add yourself when you first contribute to GPflow's code, tests, or documentation!
