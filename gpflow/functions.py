@@ -44,7 +44,7 @@ class Function(Module):
     independently for each row of X.
 
     This class is not only used for mean functions.  For example, the variance of a
-    heteroskedastic model is specified using a Function.
+    heteroskedastic model can be specified using a Function.
 
     :class:`Function` classes can have parameters, see the :class:`Linear` class for an
     example.
