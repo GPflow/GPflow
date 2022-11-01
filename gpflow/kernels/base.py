@@ -29,7 +29,7 @@ NormalizedActiveDims = Union[slice, AnyNDArray]
 class Kernel(Module, metaclass=abc.ABCMeta):
     """
     The basic kernel class. Management of active dimensions is implemented here.
-    
+
     :param active_dims: active dimensions, either a slice or list of
     indices into the columns of X.
     :param name: optional kernel name.
@@ -224,7 +224,7 @@ class Combination(Kernel):
     """
     Combine a list of kernels, e.g. by adding or multiplying (see inheriting
     classes).
-    
+
     Note that kernel composition can be done easily by using the + and * operators
     defined in :class:`Kernel` .
 

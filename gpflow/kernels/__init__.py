@@ -1,5 +1,3 @@
-
-
 r"""
 :class:`Kernel <gpflow.kernels.Kernel>` s form a core component of GPflow models and allow prior information to
 be encoded about a latent function of interest.
