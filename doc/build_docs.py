@@ -262,7 +262,7 @@ def main() -> None:
         "--limit-notebooks",
         type=str,
         nargs="*",
-        help="Only process the notebooks with this base/stem name. Useful when debugging.",
+        help="Only process the notebooks with this base/stem name; this is typically much faster and is useful when debugging.  For example, to process notebooks/tailor/external-mean-function.pct.py, use --limit_notebooks external-mean-function\n",
     )
     parser.add_argument(
         "--fail_on_warning",

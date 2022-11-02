@@ -333,7 +333,7 @@ class GPModel(BayesianModel):
         self, data: RegressionData, full_cov: bool = False, full_output_cov: bool = False
     ) -> tf.Tensor:
         """
-        Compute the log density of the data at the new data points.
+        Compute the log of the probability density of the data at the new data points.
         """
         # See https://github.com/GPflow/GPflow/issues/1461
         assert_params_false(self.predict_y, full_cov=full_cov, full_output_cov=full_output_cov)

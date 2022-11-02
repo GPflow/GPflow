@@ -71,6 +71,17 @@ def _IS_TRAINABLE_PARAMETER(o: object) -> bool:
 
 
 class Module(tf.Module):
+    """
+    Modules recursively compose other Modules and parameters to create models.
+    Compared to the `tf.Module` base class, `gpflow.Module` includes additional support for handling `gpflow.Parameter` attributes, see :py:attr:`~parameters` and :py:attr:`~trainable_parameters`.
+    It also adds pretty-printing within IPython and Jupyter notebooks.
+    All GPflow models, kernels, mean functions etc. are Modules.
+    See `this guide <https://gpflow.github.io/GPflow/develop/notebooks/getting_started/parameters_and_their_optimisation.html#The-Module-and-Parameter-classes>`_
+    for an introduction to this class.
+    See also `TensorFlow's documentation <https://www.tensorflow.org/api_docs/python/tf/Module>`_ for the base class
+    which goes into more detail as to why we use Module objects to compose things.
+    """
+
     @property
     def parameters(self) -> Tuple["Parameter", ...]:
         return tuple(self._flatten(predicate=_IS_PARAMETER))
@@ -105,6 +116,24 @@ class PriorOn(Enum):
 
 
 class Parameter(tfp.util.TransformedVariable):
+    """A parameter retains both constrained and unconstrained representations. If no transform
+    is provided, these two values will be the same.  It is often challenging for humans to operate with
+    unconstrained parameters, although this is typically easier for the optimiser. For example, a variance cannot be negative, therefore we need a
+    positive constraint and it is natural to use constrained values.  A prior can be imposed
+    either on the constrained version (default) or on the unconstrained version of the
+    parameter.
+
+    See `this guide <https://gpflow.github.io/GPflow/develop/notebooks/getting_started/parameters_and_their_optimisation.html#The-Module-and-Parameter-classes>`_
+    for an introduction to this class.
+
+    :param unconstrained_shape: Declare the shape of the unconstrained / pre-transformed values.
+        Useful for setting dynamic shapes.
+    :param constrained_shape: Declare the shape of the constrained / transformed values. Useful
+        for setting dynamic shapes.
+    :param shape: Convenience shortcut for setting both `unconstrained_shape` and
+        `constrained_shape` to the same value.
+    """
+
     def __init__(
         self,
         value: "TensorData",
@@ -119,20 +148,7 @@ class Parameter(tfp.util.TransformedVariable):
         constrained_shape: Optional[Sequence[Optional[int]]] = None,
         shape: Optional[Sequence[Optional[int]]] = None,
     ):
-        """A parameter retains both constrained and unconstrained representations. If no transform
-        is provided, these two values will be the same.  It is often challenging to operate with
-        unconstrained parameters. For example, a variance cannot be negative, therefore we need a
-        positive constraint and it is natural to use constrained values.  A prior can be imposed
-        either on the constrained version (default) or on the unconstrained version of the
-        parameter.
 
-        :param unconstrained_shape: Declare the shape of the unconstrained / pre-transformed values.
-            Useful for setting dynamic shapes.
-        :param constrained_shape: Declare the shape of the constrained / transformed values. Useful
-            for setting dynamic shapes.
-        :param shape: Convenience shortcut for setting both `unconstrained_shape` and
-            `constrained_shape` to the same value.
-        """
         if transform:
             name = name or transform.name
 

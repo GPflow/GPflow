@@ -12,21 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-r"""
-Kernels form a core component of GPflow models and allow prior information to
-be encoded about a latent function of interest. The effect of choosing
-different kernels, and how it is possible to combine multiple kernels is shown
-in the `"Using kernels in GPflow" notebook <notebooks/kernels.html>`_.
-
-Broadcasting over leading dimensions:
-`kernel.K(X1, X2)` returns the kernel evaluated on every pair in X1 and X2.
-E.g. if X1 has shape [S1, N1, D] and X2 has shape [S2, N2, D], kernel.K(X1, X2)
-will return a tensor of shape [S1, N1, S2, N2]. Similarly, kernel.K(X1, X1)
-returns a tensor of shape [S1, N1, S1, N1]. In contrast, the return shape of
-kernel.K(X1) is [S1, N1, N1]. (Without leading dimensions, the behaviour of
-kernel.K(X, None) is identical to kernel.K(X, X).)
-"""
-
 import abc
 from functools import partial, reduce
 from typing import Callable, List, Optional, Sequence, Tuple, Union, overload
@@ -43,17 +28,16 @@ NormalizedActiveDims = Union[slice, AnyNDArray]
 
 class Kernel(Module, metaclass=abc.ABCMeta):
     """
-    The basic kernel class. Handles active dims.
+    The basic kernel class. Management of active dimensions is implemented here.
+
+    :param active_dims: active dimensions, either a slice or list of
+        indices into the columns of X.
+    :param name: optional kernel name.
     """
 
     def __init__(
         self, active_dims: Optional[ActiveDims] = None, name: Optional[str] = None
     ) -> None:
-        """
-        :param active_dims: active dimensions, either a slice or list of
-            indices into the columns of X.
-        :param name: optional kernel name.
-        """
         super().__init__(name=name)
         self._active_dims = self._normalize_active_dims(active_dims)
 
@@ -240,6 +224,9 @@ class Combination(Kernel):
     """
     Combine a list of kernels, e.g. by adding or multiplying (see inheriting
     classes).
+
+    Note that kernel composition can be done easily by using the + and * operators
+    defined in :class:`Kernel` .
 
     The names of the kernels to be combined are generated from their class
     names.
