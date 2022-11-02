@@ -312,21 +312,6 @@
 <span class="c1"># See the License for the specific language governing permissions and</span>
 <span class="c1"># limitations under the License.</span>
 
-<span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Kernels form a core component of GPflow models and allow prior information to</span>
-<span class="sd">be encoded about a latent function of interest. The effect of choosing</span>
-<span class="sd">different kernels, and how it is possible to combine multiple kernels is shown</span>
-<span class="sd">in the `&quot;Using kernels in GPflow&quot; notebook &lt;notebooks/kernels.html&gt;`_.</span>
-
-<span class="sd">Broadcasting over leading dimensions:</span>
-<span class="sd">`kernel.K(X1, X2)` returns the kernel evaluated on every pair in X1 and X2.</span>
-<span class="sd">E.g. if X1 has shape [S1, N1, D] and X2 has shape [S2, N2, D], kernel.K(X1, X2)</span>
-<span class="sd">will return a tensor of shape [S1, N1, S2, N2]. Similarly, kernel.K(X1, X1)</span>
-<span class="sd">returns a tensor of shape [S1, N1, S1, N1]. In contrast, the return shape of</span>
-<span class="sd">kernel.K(X1) is [S1, N1, N1]. (Without leading dimensions, the behaviour of</span>
-<span class="sd">kernel.K(X, None) is identical to kernel.K(X, X).)</span>
-<span class="sd">&quot;&quot;&quot;</span>
-
 <span class="kn">import</span> <span class="nn">abc</span>
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span><span class="p">,</span> <span class="n">reduce</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">overload</span>
@@ -343,17 +328,16 @@
 
 <div class="viewcode-block" id="Kernel"><a class="viewcode-back" href="../../../api/gpflow/kernels/index.html#gpflow.kernels.base.Kernel">[docs]</a><span class="k">class</span> <span class="nc">Kernel</span><span class="p">(</span><span class="n">Module</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    The basic kernel class. Handles active dims.</span>
+<span class="sd">    The basic kernel class. Management of active dimensions is implemented here.</span>
+
+<span class="sd">    :param active_dims: active dimensions, either a slice or list of</span>
+<span class="sd">        indices into the columns of X.</span>
+<span class="sd">    :param name: optional kernel name.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">active_dims</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ActiveDims</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        :param active_dims: active dimensions, either a slice or list of</span>
-<span class="sd">            indices into the columns of X.</span>
-<span class="sd">        :param name: optional kernel name.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_active_dims</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_active_dims</span><span class="p">(</span><span class="n">active_dims</span><span class="p">)</span>
 
@@ -540,6 +524,9 @@
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Combine a list of kernels, e.g. by adding or multiplying (see inheriting</span>
 <span class="sd">    classes).</span>
+
+<span class="sd">    Note that kernel composition can be done easily by using the + and * operators</span>
+<span class="sd">    defined in :class:`Kernel` .</span>
 
 <span class="sd">    The names of the kernels to be combined are generated from their class</span>
 <span class="sd">    names.</span>

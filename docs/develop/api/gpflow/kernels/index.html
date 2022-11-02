@@ -374,7 +374,20 @@
               
   <section id="gpflow-kernels">
 <h1>gpflow.kernels<a class="headerlink" href="#gpflow-kernels" title="Permalink to this heading">#</a></h1>
-<span class="target" id="module-gpflow.kernels"></span><section id="modules">
+<span class="target" id="module-gpflow.kernels"></span><p><a class="reference internal" href="#gpflow.kernels.Kernel" title="gpflow.kernels.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a> s form a core component of GPflow models and allow prior information to
+be encoded about a latent function of interest.
+For an introduction to kernels, see <a class="reference external" href="https://gpflow.github.io/GPflow/develop/notebooks/getting_started/kernels.html">Kernels</a>
+in our Getting Started guide. The effect of choosing
+different kernels, and how it is possible to combine multiple kernels is shown
+in the <a class="reference external" href="notebooks/kernels.html">“Using kernels in GPflow” notebook</a>.</p>
+<p>Broadcasting over leading dimensions:
+<cite>kernel.K(X1, X2)</cite> returns the kernel evaluated on every pair in X1 and X2.
+E.g. if X1 has shape [S1, N1, D] and X2 has shape [S2, N2, D], kernel.K(X1, X2)
+will return a tensor of shape [S1, N1, S2, N2]. Similarly, kernel.K(X1, X1)
+returns a tensor of shape [S1, N1, S1, N1]. In contrast, the return shape of
+kernel.K(X1) is [S1, N1, N1]. (Without leading dimensions, the behaviour of
+kernel.K(X, None) is identical to kernel.K(X, X).)</p>
+<section id="modules">
 <h2>Modules<a class="headerlink" href="#modules" title="Permalink to this heading">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
@@ -530,6 +543,8 @@ is a logistic function defined as:</p>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a></p>
 <p>Combine a list of kernels, e.g. by adding or multiplying (see inheriting
 classes).</p>
+<p>Note that kernel composition can be done easily by using the + and * operators
+defined in <a class="reference internal" href="#gpflow.kernels.Kernel" title="gpflow.kernels.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a> .</p>
 <p>The names of the kernels to be combined are generated from their class
 names.</p>
 <dl class="field-list simple">
@@ -788,12 +803,13 @@ Euclidean distance. Should operate element-wise on r.</p>
 <dt class="sig sig-object py" id="gpflow.kernels.Kernel">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.kernels.</span></span><span class="sig-name descname"><span class="pre">Kernel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">active_dims</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/kernels/base.html#Kernel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.kernels.Kernel" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="../index.html#gpflow.Module" title="gpflow.base.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></a></p>
-<p>The basic kernel class. Handles active dims.</p>
+<p>The basic kernel class. Management of active dimensions is implemented here.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>active_dims</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<a class="reference internal" href="#gpflow.kernels.Kernel.slice" title="gpflow.kernels.Kernel.slice"><code class="xref py py-class docutils literal notranslate"><span class="pre">slice</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>], <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – </p></li>
-<li><p><strong>name</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]) – </p></li>
+<li><p><strong>active_dims</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<a class="reference internal" href="#gpflow.kernels.Kernel.slice" title="gpflow.kernels.Kernel.slice"><code class="xref py py-class docutils literal notranslate"><span class="pre">slice</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>], <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – active dimensions, either a slice or list of
+indices into the columns of X.</p></li>
+<li><p><strong>name</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]) – optional kernel name.</p></li>
 </ul>
 </dd>
 </dl>

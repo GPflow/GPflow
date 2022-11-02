@@ -371,6 +371,17 @@
 
 
 <div class="viewcode-block" id="Module"><a class="viewcode-back" href="../../api/gpflow/index.html#gpflow.base.Module">[docs]</a><span class="k">class</span> <span class="nc">Module</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Modules recursively compose other Modules and parameters to create models.</span>
+<span class="sd">    Compared to the `tf.Module` base class, `gpflow.Module` includes additional support for handling `gpflow.Parameter` attributes, see :py:attr:`~parameters` and :py:attr:`~trainable_parameters`.</span>
+<span class="sd">    It also adds pretty-printing within IPython and Jupyter notebooks.</span>
+<span class="sd">    All GPflow models, kernels, mean functions etc. are Modules.</span>
+<span class="sd">    See `this guide &lt;https://gpflow.github.io/GPflow/develop/notebooks/getting_started/parameters_and_their_optimisation.html#The-Module-and-Parameter-classes&gt;`_</span>
+<span class="sd">    for an introduction to this class.</span>
+<span class="sd">    See also `TensorFlow&#39;s documentation &lt;https://www.tensorflow.org/api_docs/python/tf/Module&gt;`_ for the base class</span>
+<span class="sd">    which goes into more detail as to why we use Module objects to compose things.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="s2">&quot;Parameter&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
         <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_flatten</span><span class="p">(</span><span class="n">predicate</span><span class="o">=</span><span class="n">_IS_PARAMETER</span><span class="p">))</span>
@@ -405,6 +416,24 @@
 
 
 <div class="viewcode-block" id="Parameter"><a class="viewcode-back" href="../../api/gpflow/index.html#gpflow.base.Parameter">[docs]</a><span class="k">class</span> <span class="nc">Parameter</span><span class="p">(</span><span class="n">tfp</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">TransformedVariable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A parameter retains both constrained and unconstrained representations. If no transform</span>
+<span class="sd">    is provided, these two values will be the same.  It is often challenging for humans to operate with</span>
+<span class="sd">    unconstrained parameters, although this is typically easier for the optimiser. For example, a variance cannot be negative, therefore we need a</span>
+<span class="sd">    positive constraint and it is natural to use constrained values.  A prior can be imposed</span>
+<span class="sd">    either on the constrained version (default) or on the unconstrained version of the</span>
+<span class="sd">    parameter.</span>
+
+<span class="sd">    See `this guide &lt;https://gpflow.github.io/GPflow/develop/notebooks/getting_started/parameters_and_their_optimisation.html#The-Module-and-Parameter-classes&gt;`_</span>
+<span class="sd">    for an introduction to this class.</span>
+
+<span class="sd">    :param unconstrained_shape: Declare the shape of the unconstrained / pre-transformed values.</span>
+<span class="sd">        Useful for setting dynamic shapes.</span>
+<span class="sd">    :param constrained_shape: Declare the shape of the constrained / transformed values. Useful</span>
+<span class="sd">        for setting dynamic shapes.</span>
+<span class="sd">    :param shape: Convenience shortcut for setting both `unconstrained_shape` and</span>
+<span class="sd">        `constrained_shape` to the same value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">value</span><span class="p">:</span> <span class="s2">&quot;TensorData&quot;</span><span class="p">,</span>
@@ -419,20 +448,7 @@
         <span class="n">constrained_shape</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">shape</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;A parameter retains both constrained and unconstrained representations. If no transform</span>
-<span class="sd">        is provided, these two values will be the same.  It is often challenging to operate with</span>
-<span class="sd">        unconstrained parameters. For example, a variance cannot be negative, therefore we need a</span>
-<span class="sd">        positive constraint and it is natural to use constrained values.  A prior can be imposed</span>
-<span class="sd">        either on the constrained version (default) or on the unconstrained version of the</span>
-<span class="sd">        parameter.</span>
 
-<span class="sd">        :param unconstrained_shape: Declare the shape of the unconstrained / pre-transformed values.</span>
-<span class="sd">            Useful for setting dynamic shapes.</span>
-<span class="sd">        :param constrained_shape: Declare the shape of the constrained / transformed values. Useful</span>
-<span class="sd">            for setting dynamic shapes.</span>
-<span class="sd">        :param shape: Convenience shortcut for setting both `unconstrained_shape` and</span>
-<span class="sd">            `constrained_shape` to the same value.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">transform</span><span class="p">:</span>
             <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="n">transform</span><span class="o">.</span><span class="n">name</span>
 
