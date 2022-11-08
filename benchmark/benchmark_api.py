@@ -17,7 +17,7 @@ Classes and other infrastructure for defining which benchmarks to run and what p
 See ``benchmarks.py`` for concrete instances of these.
 """
 from dataclasses import dataclass
-from typing import Any, Collection, Dict, List, Optional, Tuple, Sequence
+from typing import Any, Collection, Dict, List, Optional, Sequence, Tuple
 
 import pandas as pd
 
