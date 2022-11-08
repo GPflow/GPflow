@@ -180,11 +180,11 @@ class BenchmarkSet:
         Get ``line_by``, or a default value if ``line_by`` is ``None``.
         """
         if self.line_by is None:
-            used_by: Sequence[GroupingKey] = (
+            used_by: Set[GroupingKey] = (
                 set(self.file_by.by) | set(self.column_by.by) | set(self.row_by.by)
             )
             line_by = set(GroupingKey) - used_by
-            sorted_line_by: Set[GroupingKey] = sorted(line_by, key=lambda k: k.key_cost)
+            sorted_line_by: Sequence[GroupingKey] = sorted(line_by, key=lambda k: k.key_cost)   # type: ignore
             return GroupingSpec(sorted_line_by, minimise=True)
 
         return self.line_by
