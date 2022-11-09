@@ -184,7 +184,7 @@ class BenchmarkSet:
                 set(self.file_by.by) | set(self.column_by.by) | set(self.row_by.by)
             )
             line_by = set(GroupingKey) - used_by
-            sorted_line_by: Sequence[GroupingKey] = sorted(line_by, key=lambda k: k.key_cost)   # type: ignore
+            sorted_line_by: Sequence[GroupingKey] = sorted(line_by, key=lambda k: k.key_cost)   # type: ignore[arg-type] # for lambda
             return GroupingSpec(sorted_line_by, minimise=True)
 
         return self.line_by
