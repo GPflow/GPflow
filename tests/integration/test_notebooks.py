@@ -21,8 +21,8 @@ from typing import Sequence, Set
 import jupytext
 import nbformat
 import pytest
-from nbconvert.preprocessors import ExecutePreprocessor
-from nbconvert.preprocessors.execute import CellExecutionError
+from nbconvert.preprocessors.execute import ExecutePreprocessor
+from nbclient.exceptions import CellExecutionError
 
 _NOTEBOOK_DIR = (Path(__file__) / "../../../doc/sphinx/notebooks").resolve()
 
