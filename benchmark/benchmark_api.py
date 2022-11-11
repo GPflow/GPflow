@@ -17,7 +17,7 @@ Classes and other infrastructure for defining which benchmarks to run and what p
 See ``benchmarks.py`` for concrete instances of these.
 """
 from dataclasses import dataclass
-from typing import Any, Collection, Dict, List, Optional, Tuple
+from typing import Any, Collection, Dict, List, Optional, Sequence, Set, Tuple
 
 import pandas as pd
 
@@ -180,9 +180,11 @@ class BenchmarkSet:
         Get ``line_by``, or a default value if ``line_by`` is ``None``.
         """
         if self.line_by is None:
-            used_by = set(self.file_by.by) | set(self.column_by.by) | set(self.row_by.by)
+            used_by: Set[GroupingKey] = (
+                set(self.file_by.by) | set(self.column_by.by) | set(self.row_by.by)
+            )
             line_by = set(GroupingKey) - used_by
-            sorted_line_by = sorted(line_by, key=lambda k: k.key_cost)
+            sorted_line_by: Sequence[GroupingKey] = sorted(line_by, key=lambda k: k.key_cost)  # type: ignore[arg-type] # for lambda
             return GroupingSpec(sorted_line_by, minimise=True)
 
         return self.line_by
