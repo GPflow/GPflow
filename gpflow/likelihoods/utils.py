@@ -16,6 +16,11 @@ import numpy as np
 import tensorflow as tf
 
 
-def inv_probit(x: tf.Tensor) -> tf.Tensor:
-    jitter = 1e-3  # ensures output is strictly between 0 and 1
+def inv_probit(x: tf.Tensor, jitter: float = 1e-3) -> tf.Tensor:
+    """
+    Compute the inverse probit, i.e. the N(0,1) CDF, at x.
+
+    :param x: argument
+    :param jitter: small jitter that ensures output is strictly between 0 and 1
+    """
     return 0.5 * (1.0 + tf.math.erf(x / np.sqrt(2.0))) * (1 - 2 * jitter) + jitter
