@@ -6,8 +6,11 @@
 GPflow Documentation
 ==================================
 
+Please note this documentation is for an old version of GPflow.  For the most recent version of GPflow, please see https://gpflow.github.io/GPflow/develop/index.html
+
 .. toctree::
    :maxdepth: 2
+
 
    intro
    Examples and tutorials <https://nbviewer.jupyter.org/github/GPflow/GPflow/blob/develop-1.0/doc/source/notebooks/intro.ipynb?flush_cache=true>
