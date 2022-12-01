@@ -43,6 +43,12 @@ def to_default_int(x: TensorData) -> tf.Tensor:
     "return: [any...]",
 )
 def to_default_float(x: TensorData) -> tf.Tensor:
+    if not tf.is_tensor(x):
+        # workaround for the fact that tf.cast(, dtype=tf.float64) doesn't directly convert
+        # python floats to tf.float64 tensors. Instead, it converts the python float to a
+        # tf.float32 tensor, and then casts that to be tf.float64. This results in a loss
+        # of precision. See https://github.com/tensorflow/tensorflow/issues/57779 for more context.
+        return tf.convert_to_tensor(x, default_float())
     return tf.cast(x, dtype=default_float())
 
 
