@@ -33,14 +33,14 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
-# Release 2.6.4 (next upcoming release in progress)
+# Release 2.7.0 (next upcoming release in progress)
 
 <INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
 
 ## Breaking Changes
 
-* <DOCUMENT BREAKING CHANGES HERE>
-* <THIS SECTION SHOULD CONTAIN API AND BEHAVIORAL BREAKING CHANGES>
+* `gpflow.experimental.check_shapes` has been removed, in favour of an independent release. Use
+  `pip install check_shapes` and `import check_shapes` instead.
 
 ## Known Caveats
 
@@ -50,14 +50,11 @@ This release contains contributions from:
 
 ## Major Features and Improvements
 
-* <INSERT MAJOR FEATURE HERE, USING MARKDOWN SYNTAX>
-* <IF RELEASE CONTAINS MULTIPLE FEATURES FROM SAME AREA, GROUP THEM TOGETHER>
+* Major rework of documentation landing page and "getting started" section.
 
 ## Bug Fixes and Other Changes
 
-* <SIMILAR TO ABOVE SECTION, BUT FOR OTHER IMPORTANT CHANGES / BUG FIXES>
-* <IF A CHANGE CLOSES A GITHUB ISSUE, IT SHOULD BE DOCUMENTED HERE>
-* <NOTES SHOULD BE GROUPED PER AREA>
+* Fixed bug related to `tf.saved_model` and methods wrapped in `@check_shapes`.
 
 ## Thanks to our Contributors
 
@@ -72,7 +69,7 @@ This is yet another bug-fix release.
 
 ## Bug Fixes and Other Changes
 
-* Fix to `to_defualt_float` to avoid losing precision when called with python floats.
+* Fix to `to_default_float` to avoid losing precision when called with python floats.
 
 ## Thanks to our Contributors
 
