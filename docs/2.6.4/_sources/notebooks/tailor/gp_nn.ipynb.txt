@@ -1,0 +1,816 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "def4b583",
+   "metadata": {},
+   "source": [
+    "# Mixing TensorFlow models with GPflow\n",
+    "\n",
+    "This notebook explores the combination of Keras TensorFlow neural networks with GPflow models."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "3766694a",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-12-02T14:59:09.179999Z",
+     "iopub.status.busy": "2022-12-02T14:59:09.179555Z",
+     "iopub.status.idle": "2022-12-02T14:59:13.467662Z",
+     "shell.execute_reply": "2022-12-02T14:59:13.466852Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2022-12-02 14:59:09.467154: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n",
+      "2022-12-02 14:59:09.602355: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2022-12-02 14:59:09.602381: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n",
+      "2022-12-02 14:59:09.631504: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2022-12-02 14:59:10.261576: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory\n",
+      "2022-12-02 14:59:10.261644: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory\n",
+      "2022-12-02 14:59:10.261653: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You're calling gpflow.experimental.check_shapes.decorator.check_shapes which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.\n",
+      "  warn(\n",
+      "/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You're calling gpflow.experimental.check_shapes.inheritance.inherit_check_shapes which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.\n",
+      "  warn(\n"
+     ]
+    }
+   ],
+   "source": [
+    "from typing import Dict, Optional, Tuple\n",
+    "\n",
+    "import numpy as np\n",
+    "import tensorflow as tf\n",
+    "import tensorflow_datasets as tfds\n",
+    "from scipy.cluster.vq import kmeans2\n",
+    "\n",
+    "import gpflow\n",
+    "from gpflow.ci_utils import reduce_in_tests\n",
+    "from gpflow.utilities import to_default_float\n",
+    "\n",
+    "iterations = reduce_in_tests(100)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4b6306ea",
+   "metadata": {},
+   "source": [
+    "## Convolutional network inside a GPflow model"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "5a9102c1",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-12-02T14:59:13.470871Z",
+     "iopub.status.busy": "2022-12-02T14:59:13.470405Z",
+     "iopub.status.idle": "2022-12-02T14:59:15.045735Z",
+     "shell.execute_reply": "2022-12-02T14:59:15.044975Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2022-12-02 14:59:13.504903: W tensorflow/core/platform/cloud/google_auth_provider.cc:184] All attempts to get a Google authentication bearer token failed, returning an empty token. Retrieving token from files failed with \"NOT_FOUND: Could not locate the credentials file.\". Retrieving token from GCE failed with \"FAILED_PRECONDITION: Error executing an HTTP request: libcurl code 6 meaning 'Couldn't resolve host name', error details: Could not resolve host: metadata\".\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Downloading and preparing dataset 11.06 MiB (download: 11.06 MiB, generated: 21.00 MiB, total: 32.06 MiB) to /home/circleci/tensorflow_datasets/mnist/3.0.1...\n"
+     ]
+    },
+    {
+     "data": {
+      "application/vnd.jupyter.widget-view+json": {
+       "model_id": "9c5baff2688341d0bea6f6f8f326646d",
+       "version_major": 2,
+       "version_minor": 0
+      },
+      "text/plain": [
+       "Dl Completed...:   0%|          | 0/4 [00:00<?, ? file/s]"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Dataset mnist downloaded and prepared to /home/circleci/tensorflow_datasets/mnist/3.0.1. Subsequent calls will reuse this data.\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2022-12-02 14:59:14.541937: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2022-12-02 14:59:14.541968: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2022-12-02 14:59:14.541986: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (f8b010a850f9): /proc/driver/nvidia/version does not exist\n",
+      "2022-12-02 14:59:14.542219: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
+     ]
+    }
+   ],
+   "source": [
+    "original_dataset, info = tfds.load(\n",
+    "    name=\"mnist\", split=tfds.Split.TRAIN, with_info=True\n",
+    ")\n",
+    "total_num_data = info.splits[\"train\"].num_examples\n",
+    "image_shape = info.features[\"image\"].shape\n",
+    "image_size = tf.reduce_prod(image_shape)\n",
+    "batch_size = 32\n",
+    "\n",
+    "\n",
+    "def map_fn(input_slice: Dict[str, tf.Tensor]):\n",
+    "    updated = input_slice\n",
+    "    image = to_default_float(updated[\"image\"]) / 255.0\n",
+    "    label = to_default_float(updated[\"label\"])\n",
+    "    return tf.reshape(image, [-1, image_size]), label\n",
+    "\n",
+    "\n",
+    "autotune = tf.data.experimental.AUTOTUNE\n",
+    "dataset = (\n",
+    "    original_dataset.shuffle(1024)\n",
+    "    .batch(batch_size, drop_remainder=True)\n",
+    "    .map(map_fn, num_parallel_calls=autotune)\n",
+    "    .prefetch(autotune)\n",
+    "    .repeat()\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "284b5e42",
+   "metadata": {},
+   "source": [
+    "Here we'll use the GPflow functionality, but put a non-GPflow model inside the kernel.\\\n",
+    "Vanilla ConvNet. This gets 97.3% accuracy on MNIST when used on its own (+ final linear layer) after 20K iterations"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "ffd153d5",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-12-02T14:59:15.049445Z",
+     "iopub.status.busy": "2022-12-02T14:59:15.049114Z",
+     "iopub.status.idle": "2022-12-02T14:59:15.057400Z",
+     "shell.execute_reply": "2022-12-02T14:59:15.056801Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "class KernelWithConvNN(gpflow.kernels.Kernel):\n",
+    "    def __init__(\n",
+    "        self,\n",
+    "        image_shape: Tuple,\n",
+    "        output_dim: int,\n",
+    "        base_kernel: gpflow.kernels.Kernel,\n",
+    "        batch_size: Optional[int] = None,\n",
+    "    ):\n",
+    "        super().__init__()\n",
+    "        with self.name_scope:\n",
+    "            self.base_kernel = base_kernel\n",
+    "            input_size = int(tf.reduce_prod(image_shape))\n",
+    "            input_shape = (input_size,)\n",
+    "\n",
+    "            self.cnn = tf.keras.Sequential(\n",
+    "                [\n",
+    "                    tf.keras.layers.InputLayer(\n",
+    "                        input_shape=input_shape, batch_size=batch_size\n",
+    "                    ),\n",
+    "                    tf.keras.layers.Reshape(image_shape),\n",
+    "                    tf.keras.layers.Conv2D(\n",
+    "                        filters=32,\n",
+    "                        kernel_size=image_shape[:-1],\n",
+    "                        padding=\"same\",\n",
+    "                        activation=\"relu\",\n",
+    "                    ),\n",
+    "                    tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=2),\n",
+    "                    tf.keras.layers.Conv2D(\n",
+    "                        filters=64,\n",
+    "                        kernel_size=(5, 5),\n",
+    "                        padding=\"same\",\n",
+    "                        activation=\"relu\",\n",
+    "                    ),\n",
+    "                    tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=2),\n",
+    "                    tf.keras.layers.Flatten(),\n",
+    "                    tf.keras.layers.Dense(output_dim, activation=\"relu\"),\n",
+    "                    tf.keras.layers.Lambda(to_default_float),\n",
+    "                ]\n",
+    "            )\n",
+    "\n",
+    "            self.cnn.build()\n",
+    "\n",
+    "    def K(\n",
+    "        self, a_input: tf.Tensor, b_input: Optional[tf.Tensor] = None\n",
+    "    ) -> tf.Tensor:\n",
+    "        transformed_a = self.cnn(a_input)\n",
+    "        transformed_b = self.cnn(b_input) if b_input is not None else b_input\n",
+    "        return self.base_kernel.K(transformed_a, transformed_b)\n",
+    "\n",
+    "    def K_diag(self, a_input: tf.Tensor) -> tf.Tensor:\n",
+    "        transformed_a = self.cnn(a_input)\n",
+    "        return self.base_kernel.K_diag(transformed_a)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "077426c4",
+   "metadata": {},
+   "source": [
+    "$K_{uf}$ is in ConvNN output space, therefore we need to update `Kuf` multidispatch."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "86beb486",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-12-02T14:59:15.060280Z",
+     "iopub.status.busy": "2022-12-02T14:59:15.059963Z",
+     "iopub.status.idle": "2022-12-02T14:59:15.064867Z",
+     "shell.execute_reply": "2022-12-02T14:59:15.064113Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "class KernelSpaceInducingPoints(gpflow.inducing_variables.InducingPoints):\n",
+    "    pass\n",
+    "\n",
+    "\n",
+    "@gpflow.covariances.Kuu.register(KernelSpaceInducingPoints, KernelWithConvNN)\n",
+    "def Kuu(inducing_variable, kernel, jitter=None):\n",
+    "    func = gpflow.covariances.Kuu.dispatch(\n",
+    "        gpflow.inducing_variables.InducingPoints, gpflow.kernels.Kernel\n",
+    "    )\n",
+    "    return func(inducing_variable, kernel.base_kernel, jitter=jitter)\n",
+    "\n",
+    "\n",
+    "@gpflow.covariances.Kuf.register(\n",
+    "    KernelSpaceInducingPoints, KernelWithConvNN, object\n",
+    ")\n",
+    "def Kuf(inducing_variable, kernel, a_input):\n",
+    "    return kernel.base_kernel(inducing_variable.Z, kernel.cnn(a_input))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "689cd614",
+   "metadata": {},
+   "source": [
+    "Now we are ready to create and initialize the model:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "92aec521",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-12-02T14:59:15.067444Z",
+     "iopub.status.busy": "2022-12-02T14:59:15.067145Z",
+     "iopub.status.idle": "2022-12-02T14:59:17.480113Z",
+     "shell.execute_reply": "2022-12-02T14:59:17.479424Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2022-12-02 14:59:15.246122: W tensorflow/core/kernels/data/cache_dataset_ops.cc:856] The calling iterator did not fully read the dataset being cached. In order to avoid unexpected truncation of the dataset, the partially cached contents of the dataset  will be discarded. This can happen if you have an input pipeline similar to `dataset.cache().take(k).repeat()`. You should use `dataset.take(k).cache().repeat()` instead.\n",
+      "/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You're calling gpflow.experimental.check_shapes.checker.ShapeChecker.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.\n",
+      "  warn(\n"
+     ]
+    }
+   ],
+   "source": [
+    "num_mnist_classes = 10\n",
+    "output_dim = 5\n",
+    "num_inducing_points = 100\n",
+    "images_subset, labels_subset = next(iter(dataset.batch(32)))\n",
+    "images_subset = tf.reshape(images_subset, [-1, image_size])\n",
+    "labels_subset = tf.reshape(labels_subset, [-1, 1])\n",
+    "\n",
+    "kernel = KernelWithConvNN(\n",
+    "    image_shape,\n",
+    "    output_dim,\n",
+    "    gpflow.kernels.SquaredExponential(),\n",
+    "    batch_size=batch_size,\n",
+    ")\n",
+    "\n",
+    "likelihood = gpflow.likelihoods.MultiClass(num_mnist_classes)\n",
+    "\n",
+    "inducing_variable_kmeans = kmeans2(\n",
+    "    images_subset.numpy(), num_inducing_points, minit=\"points\"\n",
+    ")[0]\n",
+    "inducing_variable_cnn = kernel.cnn(inducing_variable_kmeans)\n",
+    "inducing_variable = KernelSpaceInducingPoints(inducing_variable_cnn)\n",
+    "\n",
+    "model = gpflow.models.SVGP(\n",
+    "    kernel,\n",
+    "    likelihood,\n",
+    "    inducing_variable=inducing_variable,\n",
+    "    num_data=total_num_data,\n",
+    "    num_latent_gps=num_mnist_classes,\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "c66119e7",
+   "metadata": {},
+   "source": [
+    "And start optimization:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "137b9c3b",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-12-02T14:59:17.483791Z",
+     "iopub.status.busy": "2022-12-02T14:59:17.483409Z",
+     "iopub.status.idle": "2022-12-02T14:59:49.748275Z",
+     "shell.execute_reply": "2022-12-02T14:59:49.747362Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "data_iterator = iter(dataset)\n",
+    "adam_opt = tf.optimizers.Adam(0.001)\n",
+    "\n",
+    "training_loss = model.training_loss_closure(data_iterator)\n",
+    "\n",
+    "\n",
+    "@tf.function\n",
+    "def optimization_step():\n",
+    "    adam_opt.minimize(training_loss, var_list=model.trainable_variables)\n",
+    "\n",
+    "\n",
+    "for _ in range(iterations):\n",
+    "    optimization_step()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "bc7555b7",
+   "metadata": {},
+   "source": [
+    "Let's do predictions after training. Don't expect that we will get a good accuracy, because we haven't run training for long enough."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "c143fb10",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-12-02T14:59:49.752598Z",
+     "iopub.status.busy": "2022-12-02T14:59:49.752180Z",
+     "iopub.status.idle": "2022-12-02T14:59:57.590556Z",
+     "shell.execute_reply": "2022-12-02T14:59:57.589916Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Accuracy is 66.4062%\n"
+     ]
+    }
+   ],
+   "source": [
+    "m, v = model.predict_y(images_subset)\n",
+    "preds = np.argmax(m, 1).reshape(labels_subset.numpy().shape)\n",
+    "correct = preds == labels_subset.numpy().astype(int)\n",
+    "acc = np.average(correct.astype(float)) * 100.0\n",
+    "\n",
+    "print(\"Accuracy is {:.4f}%\".format(acc))"
+   ]
+  }
+ ],
+ "metadata": {
+  "jupytext": {
+   "formats": "ipynb,.pct.py:percent"
+  },
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.10.8"
+  },
+  "widgets": {
+   "application/vnd.jupyter.widget-state+json": {
+    "state": {
+     "12c45e60f3f64040a39aff199ddd5d97": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "2.0.0",
+      "model_name": "FloatProgressModel",
+      "state": {
+       "_dom_classes": [],
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "2.0.0",
+       "_model_name": "FloatProgressModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/controls",
+       "_view_module_version": "2.0.0",
+       "_view_name": "ProgressView",
+       "bar_style": "success",
+       "description": "",
+       "description_allow_html": false,
+       "layout": "IPY_MODEL_c6796d1a43e24a80959d3b1198f72cd8",
+       "max": 4.0,
+       "min": 0.0,
+       "orientation": "horizontal",
+       "style": "IPY_MODEL_9085038603664931a9237f36f6a0b35e",
+       "tabbable": null,
+       "tooltip": null,
+       "value": 4.0
+      }
+     },
+     "44da74ba72364d99962dcbb0ffbbd364": {
+      "model_module": "@jupyter-widgets/base",
+      "model_module_version": "2.0.0",
+      "model_name": "LayoutModel",
+      "state": {
+       "_model_module": "@jupyter-widgets/base",
+       "_model_module_version": "2.0.0",
+       "_model_name": "LayoutModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/base",
+       "_view_module_version": "2.0.0",
+       "_view_name": "LayoutView",
+       "align_content": null,
+       "align_items": null,
+       "align_self": null,
+       "border_bottom": null,
+       "border_left": null,
+       "border_right": null,
+       "border_top": null,
+       "bottom": null,
+       "display": null,
+       "flex": null,
+       "flex_flow": null,
+       "grid_area": null,
+       "grid_auto_columns": null,
+       "grid_auto_flow": null,
+       "grid_auto_rows": null,
+       "grid_column": null,
+       "grid_gap": null,
+       "grid_row": null,
+       "grid_template_areas": null,
+       "grid_template_columns": null,
+       "grid_template_rows": null,
+       "height": null,
+       "justify_content": null,
+       "justify_items": null,
+       "left": null,
+       "margin": null,
+       "max_height": null,
+       "max_width": null,
+       "min_height": null,
+       "min_width": null,
+       "object_fit": null,
+       "object_position": null,
+       "order": null,
+       "overflow": null,
+       "padding": null,
+       "right": null,
+       "top": null,
+       "visibility": null,
+       "width": null
+      }
+     },
+     "593391d1e6c747158e3e7ec4688ea18a": {
+      "model_module": "@jupyter-widgets/base",
+      "model_module_version": "2.0.0",
+      "model_name": "LayoutModel",
+      "state": {
+       "_model_module": "@jupyter-widgets/base",
+       "_model_module_version": "2.0.0",
+       "_model_name": "LayoutModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/base",
+       "_view_module_version": "2.0.0",
+       "_view_name": "LayoutView",
+       "align_content": null,
+       "align_items": null,
+       "align_self": null,
+       "border_bottom": null,
+       "border_left": null,
+       "border_right": null,
+       "border_top": null,
+       "bottom": null,
+       "display": null,
+       "flex": null,
+       "flex_flow": null,
+       "grid_area": null,
+       "grid_auto_columns": null,
+       "grid_auto_flow": null,
+       "grid_auto_rows": null,
+       "grid_column": null,
+       "grid_gap": null,
+       "grid_row": null,
+       "grid_template_areas": null,
+       "grid_template_columns": null,
+       "grid_template_rows": null,
+       "height": null,
+       "justify_content": null,
+       "justify_items": null,
+       "left": null,
+       "margin": null,
+       "max_height": null,
+       "max_width": null,
+       "min_height": null,
+       "min_width": null,
+       "object_fit": null,
+       "object_position": null,
+       "order": null,
+       "overflow": null,
+       "padding": null,
+       "right": null,
+       "top": null,
+       "visibility": null,
+       "width": null
+      }
+     },
+     "6d590903659d4eccb8496ff8b8ece294": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "2.0.0",
+      "model_name": "HTMLStyleModel",
+      "state": {
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "2.0.0",
+       "_model_name": "HTMLStyleModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/base",
+       "_view_module_version": "2.0.0",
+       "_view_name": "StyleView",
+       "background": null,
+       "description_width": "",
+       "font_size": null,
+       "text_color": null
+      }
+     },
+     "73ab51142e524df8a9925ef993416c79": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "2.0.0",
+      "model_name": "HTMLStyleModel",
+      "state": {
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "2.0.0",
+       "_model_name": "HTMLStyleModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/base",
+       "_view_module_version": "2.0.0",
+       "_view_name": "StyleView",
+       "background": null,
+       "description_width": "",
+       "font_size": null,
+       "text_color": null
+      }
+     },
+     "8d9074dd051d49a8b509dbf0a0478801": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "2.0.0",
+      "model_name": "HTMLModel",
+      "state": {
+       "_dom_classes": [],
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "2.0.0",
+       "_model_name": "HTMLModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/controls",
+       "_view_module_version": "2.0.0",
+       "_view_name": "HTMLView",
+       "description": "",
+       "description_allow_html": false,
+       "layout": "IPY_MODEL_593391d1e6c747158e3e7ec4688ea18a",
+       "placeholder": "​",
+       "style": "IPY_MODEL_73ab51142e524df8a9925ef993416c79",
+       "tabbable": null,
+       "tooltip": null,
+       "value": "Dl Completed...: 100%"
+      }
+     },
+     "9085038603664931a9237f36f6a0b35e": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "2.0.0",
+      "model_name": "ProgressStyleModel",
+      "state": {
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "2.0.0",
+       "_model_name": "ProgressStyleModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/base",
+       "_view_module_version": "2.0.0",
+       "_view_name": "StyleView",
+       "bar_color": null,
+       "description_width": ""
+      }
+     },
+     "97ea08b48ef9494ba7a536f12ff3e783": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "2.0.0",
+      "model_name": "HTMLModel",
+      "state": {
+       "_dom_classes": [],
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "2.0.0",
+       "_model_name": "HTMLModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/controls",
+       "_view_module_version": "2.0.0",
+       "_view_name": "HTMLView",
+       "description": "",
+       "description_allow_html": false,
+       "layout": "IPY_MODEL_e14e2beacaef4061b73601ea286f3785",
+       "placeholder": "​",
+       "style": "IPY_MODEL_6d590903659d4eccb8496ff8b8ece294",
+       "tabbable": null,
+       "tooltip": null,
+       "value": " 4/4 [00:00&lt;00:00, 12.20 file/s]"
+      }
+     },
+     "9c5baff2688341d0bea6f6f8f326646d": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "2.0.0",
+      "model_name": "HBoxModel",
+      "state": {
+       "_dom_classes": [],
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "2.0.0",
+       "_model_name": "HBoxModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/controls",
+       "_view_module_version": "2.0.0",
+       "_view_name": "HBoxView",
+       "box_style": "",
+       "children": [
+        "IPY_MODEL_8d9074dd051d49a8b509dbf0a0478801",
+        "IPY_MODEL_12c45e60f3f64040a39aff199ddd5d97",
+        "IPY_MODEL_97ea08b48ef9494ba7a536f12ff3e783"
+       ],
+       "layout": "IPY_MODEL_44da74ba72364d99962dcbb0ffbbd364",
+       "tabbable": null,
+       "tooltip": null
+      }
+     },
+     "c6796d1a43e24a80959d3b1198f72cd8": {
+      "model_module": "@jupyter-widgets/base",
+      "model_module_version": "2.0.0",
+      "model_name": "LayoutModel",
+      "state": {
+       "_model_module": "@jupyter-widgets/base",
+       "_model_module_version": "2.0.0",
+       "_model_name": "LayoutModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/base",
+       "_view_module_version": "2.0.0",
+       "_view_name": "LayoutView",
+       "align_content": null,
+       "align_items": null,
+       "align_self": null,
+       "border_bottom": null,
+       "border_left": null,
+       "border_right": null,
+       "border_top": null,
+       "bottom": null,
+       "display": null,
+       "flex": null,
+       "flex_flow": null,
+       "grid_area": null,
+       "grid_auto_columns": null,
+       "grid_auto_flow": null,
+       "grid_auto_rows": null,
+       "grid_column": null,
+       "grid_gap": null,
+       "grid_row": null,
+       "grid_template_areas": null,
+       "grid_template_columns": null,
+       "grid_template_rows": null,
+       "height": null,
+       "justify_content": null,
+       "justify_items": null,
+       "left": null,
+       "margin": null,
+       "max_height": null,
+       "max_width": null,
+       "min_height": null,
+       "min_width": null,
+       "object_fit": null,
+       "object_position": null,
+       "order": null,
+       "overflow": null,
+       "padding": null,
+       "right": null,
+       "top": null,
+       "visibility": null,
+       "width": null
+      }
+     },
+     "e14e2beacaef4061b73601ea286f3785": {
+      "model_module": "@jupyter-widgets/base",
+      "model_module_version": "2.0.0",
+      "model_name": "LayoutModel",
+      "state": {
+       "_model_module": "@jupyter-widgets/base",
+       "_model_module_version": "2.0.0",
+       "_model_name": "LayoutModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/base",
+       "_view_module_version": "2.0.0",
+       "_view_name": "LayoutView",
+       "align_content": null,
+       "align_items": null,
+       "align_self": null,
+       "border_bottom": null,
+       "border_left": null,
+       "border_right": null,
+       "border_top": null,
+       "bottom": null,
+       "display": null,
+       "flex": null,
+       "flex_flow": null,
+       "grid_area": null,
+       "grid_auto_columns": null,
+       "grid_auto_flow": null,
+       "grid_auto_rows": null,
+       "grid_column": null,
+       "grid_gap": null,
+       "grid_row": null,
+       "grid_template_areas": null,
+       "grid_template_columns": null,
+       "grid_template_rows": null,
+       "height": null,
+       "justify_content": null,
+       "justify_items": null,
+       "left": null,
+       "margin": null,
+       "max_height": null,
+       "max_width": null,
+       "min_height": null,
+       "min_width": null,
+       "object_fit": null,
+       "object_position": null,
+       "order": null,
+       "overflow": null,
+       "padding": null,
+       "right": null,
+       "top": null,
+       "visibility": null,
+       "width": null
+      }
+     }
+    },
+    "version_major": 2,
+    "version_minor": 0
+   }
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

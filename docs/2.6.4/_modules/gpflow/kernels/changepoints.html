@@ -1,0 +1,606 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>gpflow.kernels.changepoints &#8212; GPflow 2.6.4 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=796348d33e8b1d947c94" rel="stylesheet">
+<link href="../../../_static/styles/bootstrap.css?digest=796348d33e8b1d947c94" rel="stylesheet">
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=796348d33e8b1d947c94" rel="stylesheet">
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=796348d33e8b1d947c94" rel="stylesheet">
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=796348d33e8b1d947c94">
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=796348d33e8b1d947c94">
+
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/gpflow/kernels/changepoints';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://gpflow.github.io/GPflow/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.6.4';
+        </script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="docsearch:language" content="en">
+  </head>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  
+  <input type="checkbox" class="sidebar-toggle" name="__primary" id="__primary">
+  <label class="overlay overlay-primary" for="__primary"></label>
+
+  
+  <input type="checkbox" class="sidebar-toggle" name="__secondary" id="__secondary">
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+      
+<form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+    </div>
+  </div>
+
+  
+  <nav class="bd-header navbar navbar-expand-lg bd-navbar" id="navbar-main"><div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+      <span class="fa-solid fa-bars"></span>
+  </label>
+  <div id="navbar-start">
+    
+    
+  
+
+
+<a class="navbar-brand logo" href="../../../index.html">
+
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <img src="../../../_static/gpflow_logo.svg" class="logo__image only-light" alt="Logo image">
+    <img src="../../../_static/gpflow_logo.svg" class="logo__image only-dark" alt="Logo image">
+  
+  
+</a>
+    
+  </div>
+
+  
+  <div class="col-lg-9 navbar-header-items">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <nav class="navbar-nav">
+    <p class="sidebar-header-items__title" role="heading" aria-level="1" aria-label="Site Navigation">
+        Site Navigation
+    </p>
+    <ul id="navbar-main-elements" class="navbar-nav">
+        
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../intro.html">
+                        Introduction
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../manual.html">
+                        GPflow manual
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../notebooks/intro_to_gpflow2.html">
+                        GPflow with TensorFlow 2
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../notebooks_file.html">
+                        Notebooks
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../derivations.html">
+                        Derivations
+                      </a>
+                    </li>
+                
+            <div class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    More
+                </button>
+                <div class="dropdown-menu">
+                    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../api/gpflow/index.html">
+                        API reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../bibliography.html">
+                        Bibliography
+                      </a>
+                    </li>
+                
+                </div>
+            </div>
+            
+    </ul>
+</nav>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+        <div class="navbar-end-item navbar-persistent--container">
+          
+<button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-toggle="tooltip">
+  <i class="fa-solid fa-magnifying-glass"></i>
+</button>
+        </div>
+      
+      
+      <div class="navbar-end-item">
+        <div class="version-switcher__container dropdown">
+    <button type="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-toggle="dropdown">
+        2.6.4  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div class="version-switcher__menu dropdown-menu list-group-flush py-0">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+      </div>
+      
+    </div>
+  </div>
+
+
+  
+  
+    <div class="navbar-persistent--mobile">
+<button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-toggle="tooltip">
+  <i class="fa-solid fa-magnifying-glass"></i>
+</button>
+    </div>
+  
+
+  
+  <label class="sidebar-toggle secondary-toggle" for="__secondary">
+      <span class="fa-solid fa-outdent"></span>
+  </label>
+  
+
+</div>
+  </nav>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+      
+      <div class="navbar-center-item">
+        <nav class="navbar-nav">
+    <p class="sidebar-header-items__title" role="heading" aria-level="1" aria-label="Site Navigation">
+        Site Navigation
+    </p>
+    <ul id="navbar-main-elements" class="navbar-nav">
+        
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../intro.html">
+                        Introduction
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../manual.html">
+                        GPflow manual
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../notebooks/intro_to_gpflow2.html">
+                        GPflow with TensorFlow 2
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../notebooks_file.html">
+                        Notebooks
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../derivations.html">
+                        Derivations
+                      </a>
+                    </li>
+                
+            <div class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    More
+                </button>
+                <div class="dropdown-menu">
+                    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../api/gpflow/index.html">
+                        API reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../bibliography.html">
+                        Bibliography
+                      </a>
+                    </li>
+                
+                </div>
+            </div>
+            
+    </ul>
+</nav>
+      </div>
+      
+      </div>
+    
+
+    
+    
+    <div class="sidebar-header-items__end">
+      
+      <div class="navbar-end-item">
+        <div class="version-switcher__container dropdown">
+    <button type="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-toggle="dropdown">
+        2.6.4  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div class="version-switcher__menu dropdown-menu list-group-flush py-0">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+      </div>
+      
+    </div>
+    
+  </div>
+
+  
+
+  
+  <div class="sidebar-end-items sidebar-primary__section">
+    <div class="sidebar-end-items__item">
+    </div>
+  </div>
+
+  
+  <div id="rtd-footer-container"></div>
+
+      </div>
+      <main id="main-content" class="bd-main">
+        
+        
+        <div class="bd-content">
+          <div class="bd-article-container">
+            
+            <div class="bd-header-article">
+                
+            </div>
+            
+            
+            <article class="bd-article" role="main">
+              
+  <h1>Source code for gpflow.kernels.changepoints</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2017-2020 The GPflow Contributors. All Rights Reserved.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span>
+
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+
+<span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">TensorType</span>
+<span class="kn">from</span> <span class="nn">..experimental.check_shapes</span> <span class="kn">import</span> <span class="n">check_shape</span> <span class="k">as</span> <span class="n">cs</span>
+<span class="kn">from</span> <span class="nn">..experimental.check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span><span class="p">,</span> <span class="n">inherit_check_shapes</span>
+<span class="kn">from</span> <span class="nn">..utilities</span> <span class="kn">import</span> <span class="n">positive</span>
+<span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="n">Combination</span><span class="p">,</span> <span class="n">Kernel</span>
+
+
+<div class="viewcode-block" id="ChangePoints"><a class="viewcode-back" href="../../../api/gpflow/kernels/index.html#gpflow.kernels.ChangePoints">[docs]</a><span class="k">class</span> <span class="nc">ChangePoints</span><span class="p">(</span><span class="n">Combination</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The ChangePoints kernel defines a fixed number of change-points along a 1d</span>
+<span class="sd">    input space where different kernels govern different parts of the space.</span>
+
+<span class="sd">    The kernel is by multiplication and addition of the base kernels with</span>
+<span class="sd">    sigmoid functions (σ). A single change-point kernel is defined as::</span>
+
+<span class="sd">        K₁(x, x&#39;) * (1 - σ(x)) * (1 - σ(x&#39;)) + K₂(x, x&#39;) * σ(x) * σ(x&#39;)</span>
+
+<span class="sd">    where K₁ is deactivated around the change-point and K₂ is activated. The</span>
+<span class="sd">    single change-point version can be found in :cite:t:`lloyd2014`. Each sigmoid</span>
+<span class="sd">    is a logistic function defined as::</span>
+
+<span class="sd">        σ(x) = 1 / (1 + exp{-s(x - x₀)})</span>
+
+<span class="sd">    parameterized by location &quot;x₀&quot; and steepness &quot;s&quot;.</span>
+
+<span class="sd">    The key reference is :cite:t:`lloyd2014`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;locations: [n_change_points]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;steepness: [broadcast n_change_points]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">kernels</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Kernel</span><span class="p">],</span>
+        <span class="n">locations</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
+        <span class="n">steepness</span><span class="p">:</span> <span class="n">TensorType</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param kernels: list of kernels defining the different regimes</span>
+<span class="sd">        :param locations: list of change-point locations in the 1d input space</span>
+<span class="sd">        :param steepness: the steepness parameter(s) of the sigmoids, this can be</span>
+<span class="sd">            common between them or decoupled</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">kernels</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">locations</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Number of kernels (</span><span class="si">{nk}</span><span class="s2">) must be one more than the number of &quot;</span>
+                <span class="s2">&quot;changepoint locations (</span><span class="si">{nl}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">nk</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">kernels</span><span class="p">),</span> <span class="n">nl</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">locations</span><span class="p">))</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">steepness</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">steepness</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">locations</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Dimension of steepness (</span><span class="si">{ns}</span><span class="s2">) does not match number of changepoint &quot;</span>
+                <span class="s2">&quot;locations (</span><span class="si">{nl}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ns</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">steepness</span><span class="p">),</span> <span class="n">nl</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">locations</span><span class="p">))</span>
+            <span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">kernels</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">locations</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">locations</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">steepness</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">steepness</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">positive</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">_set_kernels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kernels</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Kernel</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># it is not clear how to flatten out nested change-points</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kernels</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">kernels</span><span class="p">)</span>
+
+    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">K</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">X2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">cs</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="s2">&quot;[batch..., N, 1]  # The `ChangePoints` kernel requires a 1D input space.&quot;</span><span class="p">)</span>
+
+        <span class="n">rank</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">rank</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span>
+        <span class="n">batch</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">X</span><span class="p">)[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">X</span><span class="p">)[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">Ncp</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">locations</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">sig_X</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sigmoids</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="s2">&quot;[batch..., N, 1, Ncp]&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">X2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">rank2</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">batch2</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">constant</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+            <span class="n">N2</span> <span class="o">=</span> <span class="n">N</span>
+            <span class="n">sig_X2</span> <span class="o">=</span> <span class="n">sig_X</span>
+            <span class="n">sig_X</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span>
+                <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">sig_X</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">batch</span><span class="p">,</span> <span class="p">[</span><span class="n">N</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">Ncp</span><span class="p">]],</span> <span class="mi">0</span><span class="p">)),</span> <span class="s2">&quot;[batch..., N, 1, Ncp]&quot;</span>
+            <span class="p">)</span>
+            <span class="n">sig_X2</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span>
+                <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">sig_X2</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">batch</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">Ncp</span><span class="p">]],</span> <span class="mi">0</span><span class="p">)),</span> <span class="s2">&quot;[batch..., 1, N, Ncp]&quot;</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rank2</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">rank</span><span class="p">(</span><span class="n">X2</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span>
+            <span class="n">batch2</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">X2</span><span class="p">)[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">N2</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">X2</span><span class="p">)[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+
+            <span class="n">sig_X2</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sigmoids</span><span class="p">(</span><span class="n">X2</span><span class="p">),</span> <span class="s2">&quot;[batch2..., N2, 1, Ncp]&quot;</span><span class="p">)</span>
+
+            <span class="n">ones</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">rank</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+            <span class="n">ones2</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">rank2</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+            <span class="n">sig_X</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span>
+                <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">sig_X</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">batch</span><span class="p">,</span> <span class="p">[</span><span class="n">N</span><span class="p">],</span> <span class="n">ones2</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">Ncp</span><span class="p">]],</span> <span class="mi">0</span><span class="p">)),</span>
+                <span class="s2">&quot;[batch..., N, ..., 1, Ncp]&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">sig_X2</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span>
+                <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">sig_X2</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">ones</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">batch2</span><span class="p">,</span> <span class="p">[</span><span class="n">N2</span><span class="p">,</span> <span class="n">Ncp</span><span class="p">]],</span> <span class="mi">0</span><span class="p">)),</span>
+                <span class="s2">&quot;[..., 1, batch2..., N2, Ncp]&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="c1"># `starters` are the sigmoids going from 0 -&gt; 1, whilst `stoppers` go</span>
+        <span class="c1"># from 1 -&gt; 0.</span>
+        <span class="n">starters</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="n">sig_X</span> <span class="o">*</span> <span class="n">sig_X2</span><span class="p">,</span> <span class="s2">&quot;[batch..., N, batch2..., N2, Ncp]&quot;</span><span class="p">)</span>
+        <span class="n">stoppers</span> <span class="o">=</span> <span class="n">cs</span><span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">sig_X</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">sig_X2</span><span class="p">),</span> <span class="s2">&quot;[batch..., N, batch2..., N2, Ncp]&quot;</span><span class="p">)</span>
+
+        <span class="c1"># prepend `starters` with ones and append ones to `stoppers` since the</span>
+        <span class="c1"># first kernel has no start and the last kernel has no end</span>
+        <span class="n">ones</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">batch</span><span class="p">,</span> <span class="p">[</span><span class="n">N</span><span class="p">],</span> <span class="n">batch2</span><span class="p">,</span> <span class="p">[</span><span class="n">N2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]],</span> <span class="mi">0</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">X</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">starters</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">ones</span><span class="p">,</span> <span class="n">starters</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span> <span class="s2">&quot;[batch..., N, batch2..., N2, Nkern]&quot;</span><span class="p">)</span>
+        <span class="n">stoppers</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">stoppers</span><span class="p">,</span> <span class="n">ones</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span> <span class="s2">&quot;[batch..., N, batch2..., N2, Nkern]&quot;</span><span class="p">)</span>
+
+        <span class="c1"># now combine with the underlying kernels</span>
+        <span class="n">kernel_stack</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span>
+            <span class="n">tf</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">k</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">X2</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernels</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
+            <span class="s2">&quot;[batch..., N, batch2..., N2, Nkern]&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">kernel_stack</span> <span class="o">*</span> <span class="n">starters</span> <span class="o">*</span> <span class="n">stoppers</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">K_diag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">cs</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="s2">&quot;[batch..., N, 1]  # The `ChangePoints` kernel requires a 1D input space.&quot;</span><span class="p">)</span>
+
+        <span class="n">batch</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">X</span><span class="p">)[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">X</span><span class="p">)[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">Ncp</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">locations</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">sig_X</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span>
+            <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sigmoids</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">batch</span><span class="p">,</span> <span class="p">[</span><span class="n">N</span><span class="p">,</span> <span class="n">Ncp</span><span class="p">]],</span> <span class="mi">0</span><span class="p">)),</span> <span class="s2">&quot;[batch..., N, Ncp]&quot;</span>
+        <span class="p">)</span>
+
+        <span class="n">ones</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">batch</span><span class="p">,</span> <span class="p">[</span><span class="n">N</span><span class="p">,</span> <span class="mi">1</span><span class="p">]],</span> <span class="mi">0</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">X</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">starters</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">ones</span><span class="p">,</span> <span class="n">sig_X</span> <span class="o">*</span> <span class="n">sig_X</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span> <span class="s2">&quot;[batch..., N, Nkern]&quot;</span><span class="p">)</span>
+        <span class="n">stoppers</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">sig_X</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">sig_X</span><span class="p">),</span> <span class="n">ones</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span> <span class="s2">&quot;[batch..., N, Nkern]&quot;</span><span class="p">)</span>
+
+        <span class="n">kernel_stack</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span>
+            <span class="n">tf</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">k</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernels</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span> <span class="s2">&quot;[batch..., N, Nkern]&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">kernel_stack</span> <span class="o">*</span> <span class="n">starters</span> <span class="o">*</span> <span class="n">stoppers</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;X: [batch...]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: [batch..., Ncp]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_sigmoids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">locations</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">locations</span><span class="p">)</span>  <span class="c1"># ensure locations are ordered</span>
+        <span class="n">locations</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">locations</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,))</span>
+        <span class="n">steepness</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">steepness</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,))</span>
+        <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">steepness</span> <span class="o">*</span> <span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">-</span> <span class="n">locations</span><span class="p">))</span></div>
+</pre></div>
+
+            </article>
+            
+            
+            
+          </div>
+          
+          
+          
+            <div class="bd-sidebar-secondary bd-toc">
+              
+<div class="toc-item">
+  
+<div id="searchbox"></div>
+</div>
+
+<div class="toc-item">
+  
+</div>
+
+<div class="toc-item">
+  
+</div>
+
+            </div>
+          
+          
+        </div>
+        <footer class="bd-footer-content">
+          <div class="bd-footer-content__inner">
+            
+          </div>
+        </footer>
+        
+      </main>
+    </div>
+  </div>
+
+  
+    
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=796348d33e8b1d947c94"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=796348d33e8b1d947c94"></script>
+
+  <footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    
+<p class="copyright">
+
+    &copy; Copyright 2022, The GPflow Contributors.<br>
+
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    <p class="theme-version">
+    Built with the
+    <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">
+        PyData Sphinx Theme
+    </a>
+    0.12.0.
+</p>
+  </div>
+  
+  <div class="footer-item">
+    
+<p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.3.0.<br>
+</p>
+
+  </div>
+  
+</div>
+  </footer>
+  </body>
+</html>
