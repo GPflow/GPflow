@@ -63,6 +63,21 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
+# Release 2.6.4
+
+This is yet another bug-fix release.
+
+## Bug Fixes and Other Changes
+
+* Fix to `to_default_float` to avoid losing precision when called with python floats.
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+ChrisMorter
+
+
 # Release 2.6.3
 
 This is yet another bug-fix release.
