@@ -84,7 +84,9 @@ def _sparse_conditional(
         mean_function=None,
         precompute_cache=None,
     )
-    return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
+    return posterior.fused_predict_f(
+        Xnew, full_cov=full_cov, full_output_cov=full_output_cov
+    )
 
 
 @conditional._gpflow_internal_register(
@@ -102,7 +104,7 @@ def _sparse_orthogonal_conditional(
     full_output_cov: bool = False,
     q_sqrt_u: Optional[tf.Tensor] = None,
     q_sqrt_v: Optional[tf.Tensor] = None,
-    white: bool = False
+    white: bool = False,
 ) -> MeanAndVariance:
     """
     Single-output distributional orthogonal GP conditional.
@@ -135,8 +137,10 @@ def _sparse_orthogonal_conditional(
         Please see `gpflow.conditional._expand_independent_outputs` for more information
         about the shape of the variance, depending on `full_cov` and `full_output_cov`.
     """
-    assert(False, "Throwing an error just to check this thing gets run")
-    posterior_class = get_posterior_class(kernel, inducing_variable_u, inducing_variable_v)
+    assert (False, "Throwing an error just to check this thing gets run")
+    posterior_class = get_posterior_class(
+        kernel, inducing_variable_u, inducing_variable_v
+    )
 
     posterior = posterior_class(
         kernel,
@@ -150,7 +154,9 @@ def _sparse_orthogonal_conditional(
         mean_function=None,
     )
 
-    return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
+    return posterior.fused_predict_f(
+        Xnew, full_cov=full_cov, full_output_cov=full_output_cov
+    )
 
 
 @conditional._gpflow_internal_register(object, object, Kernel, object)
@@ -219,4 +225,6 @@ def _dense_conditional(
         white=white,
         precompute_cache=None,
     )
-    return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
+    return posterior.fused_predict_f(
+        Xnew, full_cov=full_cov, full_output_cov=full_output_cov
+    )
