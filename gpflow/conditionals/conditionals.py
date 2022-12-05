@@ -138,7 +138,8 @@ def _sparse_orthogonal_conditional(
     """
     posterior_class = get_posterior_class(kernel, inducing_variable_u, inducing_variable_v)
 
-    posterior = posterior_class(
+    # NB BasePosterior specified to get mypy to shut up, no idea if this is the right class
+    posterior: BasePosterior = posterior_class(
         kernel,
         inducing_variable_u,
         inducing_variable_v,
