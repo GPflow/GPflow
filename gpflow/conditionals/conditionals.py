@@ -124,16 +124,17 @@ def _sparse_orthogonal_conditional(
     :param f: data matrix, [M, R]
     :param full_cov: return the covariance between the datapoints
     :param full_output_cov: return the covariance between the outputs.
-           NOTE: as we are using a single-output kernel with repetitions
-                 these covariances will be zero.
+            NOTE: as we are using a single-output kernel with repetitions
+            these covariances will be zero.
     :param q_sqrt: matrix of standard-deviations or Cholesky matrices,
         size [M, R] or [R, M, M].
     :param white: boolean of whether to use the whitened representation
-    :return:
+    :return: mean and variance
         - mean:     [N, R]
         - variance: [N, R], [R, N, N], [N, R, R] or [N, R, N, R]
-        Please see `gpflow.conditional._expand_independent_outputs` for more information
-        about the shape of the variance, depending on `full_cov` and `full_output_cov`.
+    
+    Please see `gpflow.conditional._expand_independent_outputs` for more information
+    about the shape of the variance, depending on `full_cov` and `full_output_cov`.
     """
     posterior_class = get_posterior_class(kernel, inducing_variable_u, inducing_variable_v)
 
