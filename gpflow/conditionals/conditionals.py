@@ -132,7 +132,7 @@ def _sparse_orthogonal_conditional(
     :return: mean and variance
         - mean:     [N, R]
         - variance: [N, R], [R, N, N], [N, R, R] or [N, R, N, R]
-    
+
     Please see `gpflow.conditional._expand_independent_outputs` for more information
     about the shape of the variance, depending on `full_cov` and `full_output_cov`.
     """
