@@ -137,7 +137,6 @@ def _sparse_orthogonal_conditional(
         Please see `gpflow.conditional._expand_independent_outputs` for more information
         about the shape of the variance, depending on `full_cov` and `full_output_cov`.
     """
-    assert (False, "Throwing an error just to check this thing gets run")
     posterior_class = get_posterior_class(
         kernel, inducing_variable_u, inducing_variable_v
     )
