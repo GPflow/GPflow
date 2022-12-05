@@ -84,9 +84,7 @@ def _sparse_conditional(
         mean_function=None,
         precompute_cache=None,
     )
-    return posterior.fused_predict_f(
-        Xnew, full_cov=full_cov, full_output_cov=full_output_cov
-    )
+    return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
 
 
 @conditional._gpflow_internal_register(
@@ -137,9 +135,7 @@ def _sparse_orthogonal_conditional(
         Please see `gpflow.conditional._expand_independent_outputs` for more information
         about the shape of the variance, depending on `full_cov` and `full_output_cov`.
     """
-    posterior_class = get_posterior_class(
-        kernel, inducing_variable_u, inducing_variable_v
-    )
+    posterior_class = get_posterior_class(kernel, inducing_variable_u, inducing_variable_v)
 
     posterior = posterior_class(
         kernel,
@@ -153,9 +149,7 @@ def _sparse_orthogonal_conditional(
         mean_function=None,
     )
 
-    return posterior.fused_predict_f(
-        Xnew, full_cov=full_cov, full_output_cov=full_output_cov
-    )
+    return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
 
 
 @conditional._gpflow_internal_register(object, object, Kernel, object)
@@ -224,6 +218,4 @@ def _dense_conditional(
         white=white,
         precompute_cache=None,
     )
-    return posterior.fused_predict_f(
-        Xnew, full_cov=full_cov, full_output_cov=full_output_cov
-    )
+    return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
