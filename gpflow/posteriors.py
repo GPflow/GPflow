@@ -29,17 +29,19 @@ from check_shapes import (
 
 from . import covariances, kernels, mean_functions
 from .base import MeanAndVariance, Module, RegressionData, TensorType
-from .conditionals.util import (
+from .conditionals.util import (  # expand_independent_outputs,  duplicate of gpflow?
     base_conditional,
     base_conditional_with_lm,
+    base_orthogonal_conditional,
     expand_independent_outputs,
     fully_correlated_conditional,
     independent_interdomain_conditional,
     mix_latent_gp,
     separate_independent_conditional_implementation,
+    separate_independent_orthogonal_conditional_implementation,
 )
 from .config import default_float, default_jitter
-from .covariances import Kuf, Kuu
+from .covariances import Cvf, Cvv, Kuf, Kuu
 from .inducing_variables import (
     FallbackSeparateIndependentInducingVariables,
     FallbackSharedIndependentInducingVariables,
@@ -48,7 +50,7 @@ from .inducing_variables import (
     SeparateIndependentInducingVariables,
     SharedIndependentInducingVariables,
 )
-from .kernels import Kernel
+from .kernels import Kernel, SeparateIndependent, SharedIndependent
 from .likelihoods import Gaussian
 from .mean_functions import MeanFunction
 from .utilities import Dispatcher, add_likelihood_noise_cov, assert_params_false
