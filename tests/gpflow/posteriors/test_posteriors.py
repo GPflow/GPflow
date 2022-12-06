@@ -33,14 +33,14 @@ from gpflow.posteriors import (
     FallbackIndependentLatentPosterior,
     FullyCorrelatedPosterior,
     GPRPosterior,
+    IndependentOrthogonalPosteriorMultiOutput,
+    IndependentOrthogonalPosteriorSingleOutput,
     IndependentPosteriorMultiOutput,
     IndependentPosteriorSingleOutput,
     LinearCoregionalizationPosterior,
     PrecomputeCacheType,
     SGPRPosterior,
     VGPPosterior,
-    IndependentOrthogonalPosteriorSingleOutput,
-    IndependentOrthogonalPosteriorMultiOutput,
     create_posterior,
 )
 
@@ -182,7 +182,7 @@ def _assert_fused_predict_f_equals_precomputed_predict_f_and_conditional(
     np.testing.assert_array_equal(fused_f_cov, conditional_f_cov)
 
 
-#TODO: Many of these tests could be combined by parameterising kernel
+# TODO: Many of these tests could be combined by parameterising kernel
 # and register_posterior_test's second argument (PosteriorType)
 def test_independent_orthogonal_single_output(
     register_posterior_test: RegisterPosterior,
@@ -647,6 +647,8 @@ def test_independent_orthogonal_multi_output_sek_sei(
     _assert_fused_predict_f_equals_precomputed_predict_f_and_conditional(
         posterior, conditional, full_cov, full_output_cov
     )
+
+
 # End Orthogonal
 
 
