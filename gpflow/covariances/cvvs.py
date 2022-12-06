@@ -15,9 +15,9 @@
 from typing import Optional
 
 import tensorflow as tf
-from gpflux.covariances.dispatch import Cvv
 
 from gpflow.config import default_jitter
+from gpflow.covariances.dispatch import Cvv
 from gpflow.inducing_variables import InducingPoints
 from gpflow.kernels import Kernel
 

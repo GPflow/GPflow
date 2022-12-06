@@ -18,14 +18,13 @@ import tensorflow as tf
 from check_shapes import check_shapes
 
 from gpflow.base import TensorType
+from gpflow.covariances.dispatch import Cvf
 from gpflow.inducing_variables import (
     InducingPoints,
     SeparateIndependentInducingVariables,
     SharedIndependentInducingVariables,
 )
 from gpflow.kernels import MultioutputKernel, SeparateIndependent, SharedIndependent
-
-from .covariances.dispatch import Cvf
 
 
 @Cvf.register(InducingPoints, InducingPoints, MultioutputKernel, object)
