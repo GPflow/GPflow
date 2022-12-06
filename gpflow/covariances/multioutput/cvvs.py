@@ -16,6 +16,7 @@
 from typing import Optional, Union
 
 import tensorflow as tf
+from gpflux.covariances.dispatch import Cvv
 
 from gpflow.experimental.check_shapes import check_shapes
 from gpflow.inducing_variables import (
@@ -29,8 +30,6 @@ from gpflow.kernels import (
     SeparateIndependent,
     SharedIndependent,
 )
-
-from gpflux.covariances.dispatch import Cvv
 
 
 @Cvv.register(InducingPoints, InducingPoints, MultioutputKernel)

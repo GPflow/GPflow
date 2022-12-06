@@ -1,13 +1,12 @@
 from typing import Optional
 
 import tensorflow as tf
+from gpflux.covariances.dispatch import Cvf
 
 from gpflow.base import TensorLike, TensorType
 from gpflow.config import default_jitter
 from gpflow.inducing_variables import InducingPoints
 from gpflow.kernels import Kernel
-
-from gpflux.covariances.dispatch import Cvf
 
 
 @Cvf.register(InducingPoints, InducingPoints, Kernel, TensorLike)

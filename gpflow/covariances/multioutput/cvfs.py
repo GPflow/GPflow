@@ -16,6 +16,7 @@
 from typing import Optional
 
 import tensorflow as tf
+from gpflux.covariances.dispatch import Cvf
 
 from gpflow.base import TensorType
 from gpflow.experimental.check_shapes import check_shapes
@@ -25,8 +26,6 @@ from gpflow.inducing_variables import (
     SharedIndependentInducingVariables,
 )
 from gpflow.kernels import MultioutputKernel, SeparateIndependent, SharedIndependent
-
-from gpflux.covariances.dispatch import Cvf
 
 
 @Cvf.register(InducingPoints, InducingPoints, MultioutputKernel, object)

@@ -1,5 +1,5 @@
-from . import kufs, kuus, multioutput, cvfs, cvvs
-from .dispatch import Kuf, Kuu, Cvf, Cvv
+from . import cvfs, cvvs, kufs, kuus, multioutput
+from .dispatch import Cvf, Cvv, Kuf, Kuu
 
 __all__ = [
     "Kuf",
