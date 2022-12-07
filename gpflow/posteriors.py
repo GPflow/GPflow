@@ -1458,12 +1458,9 @@ def _get_posterior_linearcoregionalization_mo_efficient(
 
 
 # Begin Orthogonal Posteriors
-@get_posterior_class.register(kernels.Kernel, (InducingVariables, InducingVariables))
+@get_posterior_class.register(kernels.Kernel, Tuple[InducingVariables, InducingVariables])
 def _get_posterior_orthogonal_base_case(
-    kernel: Kernel,
-    inducing_variables: Tuple[
-        InducingVariables, InducingVariables
-    ],  # inducing_variable_u: InducingVariables, inducing_variable_v: InducingVariables
+    kernel: Kernel, inducing_variables: Tuple[InducingVariables, InducingVariables] # inducing_variable_u: InducingVariables, inducing_variable_v: InducingVariables
 ) -> Type[BaseOrthogonalPosterior]:
     # independent single output
     return IndependentOrthogonalPosteriorSingleOutput
@@ -1471,11 +1468,11 @@ def _get_posterior_orthogonal_base_case(
 
 @get_posterior_class.register(
     (kernels.SharedIndependent, kernels.SeparateIndependent),
-    (SeparateIndependentInducingVariables, SharedIndependentInducingVariables),
-    (SeparateIndependentInducingVariables, SharedIndependentInducingVariables),
+    Tuple[(SeparateIndependentInducingVariables, SharedIndependentInducingVariables),
+    (SeparateIndependentInducingVariables, SharedIndependentInducingVariables)],
 )
 def _get_posterior_orthogonal_independent_mo(
-    kernel: Kernel, inducing_variable_u: InducingVariables, inducing_variable_v: InducingVariables
+    kernel: Kernel, inducing_variables: InducingVariables, inducing_variable_v: InducingVariables
 ) -> Type[BaseOrthogonalPosterior]:
     # independent multi-output
     return IndependentOrthogonalPosteriorMultiOutput
@@ -1483,7 +1480,7 @@ def _get_posterior_orthogonal_independent_mo(
 
 def create_posterior(
     kernel: Kernel,
-    inducing_variable: InducingVariables,
+    inducing_variable: Union[InducingVariables, Tuple[InducingVariables, InducingVariables]],
     q_mu: TensorType,
     q_sqrt: TensorType,
     whiten: bool,
