@@ -489,12 +489,12 @@ def test_independent_orthogonal_multi_output_shk_shi(
     )
     inducing_variable = (
         gpflow.inducing_variables.SharedIndependentInducingVariables(
-        inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
+            inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
         ),
         gpflow.inducing_variables.SharedIndependentInducingVariables(
-        inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
+            inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
         ),
-        )
+    )
 
     q_mu = np.random.randn(NUM_INDUCING_POINTS, num_latent_gps)
     q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, num_latent_gps)
@@ -537,16 +537,16 @@ def test_independent_orthogonal_multi_output_shk_sei(
     )
     inducing_variable = (
         gpflow.inducing_variables.SeparateIndependentInducingVariables(
-        [
-            inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
-            for _ in range(num_latent_gps)
-        ]
+            [
+                inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
+                for _ in range(num_latent_gps)
+            ]
         ),
-                gpflow.inducing_variables.SeparateIndependentInducingVariables(
-        [
-            inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
-            for _ in range(num_latent_gps)
-        ]
+        gpflow.inducing_variables.SeparateIndependentInducingVariables(
+            [
+                inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
+                for _ in range(num_latent_gps)
+            ]
         ),
     )
 
@@ -591,12 +591,12 @@ def test_independent_orthogonal_multi_output_sek_shi(
     )
     inducing_variable = (
         gpflow.inducing_variables.SharedIndependentInducingVariables(
-        inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
+            inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
         ),
         gpflow.inducing_variables.SharedIndependentInducingVariables(
-        inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
+            inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
         ),
-        )
+    )
 
     q_mu = np.random.randn(NUM_INDUCING_POINTS, num_latent_gps)
     q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, num_latent_gps)
@@ -639,16 +639,16 @@ def test_independent_orthogonal_multi_output_sek_sei(
     )
     inducing_variable = (
         gpflow.inducing_variables.SeparateIndependentInducingVariables(
-        [
-            inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
-            for _ in range(num_latent_gps)
-        ]
+            [
+                inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
+                for _ in range(num_latent_gps)
+            ]
         ),
-                gpflow.inducing_variables.SeparateIndependentInducingVariables(
-        [
-            inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
-            for _ in range(num_latent_gps)
-        ]
+        gpflow.inducing_variables.SeparateIndependentInducingVariables(
+            [
+                inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
+                for _ in range(num_latent_gps)
+            ]
         ),
     )
 
