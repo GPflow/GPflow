@@ -1458,7 +1458,7 @@ def _get_posterior_linearcoregionalization_mo_efficient(
 
 
 # Begin Orthogonal Posteriors
-@get_posterior_class.register(kernels.Kernel, Tuple)#[InducingVariables, InducingVariables])
+@get_posterior_class.register(kernels.Kernel, tuple)  # [InducingVariables, InducingVariables])
 def _get_posterior_orthogonal_base_case(
     kernel: Kernel,
     inducing_variables: Tuple[
@@ -1471,11 +1471,11 @@ def _get_posterior_orthogonal_base_case(
 
 @get_posterior_class.register(
     (kernels.SharedIndependent, kernels.SeparateIndependent),
-    Tuple
-    #[
+    tuple
+    # [
     #    (SeparateIndependentInducingVariables, SharedIndependentInducingVariables),
     #    (SeparateIndependentInducingVariables, SharedIndependentInducingVariables),
-    #],
+    # ],
 )
 def _get_posterior_orthogonal_independent_mo(
     kernel: Kernel, inducing_variables: InducingVariables, inducing_variable_v: InducingVariables
