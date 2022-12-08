@@ -252,6 +252,11 @@ _ = opt.minimize(
 # Other optimizers, like `tensorflow.keras.optimizers.Adam()` need `.minimize()` to be called in a loop:
 
 opt = tf.keras.optimizers.Adam()
-for i in range(10):
+
+@tf.function
+def optimization_step():
     opt.minimize(model.training_loss, model.trainable_variables)
+
+for i in range(10):
+    optimization_step()
     monitor(i)
