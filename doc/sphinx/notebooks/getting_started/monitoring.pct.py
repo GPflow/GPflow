@@ -246,3 +246,12 @@ _ = opt.minimize(
 
 # %% [markdown]
 # Here we needed to redefine `my_scalar` and `my_image` because we had hardcoded the model.
+
+# %% [markdown]
+# `gpflow.optimizers.Scipy.minimize()` runs an optimizer until convergence.
+# Other optimizers, like `tensorflow.keras.optimizers.Adam()` need `.minimize()` to be called in a loop:
+
+opt = tf.keras.optimizers.Adam()
+for i in range(10):
+    opt.minimize(model.training_loss, model.trainable_variables)
+    monitor(i)
