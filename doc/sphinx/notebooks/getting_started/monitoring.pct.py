@@ -253,9 +253,11 @@ _ = opt.minimize(
 
 opt = tf.keras.optimizers.Adam()
 
+
 @tf.function
 def optimization_step():
     opt.minimize(model.training_loss, model.trainable_variables)
+
 
 for i in range(10):
     optimization_step()
