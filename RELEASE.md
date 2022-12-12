@@ -55,6 +55,7 @@ This release contains contributions from:
 ## Bug Fixes and Other Changes
 
 * Fixed bug related to `tf.saved_model` and methods wrapped in `@check_shapes`.
+* Documented monitoring with `Adam` optimizer.
 
 ## Thanks to our Contributors
 
