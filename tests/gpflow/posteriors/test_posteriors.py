@@ -11,7 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from typing import Any, Callable, DefaultDict, Optional, Set, Type, cast
+from typing import Any, Callable, DefaultDict, Optional, Set, Type, cast, Tuple, Union
 
 import numpy as np
 import pytest
@@ -124,7 +124,7 @@ ConditionalClosure = Callable[..., tf.Tensor]
 def create_conditional(
     *,
     kernel: Kernel,
-    inducing_variable: InducingVariables,
+    inducing_variable: Union[InducingVariables, Tuple[InducingVariables, InducingVariables]],
     q_mu: TensorType,
     q_sqrt: TensorType,
     whiten: bool,
