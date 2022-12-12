@@ -11,6 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+import logging
 from typing import Any, Callable, DefaultDict, Optional, Set, Tuple, Type, Union, cast
 
 import numpy as np
@@ -47,6 +48,8 @@ from gpflow.posteriors import (
 INPUT_DIMS = 2
 NUM_INDUCING_POINTS = 3
 
+logging.basicConfig(filename="~/debug.log", level=logging.DEBUG)
+
 
 # `PosteriorType` really should be something like `Type[AbstractPosterior]`, except mypy doesn't
 # allow passing abstract classes to functions. See: https://github.com/python/mypy/issues/4717
@@ -62,6 +65,8 @@ def _register_posterior_test_fixture(
         posterior: AbstractPosterior, expected_posterior_class: Type[AbstractPosterior]
     ) -> None:
         assert isinstance(posterior, expected_posterior_class)
+        # This is where the tested posteriors are registered.  But why are the orthogonal posteriors
+        # not being registered here?  The tests all call register_posterior_test appropriately.
         tested_posteriors["test_posteriors.py"].add(expected_posterior_class)
 
     return _verify_and_register_posterior_test
@@ -119,7 +124,7 @@ ConditionalClosure = Callable[..., tf.Tensor]
 
 
 @check_shapes(
-    "inducing_variable: [M, D, broadcast P]",
+    "inducing_variable: [M, D, broadcast P] if not isinstance(inducing_variable, tuple)",
     "q_mu: [MxP, R]",
     "q_sqrt: [MxP_or_MxP_N_N...]",
 )
@@ -191,6 +196,7 @@ def test_independent_orthogonal_single_output(
     full_cov: bool,
     full_output_cov: bool,
 ) -> None:
+    logging.info("Beginning test for orthogonal single output")
     kernel = gpflow.kernels.SquaredExponential()
     inducing_variable = inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
 
@@ -484,6 +490,7 @@ def test_independent_orthogonal_multi_output_shk_shi(
     """
     Independent multi-output posterior with a shared kernel and shared inducing points.
     """
+    logging.info("Beginning test for orthogonal multiple output")
     kernel = gpflow.kernels.SharedIndependent(
         gpflow.kernels.SquaredExponential(), output_dim=output_dims
     )
@@ -532,6 +539,7 @@ def test_independent_orthogonal_multi_output_shk_sei(
     """
     Independent multi-output posterior with a shared kernel and separate inducing points.
     """
+    logging.info("Beginning test for orthogonal multiple output")
     kernel = gpflow.kernels.SharedIndependent(
         gpflow.kernels.SquaredExponential(), output_dim=output_dims
     )
@@ -586,6 +594,7 @@ def test_independent_orthogonal_multi_output_sek_shi(
     """
     Independent multi-output posterior with separate independent kernels and shared inducing points.
     """
+    logging.info("Beginning test for orthogonal multiple output")
     kernel = gpflow.kernels.SeparateIndependent(
         [gpflow.kernels.SquaredExponential() for _ in range(num_latent_gps)]
     )
@@ -634,6 +643,7 @@ def test_independent_orthogonal_multi_output_sek_sei(
     """
     Independent multi-output posterior with separate independent kernel and separate inducing points.
     """
+    logging.info("Beginning test for orthogonal multiple output")
     kernel = gpflow.kernels.SeparateIndependent(
         [gpflow.kernels.SquaredExponential() for _ in range(num_latent_gps)]
     )
