@@ -1084,7 +1084,11 @@ class BaseOrthogonalPosterior(AbstractOrthogonalPosterior):
     ):
 
         super().__init__(
-            kernel, inducing_variable_u, inducing_variable_v, mean_function=mean_function, precompute_cache=precompute_cache
+            kernel,
+            inducing_variable_u,
+            inducing_variable_v,
+            mean_function=mean_function,
+            precompute_cache=precompute_cache,
         )
         self.whiten = whiten
         self._set_qdist(q_mu_u, q_sqrt_u, q_mu_v, q_sqrt_v)
