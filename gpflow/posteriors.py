@@ -1046,6 +1046,7 @@ class AbstractOrthogonalPosterior(AbstractPosterior):
         inducing_variable_v: Union[tf.Tensor, InducingVariables],
         cache: Optional[Tuple[tf.Tensor, ...]] = None,
         mean_function: Optional[MeanFunction] = None,
+        precompute_cache: Union[PrecomputeCacheType, str, None] = None,
     ) -> None:
         """
         TODO -- add documentation here
@@ -1057,6 +1058,8 @@ class AbstractOrthogonalPosterior(AbstractPosterior):
         self.inducing_variable_v = inducing_variable_v
         self.cache = cache
         self.mean_function = mean_function
+        if precompute_cache is not None:
+            self.update_cache(precompute_cache)
 
 
 class BaseOrthogonalPosterior(AbstractOrthogonalPosterior):
@@ -1077,10 +1080,11 @@ class BaseOrthogonalPosterior(AbstractOrthogonalPosterior):
         q_sqrt_v: tf.Tensor,
         whiten: bool = True,
         mean_function: Optional[MeanFunction] = None,
+        precompute_cache: Union[PrecomputeCacheType, str, None] = None,
     ):
 
         super().__init__(
-            kernel, inducing_variable_u, inducing_variable_v, mean_function=mean_function
+            kernel, inducing_variable_u, inducing_variable_v, mean_function=mean_function, precompute_cache=precompute_cache
         )
         self.whiten = whiten
         self._set_qdist(q_mu_u, q_sqrt_u, q_mu_v, q_sqrt_v)
@@ -1478,7 +1482,8 @@ def _get_posterior_orthogonal_base_case(
     # ],
 )
 def _get_posterior_orthogonal_independent_mo(
-    kernel: Kernel, inducing_variables: InducingVariables, inducing_variable_v: InducingVariables
+    kernel: Kernel,
+    inducing_variables: InducingVariables,  # , inducing_variable_v: InducingVariables
 ) -> Type[BaseOrthogonalPosterior]:
     # independent multi-output
     return IndependentOrthogonalPosteriorMultiOutput
@@ -1503,4 +1508,29 @@ def create_posterior(
         whiten,
         mean_function,
         precompute_cache=precompute_cache,
+    )
+
+
+def create_orthogonal_posterior(
+    kernel: Kernel,
+    inducing_variable_u: InducingVariables,
+    inducing_variable_v: InducingVariables,
+    q_mu_u: tf.Tensor,
+    q_mu_v: tf.Tensor,
+    q_sqrt_u: tf.Tensor,
+    q_sqrt_v: tf.Tensor,
+    whiten: bool,
+    mean_function: Optional[MeanFunction] = None,
+) -> BaseOrthogonalPosterior:
+    posterior_class = get_posterior_class(kernel, (inducing_variable_u, inducing_variable_v))
+    return posterior_class(  # type: ignore[no-any-return]
+        kernel,
+        inducing_variable_u,
+        inducing_variable_v,
+        q_mu_u,
+        q_mu_v,
+        q_sqrt_u,
+        q_sqrt_v,
+        whiten,
+        mean_function,
     )

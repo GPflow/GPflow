@@ -42,6 +42,7 @@ from gpflow.posteriors import (
     PrecomputeCacheType,
     SGPRPosterior,
     VGPPosterior,
+    create_orthogonal_posterior,
     create_posterior,
 )
 
@@ -124,14 +125,14 @@ ConditionalClosure = Callable[..., tf.Tensor]
 
 
 @check_shapes(
-    "inducing_variable: [M, D, broadcast P] if not isinstance(inducing_variable, tuple)",
+    "inducing_variable: [M, D, broadcast P]",
     "q_mu: [MxP, R]",
     "q_sqrt: [MxP_or_MxP_N_N...]",
 )
 def create_conditional(
     *,
     kernel: Kernel,
-    inducing_variable: Union[InducingVariables, Tuple[InducingVariables, InducingVariables]],
+    inducing_variable: InducingVariables,
     q_mu: TensorType,
     q_sqrt: TensorType,
     whiten: bool,
@@ -203,25 +204,38 @@ def test_independent_orthogonal_single_output(
     q_mu = np.random.randn(NUM_INDUCING_POINTS, 1)
     q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, 1)
 
-    conditional = create_conditional(
-        kernel=kernel,
-        inducing_variable=inducing_variable,
-        q_mu=q_mu,
+    local_conditional = lambda Xnew, inducing_variable, kernel, q_mu: conditional(
+        Xnew,
+        inducing_variable,
+        kernel,
+        q_mu,
         q_sqrt=q_sqrt,
-        whiten=whiten,
+        white=whiten,
+        full_cov=full_cov,
+        full_output_cov=full_output_cov,
     )
+    # create_conditional(
+    #    kernel=kernel,
+    #    inducing_variable=inducing_variable,
+    #    q_mu=q_mu,
+    #    q_sqrt=q_sqrt,
+    #    whiten=whiten,
+    # )
     # FIXME: posterior is not returning the appropriate type, need a different dispatch here
-    posterior = create_posterior(
+    posterior = create_orthogonal_posterior(
         kernel=kernel,
-        inducing_variable=inducing_variable,
-        q_mu=q_mu,
-        q_sqrt=q_sqrt,
+        inducing_variable_u=inducing_variable,
+        inducing_variable_v=inducing_variable,
+        q_mu_u=q_mu,
+        q_mu_v=q_mu,
+        q_sqrt_u=q_sqrt,
+        q_sqrt_v=q_sqrt,
         whiten=whiten,
     )
     register_posterior_test(posterior, IndependentOrthogonalPosteriorSingleOutput)
 
     _assert_fused_predict_f_equals_precomputed_predict_f_and_conditional(
-        posterior, conditional, full_cov, full_output_cov
+        posterior, local_conditional, full_cov, full_output_cov
     )
 
 
@@ -506,24 +520,30 @@ def test_independent_orthogonal_multi_output_shk_shi(
     q_mu = np.random.randn(NUM_INDUCING_POINTS, num_latent_gps)
     q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, num_latent_gps)
 
-    conditional = create_conditional(
-        kernel=kernel,
-        inducing_variable=inducing_variable,
-        q_mu=q_mu,
+    local_conditional = lambda Xnew, inducing_variable, kernel, q_mu: conditional(
+        Xnew,
+        inducing_variable,
+        kernel,
+        q_mu,
         q_sqrt=q_sqrt,
-        whiten=whiten,
+        white=whiten,
+        full_cov=full_cov,
+        full_output_cov=full_output_cov,
     )
-    posterior = create_posterior(
+    posterior = create_orthogonal_posterior(
         kernel=kernel,
-        inducing_variable=inducing_variable,
-        q_mu=q_mu,
-        q_sqrt=q_sqrt,
+        inducing_variable_u=inducing_variable[0],
+        inducing_variable_v=inducing_variable[1],
+        q_mu_u=q_mu,
+        q_mu_v=q_mu,
+        q_sqrt_u=q_sqrt,
+        q_sqrt_v=q_sqrt,
         whiten=whiten,
     )
     register_posterior_test(posterior, IndependentOrthogonalPosteriorMultiOutput)
 
     _assert_fused_predict_f_equals_precomputed_predict_f_and_conditional(
-        posterior, conditional, full_cov, full_output_cov
+        posterior, local_conditional, full_cov, full_output_cov
     )
 
 
@@ -561,24 +581,30 @@ def test_independent_orthogonal_multi_output_shk_sei(
     q_mu = np.random.randn(NUM_INDUCING_POINTS, num_latent_gps)
     q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, num_latent_gps)
 
-    conditional = create_conditional(
-        kernel=kernel,
-        inducing_variable=inducing_variable,
-        q_mu=q_mu,
+    local_conditional = lambda Xnew, inducing_variable, kernel, q_mu: conditional(
+        Xnew,
+        inducing_variable,
+        kernel,
+        q_mu,
         q_sqrt=q_sqrt,
-        whiten=whiten,
+        white=whiten,
+        full_cov=full_cov,
+        full_output_cov=full_output_cov,
     )
-    posterior = create_posterior(
+    posterior = create_orthogonal_posterior(
         kernel=kernel,
-        inducing_variable=inducing_variable,
-        q_mu=q_mu,
-        q_sqrt=q_sqrt,
+        inducing_variable_u=inducing_variable[0],
+        inducing_variable_v=inducing_variable[1],
+        q_mu_u=q_mu,
+        q_mu_v=q_mu,
+        q_sqrt_u=q_sqrt,
+        q_sqrt_v=q_sqrt,
         whiten=whiten,
     )
     register_posterior_test(posterior, IndependentOrthogonalPosteriorMultiOutput)
 
     _assert_fused_predict_f_equals_precomputed_predict_f_and_conditional(
-        posterior, conditional, full_cov, full_output_cov
+        posterior, local_conditional, full_cov, full_output_cov
     )
 
 
@@ -610,24 +636,30 @@ def test_independent_orthogonal_multi_output_sek_shi(
     q_mu = np.random.randn(NUM_INDUCING_POINTS, num_latent_gps)
     q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, num_latent_gps)
 
-    conditional = create_conditional(
-        kernel=kernel,
-        inducing_variable=inducing_variable,
-        q_mu=q_mu,
+    local_conditional = lambda Xnew, inducing_variable, kernel, q_mu: conditional(
+        Xnew,
+        inducing_variable,
+        kernel,
+        q_mu,
         q_sqrt=q_sqrt,
-        whiten=whiten,
+        white=whiten,
+        full_cov=full_cov,
+        full_output_cov=full_output_cov,
     )
-    posterior = create_posterior(
+    posterior = create_orthogonal_posterior(
         kernel=kernel,
-        inducing_variable=inducing_variable,
-        q_mu=q_mu,
-        q_sqrt=q_sqrt,
+        inducing_variable_u=inducing_variable[0],
+        inducing_variable_v=inducing_variable[1],
+        q_mu_u=q_mu,
+        q_mu_v=q_mu,
+        q_sqrt_u=q_sqrt,
+        q_sqrt_v=q_sqrt,
         whiten=whiten,
     )
     register_posterior_test(posterior, IndependentOrthogonalPosteriorMultiOutput)
 
     _assert_fused_predict_f_equals_precomputed_predict_f_and_conditional(
-        posterior, conditional, full_cov, full_output_cov
+        posterior, local_conditional, full_cov, full_output_cov
     )
 
 
@@ -665,24 +697,30 @@ def test_independent_orthogonal_multi_output_sek_sei(
     q_mu = np.random.randn(NUM_INDUCING_POINTS, num_latent_gps)
     q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, num_latent_gps)
 
-    conditional = create_conditional(
-        kernel=kernel,
-        inducing_variable=inducing_variable,
-        q_mu=q_mu,
+    local_conditional = lambda Xnew, inducing_variable, kernel, q_mu: conditional(
+        Xnew,
+        inducing_variable,
+        kernel,
+        q_mu,
         q_sqrt=q_sqrt,
-        whiten=whiten,
+        white=whiten,
+        full_cov=full_cov,
+        full_output_cov=full_output_cov,
     )
-    posterior = create_posterior(
+    posterior = create_orthogonal_posterior(
         kernel=kernel,
-        inducing_variable=inducing_variable,
-        q_mu=q_mu,
-        q_sqrt=q_sqrt,
+        inducing_variable_u=inducing_variable[0],
+        inducing_variable_v=inducing_variable[1],
+        q_mu_u=q_mu,
+        q_mu_v=q_mu,
+        q_sqrt_u=q_sqrt,
+        q_sqrt_v=q_sqrt,
         whiten=whiten,
     )
     register_posterior_test(posterior, IndependentOrthogonalPosteriorMultiOutput)
 
     _assert_fused_predict_f_equals_precomputed_predict_f_and_conditional(
-        posterior, conditional, full_cov, full_output_cov
+        posterior, local_conditional, full_cov, full_output_cov
     )
 
 
