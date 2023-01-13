@@ -30,9 +30,6 @@
   <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-    <script src="../../../_static/jquery.js"></script>
-    <script src="../../../_static/underscore.js"></script>
-    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../../_static/doctools.js"></script>
     <script src="../../../_static/sphinx_highlight.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -64,9 +61,8 @@
   
   
   
-    <img src="../../../_static/gpflow_logo.svg" class="logo__image only-light" alt="Logo image">
-    <img src="../../../_static/gpflow_logo.svg" class="logo__image only-dark" alt="Logo image">
   
+    <p class="title logo__title">GPflow 2.6.4 documentation</p>
   
 </a>
     
@@ -270,7 +266,7 @@ function checkPageExistsAndRedirect(event) {
 
 
 <div class="viewcode-block" id="Stationary"><a class="viewcode-back" href="../../../api/gpflow/kernels/index.html#gpflow.kernels.Stationary">[docs]</a><span class="k">class</span> <span class="nc">Stationary</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Base class for kernels that are stationary, that is, they only depend on</span>
 
 <span class="sd">        d = x - x&#39;</span>
@@ -287,7 +283,7 @@ function checkPageExistsAndRedirect(event) {
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">variance</span><span class="p">:</span> <span class="n">TensorType</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">lengthscales</span><span class="p">:</span> <span class="n">TensorType</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :param variance: the (initial) value for the variance parameter.</span>
 <span class="sd">        :param lengthscales: the (initial) value for the lengthscale</span>
 <span class="sd">            parameter(s), to induce ARD behaviour this must be initialised as</span>
@@ -309,7 +305,7 @@ function checkPageExistsAndRedirect(event) {
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">ard</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Whether ARD behaviour is active.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">ndims</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lengthscales</span><span class="o">.</span><span class="n">shape</span><span class="o">.</span><span class="n">ndims</span>
@@ -329,7 +325,7 @@ function checkPageExistsAndRedirect(event) {
 
 
 <div class="viewcode-block" id="IsotropicStationary"><a class="viewcode-back" href="../../../api/gpflow/kernels/index.html#gpflow.kernels.IsotropicStationary">[docs]</a><span class="k">class</span> <span class="nc">IsotropicStationary</span><span class="p">(</span><span class="n">Stationary</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Base class for isotropic stationary kernels, i.e. kernels that only</span>
 <span class="sd">    depend on</span>
 
@@ -369,14 +365,14 @@ function checkPageExistsAndRedirect(event) {
     <span class="k">def</span> <span class="nf">scaled_squared_euclid_dist</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">X2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TensorType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns ‖(X - X2ᵀ) / ℓ‖², i.e. the squared L₂-norm.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">square_distance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">X2</span><span class="p">))</span></div></div>
 
 
 <div class="viewcode-block" id="AnisotropicStationary"><a class="viewcode-back" href="../../../api/gpflow/kernels/index.html#gpflow.kernels.AnisotropicStationary">[docs]</a><span class="k">class</span> <span class="nc">AnisotropicStationary</span><span class="p">(</span><span class="n">Stationary</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Base class for anisotropic stationary kernels, i.e. kernels that only</span>
 <span class="sd">    depend on</span>
 
@@ -395,7 +391,7 @@ function checkPageExistsAndRedirect(event) {
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">variance</span><span class="p">:</span> <span class="n">TensorType</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">lengthscales</span><span class="p">:</span> <span class="n">TensorType</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :param variance: the (initial) value for the variance parameter.</span>
 <span class="sd">        :param lengthscales: the (initial) value for the lengthscale</span>
 <span class="sd">            parameter(s), to induce ARD behaviour this must be initialised as</span>
@@ -423,7 +419,7 @@ function checkPageExistsAndRedirect(event) {
         <span class="s2">&quot;return: [batch..., N, N, D] if X2 is None&quot;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">def</span> <span class="nf">scaled_difference_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">X2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TensorType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns [(X - X2ᵀ) / ℓ]. If X has shape [..., N, D] and</span>
 <span class="sd">        X2 has shape [..., M, D], the output will have shape [..., N, M, D].</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -438,7 +434,7 @@ function checkPageExistsAndRedirect(event) {
 
 
 <span class="k">class</span> <span class="nc">SquaredExponential</span><span class="p">(</span><span class="n">IsotropicStationary</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The radial basis function (RBF) or squared exponential kernel. The kernel equation is</span>
 
 <span class="sd">        k(r) = σ² exp{-½ r²}</span>
@@ -456,7 +452,7 @@ function checkPageExistsAndRedirect(event) {
 
 
 <div class="viewcode-block" id="RationalQuadratic"><a class="viewcode-back" href="../../../api/gpflow/kernels/index.html#gpflow.kernels.RationalQuadratic">[docs]</a><span class="k">class</span> <span class="nc">RationalQuadratic</span><span class="p">(</span><span class="n">IsotropicStationary</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Rational Quadratic kernel,</span>
 
 <span class="sd">    k(r) = σ² (1 + r² / 2αℓ²)^(-α)</span>
@@ -484,7 +480,7 @@ function checkPageExistsAndRedirect(event) {
 
 
 <div class="viewcode-block" id="Exponential"><a class="viewcode-back" href="../../../api/gpflow/kernels/index.html#gpflow.kernels.Exponential">[docs]</a><span class="k">class</span> <span class="nc">Exponential</span><span class="p">(</span><span class="n">IsotropicStationary</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The Exponential kernel. It is equivalent to a Matern12 kernel with doubled lengthscales.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -497,7 +493,7 @@ function checkPageExistsAndRedirect(event) {
 
 
 <div class="viewcode-block" id="Matern12"><a class="viewcode-back" href="../../../api/gpflow/kernels/index.html#gpflow.kernels.Matern12">[docs]</a><span class="k">class</span> <span class="nc">Matern12</span><span class="p">(</span><span class="n">IsotropicStationary</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The Matern 1/2 kernel. Functions drawn from a GP with this kernel are not</span>
 <span class="sd">    differentiable anywhere. The kernel equation is</span>
 
@@ -517,7 +513,7 @@ function checkPageExistsAndRedirect(event) {
 
 
 <div class="viewcode-block" id="Matern32"><a class="viewcode-back" href="../../../api/gpflow/kernels/index.html#gpflow.kernels.Matern32">[docs]</a><span class="k">class</span> <span class="nc">Matern32</span><span class="p">(</span><span class="n">IsotropicStationary</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The Matern 3/2 kernel. Functions drawn from a GP with this kernel are once</span>
 <span class="sd">    differentiable. The kernel equation is</span>
 
@@ -538,7 +534,7 @@ function checkPageExistsAndRedirect(event) {
 
 
 <div class="viewcode-block" id="Matern52"><a class="viewcode-back" href="../../../api/gpflow/kernels/index.html#gpflow.kernels.Matern52">[docs]</a><span class="k">class</span> <span class="nc">Matern52</span><span class="p">(</span><span class="n">IsotropicStationary</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The Matern 5/2 kernel. Functions drawn from a GP with this kernel are twice</span>
 <span class="sd">    differentiable. The kernel equation is</span>
 
@@ -559,7 +555,7 @@ function checkPageExistsAndRedirect(event) {
 
 
 <div class="viewcode-block" id="Cosine"><a class="viewcode-back" href="../../../api/gpflow/kernels/index.html#gpflow.kernels.Cosine">[docs]</a><span class="k">class</span> <span class="nc">Cosine</span><span class="p">(</span><span class="n">AnisotropicStationary</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The Cosine kernel. Functions drawn from a GP with this kernel are sinusoids</span>
 <span class="sd">    (with a random phase).  The kernel equation is</span>
 
@@ -601,7 +597,7 @@ function checkPageExistsAndRedirect(event) {
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.3.0.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 6.1.3.<br>
 </p>
   </div>
   
