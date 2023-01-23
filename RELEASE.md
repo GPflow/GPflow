@@ -33,22 +33,49 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
-# Release 2.7.0 (next upcoming release in progress)
+# Release 3.0.0 (next release)
 
-The main theme of this release is documentation, with a new suite of tutorials, several upgrades to notebooks and the removal of a rather annoying bug in the documentation site.
-
-Perhaps more notably, `check_shapes` has been removed, and can now be found [here](https://github.com/GPflow/check_shapes)
+<INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
 
 ## Breaking Changes
 
-* `gpflow.experimental.check_shapes` has been removed, in favour of an independent release. Use
-  `pip install check_shapes` and `import check_shapes` instead.
+* <DOCUMENT BREAKING CHANGES HERE>
+* <THIS SECTION SHOULD CONTAIN API AND BEHAVIORAL BREAKING CHANGES>
 
 ## Known Caveats
 
 * <CAVEATS REGARDING THE RELEASE (BUT NOT BREAKING CHANGES).>
 * <ADDING/BUMPING DEPENDENCIES SHOULD GO HERE>
 * <KNOWN LACK OF SUPPORT ON SOME PLATFORM SHOULD GO HERE>
+
+## Major Features and Improvements
+
+* <INSERT MAJOR FEATURE HERE, USING MARKDOWN SYNTAX>
+* <IF RELEASE CONTAINS MULTIPLE FEATURES FROM SAME AREA, GROUP THEM TOGETHER>
+
+## Bug Fixes and Other Changes
+
+* <SIMILAR TO ABOVE SECTION, BUT FOR OTHER IMPORTANT CHANGES / BUG FIXES>
+* <IF A CHANGE CLOSES A GITHUB ISSUE, IT SHOULD BE DOCUMENTED HERE>
+* <NOTES SHOULD BE GROUPED PER AREA>
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+<INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
+
+
+# Release 2.7.0
+
+The main theme of this release is documentation, with a new suite of tutorials, several upgrades to notebooks and the removal of a rather annoying bug in the documentation site.
+
+Perhaps more notably, `check_shapes` has been removed, and can now be found [here](https://github.com/GPflow/check_shapes).  This change is breaking for those who are still getting `check_shapes` from `gpflow`.  This intended to be the last release with breaking changes that is not a major version number; starting with the next release we will be moving to semantic versioning.
+
+## Breaking Changes
+
+* `gpflow.experimental.check_shapes` has been removed, in favour of an independent release. Use
+  `pip install check_shapes` and `import check_shapes` instead.
 
 ## Major Features and Improvements
 
