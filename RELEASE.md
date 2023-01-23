@@ -35,7 +35,9 @@ This release contains contributions from:
 
 # Release 2.7.0 (next upcoming release in progress)
 
-<INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
+The main theme of this release is documentation, with a new suite of tutorials, several upgrades to notebooks and the removal of a rather annoying bug in the documentation site.
+
+Perhaps more notably, `check_shapes` has been removed, and can now be found [here](https://github.com/GPflow/check_shapes)
 
 ## Breaking Changes
 
@@ -56,12 +58,15 @@ This release contains contributions from:
 
 * Fixed bug related to `tf.saved_model` and methods wrapped in `@check_shapes`.
 * Documented monitoring with `Adam` optimizer.
+* Fixed bug related to switching versions in documentation site
+* Fixed several issues relating to mypy
+
 
 ## Thanks to our Contributors
 
 This release contains contributions from:
 
-<INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
+sc336, st--, sethaxen, jesnie
 
 
 # Release 2.6.4
