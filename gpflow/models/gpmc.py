@@ -17,11 +17,11 @@ from typing import Optional
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
+from check_shapes import check_shapes, inherit_check_shapes
 
 from ..base import InputData, MeanAndVariance, Parameter, RegressionData
 from ..conditionals import conditional
 from ..config import default_float, default_jitter
-from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction

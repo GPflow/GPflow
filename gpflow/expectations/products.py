@@ -16,9 +16,9 @@ from functools import reduce
 from typing import Type
 
 import tensorflow as tf
+from check_shapes import check_shapes
 
 from .. import kernels
-from ..experimental.check_shapes import check_shapes
 from ..inducing_variables import InducingPoints
 from ..probability_distributions import DiagonalGaussian
 from . import dispatch

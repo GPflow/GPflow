@@ -19,10 +19,10 @@ import pytest
 import tensorflow as tf
 import tensorflow_probability as tfp
 from _pytest.fixtures import SubRequest
+from check_shapes import ShapeChecker
 
 import gpflow
 from gpflow.base import AnyNDArray, TensorType
-from gpflow.experimental.check_shapes import ShapeChecker
 from gpflow.likelihoods import HeteroskedasticTFPConditional
 
 tf.random.set_seed(99012)

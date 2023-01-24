@@ -17,14 +17,14 @@ from typing import Any, Callable, List, Sequence, Tuple, cast
 import numpy as np
 import pytest
 import tensorflow as tf
+from check_shapes import check_shape as cs
+from check_shapes import check_shapes
 from numpy.testing import assert_allclose
 
 import gpflow
 import gpflow.ci_utils
 from gpflow import kernels
 from gpflow.base import AnyNDArray, TensorType
-from gpflow.experimental.check_shapes import check_shape as cs
-from gpflow.experimental.check_shapes import check_shapes
 
 
 def create_kernels() -> Sequence[kernels.Kernel]:

@@ -15,11 +15,11 @@
 import numpy as np
 import pytest
 import tensorflow as tf
+from check_shapes import inherit_check_shapes
 from numpy.testing import assert_allclose
 
 from gpflow.base import AnyNDArray, TensorType
 from gpflow.config import default_float, default_int
-from gpflow.experimental.check_shapes import inherit_check_shapes
 from gpflow.likelihoods import Bernoulli, MultiClass, RobustMax, Softmax
 from gpflow.utilities import to_default_float, to_default_int
 

@@ -2,9 +2,9 @@ from typing import Callable, Iterable, List, Sequence, Tuple, Union, cast
 
 import numpy as np
 import tensorflow as tf
+from check_shapes import check_shapes
 
 from gpflow.base import TensorType
-from gpflow.experimental.check_shapes import check_shapes
 from gpflow.quadrature.deprecated import mvhermgauss
 
 

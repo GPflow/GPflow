@@ -16,12 +16,12 @@ from typing import NamedTuple, Optional, Tuple
 
 import numpy as np
 import tensorflow as tf
+from check_shapes import check_shapes, inherit_check_shapes
 
 from .. import posteriors
 from ..base import InputData, MeanAndVariance, RegressionData, TensorData
 from ..config import default_float, default_jitter
 from ..covariances.dispatch import Kuf, Kuu
-from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..inducing_variables import InducingPoints
 from ..kernels import Kernel
 from ..likelihoods import Gaussian
@@ -149,9 +149,11 @@ class SGPRBase_deprecated(GPModel, InternalDataTrainingLossMixin):
 
 class SGPR_deprecated(SGPRBase_deprecated):
     """
-    Sparse Variational GP regression.
+    Sparse GP regression.
 
     The key reference is :cite:t:`titsias2009variational`.
+
+    For a use example see :doc:`../../../../notebooks/getting_started/large_data`.
     """
 
     class CommonTensors(NamedTuple):
@@ -581,4 +583,5 @@ class SGPR_with_posterior(SGPR_deprecated):
 
 class SGPR(SGPR_with_posterior):
     # subclassed to ensure __class__ == "SGPR"
-    pass
+
+    __doc__ = SGPR_deprecated.__doc__  # Use documentation from SGPR_deprecated.

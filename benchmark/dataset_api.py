@@ -30,11 +30,11 @@ from urllib.request import urlopen
 
 import numpy as np
 import pandas as pd
+from check_shapes import check_shapes
 
 from benchmark.registry import TaggedRegistry
 from benchmark.tag import Tag, TagReq
 from gpflow.base import AnyNDArray
-from gpflow.experimental.check_shapes import check_shapes
 
 
 class DatasetTag(Tag["DatasetTag"]):

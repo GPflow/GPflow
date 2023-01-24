@@ -18,9 +18,9 @@ from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import tensorflow as tf
+from check_shapes import check_shapes
 
 from ..base import Parameter, _to_constrained
-from ..experimental.check_shapes import check_shapes
 
 Scalar = Union[float, tf.Tensor, np.ndarray]
 LossClosure = Callable[[], tf.Tensor]

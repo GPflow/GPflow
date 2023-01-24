@@ -16,12 +16,12 @@ from typing import Any, Sequence, Tuple, Type
 
 import numpy as np
 import pytest
+from check_shapes import check_shapes
 from numpy.testing import assert_allclose
 
 import gpflow
 from gpflow.base import AnyNDArray, TensorType
 from gpflow.config import default_int
-from gpflow.experimental.check_shapes import check_shapes
 from gpflow.functions import (
     Additive,
     Constant,

@@ -14,8 +14,8 @@
 from typing import Sequence, Tuple
 
 import tensorflow as tf
+from check_shapes import Shape, check_shapes
 
-from ...experimental.check_shapes import Shape, check_shapes
 from ..inducing_variables import InducingVariables
 
 

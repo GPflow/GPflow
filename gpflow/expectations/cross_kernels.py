@@ -15,10 +15,10 @@
 from typing import Union, cast
 
 import tensorflow as tf
+from check_shapes import check_shapes
 
 from .. import kernels
 from ..base import TensorType
-from ..experimental.check_shapes import check_shapes
 from ..inducing_variables import InducingPoints
 from ..probability_distributions import DiagonalGaussian, Gaussian
 from . import dispatch

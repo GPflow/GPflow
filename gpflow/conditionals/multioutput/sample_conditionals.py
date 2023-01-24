@@ -15,9 +15,9 @@
 from typing import Optional
 
 import tensorflow as tf
+from check_shapes import check_shapes
 
 from ...base import SamplesMeanAndVariance
-from ...experimental.check_shapes import check_shapes
 from ...inducing_variables import (
     SeparateIndependentInducingVariables,
     SharedIndependentInducingVariables,

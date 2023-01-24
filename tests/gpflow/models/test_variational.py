@@ -16,11 +16,11 @@ from typing import Tuple, cast
 
 import numpy as np
 import pytest
+from check_shapes import check_shapes
 from numpy.testing import assert_allclose
 
 import gpflow
 from gpflow.base import AnyNDArray
-from gpflow.experimental.check_shapes import check_shapes
 from gpflow.kernels import SquaredExponential
 from gpflow.likelihoods import Gaussian
 from tests.gpflow.kernels.reference import ref_rbf_kernel

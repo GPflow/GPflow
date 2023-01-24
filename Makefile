@@ -7,7 +7,7 @@ BLACK_CONFIG=-t py37 -l 100
 BLACK_TARGETS=gpflow tests benchmark doc/*.py setup.py
 ISORT_CONFIG=--atomic -l 100 --trailing-comma --remove-redundant-aliases --multi-line 3
 ISORT_TARGETS=gpflow tests benchmark doc/*.py setup.py
-MYPY_TARGETS=gpflow tests benchmark doc/*.py setup.py
+MYPY_TARGETS=gpflow tests benchmark doc/*.py doc/sphinx/notebooks/getting_started setup.py
 
 .PHONY: help clean dev-install install package format format-check type-check test check-all
 
