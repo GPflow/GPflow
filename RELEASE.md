@@ -110,7 +110,6 @@ This release contains contributions from:
 
 ChrisMorter
 
-
 # Release 2.6.3
 
 This is yet another bug-fix release.
