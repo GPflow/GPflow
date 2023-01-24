@@ -33,14 +33,14 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
-# Release 2.7.0 (next upcoming release in progress)
+# Release 2.8.0 (next release)
 
 <INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
 
 ## Breaking Changes
 
-* `gpflow.experimental.check_shapes` has been removed, in favour of an independent release. Use
-  `pip install check_shapes` and `import check_shapes` instead.
+* <DOCUMENT BREAKING CHANGES HERE>
+* <THIS SECTION SHOULD CONTAIN API AND BEHAVIORAL BREAKING CHANGES>
 
 ## Known Caveats
 
@@ -50,18 +50,50 @@ This release contains contributions from:
 
 ## Major Features and Improvements
 
-* Major rework of documentation landing page and "getting started" section.
+* <INSERT MAJOR FEATURE HERE, USING MARKDOWN SYNTAX>
+* <IF RELEASE CONTAINS MULTIPLE FEATURES FROM SAME AREA, GROUP THEM TOGETHER>
 
 ## Bug Fixes and Other Changes
 
-* Fixed bug related to `tf.saved_model` and methods wrapped in `@check_shapes`.
-* Documented monitoring with `Adam` optimizer.
+* <SIMILAR TO ABOVE SECTION, BUT FOR OTHER IMPORTANT CHANGES / BUG FIXES>
+* <IF A CHANGE CLOSES A GITHUB ISSUE, IT SHOULD BE DOCUMENTED HERE>
+* <NOTES SHOULD BE GROUPED PER AREA>
 
 ## Thanks to our Contributors
 
 This release contains contributions from:
 
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
+
+
+# Release 2.7.0
+
+The main theme of this release is documentation, with a new suite of tutorials, several upgrades to notebooks and the removal of a rather annoying bug in the documentation site.
+
+Perhaps more notably, `check_shapes` has been removed, and can now be found [here](https://github.com/GPflow/check_shapes).  This change is breaking for those who are still getting `check_shapes` from `gpflow`, although being in experimental this change does not require a new version number.
+
+## Breaking Changes
+
+* `gpflow.experimental.check_shapes` has been removed, in favour of an independent release. Use
+  `pip install check_shapes` and `import check_shapes` instead.
+
+## Major Features and Improvements
+
+* Major rework of documentation landing page and "getting started" section.
+
+## Bug Fixes and Other Changes
+
+* Fixed bug related to `tf.saved_model` and methods wrapped in `@check_shapes`.
+* Documented monitoring with `Adam` optimizer.
+* Fixed bug related to switching versions in documentation site
+* Fixed several issues relating to mypy
+
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+sc336, st--, sethaxen, jesnie
 
 
 # Release 2.6.4
