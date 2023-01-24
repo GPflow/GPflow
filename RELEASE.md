@@ -70,7 +70,7 @@ This release contains contributions from:
 
 The main theme of this release is documentation, with a new suite of tutorials, several upgrades to notebooks and the removal of a rather annoying bug in the documentation site.
 
-Perhaps more notably, `check_shapes` has been removed, and can now be found [here](https://github.com/GPflow/check_shapes).  This change is breaking for those who are still getting `check_shapes` from `gpflow`.  This intended to be the last release with breaking changes that is not a major version number; starting with the next release we will be moving to semantic versioning.
+Perhaps more notably, `check_shapes` has been removed, and can now be found [here](https://github.com/GPflow/check_shapes).  This change is breaking for those who are still getting `check_shapes` from `gpflow`, although being in experimental this change does not require a new version number.
 
 ## Breaking Changes
 
