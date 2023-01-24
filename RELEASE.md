@@ -39,8 +39,8 @@ This release contains contributions from:
 
 ## Breaking Changes
 
-* `gpflow.experimental.check_shapes` has been removed, in favour of an independent release. Use
-  `pip install check_shapes` and `import check_shapes` instead.
+* <DOCUMENT BREAKING CHANGES HERE>
+* <THIS SECTION SHOULD CONTAIN API AND BEHAVIORAL BREAKING CHANGES>
 
 ## Known Caveats
 
