@@ -17,13 +17,13 @@ from typing import Collection, Optional
 import numpy as np
 import pytest
 import tensorflow as tf
+from check_shapes import ShapeChecker, check_shapes
 from numpy.testing import assert_allclose
 
 import gpflow
 from gpflow.base import AnyNDArray, MeanAndVariance
 from gpflow.conditionals import conditional, uncertain_conditional
 from gpflow.config import default_float
-from gpflow.experimental.check_shapes import ShapeChecker, check_shapes
 from gpflow.mean_functions import Constant, Linear, MeanFunction, Zero
 from gpflow.quadrature import mvnquad
 from gpflow.utilities import training_loop

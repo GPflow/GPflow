@@ -16,10 +16,10 @@ from typing import Sequence, Tuple
 
 import numpy as np
 import tensorflow as tf
+from check_shapes import check_shapes, inherit_check_shapes
 
 from ..base import TensorType
 from ..config import default_float
-from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from .base import GaussianQuadrature
 
 

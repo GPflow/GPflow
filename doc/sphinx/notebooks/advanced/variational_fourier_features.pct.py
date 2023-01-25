@@ -26,13 +26,13 @@
 # %%
 import numpy as np
 import tensorflow as tf
+from check_shapes import Shape
 
 import gpflow
 from gpflow import covariances as cov
 from gpflow import kullback_leiblers as kl
 from gpflow.base import TensorLike
 from gpflow.ci_utils import reduce_in_tests
-from gpflow.experimental.check_shapes import Shape
 from gpflow.inducing_variables import InducingVariables
 from gpflow.utilities import to_default_float
 

@@ -16,9 +16,9 @@ from typing import Optional
 
 import numpy as np
 import tensorflow as tf
+from check_shapes import check_shapes, inherit_check_shapes
 
 from ..base import Parameter, TensorType
-from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..utilities import positive
 from ..utilities.ops import difference_matrix
 from .base import ActiveDims, Kernel, NormalizedActiveDims

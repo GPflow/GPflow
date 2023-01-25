@@ -168,9 +168,7 @@ class ImageToTensorBoard(ToTensorBoard):
     def __init__(
         self,
         log_dir: str,
-        plotting_function: Callable[
-            ["matplotlib.figure.Figure", "matplotlib.figure.Axes"], "matplotlib.figure.Figure"
-        ],
+        plotting_function: Callable[["matplotlib.figure.Figure", "matplotlib.figure.Axes"], None],
         name: Optional[str] = None,
         *,
         fig_kw: Optional[Dict[str, Any]] = None,

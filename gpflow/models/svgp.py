@@ -16,12 +16,12 @@ from typing import Optional
 
 import numpy as np
 import tensorflow as tf
+from check_shapes import check_shapes, inherit_check_shapes
 
 from .. import kullback_leiblers, posteriors
 from ..base import AnyNDArray, InputData, MeanAndVariance, Parameter, RegressionData
 from ..conditionals import conditional
 from ..config import default_float
-from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..inducing_variables import InducingVariables
 from ..kernels import Kernel
 from ..likelihoods import Likelihood
@@ -37,6 +37,9 @@ class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
     This is the Sparse Variational GP (SVGP).
 
     The key reference is :cite:t:`hensman2014scalable`.
+
+    For a use example see
+    :doc:`../../../../notebooks/getting_started/classification_and_other_data_distributions`.
     """
 
     @check_shapes(
@@ -254,4 +257,5 @@ class SVGP_with_posterior(SVGP_deprecated):
 
 class SVGP(SVGP_with_posterior):
     # subclassed to ensure __class__ == "SVGP"
-    pass
+
+    __doc__ = SVGP_deprecated.__doc__  # Use documentation from SVGP_deprecated.

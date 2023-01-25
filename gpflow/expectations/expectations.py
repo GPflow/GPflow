@@ -14,9 +14,9 @@
 from typing import Optional, Tuple, Union, cast
 
 import tensorflow as tf
+from check_shapes import check_shapes
 
 from ..base import TensorType
-from ..experimental.check_shapes import check_shapes
 from ..inducing_variables import InducingVariables
 from ..kernels import Kernel
 from ..mean_functions import MeanFunction

@@ -1,7 +1,7 @@
 import numpy as np
+from check_shapes import check_shapes
 
 from gpflow.base import AnyNDArray
-from gpflow.experimental.check_shapes import check_shapes
 
 
 @check_shapes(

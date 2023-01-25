@@ -15,8 +15,7 @@ from typing import Iterable
 
 import pytest
 from _pytest.logging import LogCaptureFixture
-
-from gpflow.experimental.check_shapes.config import (
+from check_shapes.config import (
     DocstringFormat,
     ShapeCheckingState,
     get_enable_check_shapes,

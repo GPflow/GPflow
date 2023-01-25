@@ -14,12 +14,12 @@
 from typing import Sequence, Tuple
 
 import numpy as np
+from check_shapes import ShapeChecker
 from numpy.testing import assert_allclose
 
 import gpflow
 from gpflow import set_trainable
 from gpflow.base import AnyNDArray
-from gpflow.experimental.check_shapes import ShapeChecker
 from gpflow.mean_functions import Constant
 from gpflow.models import VGP
 
