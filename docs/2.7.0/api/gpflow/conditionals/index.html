@@ -1,0 +1,1369 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>gpflow.conditionals &#8212; GPflow 2.7.0 documentation</title>
+<script>
+  document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+  document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
+</script>
+
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+
+
+  <link rel="stylesheet"
+    href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css" />
+
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
+
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="gpflow.conditionals.util" href="util/index.html" />
+    <link rel="prev" title="gpflow.base" href="../base/index.html" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="docsearch:language" content="en">
+  </head>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+    <div class="bd-header-announcement container-fluid" id="banner">
+      
+
+    </div>
+
+    
+    <nav class="bd-header navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="bd-header__inner container-xl">
+
+  <div id="navbar-start">
+    
+    
+  
+
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">GPflow 2.7.0 documentation</p>
+  
+</a>
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="fas fa-bars"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../getting_started.html">
+  Getting Started
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../user_guide.html">
+  User Guide
+ </a>
+</li>
+
+<li class="toctree-l1 current active nav-item">
+ <a class="reference internal nav-link" href="../index.html">
+  API reference
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../benchmarks.html">
+  Benchmarks
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../bibliography.html">
+  Bibliography
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <div class="dropdown" id="version_switcher">
+    <button type="button" class="btn btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+        2.7.0  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div id="version_switcher_menu" class="dropdown-menu list-group-flush py-0" aria-labelledby="version_switcher_button">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+
+<!-- NOTE: this JS must live here (not in our global JS file) because it relies
+     on being processed by Jinja before it is run (specifically for replacing
+     variables api/gpflow/conditionals/index and {'json_url': 'https://gpflow.github.io/GPflow/versions.json', 'version_match': '2.7.0'}.
+-->
+
+<script type="text/javascript">
+// Check if corresponding page path exists in other version of docs
+// and, if so, go there instead of the homepage of the other docs version
+function checkPageExistsAndRedirect(event) {
+    const currentFilePath = "api/gpflow/conditionals/index.html",
+          tryUrl = event.target.getAttribute("href");
+    let otherDocsHomepage = tryUrl.replace(currentFilePath, "");
+    $.ajax({
+        type: 'HEAD',
+        url: tryUrl,
+        // if the page exists, go there
+        success: function() {
+            location.href = tryUrl;
+        }
+    }).fail(function() {
+        location.href = otherDocsHomepage;
+    });
+    // this prevents the browser from following the href of the clicked node
+    // (which is fine because this function takes care of redirecting)
+    return false;
+}
+
+// Populate the version switcher from the JSON config file
+(function () {
+    $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
+        const currentFilePath = "api/gpflow/conditionals/index.html";
+        let btn = document.getElementById("version_switcher_button");
+        // Set empty strings by default so that these attributes exist and can be used in CSS selectors
+        btn.dataset["activeVersionName"] = "";
+        btn.dataset["activeVersion"] = "";
+        // create links to the corresponding page in the other docs versions
+        $.each(data, function(index, entry) {
+            // if no custom name specified (e.g., "latest"), use version string
+            if (!("name" in entry)) {
+                entry.name = entry.version;
+            }
+            // create the node
+            const node = document.createElement("a");
+            node.setAttribute("class", "list-group-item list-group-item-action py-1");
+            node.textContent = `${entry.name}`;
+            node.setAttribute("href", `${entry.url}${currentFilePath}`);
+            // on click, AJAX calls will check if the linked page exists before
+            // trying to redirect, and if not, will redirect to the homepage
+            // for that version of the docs.
+            node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
+            $("#version_switcher_menu").append(node);
+            // replace dropdown button text with the preferred display name of
+            // this version, rather than using sphinx's  variable.
+            // also highlight the dropdown entry for the currently-viewed
+            // version's entry
+            if (entry.version == "2.7.0") {
+                node.classList.add("active");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
+            }
+        });
+    });
+})();
+</script>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="bd-container container-xl">
+      <div class="bd-container__inner row">
+          
+
+<!-- Only show if we have sidebars configured, else just a small margin  -->
+<div class="bd-sidebar-primary col-12 col-md-3 bd-sidebar">
+  <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    <ul class="current nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../base/index.html">
+   gpflow.base
+  </a>
+ </li>
+ <li class="toctree-l1 current active has-children">
+  <a class="current reference internal" href="#">
+   gpflow.conditionals
+  </a>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="util/index.html">
+     gpflow.conditionals.util
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../config/index.html">
+   gpflow.config
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../covariances/index.html">
+   gpflow.covariances
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../expectations/index.html">
+   gpflow.expectations
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+  <label for="toctree-checkbox-2">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../expectations/quadratures/index.html">
+     gpflow.expectations.quadratures
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../experimental/index.html">
+   gpflow.experimental
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/>
+  <label for="toctree-checkbox-3">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../experimental/utils/index.html">
+     gpflow.experimental.utils
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../functions/index.html">
+   gpflow.functions
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../inducing_variables/index.html">
+   gpflow.inducing_variables
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
+  <label for="toctree-checkbox-4">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../inducing_variables/inducing_variables/index.html">
+     gpflow.inducing_variables.inducing_variables
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../kernels/index.html">
+   gpflow.kernels
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/>
+  <label for="toctree-checkbox-5">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../kernels/base/index.html">
+     gpflow.kernels.base
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../kullback_leiblers/index.html">
+   gpflow.kullback_leiblers
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../likelihoods/index.html">
+   gpflow.likelihoods
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/>
+  <label for="toctree-checkbox-6">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../likelihoods/utils/index.html">
+     gpflow.likelihoods.utils
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../logdensities/index.html">
+   gpflow.logdensities
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../models/index.html">
+   gpflow.models
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+  <label for="toctree-checkbox-7">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/cglb/index.html">
+     gpflow.models.cglb
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/gpr/index.html">
+     gpflow.models.gpr
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/sgpr/index.html">
+     gpflow.models.sgpr
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/svgp/index.html">
+     gpflow.models.svgp
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/util/index.html">
+     gpflow.models.util
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/vgp/index.html">
+     gpflow.models.vgp
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../monitor/index.html">
+   gpflow.monitor
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../optimizers/index.html">
+   gpflow.optimizers
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+  <label for="toctree-checkbox-8">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../optimizers/natgrad/index.html">
+     gpflow.optimizers.natgrad
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../posteriors/index.html">
+   gpflow.posteriors
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../probability_distributions/index.html">
+   gpflow.probability_distributions
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../quadrature/index.html">
+   gpflow.quadrature
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/>
+  <label for="toctree-checkbox-9">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../quadrature/gauss_hermite/index.html">
+     gpflow.quadrature.gauss_hermite
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../type_flags/index.html">
+   gpflow.type_flags
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../utilities/index.html">
+   gpflow.utilities
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/>
+  <label for="toctree-checkbox-10">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../utilities/ops/index.html">
+     gpflow.utilities.ops
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../utilities/parameter_or_function/index.html">
+     gpflow.utilities.parameter_or_function
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+  </div>
+</nav>
+  </div>
+  <div class="sidebar-end-items">
+  </div>
+</div>
+
+
+          
+
+
+<div class="bd-sidebar-secondary d-none d-xl-block col-xl-2 bd-toc">
+  
+    
+    <div class="toc-item">
+      
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#modules">
+   Modules
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#functions">
+   Functions
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-conditionals-base-conditional">
+     gpflow.conditionals.base_conditional
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.conditionals.base_conditional">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         base_conditional()
+        </span>
+       </code>
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-conditionals-conditional">
+     gpflow.conditionals.conditional
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.conditionals.conditionals._sparse_conditional">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         _sparse_conditional()
+        </span>
+       </code>
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.conditionals.conditionals._dense_conditional">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         _dense_conditional()
+        </span>
+       </code>
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.conditionals.multioutput.conditionals.shared_independent_conditional">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         shared_independent_conditional()
+        </span>
+       </code>
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.conditionals.multioutput.conditionals.separate_independent_conditional">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         separate_independent_conditional()
+        </span>
+       </code>
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.conditionals.multioutput.conditionals.fallback_independent_latent_conditional">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         fallback_independent_latent_conditional()
+        </span>
+       </code>
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.conditionals.multioutput.conditionals.inducing_point_conditional">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         inducing_point_conditional()
+        </span>
+       </code>
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.conditionals.multioutput.conditionals.coregionalization_conditional">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         coregionalization_conditional()
+        </span>
+       </code>
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-conditionals-sample-conditional">
+     gpflow.conditionals.sample_conditional
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.conditionals.multioutput.sample_conditionals._sample_conditional">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         _sample_conditional()
+        </span>
+       </code>
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.conditionals.sample_conditionals._sample_conditional">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         _sample_conditional()
+        </span>
+       </code>
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-conditionals-uncertain-conditional">
+     gpflow.conditionals.uncertain_conditional
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#gpflow.conditionals.uncertain_conditional">
+       <code class="docutils literal notranslate">
+        <span class="pre">
+         uncertain_conditional()
+        </span>
+       </code>
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+</nav>
+    </div>
+    
+    <div class="toc-item">
+      
+    </div>
+    
+  
+</div>
+
+
+          
+          
+          <div class="bd-content col-12 col-md-9 col-xl-7">
+              
+              <article class="bd-article" role="main">
+                
+  <section id="gpflow-conditionals">
+<h1>gpflow.conditionals<a class="headerlink" href="#gpflow-conditionals" title="Permalink to this heading">#</a></h1>
+<span class="target" id="module-gpflow.conditionals"></span><section id="modules">
+<h2>Modules<a class="headerlink" href="#modules" title="Permalink to this heading">#</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="util/index.html">gpflow.conditionals.util</a></li>
+</ul>
+</div>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this heading">#</a></h2>
+<section id="gpflow-conditionals-base-conditional">
+<h3>gpflow.conditionals.base_conditional<a class="headerlink" href="#gpflow-conditionals-base-conditional" title="Permalink to this heading">#</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.conditionals.base_conditional">
+<span class="sig-prename descclassname"><span class="pre">gpflow.conditionals.</span></span><span class="sig-name descname"><span class="pre">base_conditional</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Kmn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Kmm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Knn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/util.html#base_conditional"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.conditionals.base_conditional" title="Permalink to this definition">#</a></dt>
+<dd><p>Given a g1 and g2, and distribution p and q such that:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>p(g2) = N(g2; 0, Kmm)
+
+p(g1) = N(g1; 0, Knn)
+p(g1 | g2) = N(g1; Knm (Kmm⁻¹) g2, Knn - Knm (Kmm⁻¹) Kmn)
+</pre></div>
+</div>
+<p>And:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">q</span><span class="p">(</span><span class="n">g2</span><span class="p">)</span> <span class="o">=</span> <span class="n">N</span><span class="p">(</span><span class="n">g2</span><span class="p">;</span> <span class="n">f</span><span class="p">,</span> <span class="n">q_sqrt</span> <span class="n">q_sqrtᵀ</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This method computes the mean and (co)variance of:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>q(g1) = ∫ q(g2) p(g1 | g2)
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – <ul>
+<li><p><strong>q_sqrt</strong> has shape [<em>M_R_or_R_M_M</em>…].</p></li>
+</ul>
+<p>If this is a Tensor, it must have shape [R, M, M] (lower
+triangular) or [M, R] (diagonal)</p>
+</p></li>
+<li><p><strong>Kmn</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>Kmn</strong> has shape [<em>M</em>, <em>batch</em>…, <em>N</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>Kmm</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>Kmm</strong> has shape [<em>M</em>, <em>M</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>Knn</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>Knn</strong> has shape [<em>batch</em>…, <em>N</em>, <em>N</em>] if <em>full_cov</em>.</p></li>
+<li><p><strong>Knn</strong> has shape [<em>batch</em>…, <em>N</em>] if not <em>full_cov</em>.</p></li>
+</ul>
+</p></li>
+<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>f</strong> has shape [<em>M</em>, <em>R</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>R</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>R</em>] if not <em>full_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>R</em>, <em>N</em>, <em>N</em>] if <em>full_cov</em>.</p></li>
+</ul>
+<p>mean, variance</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-conditionals-conditional">
+<h3>gpflow.conditionals.conditional<a class="headerlink" href="#gpflow-conditionals-conditional" title="Permalink to this heading">#</a></h3>
+<p>This function uses multiple dispatch, which will depend on the type of argument passed in:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">conditionals</span><span class="o">.</span><span class="n">conditional</span><span class="p">(</span> <span class="nb">object</span><span class="p">,</span> <span class="n">InducingVariables</span><span class="p">,</span> <span class="n">Kernel</span><span class="p">,</span> <span class="nb">object</span> <span class="p">)</span>
+<span class="c1"># dispatch to -&gt; gpflow.conditionals.conditionals._sparse_conditional(...)</span>
+</pre></div>
+</div>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.conditionals.conditionals._sparse_conditional">
+<span class="sig-prename descclassname"><span class="pre">gpflow.conditionals.conditionals.</span></span><span class="sig-name descname"><span class="pre">_sparse_conditional</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/conditionals.html#_sparse_conditional"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.conditionals.conditionals._sparse_conditional" title="Permalink to this definition">#</a></dt>
+<dd><p>Single-output GP conditional.</p>
+<p>The covariance matrices used to calculate the conditional have the following shape:</p>
+<ul class="simple">
+<li><p>Kuu: [M, M]</p></li>
+<li><p>Kuf: [M, N]</p></li>
+<li><p>Kff: [N, N]</p></li>
+</ul>
+<p>Further reference:</p>
+<ul class="simple">
+<li><p>See <cite>gpflow.conditionals._dense_conditional</cite> (below) for a detailed explanation of
+conditional in the single-output case.</p></li>
+<li><p>See the multiouput notebook for more information about the multiouput framework.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Xnew</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>Xnew</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>data matrix</p>
+</p></li>
+<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>f</strong> has shape [<em>M</em>, <em>R</em>].</p></li>
+</ul>
+<p>data matrix</p>
+</p></li>
+<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – return the covariance between the datapoints</p></li>
+<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – return the covariance between the outputs.
+NOTE: as we are using a single-output kernel with repetitions
+these covariances will be zero.</p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – <ul>
+<li><p><strong>q_sqrt</strong> has shape [<em>M_R_or_R_M_M</em>…].</p></li>
+</ul>
+<p>matrix of standard-deviations or Cholesky matrices,
+size [M, R] or [R, M, M].</p>
+</p></li>
+<li><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – boolean of whether to use the whitened representation</p></li>
+<li><p><strong>inducing_variable</strong> (<a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.InducingVariables" title="gpflow.inducing_variables.inducing_variables.InducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingVariables</span></code></a>) – <ul>
+<li><p><strong>inducing_variable</strong> has shape [<em>M</em>, <em>D</em>, broadcast <em>R</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>R</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>R</em>, <em>N</em>, <em>R</em>] if <em>full_cov</em> and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>R</em>, <em>R</em>] if (not <em>full_cov</em>) and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>R</em>] if (not <em>full_cov</em>) and (not <em>full_output_cov</em>).</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>R</em>, <em>N</em>, <em>N</em>] if <em>full_cov</em> and (not <em>full_output_cov</em>).</p></li>
+</ul>
+<p>mean and variance</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">conditionals</span><span class="o">.</span><span class="n">conditional</span><span class="p">(</span> <span class="nb">object</span><span class="p">,</span> <span class="nb">object</span><span class="p">,</span> <span class="n">Kernel</span><span class="p">,</span> <span class="nb">object</span> <span class="p">)</span>
+<span class="c1"># dispatch to -&gt; gpflow.conditionals.conditionals._dense_conditional(...)</span>
+</pre></div>
+</div>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.conditionals.conditionals._dense_conditional">
+<span class="sig-prename descclassname"><span class="pre">gpflow.conditionals.conditionals.</span></span><span class="sig-name descname"><span class="pre">_dense_conditional</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/conditionals.html#_dense_conditional"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.conditionals.conditionals._dense_conditional" title="Permalink to this definition">#</a></dt>
+<dd><p>Given f, representing the GP at the points X, produce the mean and
+(co-)variance of the GP at the points Xnew.</p>
+<p>Additionally, there may be Gaussian uncertainty about f as represented by
+q_sqrt. In this case <cite>f</cite> represents the mean of the distribution and
+q_sqrt the square-root of the covariance.</p>
+<p>Additionally, the GP may have been centered (whitened) so that:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">p</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">=</span> <span class="n">𝒩</span><span class="p">(</span><span class="mi">𝟎</span><span class="p">,</span> <span class="n">𝐈</span><span class="p">)</span>
+<span class="n">f</span> <span class="o">=</span> <span class="n">𝐋v</span>
+</pre></div>
+</div>
+<p>thus:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">p</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="o">=</span> <span class="n">𝒩</span><span class="p">(</span><span class="mi">𝟎</span><span class="p">,</span> <span class="n">𝐋𝐋ᵀ</span><span class="p">)</span> <span class="o">=</span> <span class="n">𝒩</span><span class="p">(</span><span class="mi">𝟎</span><span class="p">,</span> <span class="n">𝐊</span><span class="p">)</span><span class="o">.</span>
+</pre></div>
+</div>
+<p>In this case <cite>f</cite> represents the values taken by v.</p>
+<p>The method can either return the diagonals of the covariance matrix for
+each output (default) or the full covariance matrix (full_cov=True).</p>
+<p>We assume R independent GPs, represented by the columns of f (and the
+first dimension of q_sqrt).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Xnew</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>Xnew</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>data matrix. Evaluate the GP at these new points</p>
+</p></li>
+<li><p><strong>X</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>X</strong> has shape [<em>M</em>, <em>D</em>].</p></li>
+</ul>
+<p>data points.</p>
+</p></li>
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>) – GPflow kernel.</p></li>
+<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>f</strong> has shape [<em>M</em>, <em>R</em>].</p></li>
+</ul>
+<p>data matrix, representing the function values at X,
+for R functions.</p>
+</p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – matrix of standard-deviations or Cholesky matrices,
+size [M, R] or [R, M, M].</p></li>
+<li><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – boolean of whether to use the whitened representation as
+described above.</p></li>
+<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>R</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>R</em>, <em>N</em>, <em>R</em>] if <em>full_cov</em> and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>R</em>, <em>R</em>] if (not <em>full_cov</em>) and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>R</em>] if (not <em>full_cov</em>) and (not <em>full_output_cov</em>).</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>R</em>, <em>N</em>, <em>N</em>] if <em>full_cov</em> and (not <em>full_output_cov</em>).</p></li>
+</ul>
+<p>mean and variance</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">conditionals</span><span class="o">.</span><span class="n">conditional</span><span class="p">(</span> <span class="nb">object</span><span class="p">,</span> <span class="n">SharedIndependentInducingVariables</span><span class="p">,</span> <span class="n">SharedIndependent</span><span class="p">,</span> <span class="nb">object</span> <span class="p">)</span>
+<span class="c1"># dispatch to -&gt; gpflow.conditionals.multioutput.conditionals.shared_independent_conditional(...)</span>
+</pre></div>
+</div>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.conditionals.multioutput.conditionals.shared_independent_conditional">
+<span class="sig-prename descclassname"><span class="pre">gpflow.conditionals.multioutput.conditionals.</span></span><span class="sig-name descname"><span class="pre">shared_independent_conditional</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/multioutput/conditionals.html#shared_independent_conditional"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.conditionals.multioutput.conditionals.shared_independent_conditional" title="Permalink to this definition">#</a></dt>
+<dd><p>Multioutput conditional for an independent kernel and shared inducing inducing.
+Same behaviour as conditional with non-multioutput kernels.
+The covariance matrices used to calculate the conditional have the following shape:</p>
+<ul class="simple">
+<li><p>Kuu: [M, M]</p></li>
+<li><p>Kuf: [M, N]</p></li>
+<li><p>Kff: N or [N, N]</p></li>
+</ul>
+<p>Further reference:</p>
+<ul class="simple">
+<li><p>See <cite>gpflow.conditionals._conditional</cite> for a detailed explanation of
+conditional in the single-output case.</p></li>
+<li><p>See the multioutput notebook for more information about the multioutput framework.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Xnew</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>Xnew</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>data matrix, size [N, D].</p>
+</p></li>
+<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>f</strong> has shape [<em>M</em>, <em>L</em>].</p></li>
+</ul>
+<p>data matrix, [M, P]</p>
+</p></li>
+<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – return the covariance between the datapoints</p></li>
+<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – return the covariance between the outputs.
+Note: as we are using a independent kernel these covariances will be zero.</p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – <ul>
+<li><p><strong>q_sqrt</strong> has shape [<em>M_L_or_L_M_M</em>…].</p></li>
+</ul>
+<p>matrix of standard-deviations or Cholesky matrices,
+size [M, P] or [P, M, M].</p>
+</p></li>
+<li><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – boolean of whether to use the whitened representation</p></li>
+<li><p><strong>inducing_variable</strong> (<a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.SharedIndependentInducingVariables" title="gpflow.inducing_variables.multioutput.inducing_variables.SharedIndependentInducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">SharedIndependentInducingVariables</span></code></a>) – <ul>
+<li><p><strong>inducing_variable</strong> has shape [<em>M</em>, <em>D</em>, broadcast <em>L</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.SharedIndependent" title="gpflow.kernels.multioutput.kernels.SharedIndependent"><code class="xref py py-class docutils literal notranslate"><span class="pre">SharedIndependent</span></code></a>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>N</em>, <em>P</em>] if <em>full_cov</em> and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>P</em>] if (not <em>full_cov</em>) and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>] if (not <em>full_cov</em>) and (not <em>full_output_cov</em>).</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>P</em>, <em>N</em>, <em>N</em>] if <em>full_cov</em> and (not <em>full_output_cov</em>).</p></li>
+</ul>
+<ul class="simple">
+<li><p>mean:     [N, P]</p></li>
+<li><p>variance: [N, P], [P, N, N], [N, P, P] or [N, P, N, P]</p></li>
+</ul>
+<p>Please see <cite>gpflow.conditional._expand_independent_outputs</cite> for more information
+about the shape of the variance, depending on <cite>full_cov</cite> and <cite>full_output_cov</cite>.</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">conditionals</span><span class="o">.</span><span class="n">conditional</span><span class="p">(</span> <span class="nb">object</span><span class="p">,</span> <span class="n">SeparateIndependentInducingVariables</span><span class="p">,</span> <span class="n">SharedIndependent</span><span class="p">,</span> <span class="nb">object</span> <span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">conditionals</span><span class="o">.</span><span class="n">conditional</span><span class="p">(</span> <span class="nb">object</span><span class="p">,</span> <span class="n">SharedIndependentInducingVariables</span><span class="p">,</span> <span class="n">SeparateIndependent</span><span class="p">,</span> <span class="nb">object</span> <span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">conditionals</span><span class="o">.</span><span class="n">conditional</span><span class="p">(</span> <span class="nb">object</span><span class="p">,</span> <span class="n">SeparateIndependentInducingVariables</span><span class="p">,</span> <span class="n">SeparateIndependent</span><span class="p">,</span> <span class="nb">object</span> <span class="p">)</span>
+<span class="c1"># dispatch to -&gt; gpflow.conditionals.multioutput.conditionals.separate_independent_conditional(...)</span>
+</pre></div>
+</div>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.conditionals.multioutput.conditionals.separate_independent_conditional">
+<span class="sig-prename descclassname"><span class="pre">gpflow.conditionals.multioutput.conditionals.</span></span><span class="sig-name descname"><span class="pre">separate_independent_conditional</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/multioutput/conditionals.html#separate_independent_conditional"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.conditionals.multioutput.conditionals.separate_independent_conditional" title="Permalink to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Xnew</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
+<li><p><strong>inducing_variable</strong> (<a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.MultioutputInducingVariables" title="gpflow.inducing_variables.multioutput.inducing_variables.MultioutputInducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultioutputInducingVariables</span></code></a>) – </p></li>
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.MultioutputKernel" title="gpflow.kernels.multioutput.kernels.MultioutputKernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultioutputKernel</span></code></a>) – </p></li>
+<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
+<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – </p></li>
+<li><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">conditionals</span><span class="o">.</span><span class="n">conditional</span><span class="p">(</span> <span class="nb">object</span><span class="p">,</span> <span class="n">FallbackSharedIndependentInducingVariables</span><span class="p">,</span> <span class="n">IndependentLatent</span><span class="p">,</span> <span class="nb">object</span> <span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">conditionals</span><span class="o">.</span><span class="n">conditional</span><span class="p">(</span> <span class="nb">object</span><span class="p">,</span> <span class="n">FallbackSeparateIndependentInducingVariables</span><span class="p">,</span> <span class="n">IndependentLatent</span><span class="p">,</span> <span class="nb">object</span> <span class="p">)</span>
+<span class="c1"># dispatch to -&gt; gpflow.conditionals.multioutput.conditionals.fallback_independent_latent_conditional(...)</span>
+</pre></div>
+</div>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.conditionals.multioutput.conditionals.fallback_independent_latent_conditional">
+<span class="sig-prename descclassname"><span class="pre">gpflow.conditionals.multioutput.conditionals.</span></span><span class="sig-name descname"><span class="pre">fallback_independent_latent_conditional</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/multioutput/conditionals.html#fallback_independent_latent_conditional"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.conditionals.multioutput.conditionals.fallback_independent_latent_conditional" title="Permalink to this definition">#</a></dt>
+<dd><p>Interdomain conditional with independent latents.
+In this case the number of latent GPs (L) will be different than the number of outputs (P)
+The covariance matrices used to calculate the conditional have the following shape:
+- Kuu: [L, M, M]
+- Kuf: [M, L, N, P]
+- Kff: [N, P, N, P], [N, P, P], [N, P]</p>
+<p>Further reference:</p>
+<ul class="simple">
+<li><p>See <cite>gpflow.conditionals._conditional</cite> for a detailed explanation of
+conditional in the single-output case.</p></li>
+<li><p>See the multioutput notebook for more information about the multioutput framework.</p></li>
+<li><p>See above for the parameters and the return value.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Xnew</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>Xnew</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>inducing_variable</strong> (<a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.MultioutputInducingVariables" title="gpflow.inducing_variables.multioutput.inducing_variables.MultioutputInducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultioutputInducingVariables</span></code></a>) – <ul>
+<li><p><strong>inducing_variable</strong> has shape [<em>M</em>, <em>D</em>, broadcast <em>L</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>f</strong> has shape [<em>M</em>, <em>L</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – <ul>
+<li><p><strong>q_sqrt</strong> has shape [<em>M_L_or_L_M_M</em>…].</p></li>
+</ul>
+</p></li>
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.IndependentLatent" title="gpflow.kernels.multioutput.kernels.IndependentLatent"><code class="xref py py-class docutils literal notranslate"><span class="pre">IndependentLatent</span></code></a>) – </p></li>
+<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>N</em>, <em>P</em>] if <em>full_cov</em> and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>P</em>] if (not <em>full_cov</em>) and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>] if (not <em>full_cov</em>) and (not <em>full_output_cov</em>).</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>P</em>, <em>N</em>, <em>N</em>] if <em>full_cov</em> and (not <em>full_output_cov</em>).</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">conditionals</span><span class="o">.</span><span class="n">conditional</span><span class="p">(</span> <span class="nb">object</span><span class="p">,</span> <span class="n">InducingPoints</span><span class="p">,</span> <span class="n">MultioutputKernel</span><span class="p">,</span> <span class="nb">object</span> <span class="p">)</span>
+<span class="c1"># dispatch to -&gt; gpflow.conditionals.multioutput.conditionals.inducing_point_conditional(...)</span>
+</pre></div>
+</div>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.conditionals.multioutput.conditionals.inducing_point_conditional">
+<span class="sig-prename descclassname"><span class="pre">gpflow.conditionals.multioutput.conditionals.</span></span><span class="sig-name descname"><span class="pre">inducing_point_conditional</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/multioutput/conditionals.html#inducing_point_conditional"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.conditionals.multioutput.conditionals.inducing_point_conditional" title="Permalink to this definition">#</a></dt>
+<dd><p>Multi-output GP with fully correlated inducing variables.
+The inducing variables are shaped in the same way as evaluations of K, to allow a default
+inducing point scheme for multi-output kernels.
+The covariance matrices used to calculate the conditional have the following shape:
+- Kuu: [M, L, M, L]
+- Kuf: [M, L, N, P]
+- Kff: [N, P, N, P], [N, P, P], [N, P]</p>
+<p>Further reference:</p>
+<ul class="simple">
+<li><p>See <cite>gpflow.conditionals._conditional</cite> for a detailed explanation of
+conditional in the single-output case.</p></li>
+<li><p>See the multioutput notebook for more information about the multioutput framework.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>f</strong> has shape [<em>L</em>, 1].</p></li>
+</ul>
+<p>variational mean, [L, 1]</p>
+</p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – <ul>
+<li><p><strong>q_sqrt</strong> has shape [<em>L_1_or_1_L_L</em>…].</p></li>
+</ul>
+<p>standard-deviations or cholesky, [L, 1]  or  [1, L, L]</p>
+</p></li>
+<li><p><strong>Xnew</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>Xnew</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>inducing_variable</strong> (<a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.InducingPoints" title="gpflow.inducing_variables.inducing_variables.InducingPoints"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingPoints</span></code></a>) – <ul>
+<li><p><strong>inducing_variable</strong> has shape [<em>M</em>, <em>D</em>, broadcast <em>L</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.MultioutputKernel" title="gpflow.kernels.multioutput.kernels.MultioutputKernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultioutputKernel</span></code></a>) – </p></li>
+<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>N</em>, <em>P</em>] if <em>full_cov</em> and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>P</em>] if (not <em>full_cov</em>) and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>] if (not <em>full_cov</em>) and (not <em>full_output_cov</em>).</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>P</em>, <em>N</em>, <em>N</em>] if <em>full_cov</em> and (not <em>full_output_cov</em>).</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">conditionals</span><span class="o">.</span><span class="n">conditional</span><span class="p">(</span> <span class="nb">object</span><span class="p">,</span> <span class="n">SharedIndependentInducingVariables</span><span class="p">,</span> <span class="n">LinearCoregionalization</span><span class="p">,</span> <span class="nb">object</span> <span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">conditionals</span><span class="o">.</span><span class="n">conditional</span><span class="p">(</span> <span class="nb">object</span><span class="p">,</span> <span class="n">SeparateIndependentInducingVariables</span><span class="p">,</span> <span class="n">LinearCoregionalization</span><span class="p">,</span> <span class="nb">object</span> <span class="p">)</span>
+<span class="c1"># dispatch to -&gt; gpflow.conditionals.multioutput.conditionals.coregionalization_conditional(...)</span>
+</pre></div>
+</div>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.conditionals.multioutput.conditionals.coregionalization_conditional">
+<span class="sig-prename descclassname"><span class="pre">gpflow.conditionals.multioutput.conditionals.</span></span><span class="sig-name descname"><span class="pre">coregionalization_conditional</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/multioutput/conditionals.html#coregionalization_conditional"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.conditionals.multioutput.conditionals.coregionalization_conditional" title="Permalink to this definition">#</a></dt>
+<dd><p>Most efficient routine to project L independent latent gps through a mixing matrix W.
+The mixing matrix is a member of the <cite>LinearCoregionalization</cite> and has shape [P, L].
+The covariance matrices used to calculate the conditional have the following shape:
+- Kuu: [L, M, M]
+- Kuf: [L, M, N]
+- Kff: [L, N] or [L, N, N]</p>
+<p>Further reference:</p>
+<ul class="simple">
+<li><p>See <cite>gpflow.conditionals._conditional</cite> for a detailed explanation of
+conditional in the single-output case.</p></li>
+<li><p>See the multioutput notebook for more information about the multioutput framework.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Xnew</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>Xnew</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>inducing_variable</strong> (<a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.MultioutputInducingVariables" title="gpflow.inducing_variables.multioutput.inducing_variables.MultioutputInducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultioutputInducingVariables</span></code></a>) – <ul>
+<li><p><strong>inducing_variable</strong> has shape [<em>M</em>, <em>D</em>, broadcast <em>L</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>f</strong> has shape [<em>M</em>, <em>L</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – <ul>
+<li><p><strong>q_sqrt</strong> has shape [<em>M_L_or_L_M_M</em>…].</p></li>
+</ul>
+</p></li>
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.LinearCoregionalization" title="gpflow.kernels.multioutput.kernels.LinearCoregionalization"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinearCoregionalization</span></code></a>) – </p></li>
+<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>N</em>, <em>P</em>] if <em>full_cov</em> and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>P</em>] if (not <em>full_cov</em>) and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>] if (not <em>full_cov</em>) and (not <em>full_output_cov</em>).</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>P</em>, <em>N</em>, <em>N</em>] if <em>full_cov</em> and (not <em>full_output_cov</em>).</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-conditionals-sample-conditional">
+<h3>gpflow.conditionals.sample_conditional<a class="headerlink" href="#gpflow-conditionals-sample-conditional" title="Permalink to this heading">#</a></h3>
+<p>This function uses multiple dispatch, which will depend on the type of argument passed in:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">conditionals</span><span class="o">.</span><span class="n">sample_conditional</span><span class="p">(</span> <span class="nb">object</span><span class="p">,</span> <span class="n">SharedIndependentInducingVariables</span><span class="p">,</span> <span class="n">LinearCoregionalization</span><span class="p">,</span> <span class="nb">object</span> <span class="p">)</span>
+<span class="c1"># dispatch to -&gt; gpflow.conditionals.multioutput.sample_conditionals._sample_conditional(...)</span>
+</pre></div>
+</div>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.conditionals.multioutput.sample_conditionals._sample_conditional">
+<span class="sig-prename descclassname"><span class="pre">gpflow.conditionals.multioutput.sample_conditionals.</span></span><span class="sig-name descname"><span class="pre">_sample_conditional</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/multioutput/sample_conditionals.html#_sample_conditional"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.conditionals.multioutput.sample_conditionals._sample_conditional" title="Permalink to this definition">#</a></dt>
+<dd><blockquote>
+<div><p><cite>sample_conditional</cite> will return a sample from the conditional distribution.
+In most cases this means calculating the conditional mean m and variance v and then
+returning m + sqrt(v) * eps, with eps ~ N(0, 1).
+However, for some combinations of Mok and Mof, more efficient sampling routines exist.
+The dispatcher will make sure that we use the most efficent one.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>] if <em>num_samples</em> is <em>None</em>.</p></li>
+<li><p><strong>return[0]</strong> has shape [<em>batch</em>…, <em>num_samples</em>, <em>N</em>, <em>P</em>] if <em>num_samples</em> is not <em>None</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>].</p></li>
+<li><p><strong>return[2]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>].</p></li>
+</ul>
+<p>samples, mean, cov</p>
+</p>
+</dd>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Xnew</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>Xnew</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>inducing_variable</strong> (<a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.SharedIndependentInducingVariables" title="gpflow.inducing_variables.multioutput.inducing_variables.SharedIndependentInducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">SharedIndependentInducingVariables</span></code></a>) – <ul>
+<li><p><strong>inducing_variable</strong> has shape [<em>M</em>, <em>D</em>, <em>maybe_R</em>…].</p></li>
+</ul>
+</p></li>
+<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>f</strong> has shape [<em>M</em>, <em>R</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.LinearCoregionalization" title="gpflow.kernels.multioutput.kernels.LinearCoregionalization"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinearCoregionalization</span></code></a>) – </p></li>
+<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – </p></li>
+<li><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>num_samples</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">conditionals</span><span class="o">.</span><span class="n">sample_conditional</span><span class="p">(</span> <span class="nb">object</span><span class="p">,</span> <span class="n">InducingVariables</span><span class="p">,</span> <span class="n">Kernel</span><span class="p">,</span> <span class="nb">object</span> <span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">conditionals</span><span class="o">.</span><span class="n">sample_conditional</span><span class="p">(</span> <span class="nb">object</span><span class="p">,</span> <span class="nb">object</span><span class="p">,</span> <span class="n">Kernel</span><span class="p">,</span> <span class="nb">object</span> <span class="p">)</span>
+<span class="c1"># dispatch to -&gt; gpflow.conditionals.sample_conditionals._sample_conditional(...)</span>
+</pre></div>
+</div>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.conditionals.sample_conditionals._sample_conditional">
+<span class="sig-prename descclassname"><span class="pre">gpflow.conditionals.sample_conditionals.</span></span><span class="sig-name descname"><span class="pre">_sample_conditional</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/sample_conditionals.html#_sample_conditional"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.conditionals.sample_conditionals._sample_conditional" title="Permalink to this definition">#</a></dt>
+<dd><p><cite>sample_conditional</cite> will return a sample from the conditional distribution.
+In most cases this means calculating the conditional mean m and variance v and then
+returning m + sqrt(v) * eps, with eps ~ N(0, 1).
+However, for some combinations of Mok and Mof more efficient sampling routines exists.
+The dispatcher will make sure that we use the most efficient one.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>R</em>] if <em>num_samples</em> is <em>None</em>.</p></li>
+<li><p><strong>return[0]</strong> has shape [<em>batch</em>…, <em>num_samples</em>, <em>N</em>, <em>R</em>] if <em>num_samples</em> is not <em>None</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>R</em>].</p></li>
+<li><p><strong>return[2]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>R</em>, <em>R</em>] if (not <em>full_cov</em>) and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[2]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>R</em>] if (not <em>full_cov</em>) and (not <em>full_output_cov</em>).</p></li>
+<li><p><strong>return[2]</strong> has shape [<em>batch</em>…, <em>R</em>, <em>N</em>, <em>N</em>] if <em>full_cov</em> and (not <em>full_output_cov</em>).</p></li>
+</ul>
+<p>samples, mean, cov</p>
+</p>
+</dd>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Xnew</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>Xnew</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>inducing_variable</strong> (<a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.InducingVariables" title="gpflow.inducing_variables.inducing_variables.InducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingVariables</span></code></a>) – <ul>
+<li><p><strong>inducing_variable</strong> has shape [<em>M</em>, <em>D</em>, <em>maybe_R</em>…].</p></li>
+</ul>
+</p></li>
+<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>f</strong> has shape [<em>M</em>, <em>R</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>) – </p></li>
+<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – </p></li>
+<li><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>num_samples</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-conditionals-uncertain-conditional">
+<h3>gpflow.conditionals.uncertain_conditional<a class="headerlink" href="#gpflow-conditionals-uncertain-conditional" title="Permalink to this heading">#</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.conditionals.uncertain_conditional">
+<span class="sig-prename descclassname"><span class="pre">gpflow.conditionals.</span></span><span class="sig-name descname"><span class="pre">uncertain_conditional</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew_var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/uncertain_conditionals.html#uncertain_conditional"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.conditionals.uncertain_conditional" title="Permalink to this definition">#</a></dt>
+<dd><p>Calculates the conditional for uncertain inputs Xnew, p(Xnew) = N(Xnew_mu, Xnew_var).
+See <code class="docutils literal notranslate"><span class="pre">conditional</span></code> documentation for further reference.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Xnew_mu</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>Xnew_mu</strong> has shape [<em>batch</em>…, <em>N</em>, <em>Din</em>].</p></li>
+</ul>
+<p>mean of the inputs</p>
+</p></li>
+<li><p><strong>Xnew_var</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>Xnew_var</strong> has shape [<em>batch</em>…, <em>N</em>, <em>n</em>, <em>n</em>].</p></li>
+</ul>
+<p>covariance matrix of the inputs</p>
+</p></li>
+<li><p><strong>inducing_variable</strong> (<a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.InducingVariables" title="gpflow.inducing_variables.inducing_variables.InducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingVariables</span></code></a>) – <ul>
+<li><p><strong>inducing_variable</strong> has shape [<em>M</em>, <em>Din</em>, broadcast <em>t</em>].</p></li>
+</ul>
+<p>gpflow.InducingVariable object, only InducingPoints is supported</p>
+</p></li>
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>) – gpflow kernel object.</p></li>
+<li><p><strong>q_mu</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>q_mu</strong> has shape [<em>M</em>, <em>Dout</em>].</p></li>
+</ul>
+<p>mean inducing points</p>
+</p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>q_sqrt</strong> has shape [<em>t</em>, <em>M</em>, <em>M</em>].</p></li>
+</ul>
+<p>cholesky of the covariance matrix of the inducing points</p>
+</p></li>
+<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – boolean wheter to compute covariance between output dimension.
+Influences the shape of return value <code class="docutils literal notranslate"><span class="pre">fvar</span></code>. Default is False</p></li>
+<li><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – boolean whether to use whitened representation. Default is False.</p></li>
+<li><p><strong>mean_function</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="../functions/index.html#gpflow.functions.MeanFunction" title="gpflow.functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeanFunction</span></code></a>]) – </p></li>
+<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return fmean, fvar<span class="colon">:</span></dt>
+<dd class="field-even"><p>mean and covariance of the conditional</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>Dout</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>Dout</em>] if not <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>t</em>, <em>t</em>] if <em>full_output_cov</em>.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+              </article>
+              
+
+              
+          </div>
+          
+      </div>
+    </div>
+
+  
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695"></script>
+
+<footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    <p class="copyright">
+    &copy; Copyright 2022, The GPflow Contributors.<br>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 6.1.3.<br>
+</p>
+  </div>
+  
+</div>
+</footer>
+  </body>
+</html>

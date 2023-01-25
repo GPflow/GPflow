@@ -1,0 +1,624 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>User Guide &#8212; GPflow 2.7.0 documentation</title>
+<script>
+  document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+  document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
+</script>
+
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+<link href="_static/styles/pydata-sphinx-theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+
+
+  <link rel="stylesheet"
+    href="_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/pydata-custom.css" />
+
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
+
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Derivation of VGP equations" href="notebooks/theory/vgp_notes.html" />
+    <link rel="prev" title="Saving and Loading Models" href="notebooks/getting_started/saving_and_loading.html" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="docsearch:language" content="en">
+  </head>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+    <div class="bd-header-announcement container-fluid" id="banner">
+      
+
+    </div>
+
+    
+    <nav class="bd-header navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="bd-header__inner container-xl">
+
+  <div id="navbar-start">
+    
+    
+  
+
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">GPflow 2.7.0 documentation</p>
+  
+</a>
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="fas fa-bars"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="getting_started.html">
+  Getting Started
+ </a>
+</li>
+
+<li class="toctree-l1 current active nav-item">
+ <a class="current reference internal nav-link" href="#">
+  User Guide
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="api/gpflow/index.html">
+  API reference
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="benchmarks.html">
+  Benchmarks
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="bibliography.html">
+  Bibliography
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <div class="dropdown" id="version_switcher">
+    <button type="button" class="btn btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+        2.7.0  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div id="version_switcher_menu" class="dropdown-menu list-group-flush py-0" aria-labelledby="version_switcher_button">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+
+<!-- NOTE: this JS must live here (not in our global JS file) because it relies
+     on being processed by Jinja before it is run (specifically for replacing
+     variables user_guide and {'json_url': 'https://gpflow.github.io/GPflow/versions.json', 'version_match': '2.7.0'}.
+-->
+
+<script type="text/javascript">
+// Check if corresponding page path exists in other version of docs
+// and, if so, go there instead of the homepage of the other docs version
+function checkPageExistsAndRedirect(event) {
+    const currentFilePath = "user_guide.html",
+          tryUrl = event.target.getAttribute("href");
+    let otherDocsHomepage = tryUrl.replace(currentFilePath, "");
+    $.ajax({
+        type: 'HEAD',
+        url: tryUrl,
+        // if the page exists, go there
+        success: function() {
+            location.href = tryUrl;
+        }
+    }).fail(function() {
+        location.href = otherDocsHomepage;
+    });
+    // this prevents the browser from following the href of the clicked node
+    // (which is fine because this function takes care of redirecting)
+    return false;
+}
+
+// Populate the version switcher from the JSON config file
+(function () {
+    $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
+        const currentFilePath = "user_guide.html";
+        let btn = document.getElementById("version_switcher_button");
+        // Set empty strings by default so that these attributes exist and can be used in CSS selectors
+        btn.dataset["activeVersionName"] = "";
+        btn.dataset["activeVersion"] = "";
+        // create links to the corresponding page in the other docs versions
+        $.each(data, function(index, entry) {
+            // if no custom name specified (e.g., "latest"), use version string
+            if (!("name" in entry)) {
+                entry.name = entry.version;
+            }
+            // create the node
+            const node = document.createElement("a");
+            node.setAttribute("class", "list-group-item list-group-item-action py-1");
+            node.textContent = `${entry.name}`;
+            node.setAttribute("href", `${entry.url}${currentFilePath}`);
+            // on click, AJAX calls will check if the linked page exists before
+            // trying to redirect, and if not, will redirect to the homepage
+            // for that version of the docs.
+            node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
+            $("#version_switcher_menu").append(node);
+            // replace dropdown button text with the preferred display name of
+            // this version, rather than using sphinx's  variable.
+            // also highlight the dropdown entry for the currently-viewed
+            // version's entry
+            if (entry.version == "2.7.0") {
+                node.classList.add("active");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
+            }
+        });
+    });
+})();
+</script>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="bd-container container-xl">
+      <div class="bd-container__inner row">
+          
+
+<!-- Only show if we have sidebars configured, else just a small margin  -->
+<div class="bd-sidebar-primary col-12 col-md-3 bd-sidebar">
+  <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    <ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="notebooks/theory/vgp_notes.html">
+   Derivation of VGP equations
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="notebooks/theory/SGPR_notes.html">
+   Derivation of SGPR equations
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="notebooks/theory/cglb.html">
+   Conjugate Gradient Lower Bound
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="notebooks/theory/upper_bound.html">
+   Discussion of the GP marginal likelihood upper bound
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="notebooks/theory/FITCvsVFE.html">
+   Comparing FITC approximation to VFE approximation
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="notebooks/theory/Sanity_check.html">
+   Sanity checking when model behaviours should overlap
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="notebooks/tailor/kernel_design.html">
+   Kernel Design
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="notebooks/tailor/gp_nn.html">
+   Mixing TensorFlow models with GPflow
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="notebooks/tailor/external-mean-function.html">
+   Custom mean functions: metalearning with GPs
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="notebooks/tailor/mixture_density_network.html">
+   Mixture Density Networks in GPflow
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="notebooks/advanced/mcmc.html">
+   MCMC (Markov Chain Monte Carlo)
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="notebooks/advanced/ordinal_regression.html">
+   Ordinal regression
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="notebooks/advanced/gps_for_big_data.html">
+   Stochastic Variational Inference for scalability with SVGP
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="notebooks/advanced/multiclass_classification.html">
+   Multiclass classification
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="notebooks/advanced/varying_noise.html">
+   Gaussian process regression with varying output noise
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="notebooks/advanced/heteroskedastic.html">
+   Heteroskedastic Likelihood and Multi-Latent GP
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="notebooks/advanced/changepoints.html">
+   Change points
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="notebooks/advanced/convolutional.html">
+   Convolutional Gaussian Processes
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="notebooks/advanced/multioutput.html">
+   Multi-output Gaussian processes in GPflow
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="notebooks/advanced/coregionalisation.html">
+   A simple demonstration of coregionalization
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="notebooks/advanced/fast_predictions.html">
+   Faster predictions by caching
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="notebooks/advanced/GPLVM.html">
+   Bayesian Gaussian process latent variable model (Bayesian GPLVM)
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="notebooks/advanced/variational_fourier_features.html">
+   Variational Fourier Features in the GPflow framework
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="notebooks/advanced/natural_gradients.html">
+   Natural gradients
+  </a>
+ </li>
+</ul>
+
+  </div>
+</nav>
+  </div>
+  <div class="sidebar-end-items">
+  </div>
+</div>
+
+
+          
+
+
+<div class="bd-sidebar-secondary d-none d-xl-block col-xl-2 bd-toc">
+  
+    
+    <div class="toc-item">
+      
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#theoretical-notes">
+   Theoretical notes
+  </a>
+  <ul class="nav section-nav flex-column">
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#tailored-models">
+   Tailored models
+  </a>
+  <ul class="nav section-nav flex-column">
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#advanced-needs">
+   Advanced needs
+  </a>
+  <ul class="nav section-nav flex-column">
+  </ul>
+ </li>
+</ul>
+
+</nav>
+    </div>
+    
+    <div class="toc-item">
+      
+    </div>
+    
+  
+</div>
+
+
+          
+          
+          <div class="bd-content col-12 col-md-9 col-xl-7">
+              
+              <article class="bd-article" role="main">
+                
+  <section id="user-guide">
+<h1>User Guide<a class="headerlink" href="#user-guide" title="Permalink to this heading">#</a></h1>
+<p>You can use this document to get familiar with the more in-depth topics of GPflow. If you are new to GPflow you should see our <a class="reference internal" href="getting_started.html"><span class="doc">Getting Started</span></a> guide first. We have also provided a <a class="reference external" href="_static/GPflows.png">flow diagram</a> to guide you to the relevant parts of GPflow for your specific problem.</p>
+<section id="theoretical-notes">
+<h2>Theoretical notes<a class="headerlink" href="#theoretical-notes" title="Permalink to this heading">#</a></h2>
+<p>The following notebooks relate to the theory of Gaussian processes and approximations. These are not required reading for using GPflow, but are included for those interested in the theoretical underpinning and technical details.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/theory/vgp_notes.html">Derivation of VGP equations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/theory/SGPR_notes.html">Derivation of SGPR equations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/theory/cglb.html">Conjugate Gradient Lower Bound</a></li>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/theory/upper_bound.html">Discussion of the GP marginal likelihood upper bound</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/theory/FITCvsVFE.html">Comparing FITC approximation to VFE approximation</a></li>
+</ul>
+</div>
+<p>Why we like the Variational Free Energy (VFE) objective rather than the Fully Independent Training Conditional (FITC) approximation for our sparse approximations.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/theory/Sanity_check.html">Sanity checking when model behaviours should overlap</a></li>
+</ul>
+</div>
+<p>Demonstrates the overlapping behaviour of many of the GPflow model classes in special cases (specifically, with a Gaussian likelihood and, for sparse approximations, inducing points fixed to the data points).</p>
+</section>
+<section id="tailored-models">
+<h2>Tailored models<a class="headerlink" href="#tailored-models" title="Permalink to this heading">#</a></h2>
+<p>This section shows how to use GPflow’s utilities and codebase to build new probabilistic models.
+These can be seen as complete examples.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/tailor/kernel_design.html">Kernel Design</a></li>
+</ul>
+</div>
+<p>How to implement a covariance function that is not available by default in GPflow. For this example, we look at the Brownian motion covariance.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/tailor/gp_nn.html">Mixing TensorFlow models with GPflow</a></li>
+</ul>
+</div>
+<p>Two ways to combine TensorFlow neural networks with GPflow models.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/tailor/external-mean-function.html">Custom mean functions: metalearning with GPs</a></li>
+</ul>
+</div>
+<p>How to use a neural network as a mean function.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/tailor/mixture_density_network.html">Mixture Density Networks in GPflow</a></li>
+</ul>
+</div>
+<p>How GPflow’s utilities make it easy to build other, non-GP probabilistic models.</p>
+</section>
+<section id="advanced-needs">
+<h2>Advanced needs<a class="headerlink" href="#advanced-needs" title="Permalink to this heading">#</a></h2>
+<p>This section explains the more complex models and features that are available in GPflow.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/advanced/mcmc.html">MCMC (Markov Chain Monte Carlo)</a></li>
+</ul>
+</div>
+<p>Using Hamiltonian Monte Carlo to sample the posterior GP and hyperparameters.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/advanced/ordinal_regression.html">Ordinal regression</a></li>
+</ul>
+</div>
+<p>Using GPflow to deal with ordinal variables.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/advanced/gps_for_big_data.html">Stochastic Variational Inference for scalability with SVGP</a></li>
+</ul>
+</div>
+<p>Using GPflow’s Sparse Variational Gaussian Process (SVGP) model <span id="id1">[<a class="reference internal" href="bibliography.html#id6" title="James Hensman, Alexander G. de G. Matthews, and Zoubin Ghahramani. Scalable variational gaussian process classification. In Proceedings of AISTATS. 2015.">HMG15</a>]</span> <span id="id2">[<a class="reference internal" href="bibliography.html#id5" title="James Hensman, Nicolo Fusi, and Neil D Lawrence. Gaussian processes for big data. arXiv preprint arXiv:1309.6835, 2013.">HFL13</a>]</span>. Use sparse methods when dealing with large datasets (more than around a thousand data points).</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/advanced/multiclass_classification.html">Multiclass classification</a></li>
+</ul>
+</div>
+<p>On classification with more than two classes.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/advanced/varying_noise.html">Gaussian process regression with varying output noise</a></li>
+</ul>
+</div>
+<p>Most GP models assume the noise is constant across all data points. This notebook shows how to model simple varying noise.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/advanced/heteroskedastic.html">Heteroskedastic Likelihood and Multi-Latent GP</a></li>
+</ul>
+</div>
+<p>This is a more expensive, but also more powerful way to handly noise that varies across data points.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/advanced/changepoints.html">Change points</a></li>
+</ul>
+</div>
+<p>How to deal with regime-changes in 1D datasets.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/advanced/convolutional.html">Convolutional Gaussian Processes</a></li>
+</ul>
+</div>
+<p>How we can use GPs with convolutional kernels for image classification.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/advanced/multioutput.html">Multi-output Gaussian processes in GPflow</a></li>
+</ul>
+</div>
+<p>For when you have multiple outputs, that all are observed at all data points.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/advanced/coregionalisation.html">A simple demonstration of coregionalization</a></li>
+</ul>
+</div>
+<p>For when you have multiple outputs, but not all of them are observed at every data point.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/advanced/fast_predictions.html">Faster predictions by caching</a></li>
+</ul>
+</div>
+<p>How to use caching to speed up repeated predictions.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/advanced/GPLVM.html">Bayesian Gaussian process latent variable model (Bayesian GPLVM)</a></li>
+</ul>
+</div>
+<p>How to use the Bayesian GPLVM model. This is an unsupervised learning method usually used for dimensionality reduction.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/advanced/variational_fourier_features.html">Variational Fourier Features in the GPflow framework</a></li>
+</ul>
+</div>
+<p>In this notebook we demonstrate how new types of inducing variables can easily be incorporated in the GPflow framework. As an example case, we use variational Fourier features.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/advanced/natural_gradients.html">Natural gradients</a></li>
+</ul>
+</div>
+<p>How to optimize the variational approximate posterior’s parameters.</p>
+</section>
+</section>
+
+
+              </article>
+              
+
+              
+          </div>
+          
+      </div>
+    </div>
+
+  
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695"></script>
+
+<footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    <p class="copyright">
+    &copy; Copyright 2022, The GPflow Contributors.<br>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 6.1.3.<br>
+</p>
+  </div>
+  
+</div>
+</footer>
+  </body>
+</html>

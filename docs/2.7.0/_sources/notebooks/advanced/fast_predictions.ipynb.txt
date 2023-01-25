@@ -1,0 +1,520 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "19caf936",
+   "metadata": {
+    "id": "eYrSpUncKGSk"
+   },
+   "source": [
+    "# Faster predictions by caching"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f65cef71",
+   "metadata": {
+    "id": "PLuPjfS7KLQ-"
+   },
+   "source": [
+    "The default behaviour of `predict_f` in GPflow models is to compute the predictions from scratch on each call. This is convenient when predicting and training are interleaved, and simplifies the use of these models. There are some use cases, such as Bayesian optimisation, where prediction (at different test points) happens much more frequently than training. In these cases it is convenient to cache parts of the calculation which do not depend upon the test points, and reuse those parts between predictions.\n",
+    "\n",
+    "There are three models to which we want to add this caching capability: GPR, (S)VGP and SGPR. The VGP and SVGP can be considered together; the difference between the models is whether to condition on the full training data set (VGP) or on the inducing variables (SVGP)."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "658ccf73",
+   "metadata": {
+    "id": "EACkO-iRKM5T"
+   },
+   "source": [
+    "## Posterior predictive distribution\n",
+    "\n",
+    "The posterior predictive distribution evaluated at a set of test points $\\mathbf{x}_*$ for a Gaussian process model is given by:\n",
+    "\\begin{equation*}\n",
+    "p(\\mathbf{f}_*|X, Y) = \\mathcal{N}(\\mu, \\Sigma)\n",
+    "\\end{equation*}\n",
+    "\n",
+    "In the case of the GPR model, the parameters $\\mu$ and $\\Sigma$ are given by:\n",
+    "\\begin{equation*}\n",
+    "\\mu = K_{nm}[K_{mm} + \\sigma^2I]^{-1}\\mathbf{y}\n",
+    "\\end{equation*}\n",
+    "and\n",
+    "\\begin{equation*}\n",
+    "\\Sigma = K_{nn} - K_{nm}[K_{mm} + \\sigma^2I]^{-1}K_{mn}\n",
+    "\\end{equation*}\n",
+    "\n",
+    "The posterior predictive distribution for the VGP and SVGP model is parameterised as follows:\n",
+    "\\begin{equation*}\n",
+    "\\mu = K_{nu}K_{uu}^{-1}\\mathbf{u}\n",
+    "\\end{equation*}\n",
+    "and\n",
+    "\\begin{equation*}\n",
+    "\\Sigma = K_{nn} - K_{nu}K_{uu}^{-1}K_{un}\n",
+    "\\end{equation*}\n",
+    "\n",
+    "Finally, the parameters for the SGPR model are:\n",
+    "\\begin{equation*}\n",
+    "\\mu = K_{nu}L^{-T}L_B^{-T}\\mathbf{c}\n",
+    "\\end{equation*}\n",
+    "and\n",
+    "\\begin{equation*}\n",
+    "\\Sigma = K_{nn} - K_{nu}L^{-T}(I - B^{-1})L^{-1}K_{un}\n",
+    "\\end{equation*}\n",
+    "\n",
+    "Where the mean function is not the zero function, the predictive mean should have the mean function evaluated at the test points added to it."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "dc4c0e6f",
+   "metadata": {
+    "id": "GX1U-fYPKPrt"
+   },
+   "source": [
+    "## What can be cached?\n",
+    "\n",
+    "We cache two separate values: $\\alpha$ and $Q^{-1}$. These correspond to the parts of the mean and covariance functions respectively which do not depend upon the test points. In the case of the GPR these are the same value:\n",
+    "\\begin{equation*}\n",
+    "\\alpha = Q^{-1} = [K_{mm} + \\sigma^2I]^{-1}\n",
+    "\\end{equation*}\n",
+    "in the case of the VGP and SVGP model these are:\n",
+    "\\begin{equation*}\n",
+    "\\alpha = K_{uu}^{-1}\\mathbf{u}\\\\ Q^{-1} = K_{uu}^{-1}\n",
+    "\\end{equation*}\n",
+    "and in the case of the SGPR model these are:\n",
+    "\\begin{equation*}\n",
+    "\\alpha = L^{-T}L_B^{-T}\\mathbf{c}\\\\ Q^{-1} = L^{-T}(I - B^{-1})L^{-1}\n",
+    "\\end{equation*}\n",
+    "\n",
+    "\n",
+    "Note that in the (S)VGP case, $\\alpha$ is the parameter as proposed by Opper and Archambeau for the mean of the predictive distribution."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "d2ffec84",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-01-25T09:47:56.827798Z",
+     "iopub.status.busy": "2023-01-25T09:47:56.827508Z",
+     "iopub.status.idle": "2023-01-25T09:48:00.706897Z",
+     "shell.execute_reply": "2023-01-25T09:48:00.706167Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2023-01-25 09:47:57.125892: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n",
+      "2023-01-25 09:47:57.255210: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2023-01-25 09:47:57.255238: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n",
+      "2023-01-25 09:47:57.284242: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2023-01-25 09:47:57.882445: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory\n",
+      "2023-01-25 09:47:57.882513: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory\n",
+      "2023-01-25 09:47:57.882521: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.\n"
+     ]
+    }
+   ],
+   "source": [
+    "import numpy as np\n",
+    "\n",
+    "import gpflow\n",
+    "from gpflow.ci_utils import reduce_in_tests\n",
+    "\n",
+    "# Create some data\n",
+    "n_data = reduce_in_tests(1000)\n",
+    "X = np.linspace(-1.1, 1.1, n_data)[:, None]\n",
+    "Y = np.sin(X)\n",
+    "Xnew = np.linspace(-1.1, 1.1, n_data)[:, None]\n",
+    "inducing_points = Xnew"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4424f0d5",
+   "metadata": {
+    "id": "FzCgor4nKUcW"
+   },
+   "source": [
+    "\n",
+    "## GPR Example\n",
+    "\n",
+    "We will construct a GPR model to demonstrate the faster predictions from using the cached data in the GPFlow posterior classes (subclasses of `gpflow.posteriors.AbstractPosterior`)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "c307d513",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-01-25T09:48:00.711031Z",
+     "iopub.status.busy": "2023-01-25T09:48:00.710538Z",
+     "iopub.status.idle": "2023-01-25T09:48:00.814531Z",
+     "shell.execute_reply": "2023-01-25T09:48:00.813911Z"
+    },
+    "id": "BMnIdXNiKU6t"
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2023-01-25 09:48:00.714456: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2023-01-25 09:48:00.714721: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2023-01-25 09:48:00.714744: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (e5492288cfe7): /proc/driver/nvidia/version does not exist\n",
+      "2023-01-25 09:48:00.715499: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
+     ]
+    }
+   ],
+   "source": [
+    "model = gpflow.models.GPR(\n",
+    "    (X, Y),\n",
+    "    gpflow.kernels.SquaredExponential(),\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "01f83f18",
+   "metadata": {},
+   "source": [
+    "The `predict_f` method on the `GPModel` class performs no caching."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "37c231d0",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-01-25T09:48:00.817686Z",
+     "iopub.status.busy": "2023-01-25T09:48:00.817358Z",
+     "iopub.status.idle": "2023-01-25T09:48:02.251755Z",
+     "shell.execute_reply": "2023-01-25T09:48:02.251042Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "172 ms \u00b1 10.6 ms per loop (mean \u00b1 std. dev. of 7 runs, 1 loop each)\n"
+     ]
+    }
+   ],
+   "source": [
+    "%%timeit\n",
+    "model.predict_f(Xnew)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "de2ded80",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-01-25T09:48:02.254600Z",
+     "iopub.status.busy": "2023-01-25T09:48:02.254294Z",
+     "iopub.status.idle": "2023-01-25T09:48:02.322274Z",
+     "shell.execute_reply": "2023-01-25T09:48:02.321431Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "# To make use of the caching, first retrieve the posterior class from the model. The posterior class has methods to predict the parameters of marginal distributions at test points, in the same way as the `predict_f` method of the `GPModel`.\n",
+    "posterior = model.posterior()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "c581852e",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-01-25T09:48:02.325191Z",
+     "iopub.status.busy": "2023-01-25T09:48:02.324901Z",
+     "iopub.status.idle": "2023-01-25T09:48:12.180400Z",
+     "shell.execute_reply": "2023-01-25T09:48:12.179742Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "121 ms \u00b1 3.42 ms per loop (mean \u00b1 std. dev. of 7 runs, 10 loops each)\n"
+     ]
+    }
+   ],
+   "source": [
+    "%%timeit\n",
+    "posterior.predict_f(Xnew)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a8aa4a53",
+   "metadata": {},
+   "source": [
+    "## SVGP Example\n",
+    "\n",
+    "Likewise, we will construct an SVGP model to demonstrate the faster predictions from using the cached data in the GPFlow posterior classes."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "1887258b",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-01-25T09:48:12.183012Z",
+     "iopub.status.busy": "2023-01-25T09:48:12.182727Z",
+     "iopub.status.idle": "2023-01-25T09:48:12.246472Z",
+     "shell.execute_reply": "2023-01-25T09:48:12.245773Z"
+    },
+    "id": "BMnIdXNiKU6t"
+   },
+   "outputs": [],
+   "source": [
+    "model = gpflow.models.SVGP(\n",
+    "    gpflow.kernels.SquaredExponential(),\n",
+    "    gpflow.likelihoods.Gaussian(),\n",
+    "    inducing_points,\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "74e0d48e",
+   "metadata": {},
+   "source": [
+    "The `predict_f` method on the `GPModel` class performs no caching."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "24013f07",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-01-25T09:48:12.249794Z",
+     "iopub.status.busy": "2023-01-25T09:48:12.249421Z",
+     "iopub.status.idle": "2023-01-25T09:48:29.811827Z",
+     "shell.execute_reply": "2023-01-25T09:48:29.811198Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "216 ms \u00b1 4.92 ms per loop (mean \u00b1 std. dev. of 7 runs, 10 loops each)\n"
+     ]
+    }
+   ],
+   "source": [
+    "%%timeit\n",
+    "model.predict_f(Xnew)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4a44a873",
+   "metadata": {},
+   "source": [
+    "And again using the posterior object and caching"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "29bfd0b2",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-01-25T09:48:29.815170Z",
+     "iopub.status.busy": "2023-01-25T09:48:29.814882Z",
+     "iopub.status.idle": "2023-01-25T09:48:30.068628Z",
+     "shell.execute_reply": "2023-01-25T09:48:30.067979Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "posterior = model.posterior()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "010b03a7",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-01-25T09:48:30.071682Z",
+     "iopub.status.busy": "2023-01-25T09:48:30.071384Z",
+     "iopub.status.idle": "2023-01-25T09:48:38.810953Z",
+     "shell.execute_reply": "2023-01-25T09:48:38.810318Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "109 ms \u00b1 3.46 ms per loop (mean \u00b1 std. dev. of 7 runs, 10 loops each)\n"
+     ]
+    }
+   ],
+   "source": [
+    "%%timeit\n",
+    "posterior.predict_f(Xnew)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "427e874f",
+   "metadata": {},
+   "source": [
+    "## SGPR Example\n",
+    "\n",
+    "And finally, we follow the same approach this time for the SGPR case."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "56408c41",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-01-25T09:48:38.813994Z",
+     "iopub.status.busy": "2023-01-25T09:48:38.813686Z",
+     "iopub.status.idle": "2023-01-25T09:48:38.835496Z",
+     "shell.execute_reply": "2023-01-25T09:48:38.834894Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "model = gpflow.models.SGPR(\n",
+    "    (X, Y), gpflow.kernels.SquaredExponential(), inducing_points\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "52d9be10",
+   "metadata": {},
+   "source": [
+    "The predict_f method on the instance performs no caching."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "21ce36e7",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-01-25T09:48:38.838280Z",
+     "iopub.status.busy": "2023-01-25T09:48:38.838006Z",
+     "iopub.status.idle": "2023-01-25T09:48:41.263653Z",
+     "shell.execute_reply": "2023-01-25T09:48:41.263033Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "301 ms \u00b1 5.73 ms per loop (mean \u00b1 std. dev. of 7 runs, 1 loop each)\n"
+     ]
+    }
+   ],
+   "source": [
+    "%%timeit\n",
+    "model.predict_f(Xnew)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "94e84caf",
+   "metadata": {},
+   "source": [
+    "Using the posterior object instead:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "id": "036cb0d6",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-01-25T09:48:41.266240Z",
+     "iopub.status.busy": "2023-01-25T09:48:41.265961Z",
+     "iopub.status.idle": "2023-01-25T09:48:41.454321Z",
+     "shell.execute_reply": "2023-01-25T09:48:41.453528Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "posterior = model.posterior()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "id": "a420f5f4",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-01-25T09:48:41.457204Z",
+     "iopub.status.busy": "2023-01-25T09:48:41.456919Z",
+     "iopub.status.idle": "2023-01-25T09:48:50.490687Z",
+     "shell.execute_reply": "2023-01-25T09:48:50.489935Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "112 ms \u00b1 3.27 ms per loop (mean \u00b1 std. dev. of 7 runs, 10 loops each)\n"
+     ]
+    }
+   ],
+   "source": [
+    "%%timeit\n",
+    "posterior.predict_f(Xnew)"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.10.9"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
