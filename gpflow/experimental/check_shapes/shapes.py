@@ -109,6 +109,7 @@ def get_ndarray_shape(shaped: AnyNDArray, context: ErrorContext) -> Shape:
 
 
 @register_get_shape(tf.Tensor)
+@register_get_shape(tf.SparseTensor)
 @register_get_shape(tf.Variable)
 @register_get_shape(tfp.util.DeferredTensor)
 def get_tensorflow_shape(
