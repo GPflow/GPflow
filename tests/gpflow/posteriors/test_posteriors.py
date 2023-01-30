@@ -42,8 +42,18 @@ from gpflow.posteriors import (
     create_posterior,
 )
 
-INPUT_DIMS = 2
+INPUT_DIMS = 4
 NUM_INDUCING_POINTS = 3
+
+
+def create_kernel():
+    """ Create kernel function, note that both kernels don't use all the active dims """
+    return (
+        gpflow.kernels.SquaredExponential(lengthscales=[0.8], active_dims=[3,]) +
+        gpflow.kernels.SquaredExponential(lengthscales=[0.5, 0.2], active_dims=[2, 3]) +
+        gpflow.kernels.Linear(variance=[0.9, 0.3], active_dims=[1, 2])
+    )
+
 
 
 # `PosteriorType` really should be something like `Type[AbstractPosterior]`, except mypy doesn't
@@ -187,7 +197,7 @@ def test_independent_single_output(
     full_cov: bool,
     full_output_cov: bool,
 ) -> None:
-    kernel = gpflow.kernels.SquaredExponential()
+    kernel = create_kernel()
     inducing_variable = inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
 
     q_mu = np.random.randn(NUM_INDUCING_POINTS, 1)
@@ -226,7 +236,7 @@ def test_fully_correlated_multi_output(
     The fully correlated posterior has one latent GP.
     """
     kernel = gpflow.kernels.SharedIndependent(
-        gpflow.kernels.SquaredExponential(), output_dim=output_dims
+        create_kernel(), output_dim=output_dims
     )
     inducing_variable = inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
 
@@ -267,7 +277,7 @@ def test_independent_multi_output_shk_shi(
     Independent multi-output posterior with a shared kernel and shared inducing points.
     """
     kernel = gpflow.kernels.SharedIndependent(
-        gpflow.kernels.SquaredExponential(), output_dim=output_dims
+        create_kernel(), output_dim=output_dims
     )
     inducing_variable = gpflow.inducing_variables.SharedIndependentInducingVariables(
         inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
@@ -310,7 +320,7 @@ def test_independent_multi_output_shk_sei(
     Independent multi-output posterior with a shared kernel and separate inducing points.
     """
     kernel = gpflow.kernels.SharedIndependent(
-        gpflow.kernels.SquaredExponential(), output_dim=output_dims
+        create_kernel(), output_dim=output_dims
     )
     inducing_variable = gpflow.inducing_variables.SeparateIndependentInducingVariables(
         [
@@ -355,8 +365,9 @@ def test_independent_multi_output_sek_shi(
     """
     Independent multi-output posterior with separate independent kernels and shared inducing points.
     """
+
     kernel = gpflow.kernels.SeparateIndependent(
-        [gpflow.kernels.SquaredExponential() for _ in range(num_latent_gps)]
+        [create_kernel() for _ in range(num_latent_gps)]
     )
     inducing_variable = gpflow.inducing_variables.SharedIndependentInducingVariables(
         inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
@@ -399,7 +410,7 @@ def test_independent_multi_output_sek_sei(
     Independent multi-output posterior with separate independent kernel and separate inducing points.
     """
     kernel = gpflow.kernels.SeparateIndependent(
-        [gpflow.kernels.SquaredExponential() for _ in range(num_latent_gps)]
+        [create_kernel() for _ in range(num_latent_gps)]
     )
     inducing_variable = gpflow.inducing_variables.SeparateIndependentInducingVariables(
         [
@@ -447,7 +458,7 @@ def test_fallback_independent_multi_output_sei(
     requires a single latent GP function.
     """
     kernel = gpflow.kernels.LinearCoregionalization(
-        [gpflow.kernels.SquaredExponential()], W=tf.random.normal((output_dims, 1))
+        [create_kernel()], W=tf.random.normal((output_dims, 1))
     )
     inducing_variable = gpflow.inducing_variables.FallbackSeparateIndependentInducingVariables(
         [inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS)) for _ in range(1)]
@@ -492,7 +503,7 @@ def test_fallback_independent_multi_output_shi(
     requires a single latent GP function.
     """
     kernel = gpflow.kernels.LinearCoregionalization(
-        [gpflow.kernels.SquaredExponential()], W=tf.random.normal((output_dims, 1))
+        [create_kernel()], W=tf.random.normal((output_dims, 1))
     )
     inducing_variable = gpflow.inducing_variables.FallbackSharedIndependentInducingVariables(
         inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
@@ -535,7 +546,7 @@ def test_linear_coregionalization_sei(
     Linear coregionalization posterior with separate independent inducing variables.
     """
     kernel = gpflow.kernels.LinearCoregionalization(
-        [gpflow.kernels.SquaredExponential() for _ in range(num_latent_gps)],
+        [create_kernel() for _ in range(num_latent_gps)],
         W=tf.random.normal((output_dims, num_latent_gps)),
     )
     inducing_variable = gpflow.inducing_variables.SeparateIndependentInducingVariables(
@@ -582,7 +593,7 @@ def test_linear_coregionalization_shi(
     Linear coregionalization with shared independent inducing variables.
     """
     kernel = gpflow.kernels.LinearCoregionalization(
-        [gpflow.kernels.SquaredExponential() for _ in range(num_latent_gps)],
+        [create_kernel() for _ in range(num_latent_gps)],
         W=tf.random.normal((output_dims, num_latent_gps)),
     )
     inducing_variable = gpflow.inducing_variables.SharedIndependentInducingVariables(
@@ -619,7 +630,7 @@ def test_linear_coregionalization_shi(
 def test_posterior_update_cache_with_variables_no_precompute(
     q_sqrt_factory: QSqrtFactory, whiten: bool, precompute_cache_type: PrecomputeCacheType
 ) -> None:
-    kernel = gpflow.kernels.SquaredExponential()
+    kernel = create_kernel()
     inducing_variable = inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
 
     q_mu = np.random.randn(NUM_INDUCING_POINTS, 1)
@@ -650,7 +661,7 @@ def test_gpr_posterior_update_cache_with_variables_no_precompute(
     whiten: bool,
     precompute_cache_type: PrecomputeCacheType,
 ) -> None:
-    kernel = gpflow.kernels.SquaredExponential()
+    kernel = create_kernel()
     X = np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS)
     Y = np.random.randn(NUM_INDUCING_POINTS, 1)
 
@@ -679,7 +690,7 @@ def test_sgpr_posterior_update_cache_with_variables_no_precompute(
     whiten: bool,
     precompute_cache_type: PrecomputeCacheType,
 ) -> None:
-    kernel = gpflow.kernels.SquaredExponential()
+    kernel = create_kernel()
     X = np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS)
     Y = np.random.randn(NUM_INDUCING_POINTS, 1)
     Z = np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS)
@@ -712,7 +723,7 @@ def test_vgp_posterior_update_cache_with_variables_no_precompute(
     whiten: bool,
     precompute_cache_type: PrecomputeCacheType,
 ) -> None:
-    kernel = gpflow.kernels.SquaredExponential()
+    kernel = create_kernel()
     X = np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS)
     q_mu = np.random.randn(NUM_INDUCING_POINTS, 1)
     q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, 1)
@@ -737,7 +748,7 @@ def test_posterior_update_cache_with_variables_update_value(
     q_sqrt_factory: QSqrtFactory, whiten: bool
 ) -> None:
     # setup posterior
-    kernel = gpflow.kernels.SquaredExponential()
+    kernel = create_kernel()
     inducing_variable = inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
 
     q_mu = tf.Variable(np.random.randn(NUM_INDUCING_POINTS, 1))
@@ -779,7 +790,7 @@ def test_posterior_update_cache_fails_without_argument(
     q_sqrt_factory: QSqrtFactory, whiten: bool
 ) -> None:
     # setup posterior
-    kernel = gpflow.kernels.SquaredExponential()
+    kernel = create_kernel()
     inducing_variable = inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
 
     q_mu = tf.Variable(np.random.randn(NUM_INDUCING_POINTS, 1))
@@ -824,7 +835,7 @@ def test_posterior_create_with_variables_update_cache_works(
     q_sqrt_factory: QSqrtFactory, whiten: bool
 ) -> None:
     # setup posterior
-    kernel = gpflow.kernels.SquaredExponential()
+    kernel = create_kernel()
     inducing_variable = inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
 
     q_mu = tf.Variable(np.random.randn(NUM_INDUCING_POINTS, 1))

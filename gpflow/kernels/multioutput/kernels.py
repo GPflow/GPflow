@@ -104,6 +104,7 @@ class MultioutputKernel(Kernel):
         full_output_cov: bool = True,
         presliced: bool = False,
     ) -> tf.Tensor:
+        # NOTE: no slicing ever happens in this kernel, slicing happens in subkernels
         if not presliced:
             X, X2 = self.slice(X, X2)
         if not full_cov and X2 is not None:
@@ -144,7 +145,7 @@ class SharedIndependent(MultioutputKernel):
     def K(
         self, X: TensorType, X2: Optional[TensorType] = None, full_output_cov: bool = True
     ) -> tf.Tensor:
-        K = self.kernel.K(X, X2)
+        K = self.kernel(X, X2)
         rank = tf.rank(X) - 1
         if X2 is None:
             cs(K, "[batch..., N, N]")
@@ -189,7 +190,7 @@ class SharedIndependent(MultioutputKernel):
 
     @inherit_check_shapes
     def K_diag(self, X: TensorType, full_output_cov: bool = True) -> tf.Tensor:
-        K = cs(self.kernel.K_diag(X), "[batch..., N]")
+        K = cs(self.kernel(X, full_cov=False), "[batch..., N]")
         rank = tf.rank(X) - 1
         ones = tf.ones((rank,), dtype=tf.int32)
         multiples = tf.concat([ones, [self.output_dim]], 0)
@@ -223,7 +224,7 @@ class SeparateIndependent(MultioutputKernel, Combination):
         if X2 is None:
             if full_output_cov:
                 Kxxs = cs(
-                    tf.stack([k.K(X, X2) for k in self.kernels], axis=-1), "[batch..., N, N, P]"
+                    tf.stack([k(X, X2) for k in self.kernels], axis=-1), "[batch..., N, N, P]"
                 )
                 perm = tf.concat(
                     [
@@ -235,13 +236,13 @@ class SeparateIndependent(MultioutputKernel, Combination):
                 return cs(tf.transpose(tf.linalg.diag(Kxxs), perm), "[batch..., N, P, N, P]")
             else:
                 return cs(
-                    tf.stack([k.K(X, X2) for k in self.kernels], axis=0), "[P, batch..., N, N]"
+                    tf.stack([k(X, X2) for k in self.kernels], axis=0), "[P, batch..., N, N]"
                 )
         else:
             rank2 = tf.rank(X2) - 1
             if full_output_cov:
                 Kxxs = cs(
-                    tf.stack([k.K(X, X2) for k in self.kernels], axis=-1),
+                    tf.stack([k(X, X2) for k in self.kernels], axis=-1),
                     "[batch..., N, batch2..., N2, P]",
                 )
                 perm = tf.concat(
@@ -258,13 +259,13 @@ class SeparateIndependent(MultioutputKernel, Combination):
                 )
             else:
                 return cs(
-                    tf.stack([k.K(X, X2) for k in self.kernels], axis=0),
+                    tf.stack([k(X, X2) for k in self.kernels], axis=0),
                     "[P, batch..., N, batch2..., N2]",
                 )
 
     @inherit_check_shapes
     def K_diag(self, X: TensorType, full_output_cov: bool = False) -> tf.Tensor:
-        stacked = cs(tf.stack([k.K_diag(X) for k in self.kernels], axis=-1), "[batch..., N, P]")
+        stacked = cs(tf.stack([k(X, full_cov=False) for k in self.kernels], axis=-1), "[batch..., N, P]")
         if full_output_cov:
             return cs(tf.linalg.diag(stacked), "[batch..., N, P, P]")
         else:
@@ -319,7 +320,7 @@ class LinearCoregionalization(IndependentLatent, Combination):
     @inherit_check_shapes
     def Kgg(self, X: TensorType, X2: TensorType) -> tf.Tensor:
         return cs(
-            tf.stack([k.K(X, X2) for k in self.kernels], axis=0), "[L, batch..., N, batch2..., M]"
+            tf.stack([k(X, X2) for k in self.kernels], axis=0), "[L, batch..., N, batch2..., M]"
         )
 
     @inherit_check_shapes
@@ -380,7 +381,7 @@ class LinearCoregionalization(IndependentLatent, Combination):
 
     @inherit_check_shapes
     def K_diag(self, X: TensorType, full_output_cov: bool = True) -> tf.Tensor:
-        K = cs(tf.stack([k.K_diag(X) for k in self.kernels], axis=-1), "[batch..., N, L]")
+        K = cs(tf.stack([k(X, full_cov=False) for k in self.kernels], axis=-1), "[batch..., N, L]")
         rank = tf.rank(X) - 1
         ones = tf.ones((rank,), dtype=tf.int32)
 
