@@ -235,9 +235,7 @@ class SeparateIndependent(MultioutputKernel, Combination):
                 )
                 return cs(tf.transpose(tf.linalg.diag(Kxxs), perm), "[batch..., N, P, N, P]")
             else:
-                return cs(
-                    tf.stack([k(X, X2) for k in self.kernels], axis=0), "[P, batch..., N, N]"
-                )
+                return cs(tf.stack([k(X, X2) for k in self.kernels], axis=0), "[P, batch..., N, N]")
         else:
             rank2 = tf.rank(X2) - 1
             if full_output_cov:
@@ -265,7 +263,9 @@ class SeparateIndependent(MultioutputKernel, Combination):
 
     @inherit_check_shapes
     def K_diag(self, X: TensorType, full_output_cov: bool = False) -> tf.Tensor:
-        stacked = cs(tf.stack([k(X, full_cov=False) for k in self.kernels], axis=-1), "[batch..., N, P]")
+        stacked = cs(
+            tf.stack([k(X, full_cov=False) for k in self.kernels], axis=-1), "[batch..., N, P]"
+        )
         if full_output_cov:
             return cs(tf.linalg.diag(stacked), "[batch..., N, P, P]")
         else:

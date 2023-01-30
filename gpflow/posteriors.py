@@ -870,9 +870,7 @@ class IndependentPosteriorMultiOutput(IndependentPosterior):
                 kernel_list = self.kernel.kernels
             else:
                 kernel_list = [self.kernel.kernel] * len(self.X_data.inducing_variable_list)
-            Knns = tf.stack(
-                [k(Xnew, full_cov=full_cov) for k in kernel_list], axis=0
-            )
+            Knns = tf.stack([k(Xnew, full_cov=full_cov) for k in kernel_list], axis=0)
 
             fmean, fvar = separate_independent_conditional_implementation(
                 Kmns,

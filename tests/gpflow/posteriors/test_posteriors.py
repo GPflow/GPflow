@@ -49,11 +49,15 @@ NUM_INDUCING_POINTS = 3
 def create_kernel():
     """ Create kernel function, note that both kernels don't use all the active dims """
     return (
-        gpflow.kernels.SquaredExponential(lengthscales=[0.8], active_dims=[3,]) +
-        gpflow.kernels.SquaredExponential(lengthscales=[0.5, 0.2], active_dims=[2, 3]) +
-        gpflow.kernels.Linear(variance=[0.9, 0.3], active_dims=[1, 2])
+        gpflow.kernels.SquaredExponential(
+            lengthscales=[0.8],
+            active_dims=[
+                3,
+            ],
+        )
+        + gpflow.kernels.SquaredExponential(lengthscales=[0.5, 0.2], active_dims=[2, 3])
+        + gpflow.kernels.Linear(variance=[0.9, 0.3], active_dims=[1, 2])
     )
-
 
 
 # `PosteriorType` really should be something like `Type[AbstractPosterior]`, except mypy doesn't
@@ -235,9 +239,7 @@ def test_fully_correlated_multi_output(
     """
     The fully correlated posterior has one latent GP.
     """
-    kernel = gpflow.kernels.SharedIndependent(
-        create_kernel(), output_dim=output_dims
-    )
+    kernel = gpflow.kernels.SharedIndependent(create_kernel(), output_dim=output_dims)
     inducing_variable = inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
 
     q_mu = np.random.randn(output_dims * NUM_INDUCING_POINTS, 1)
@@ -276,9 +278,7 @@ def test_independent_multi_output_shk_shi(
     """
     Independent multi-output posterior with a shared kernel and shared inducing points.
     """
-    kernel = gpflow.kernels.SharedIndependent(
-        create_kernel(), output_dim=output_dims
-    )
+    kernel = gpflow.kernels.SharedIndependent(create_kernel(), output_dim=output_dims)
     inducing_variable = gpflow.inducing_variables.SharedIndependentInducingVariables(
         inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
     )
@@ -319,9 +319,7 @@ def test_independent_multi_output_shk_sei(
     """
     Independent multi-output posterior with a shared kernel and separate inducing points.
     """
-    kernel = gpflow.kernels.SharedIndependent(
-        create_kernel(), output_dim=output_dims
-    )
+    kernel = gpflow.kernels.SharedIndependent(create_kernel(), output_dim=output_dims)
     inducing_variable = gpflow.inducing_variables.SeparateIndependentInducingVariables(
         [
             inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
@@ -366,9 +364,7 @@ def test_independent_multi_output_sek_shi(
     Independent multi-output posterior with separate independent kernels and shared inducing points.
     """
 
-    kernel = gpflow.kernels.SeparateIndependent(
-        [create_kernel() for _ in range(num_latent_gps)]
-    )
+    kernel = gpflow.kernels.SeparateIndependent([create_kernel() for _ in range(num_latent_gps)])
     inducing_variable = gpflow.inducing_variables.SharedIndependentInducingVariables(
         inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
     )
@@ -409,9 +405,7 @@ def test_independent_multi_output_sek_sei(
     """
     Independent multi-output posterior with separate independent kernel and separate inducing points.
     """
-    kernel = gpflow.kernels.SeparateIndependent(
-        [create_kernel() for _ in range(num_latent_gps)]
-    )
+    kernel = gpflow.kernels.SeparateIndependent([create_kernel() for _ in range(num_latent_gps)])
     inducing_variable = gpflow.inducing_variables.SeparateIndependentInducingVariables(
         [
             inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
