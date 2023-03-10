@@ -39,6 +39,7 @@ class Scipy:
         step_callback: Optional[StepCallback] = None,
         compile: bool = True,
         allow_unused_variables: bool = False,
+        always_copy_last_good_state: bool = False,
         **scipy_kwargs: Any,
     ) -> OptimizeResult:
         """
@@ -94,8 +95,9 @@ class Scipy:
         opt_result = scipy.optimize.minimize(
             func, initial_params, jac=True, method=method, **scipy_kwargs
         )
-        values = self.unpack_tensors(variables, opt_result.x)
-        self.assign_tensors(variables, values)
+        if always_copy_last_good_state:
+            values = self.unpack_tensors(variables, opt_result.x)
+            self.assign_tensors(variables, values)
         return opt_result
 
     @classmethod
