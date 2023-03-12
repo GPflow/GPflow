@@ -18,8 +18,9 @@
 # be a good replacement.
 from abc import ABC, abstractmethod
 
+from check_shapes import ErrorContext, Shape, check_shapes, register_get_shape
+
 from .base import TensorType
-from .experimental.check_shapes import ErrorContext, Shape, check_shapes, register_get_shape
 
 
 class ProbabilityDistribution(ABC):

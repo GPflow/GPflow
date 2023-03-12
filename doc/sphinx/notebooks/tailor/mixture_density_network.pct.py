@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.3.3
+#       jupytext_version: 1.14.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -26,8 +26,8 @@
 # Imagine we are interested in performing regression on the following dataset.
 
 # %%
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 # %matplotlib inline
 
@@ -84,12 +84,12 @@ _ = plt.ylabel("$y$")
 # We begin by importing the required packages from TensorFlow and GPflow.
 
 # %%
+from typing import Callable, Optional, Tuple
+
 import tensorflow as tf
 
-# %%
-import gpflow
-from gpflow.models import BayesianModel, ExternalDataTrainingLossMixin
 from gpflow.base import Parameter
+from gpflow.models import BayesianModel, ExternalDataTrainingLossMixin
 
 # %% [markdown]
 # Next, we create a `MDN` class that inherits from GPflow's `Model` class. We need to do the following:
@@ -98,15 +98,14 @@ from gpflow.base import Parameter
 # 3. Define the objective function using the `_build_likelihood` method. When we optimize the model the negative of this function will be minimized.
 
 # %%
-from typing import Callable, Optional, Tuple
-
-
 class MDN(BayesianModel, ExternalDataTrainingLossMixin):
     def __init__(
         self,
         num_mixtures: Optional[int] = 5,
         inner_dims: Optional[list] = [10, 10],
-        activation: Optional[Callable[[tf.Tensor], tf.Tensor]] = tf.keras.activations.relu,
+        activation: Optional[
+            Callable[[tf.Tensor], tf.Tensor]
+        ] = tf.keras.activations.relu,
     ):
         super().__init__()
 
@@ -123,7 +122,9 @@ class MDN(BayesianModel, ExternalDataTrainingLossMixin):
 
         for dim_in, dim_out in zip(self.dims[:-1], self.dims[1:]):
             init_xavier_std = (2.0 / (dim_in + dim_out)) ** 0.5
-            self.Ws.append(Parameter(np.random.randn(dim_in, dim_out) * init_xavier_std))
+            self.Ws.append(
+                Parameter(np.random.randn(dim_in, dim_out) * init_xavier_std)
+            )
             self.bs.append(Parameter(np.zeros(dim_out)))
 
     def eval_network(self, X):
@@ -138,11 +139,17 @@ class MDN(BayesianModel, ExternalDataTrainingLossMixin):
 
         return pis, mus, sigmas
 
-    def maximum_log_likelihood_objective(self, data: Tuple[tf.Tensor, tf.Tensor]):
+    def maximum_log_likelihood_objective(
+        self, data: Tuple[tf.Tensor, tf.Tensor]
+    ):
         x, y = data
         pis, mus, sigmas = self.eval_network(x)
         Z = (2 * np.pi) ** 0.5 * sigmas
-        log_probs_mog = (-0.5 * (mus - y) ** 2 / sigmas ** 2) - tf.math.log(Z) + tf.math.log(pis)
+        log_probs_mog = (
+            (-0.5 * (mus - y) ** 2 / sigmas ** 2)
+            - tf.math.log(Z)
+            + tf.math.log(pis)
+        )
         log_probs = tf.reduce_logsumexp(log_probs_mog, axis=1)
         return tf.reduce_sum(log_probs)
 
@@ -177,8 +184,8 @@ print_summary(model)
 # We use the `Scipy` optimizer, which is a wrapper around SciPy's L-BFGS optimization algorithm. Note that GPflow supports other TensorFlow optimizers such as `Adam`, `Adagrad`, and `Adadelta` as well.
 
 # %%
-from gpflow.optimizers import Scipy
 from gpflow.ci_utils import reduce_in_tests
+from gpflow.optimizers import Scipy
 
 Scipy().minimize(
     model.training_loss_closure(data, compile=True),

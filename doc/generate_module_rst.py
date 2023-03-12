@@ -18,7 +18,7 @@ import inspect
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Deque, Dict, List, Mapping, Optional, Set, TextIO, Type, Union
+from typing import Any, Callable, Deque, Dict, List, Mapping, Set, TextIO, Type, Union
 
 from gpflow.utilities import Dispatcher
 
@@ -140,10 +140,13 @@ class DocumentableModule:
             if child_name in IGNORE_MODULES:
                 continue
 
+            # pylint: disable=cell-var-from-loop
             def _should_ignore(child: Union[Callable[..., Any], Type[Any]]) -> bool:
                 declared_in_root = child.__module__ == root_name
                 explicitly_exported = key in exported_names
                 return not (declared_in_root or explicitly_exported)
+
+            # pylint: enable=cell-var-from-loop
 
             if isinstance(child, Dispatcher):
                 functions.append(DocumentableDispatcher(child_name, child))

@@ -1,8 +1,8 @@
------------------
-Benchmark results
------------------
+----------
+Benchmarks
+----------
 
-To monitor regressions we regularly run a set of benchmarks. Results are available below.
+To monitor regressions over time we regularly run a set of benchmarks. Results are available below.
 
 For more details about the benchmarks, see their
 `readme and implementation <https://github.com/GPflow/GPflow/tree/develop/benchmark>`_.

@@ -16,6 +16,7 @@ from typing import Optional
 
 import numpy as np
 import tensorflow as tf
+from check_shapes import check_shapes, inherit_check_shapes
 
 import gpflow
 
@@ -23,7 +24,6 @@ from .. import posteriors
 from ..base import InputData, MeanAndVariance, Parameter, RegressionData
 from ..conditionals import conditional
 from ..config import default_float, default_jitter
-from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..kernels import Kernel
 from ..kullback_leiblers import gauss_kl
 from ..likelihoods import Likelihood
@@ -51,6 +51,8 @@ class VGP_deprecated(GPModel, InternalDataTrainingLossMixin):
 
        q(\mathbf f) = N(\mathbf f \,|\, \boldsymbol \mu, \boldsymbol \Sigma)
 
+    For a use example see
+    :doc:`../../../../notebooks/getting_started/classification_and_other_data_distributions`.
     """
 
     @check_shapes(
@@ -215,7 +217,8 @@ class VGP_with_posterior(VGP_deprecated):
 
 class VGP(VGP_with_posterior):
     # subclassed to ensure __class__ == "VGP"
-    pass
+
+    __doc__ = VGP_deprecated.__doc__  # Use documentation from VGP_deprecated.
 
 
 @check_shapes(

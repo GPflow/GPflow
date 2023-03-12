@@ -20,9 +20,8 @@ This package contains code that is still experimental. This means:
 
 When the code is considered mature it will be moved out of this package.
 """
-from . import check_shapes, utils
+from . import utils
 
 __all__ = [
-    "check_shapes",
     "utils",
 ]

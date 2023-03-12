@@ -17,10 +17,10 @@ from typing import Any, Optional
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
+from check_shapes import check_shapes, inherit_check_shapes
 
 from ..base import MeanAndVariance, Module, Parameter, TensorType
 from ..config import default_float
-from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..quadrature import hermgauss
 from ..utilities import to_default_float, to_default_int
 from .base import Likelihood, MonteCarloLikelihood

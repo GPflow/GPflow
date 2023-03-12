@@ -16,11 +16,10 @@ from typing import Callable, Iterable, List, Optional, Union
 
 import tensorflow as tf
 import tensorflow_probability as tfp
+from check_shapes import check_shapes
 
 from ..base import TensorData
 from ..config import default_float, default_int
-from ..experimental.check_shapes import check_shapes
-from .ops import cast
 
 __all__ = [
     "is_variable",
@@ -36,7 +35,7 @@ __all__ = [
     "return: [any...]",
 )
 def to_default_int(x: TensorData) -> tf.Tensor:
-    return cast(x, dtype=default_int())
+    return tf.cast(x, dtype=default_int())
 
 
 @check_shapes(
@@ -44,7 +43,13 @@ def to_default_int(x: TensorData) -> tf.Tensor:
     "return: [any...]",
 )
 def to_default_float(x: TensorData) -> tf.Tensor:
-    return cast(x, dtype=default_float())
+    if not tf.is_tensor(x):
+        # workaround for the fact that tf.cast(, dtype=tf.float64) doesn't directly convert
+        # python floats to tf.float64 tensors. Instead, it converts the python float to a
+        # tf.float32 tensor, and then casts that to be tf.float64. This results in a loss
+        # of precision. See https://github.com/tensorflow/tensorflow/issues/57779 for more context.
+        return tf.convert_to_tensor(x, default_float())
+    return tf.cast(x, dtype=default_float())
 
 
 def set_trainable(model: Union[tf.Module, Iterable[tf.Module]], flag: bool) -> None:

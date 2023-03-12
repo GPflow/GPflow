@@ -44,23 +44,21 @@
 #
 
 # %%
-import numpy as np
-import tensorflow as tf
-
 import warnings
 
 warnings.filterwarnings("ignore")  # ignore DeprecationWarnings from tensorflow
 
 import matplotlib.pyplot as plt
+import numpy as np
+import tensorflow as tf
+from multiclass_classification import colors, plot_posterior_predictions
+
+import gpflow
+from gpflow.ci_utils import reduce_in_tests
+from gpflow.utilities import print_summary, set_trainable
 
 # %matplotlib inline
 
-import gpflow
-
-from gpflow.utilities import print_summary, set_trainable
-from gpflow.ci_utils import reduce_in_tests
-
-from multiclass_classification import plot_posterior_predictions, colors
 
 # reproducibility:
 np.random.seed(0)
@@ -149,7 +147,9 @@ kernel = gpflow.kernels.Matern32() + gpflow.kernels.White(variance=0.01)
 
 # Robustmax Multiclass Likelihood
 invlink = gpflow.likelihoods.RobustMax(C)  # Robustmax inverse link function
-likelihood = gpflow.likelihoods.MultiClass(3, invlink=invlink)  # Multiclass likelihood
+likelihood = gpflow.likelihoods.MultiClass(
+    3, invlink=invlink
+)  # Multiclass likelihood
 Z = X[::5].copy()  # inducing inputs
 
 m = gpflow.models.SVGP(

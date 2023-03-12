@@ -4,11 +4,11 @@ import numpy as np
 import pytest
 import tensorflow as tf
 import tensorflow_probability as tfp
+from check_shapes import ShapeChecker, check_shapes
 from tensorflow_probability.python.distributions import Gamma, Uniform
 
 import gpflow
 from gpflow.base import AnyNDArray, PriorOn
-from gpflow.experimental.check_shapes import ShapeChecker, check_shapes
 from gpflow.models import GPR
 from gpflow.utilities import to_default_float
 

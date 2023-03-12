@@ -3,10 +3,10 @@ from typing import Union, cast
 import numpy as np
 import pytest
 import tensorflow as tf
+from check_shapes import check_shapes
 
 import gpflow
 from gpflow.base import AnyNDArray
-from gpflow.experimental.check_shapes import check_shapes
 from gpflow.utilities.ops import difference_matrix
 
 

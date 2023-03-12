@@ -15,8 +15,8 @@
 from typing import Union
 
 import tensorflow as tf
+from check_shapes import check_shapes
 
-from ...experimental.check_shapes import check_shapes
 from ...inducing_variables import (
     FallbackSeparateIndependentInducingVariables,
     FallbackSharedIndependentInducingVariables,

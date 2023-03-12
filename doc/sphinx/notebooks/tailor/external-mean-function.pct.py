@@ -23,18 +23,14 @@
 # For an in-depth discussion on this topic, see *(Fortuin and Rätsch, 2019)*. This notebook reproduces section 4.2 of this paper.
 
 # %%
+import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
-import matplotlib.pyplot as plt
 
 import gpflow
-from gpflow.kernels import RBF
-from gpflow.likelihoods import Gaussian
-from gpflow.mean_functions import MeanFunction
-from gpflow.models import GPR
-from gpflow.base import Parameter
-
 from gpflow.ci_utils import reduce_in_tests
+from gpflow.kernels import RBF
+from gpflow.models import GPR
 
 # for reproducibility of this notebook:
 np.random.seed(1)
@@ -284,7 +280,9 @@ for i, test_task in enumerate(test):
 # %%
 mean_mse = np.mean(mean_squared_errors)
 std_mse = np.std(mean_squared_errors) / np.sqrt(num_test_tasks)
-print(f"The mean MSE over all {num_test_tasks} test tasks is {mean_mse:.2f} +/- {std_mse:.2f}")
+print(
+    f"The mean MSE over all {num_test_tasks} test tasks is {mean_mse:.2f} +/- {std_mse:.2f}"
+)
 
 # %% [markdown]
 # We achieve comparable results to those reported in the paper.

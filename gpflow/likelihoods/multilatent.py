@@ -16,9 +16,9 @@ from typing import Any, Callable, Optional, Type
 
 import tensorflow as tf
 import tensorflow_probability as tfp
+from check_shapes import check_shapes, inherit_check_shapes
 
 from ..base import TensorType
-from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..utilities import positive
 from .base import QuadratureLikelihood
 

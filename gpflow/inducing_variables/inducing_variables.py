@@ -17,10 +17,10 @@ from typing import Optional
 
 import tensorflow as tf
 import tensorflow_probability as tfp
+from check_shapes import Shape, check_shapes
 from deprecated import deprecated
 
 from ..base import Module, Parameter, TensorData, TensorType
-from ..experimental.check_shapes import ErrorContext, Shape, check_shapes, register_get_shape
 from ..utilities import positive
 
 
@@ -58,11 +58,6 @@ class InducingVariables(Module, abc.ABC):
         * ``P`` is the number of output dimensions (1 if this is not a multi-output inducing
           variable).
         """
-
-
-@register_get_shape(InducingVariables)
-def get_scalar_shape(shaped: InducingVariables, context: ErrorContext) -> Shape:
-    return shaped.shape
 
 
 class InducingPointsBase(InducingVariables):
