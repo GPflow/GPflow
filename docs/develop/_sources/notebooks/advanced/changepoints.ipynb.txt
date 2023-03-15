@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "95e58d4d",
+   "id": "786ad13c",
    "metadata": {},
    "source": [
     "# Change points\n",
@@ -21,13 +21,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "4b061a61",
+   "id": "e25a58a7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-03-12T18:42:00.957501Z",
-     "iopub.status.busy": "2023-03-12T18:42:00.957109Z",
-     "iopub.status.idle": "2023-03-12T18:42:05.004287Z",
-     "shell.execute_reply": "2023-03-12T18:42:05.003702Z"
+     "iopub.execute_input": "2023-03-15T14:50:26.208309Z",
+     "iopub.status.busy": "2023-03-15T14:50:26.207853Z",
+     "iopub.status.idle": "2023-03-15T14:50:30.119944Z",
+     "shell.execute_reply": "2023-03-15T14:50:30.119376Z"
     }
    },
    "outputs": [
@@ -35,20 +35,20 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2023-03-12 18:42:01.645977: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2023-03-15 14:50:26.939082: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n",
-      "2023-03-12 18:42:01.764344: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
-      "2023-03-12 18:42:01.764365: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n",
-      "2023-03-12 18:42:01.792912: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n"
+      "2023-03-15 14:50:27.054788: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2023-03-15 14:50:27.054808: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n",
+      "2023-03-15 14:50:27.082943: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2023-03-12 18:42:02.416005: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory\n",
-      "2023-03-12 18:42:02.416097: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory\n",
-      "2023-03-12 18:42:02.416105: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.\n"
+      "2023-03-15 14:50:27.688765: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory\n",
+      "2023-03-15 14:50:27.688825: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory\n",
+      "2023-03-15 14:50:27.688832: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.\n"
      ]
     }
    ],
@@ -72,7 +72,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "fd910af1",
+   "id": "799c268f",
    "metadata": {},
    "source": [
     "We demonstrate the use of the kernel by drawing a number of samples from different parameterizations. Firstly, a simple single change-point between two kernels of differing lengthscales."
@@ -81,13 +81,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "9c725cff",
+   "id": "7881c263",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-03-12T18:42:05.007211Z",
-     "iopub.status.busy": "2023-03-12T18:42:05.006808Z",
-     "iopub.status.idle": "2023-03-12T18:42:05.461286Z",
-     "shell.execute_reply": "2023-03-12T18:42:05.460758Z"
+     "iopub.execute_input": "2023-03-15T14:50:30.122872Z",
+     "iopub.status.busy": "2023-03-15T14:50:30.122479Z",
+     "iopub.status.idle": "2023-03-15T14:50:30.603009Z",
+     "shell.execute_reply": "2023-03-15T14:50:30.602494Z"
     }
    },
    "outputs": [
@@ -95,10 +95,10 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2023-03-12 18:42:05.010733: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
-      "2023-03-12 18:42:05.010943: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)\n",
-      "2023-03-12 18:42:05.010963: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (14b67fc53d94): /proc/driver/nvidia/version does not exist\n",
-      "2023-03-12 18:42:05.011547: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2023-03-15 14:50:30.127138: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2023-03-15 14:50:30.127529: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2023-03-15 14:50:30.127579: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (6c96136a6431): /proc/driver/nvidia/version does not exist\n",
+      "2023-03-15 14:50:30.128812: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     },
@@ -126,7 +126,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "5228ed9e",
+   "id": "740ca428",
    "metadata": {},
    "source": [
     "Secondly, an implementation of a \"change window\" in which we change from one kernel to another, then back to the original."
@@ -135,13 +135,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "be0bcb14",
+   "id": "7470e14a",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-03-12T18:42:05.463599Z",
-     "iopub.status.busy": "2023-03-12T18:42:05.463339Z",
-     "iopub.status.idle": "2023-03-12T18:42:05.799826Z",
-     "shell.execute_reply": "2023-03-12T18:42:05.799299Z"
+     "iopub.execute_input": "2023-03-15T14:50:30.605282Z",
+     "iopub.status.busy": "2023-03-15T14:50:30.605015Z",
+     "iopub.status.idle": "2023-03-15T14:50:30.926646Z",
+     "shell.execute_reply": "2023-03-15T14:50:30.926145Z"
     }
    },
    "outputs": [
@@ -171,7 +171,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "5a06c78f",
+   "id": "87f875c9",
    "metadata": {},
    "source": [
     "And finally, allowing different change-points to occur more or less abruptly by defining different steepness parameters."
@@ -180,13 +180,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "178443a1",
+   "id": "36b3a5c7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-03-12T18:42:05.802189Z",
-     "iopub.status.busy": "2023-03-12T18:42:05.801927Z",
-     "iopub.status.idle": "2023-03-12T18:42:06.104194Z",
-     "shell.execute_reply": "2023-03-12T18:42:06.103666Z"
+     "iopub.execute_input": "2023-03-15T14:50:30.928799Z",
+     "iopub.status.busy": "2023-03-15T14:50:30.928542Z",
+     "iopub.status.idle": "2023-03-15T14:50:31.225358Z",
+     "shell.execute_reply": "2023-03-15T14:50:31.224869Z"
     }
    },
    "outputs": [
