@@ -63,6 +63,33 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
+# Release 2.7.1
+
+A small fix for a bug in the scipy optimize wrapper.
+
+## Breaking Changes
+
+* None
+
+## Known Caveats
+
+* None
+
+## Major Features and Improvements
+
+* None
+
+## Bug Fixes and Other Changes
+
+* Patched `gpflow.optimizers.Scipy` to always assign the last good state returned by `scipy.optimize.minimize` to the model under optimization.  Previously, this step could be missed if `minimize` failed in some situations, leaving the model in an arbitrary state.
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+Khurram Ghani
+
+
 # Release 2.7.0
 
 The main theme of this release is documentation, with a new suite of tutorials, several upgrades to notebooks and the removal of a rather annoying bug in the documentation site.
