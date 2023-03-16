@@ -1,0 +1,694 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>gpflow.models.vgp &#8212; GPflow 2.7.1 documentation</title>
+<script>
+  document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+  document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
+</script>
+
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+
+
+  <link rel="stylesheet"
+    href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css" />
+
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
+
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="docsearch:language" content="en">
+  </head>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+    <div class="bd-header-announcement container-fluid" id="banner">
+      
+
+    </div>
+
+    
+    <nav class="bd-header navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="bd-header__inner container-xl">
+
+  <div id="navbar-start">
+    
+    
+  
+
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">GPflow 2.7.1 documentation</p>
+  
+</a>
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="fas fa-bars"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../getting_started.html">
+  Getting Started
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../user_guide.html">
+  User Guide
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../api/gpflow/index.html">
+  API reference
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../benchmarks.html">
+  Benchmarks
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../bibliography.html">
+  Bibliography
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <div class="dropdown" id="version_switcher">
+    <button type="button" class="btn btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+        2.7.1  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div id="version_switcher_menu" class="dropdown-menu list-group-flush py-0" aria-labelledby="version_switcher_button">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+
+<!-- NOTE: this JS must live here (not in our global JS file) because it relies
+     on being processed by Jinja before it is run (specifically for replacing
+     variables _modules/gpflow/models/vgp and {'json_url': 'https://gpflow.github.io/GPflow/versions.json', 'version_match': '2.7.1'}.
+-->
+
+<script type="text/javascript">
+// Check if corresponding page path exists in other version of docs
+// and, if so, go there instead of the homepage of the other docs version
+function checkPageExistsAndRedirect(event) {
+    const currentFilePath = "_modules/gpflow/models/vgp.html",
+          tryUrl = event.target.getAttribute("href");
+    let otherDocsHomepage = tryUrl.replace(currentFilePath, "");
+    $.ajax({
+        type: 'HEAD',
+        url: tryUrl,
+        // if the page exists, go there
+        success: function() {
+            location.href = tryUrl;
+        }
+    }).fail(function() {
+        location.href = otherDocsHomepage;
+    });
+    // this prevents the browser from following the href of the clicked node
+    // (which is fine because this function takes care of redirecting)
+    return false;
+}
+
+// Populate the version switcher from the JSON config file
+(function () {
+    $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
+        const currentFilePath = "_modules/gpflow/models/vgp.html";
+        let btn = document.getElementById("version_switcher_button");
+        // Set empty strings by default so that these attributes exist and can be used in CSS selectors
+        btn.dataset["activeVersionName"] = "";
+        btn.dataset["activeVersion"] = "";
+        // create links to the corresponding page in the other docs versions
+        $.each(data, function(index, entry) {
+            // if no custom name specified (e.g., "latest"), use version string
+            if (!("name" in entry)) {
+                entry.name = entry.version;
+            }
+            // create the node
+            const node = document.createElement("a");
+            node.setAttribute("class", "list-group-item list-group-item-action py-1");
+            node.textContent = `${entry.name}`;
+            node.setAttribute("href", `${entry.url}${currentFilePath}`);
+            // on click, AJAX calls will check if the linked page exists before
+            // trying to redirect, and if not, will redirect to the homepage
+            // for that version of the docs.
+            node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
+            $("#version_switcher_menu").append(node);
+            // replace dropdown button text with the preferred display name of
+            // this version, rather than using sphinx's  variable.
+            // also highlight the dropdown entry for the currently-viewed
+            // version's entry
+            if (entry.version == "2.7.1") {
+                node.classList.add("active");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
+            }
+        });
+    });
+})();
+</script>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="bd-container container-xl">
+      <div class="bd-container__inner row">
+          
+
+<!-- Only show if we have sidebars configured, else just a small margin  -->
+<div class="bd-sidebar-primary col-12 col-md-3 bd-sidebar">
+  <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    
+  </div>
+</nav>
+  </div>
+  <div class="sidebar-end-items">
+  </div>
+</div>
+
+
+          
+
+
+<div class="bd-sidebar-secondary d-none d-xl-block col-xl-2 bd-toc">
+  
+</div>
+
+
+          
+          
+          <div class="bd-content col-12 col-md-9 col-xl-7">
+              
+              <article class="bd-article" role="main">
+                
+  <h1>Source code for gpflow.models.vgp</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2016-2020 The GPflow Contributors. All Rights Reserved.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span class="kn">from</span> <span class="nn">check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span><span class="p">,</span> <span class="n">inherit_check_shapes</span>
+
+<span class="kn">import</span> <span class="nn">gpflow</span>
+
+<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">posteriors</span>
+<span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">InputData</span><span class="p">,</span> <span class="n">MeanAndVariance</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">RegressionData</span>
+<span class="kn">from</span> <span class="nn">..conditionals</span> <span class="kn">import</span> <span class="n">conditional</span>
+<span class="kn">from</span> <span class="nn">..config</span> <span class="kn">import</span> <span class="n">default_float</span><span class="p">,</span> <span class="n">default_jitter</span>
+<span class="kn">from</span> <span class="nn">..kernels</span> <span class="kn">import</span> <span class="n">Kernel</span>
+<span class="kn">from</span> <span class="nn">..kullback_leiblers</span> <span class="kn">import</span> <span class="n">gauss_kl</span>
+<span class="kn">from</span> <span class="nn">..likelihoods</span> <span class="kn">import</span> <span class="n">Likelihood</span>
+<span class="kn">from</span> <span class="nn">..mean_functions</span> <span class="kn">import</span> <span class="n">MeanFunction</span>
+<span class="kn">from</span> <span class="nn">..utilities</span> <span class="kn">import</span> <span class="n">assert_params_false</span><span class="p">,</span> <span class="n">is_variable</span><span class="p">,</span> <span class="n">triangular</span><span class="p">,</span> <span class="n">triangular_size</span>
+<span class="kn">from</span> <span class="nn">.model</span> <span class="kn">import</span> <span class="n">GPModel</span>
+<span class="kn">from</span> <span class="nn">.training_mixins</span> <span class="kn">import</span> <span class="n">InternalDataTrainingLossMixin</span>
+<span class="kn">from</span> <span class="nn">.util</span> <span class="kn">import</span> <span class="n">data_input_to_tensor</span>
+
+
+<div class="viewcode-block" id="VGP_deprecated"><a class="viewcode-back" href="../../../api/gpflow/models/vgp/index.html#gpflow.models.VGP_deprecated">[docs]</a><span class="k">class</span> <span class="nc">VGP_deprecated</span><span class="p">(</span><span class="n">GPModel</span><span class="p">,</span> <span class="n">InternalDataTrainingLossMixin</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This method approximates the Gaussian process posterior using a multivariate Gaussian.</span>
+
+<span class="sd">    The idea is that the posterior over the function-value vector F is</span>
+<span class="sd">    approximated by a Gaussian, and the KL divergence is minimised between</span>
+<span class="sd">    the approximation and the posterior.</span>
+
+<span class="sd">    This implementation is equivalent to SVGP with X=Z, but is more efficient.</span>
+<span class="sd">    The whitened representation is used to aid optimization.</span>
+
+<span class="sd">    The posterior approximation is</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">       q(\mathbf f) = N(\mathbf f \,|\, \boldsymbol \mu, \boldsymbol \Sigma)</span>
+
+<span class="sd">    For a use example see</span>
+<span class="sd">    :doc:`../../../../notebooks/getting_started/classification_and_other_data_distributions`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;data[0]: [N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;data[1]: [N, P]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">RegressionData</span><span class="p">,</span>
+        <span class="n">kernel</span><span class="p">:</span> <span class="n">Kernel</span><span class="p">,</span>
+        <span class="n">likelihood</span><span class="p">:</span> <span class="n">Likelihood</span><span class="p">,</span>
+        <span class="n">mean_function</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MeanFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">num_latent_gps</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        data = (X, Y) contains the input points [N, D] and the observations [N, P]</span>
+<span class="sd">        kernel, likelihood, mean_function are appropriate GPflow objects</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">num_latent_gps</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">num_latent_gps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_num_latent_gps_from_data</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">likelihood</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">likelihood</span><span class="p">,</span> <span class="n">mean_function</span><span class="p">,</span> <span class="n">num_latent_gps</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data_input_to_tensor</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">X_data</span><span class="p">,</span> <span class="n">_Y_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+
+        <span class="n">static_num_data</span> <span class="o">=</span> <span class="n">X_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">static_num_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">q_sqrt_unconstrained_shape</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_latent_gps</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">q_sqrt_unconstrained_shape</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_latent_gps</span><span class="p">,</span> <span class="n">triangular_size</span><span class="p">(</span><span class="n">static_num_data</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_data</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">X_data</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">shape</span><span class="o">=</span><span class="p">[],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="n">trainable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1"># Many functions below don&#39;t like `Parameter`s:</span>
+        <span class="n">dynamic_num_data</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_data</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">q_mu</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">tf</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">dynamic_num_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_latent_gps</span><span class="p">)),</span>
+            <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">static_num_data</span><span class="p">,</span> <span class="n">num_latent_gps</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">q_sqrt</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">dynamic_num_data</span><span class="p">,</span> <span class="n">batch_shape</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">num_latent_gps</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q_sqrt</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">q_sqrt</span><span class="p">,</span>
+            <span class="n">transform</span><span class="o">=</span><span class="n">triangular</span><span class="p">(),</span>
+            <span class="n">unconstrained_shape</span><span class="o">=</span><span class="n">q_sqrt_unconstrained_shape</span><span class="p">,</span>
+            <span class="n">constrained_shape</span><span class="o">=</span><span class="p">(</span><span class="n">num_latent_gps</span><span class="p">,</span> <span class="n">static_num_data</span><span class="p">,</span> <span class="n">static_num_data</span><span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="c1"># type-ignore is because of changed method signature:</span>
+<div class="viewcode-block" id="VGP_deprecated.maximum_log_likelihood_objective"><a class="viewcode-back" href="../../../api/gpflow/models/vgp/index.html#gpflow.models.VGP_deprecated.maximum_log_likelihood_objective">[docs]</a>    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">maximum_log_likelihood_objective</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>  <span class="c1"># type: ignore[override]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">elbo</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="VGP_deprecated.elbo"><a class="viewcode-back" href="../../../api/gpflow/models/vgp/index.html#gpflow.models.VGP_deprecated.elbo">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;return: []&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">elbo</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method computes the variational lower bound on the likelihood,</span>
+<span class="sd">        which is:</span>
+
+<span class="sd">            E_{q(F)} [ \log p(Y|F) ] - KL[ q(F) || p(F)]</span>
+
+<span class="sd">        with</span>
+
+<span class="sd">            q(\mathbf f) = N(\mathbf f \,|\, \boldsymbol \mu, \boldsymbol \Sigma)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">X_data</span><span class="p">,</span> <span class="n">Y_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+        <span class="n">num_data</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_data</span><span class="p">)</span>
+
+        <span class="c1"># Get prior KL.</span>
+        <span class="n">KL</span> <span class="o">=</span> <span class="n">gauss_kl</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q_mu</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_sqrt</span><span class="p">)</span>
+
+        <span class="c1"># Get conditionals</span>
+        <span class="n">K</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="n">X_data</span><span class="p">)</span> <span class="o">+</span> <span class="n">tf</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">num_data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">default_float</span><span class="p">())</span> <span class="o">*</span> <span class="n">default_jitter</span><span class="p">()</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
+        <span class="n">fmean</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_mu</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_function</span><span class="p">(</span><span class="n">X_data</span><span class="p">)</span>  <span class="c1"># [NN, ND] -&gt; ND</span>
+        <span class="n">q_sqrt_dnn</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">band_part</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q_sqrt</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>  <span class="c1"># [D, N, N]</span>
+        <span class="n">L_tiled</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">tf</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">num_latent_gps</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span>
+        <span class="n">LTA</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">L_tiled</span><span class="p">,</span> <span class="n">q_sqrt_dnn</span><span class="p">)</span>  <span class="c1"># [D, N, N]</span>
+        <span class="n">fvar</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">LTA</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">fvar</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">fvar</span><span class="p">)</span>
+
+        <span class="c1"># Get variational expectations.</span>
+        <span class="n">var_exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">variational_expectations</span><span class="p">(</span><span class="n">X_data</span><span class="p">,</span> <span class="n">fmean</span><span class="p">,</span> <span class="n">fvar</span><span class="p">,</span> <span class="n">Y_data</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">var_exp</span><span class="p">)</span> <span class="o">-</span> <span class="n">KL</span></div>
+
+<div class="viewcode-block" id="VGP_deprecated.predict_f"><a class="viewcode-back" href="../../../api/gpflow/models/vgp/index.html#gpflow.models.VGP_deprecated.predict_f">[docs]</a>    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">predict_f</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">InputData</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
+        <span class="n">assert_params_false</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predict_f</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="o">=</span><span class="n">full_output_cov</span><span class="p">)</span>
+
+        <span class="n">X_data</span><span class="p">,</span> <span class="n">_Y_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+        <span class="n">mu</span><span class="p">,</span> <span class="n">var</span> <span class="o">=</span> <span class="n">conditional</span><span class="p">(</span>
+            <span class="n">Xnew</span><span class="p">,</span>
+            <span class="n">X_data</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">q_mu</span><span class="p">,</span>
+            <span class="n">q_sqrt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q_sqrt</span><span class="p">,</span>
+            <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">,</span>
+            <span class="n">white</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">mu</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_function</span><span class="p">(</span><span class="n">Xnew</span><span class="p">),</span> <span class="n">var</span></div></div>
+
+
+<div class="viewcode-block" id="VGP_with_posterior"><a class="viewcode-back" href="../../../api/gpflow/models/vgp/index.html#gpflow.models.VGP_with_posterior">[docs]</a><span class="k">class</span> <span class="nc">VGP_with_posterior</span><span class="p">(</span><span class="n">VGP_deprecated</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is an implementation of VGP that provides a posterior() method that</span>
+<span class="sd">    enables caching for faster subsequent predictions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="VGP_with_posterior.posterior"><a class="viewcode-back" href="../../../api/gpflow/models/vgp/index.html#gpflow.models.VGP_with_posterior.posterior">[docs]</a>    <span class="k">def</span> <span class="nf">posterior</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">precompute_cache</span><span class="p">:</span> <span class="n">posteriors</span><span class="o">.</span><span class="n">PrecomputeCacheType</span> <span class="o">=</span> <span class="n">posteriors</span><span class="o">.</span><span class="n">PrecomputeCacheType</span><span class="o">.</span><span class="n">TENSOR</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">posteriors</span><span class="o">.</span><span class="n">VGPPosterior</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create the Posterior object which contains precomputed matrices for</span>
+<span class="sd">        faster prediction.</span>
+
+<span class="sd">        precompute_cache has three settings:</span>
+
+<span class="sd">        - `PrecomputeCacheType.TENSOR` (or `&quot;tensor&quot;`): Precomputes the cached</span>
+<span class="sd">          quantities and stores them as tensors (which allows differentiating</span>
+<span class="sd">          through the prediction). This is the default.</span>
+<span class="sd">        - `PrecomputeCacheType.VARIABLE` (or `&quot;variable&quot;`): Precomputes the cached</span>
+<span class="sd">          quantities and stores them as variables, which allows for updating</span>
+<span class="sd">          their values without changing the compute graph (relevant for AOT</span>
+<span class="sd">          compilation).</span>
+<span class="sd">        - `PrecomputeCacheType.NOCACHE` (or `&quot;nocache&quot;` or `None`): Avoids</span>
+<span class="sd">          immediate cache computation. This is useful for avoiding extraneous</span>
+<span class="sd">          computations when you only want to call the posterior&#39;s</span>
+<span class="sd">          `fused_predict_f` method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">X_data</span><span class="p">,</span> <span class="n">_Y_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+        <span class="k">return</span> <span class="n">posteriors</span><span class="o">.</span><span class="n">VGPPosterior</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span>
+            <span class="n">X_data</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">q_mu</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">q_sqrt</span><span class="p">,</span>
+            <span class="n">mean_function</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mean_function</span><span class="p">,</span>
+            <span class="n">precompute_cache</span><span class="o">=</span><span class="n">precompute_cache</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="VGP_with_posterior.predict_f"><a class="viewcode-back" href="../../../api/gpflow/models/vgp/index.html#gpflow.models.VGP_with_posterior.predict_f">[docs]</a>    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">predict_f</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">InputData</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        For backwards compatibility, VGP&#39;s predict_f uses the fused (no-cache)</span>
+<span class="sd">        computation, which is more efficient during training.</span>
+
+<span class="sd">        For faster (cached) prediction, predict directly from the posterior object, i.e.,:</span>
+<span class="sd">            model.posterior().predict_f(Xnew, ...)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">posterior</span><span class="p">(</span><span class="n">posteriors</span><span class="o">.</span><span class="n">PrecomputeCacheType</span><span class="o">.</span><span class="n">NOCACHE</span><span class="p">)</span><span class="o">.</span><span class="n">fused_predict_f</span><span class="p">(</span>
+            <span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="o">=</span><span class="n">full_output_cov</span>
+        <span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="VGP"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.VGP">[docs]</a><span class="k">class</span> <span class="nc">VGP</span><span class="p">(</span><span class="n">VGP_with_posterior</span><span class="p">):</span>
+    <span class="c1"># subclassed to ensure __class__ == &quot;VGP&quot;</span>
+
+    <span class="vm">__doc__</span> <span class="o">=</span> <span class="n">VGP_deprecated</span><span class="o">.</span><span class="vm">__doc__</span>  <span class="c1"># Use documentation from VGP_deprecated.</span></div>
+
+
+<div class="viewcode-block" id="update_vgp_data"><a class="viewcode-back" href="../../../api/gpflow/models/vgp/index.html#gpflow.models.update_vgp_data">[docs]</a><span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;new_data[0]: [N, D]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;new_data[1]: [N, P]&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">update_vgp_data</span><span class="p">(</span><span class="n">vgp</span><span class="p">:</span> <span class="n">VGP_deprecated</span><span class="p">,</span> <span class="n">new_data</span><span class="p">:</span> <span class="n">RegressionData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Set the data on the given VGP model, and update its variational parameters.</span>
+
+<span class="sd">    As opposed to many of the other models the VGP has internal parameters whose shape depends on</span>
+<span class="sd">    the shape of the data. This functions updates the internal data of the given vgp, and updates</span>
+<span class="sd">    the variational parameters to fit.</span>
+
+<span class="sd">    This function requires that the input `vgp` were create with :class:`tf.Variable`s for</span>
+<span class="sd">    `data`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">old_X_data</span><span class="p">,</span> <span class="n">old_Y_data</span> <span class="o">=</span> <span class="n">vgp</span><span class="o">.</span><span class="n">data</span>
+    <span class="k">assert</span> <span class="n">is_variable</span><span class="p">(</span><span class="n">old_X_data</span><span class="p">)</span> <span class="ow">and</span> <span class="n">is_variable</span><span class="p">(</span>
+        <span class="n">old_Y_data</span>
+    <span class="p">),</span> <span class="s2">&quot;update_vgp_data requires the model to have been created with variable data.&quot;</span>
+
+    <span class="n">new_X_data</span><span class="p">,</span> <span class="n">new_Y_data</span> <span class="o">=</span> <span class="n">new_data</span>
+    <span class="n">new_num_data</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">new_X_data</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">f_mu</span><span class="p">,</span> <span class="n">f_cov</span> <span class="o">=</span> <span class="n">vgp</span><span class="o">.</span><span class="n">predict_f</span><span class="p">(</span><span class="n">new_X_data</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># [N, L], [L, N, N]</span>
+
+    <span class="c1"># This model is hard-coded to use the whitened representation, i.e.  q_mu and q_sqrt</span>
+    <span class="c1"># parametrize q(v), and u = f(X) = L v, where L = cholesky(K(X, X)) Hence we need to</span>
+    <span class="c1"># back-transform from f_mu and f_cov to obtain the updated new_q_mu and new_q_sqrt:</span>
+    <span class="n">Knn</span> <span class="o">=</span> <span class="n">vgp</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="n">new_X_data</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># [N, N]</span>
+    <span class="n">jitter_mat</span> <span class="o">=</span> <span class="n">default_jitter</span><span class="p">()</span> <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">new_num_data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">Knn</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">Lnn</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">Knn</span> <span class="o">+</span> <span class="n">jitter_mat</span><span class="p">)</span>  <span class="c1"># [N, N]</span>
+    <span class="n">new_q_mu</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">triangular_solve</span><span class="p">(</span><span class="n">Lnn</span><span class="p">,</span> <span class="n">f_mu</span><span class="p">)</span>  <span class="c1"># [N, L]</span>
+    <span class="n">tmp</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">triangular_solve</span><span class="p">(</span><span class="n">Lnn</span><span class="p">[</span><span class="kc">None</span><span class="p">],</span> <span class="n">f_cov</span><span class="p">)</span>  <span class="c1"># [L, N, N], L⁻¹ f_cov</span>
+    <span class="n">S_v</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">triangular_solve</span><span class="p">(</span><span class="n">Lnn</span><span class="p">[</span><span class="kc">None</span><span class="p">],</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">matrix_transpose</span><span class="p">(</span><span class="n">tmp</span><span class="p">))</span>  <span class="c1"># [L, N, N]</span>
+    <span class="n">new_q_sqrt</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">S_v</span> <span class="o">+</span> <span class="n">jitter_mat</span><span class="p">)</span>  <span class="c1"># [L, N, N]</span>
+
+    <span class="n">old_X_data</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">new_X_data</span><span class="p">)</span>
+    <span class="n">old_Y_data</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">new_Y_data</span><span class="p">)</span>
+    <span class="n">vgp</span><span class="o">.</span><span class="n">num_data</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">new_num_data</span><span class="p">)</span>
+    <span class="n">vgp</span><span class="o">.</span><span class="n">q_mu</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">new_q_mu</span><span class="p">)</span>
+    <span class="n">vgp</span><span class="o">.</span><span class="n">q_sqrt</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">new_q_sqrt</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="VGPOpperArchambeau"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.VGPOpperArchambeau">[docs]</a><span class="k">class</span> <span class="nc">VGPOpperArchambeau</span><span class="p">(</span><span class="n">GPModel</span><span class="p">,</span> <span class="n">InternalDataTrainingLossMixin</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This method approximates the Gaussian process posterior using a multivariate Gaussian.</span>
+
+<span class="sd">    The key reference is :cite:t:`Opper:2009`.</span>
+
+<span class="sd">    The idea is that the posterior over the function-value vector F is</span>
+<span class="sd">    approximated by a Gaussian, and the KL divergence is minimised between</span>
+<span class="sd">    the approximation and the posterior. It turns out that the optimal</span>
+<span class="sd">    posterior precision shares off-diagonal elements with the prior, so</span>
+<span class="sd">    only the diagonal elements of the precision need be adjusted.</span>
+<span class="sd">    The posterior approximation is</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">       q(\mathbf f) = N(\mathbf f \,|\, \mathbf K \boldsymbol \alpha,</span>
+<span class="sd">                         [\mathbf K^{-1} + \textrm{diag}(\boldsymbol \lambda))^2]^{-1})</span>
+
+<span class="sd">    This approach has only 2ND parameters, rather than the N + N^2 of vgp,</span>
+<span class="sd">    but the optimization is non-convex and in practice may cause difficulty.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;data[0]: [N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;data[1]: [N, P]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">RegressionData</span><span class="p">,</span>
+        <span class="n">kernel</span><span class="p">:</span> <span class="n">Kernel</span><span class="p">,</span>
+        <span class="n">likelihood</span><span class="p">:</span> <span class="n">Likelihood</span><span class="p">,</span>
+        <span class="n">mean_function</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MeanFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">num_latent_gps</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        data = (X, Y) contains the input points [N, D] and the observations [N, P]</span>
+<span class="sd">        kernel, likelihood, mean_function are appropriate GPflow objects</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">num_latent_gps</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">num_latent_gps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_num_latent_gps_from_data</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">likelihood</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">likelihood</span><span class="p">,</span> <span class="n">mean_function</span><span class="p">,</span> <span class="n">num_latent_gps</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data_input_to_tensor</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">X_data</span><span class="p">,</span> <span class="n">_Y_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_data</span> <span class="o">=</span> <span class="n">X_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q_alpha</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">num_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_latent_gps</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q_lambda</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">num_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_latent_gps</span><span class="p">)),</span> <span class="n">transform</span><span class="o">=</span><span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">positive</span><span class="p">()</span>
+        <span class="p">)</span>
+
+    <span class="c1"># type-ignore is because of changed method signature:</span>
+<div class="viewcode-block" id="VGPOpperArchambeau.maximum_log_likelihood_objective"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.VGPOpperArchambeau.maximum_log_likelihood_objective">[docs]</a>    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">maximum_log_likelihood_objective</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>  <span class="c1"># type: ignore[override]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">elbo</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="VGPOpperArchambeau.elbo"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.VGPOpperArchambeau.elbo">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;return: []&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">elbo</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        q_alpha, q_lambda are variational parameters, size [N, R]</span>
+<span class="sd">        This method computes the variational lower bound on the likelihood,</span>
+<span class="sd">        which is:</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">           E_{q(F)} [ \log p(Y|F) ] - KL[ q(F) || p(F)]</span>
+
+<span class="sd">        with</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">           q(f) = N(f |</span>
+<span class="sd">               K \alpha + \textrm{mean},</span>
+<span class="sd">               [K^-1 + \textrm{diag}(\textrm{square}(\lambda))]^-1) .</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">X_data</span><span class="p">,</span> <span class="n">Y_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+
+        <span class="n">K</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="n">X_data</span><span class="p">)</span>
+        <span class="n">K_alpha</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_alpha</span><span class="p">)</span>
+        <span class="n">f_mean</span> <span class="o">=</span> <span class="n">K_alpha</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_function</span><span class="p">(</span><span class="n">X_data</span><span class="p">)</span>
+
+        <span class="c1"># compute the variance for each of the outputs</span>
+        <span class="n">I</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span>
+            <span class="n">tf</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">default_float</span><span class="p">())[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">num_latent_gps</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">I</span>
+            <span class="o">+</span> <span class="n">tf</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q_lambda</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+            <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q_lambda</span><span class="p">)[:,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+            <span class="o">*</span> <span class="n">K</span>
+        <span class="p">)</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+        <span class="n">Li</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">triangular_solve</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">I</span><span class="p">)</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">Li</span> <span class="o">/</span> <span class="n">tf</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q_lambda</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+        <span class="n">f_var</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q_lambda</span><span class="p">)</span> <span class="o">-</span> <span class="n">tf</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">tmp</span><span class="p">),</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="c1"># some statistics about A are used in the KL</span>
+        <span class="n">A_logdet</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">diag_part</span><span class="p">(</span><span class="n">L</span><span class="p">)))</span>
+        <span class="n">trAi</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">Li</span><span class="p">))</span>
+
+        <span class="n">KL</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span>
+            <span class="n">A_logdet</span>
+            <span class="o">+</span> <span class="n">trAi</span>
+            <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_data</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_latent_gps</span>
+            <span class="o">+</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">K_alpha</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_alpha</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">v_exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">variational_expectations</span><span class="p">(</span><span class="n">X_data</span><span class="p">,</span> <span class="n">f_mean</span><span class="p">,</span> <span class="n">f_var</span><span class="p">,</span> <span class="n">Y_data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">v_exp</span><span class="p">)</span> <span class="o">-</span> <span class="n">KL</span></div>
+
+<div class="viewcode-block" id="VGPOpperArchambeau.predict_f"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.VGPOpperArchambeau.predict_f">[docs]</a>    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">predict_f</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">InputData</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The posterior variance of F is given by</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">           q(f) = N(f |</span>
+<span class="sd">               K \alpha + \textrm{mean}, [K^-1 + \textrm{diag}(\lambda**2)]^-1)</span>
+
+<span class="sd">        Here we project this to F*, the values of the GP at Xnew which is given</span>
+<span class="sd">        by</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">           q(F*) = N ( F* | K_{*F} \alpha + \textrm{mean}, K_{**} - K_{*f}[K_{ff} +</span>
+<span class="sd">                                           \textrm{diag}(\lambda**-2)]^-1 K_{f*} )</span>
+
+<span class="sd">        Note: This model currently does not allow full output covariances</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">assert_params_false</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predict_f</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="o">=</span><span class="n">full_output_cov</span><span class="p">)</span>
+
+        <span class="n">X_data</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+        <span class="c1"># compute kernel things</span>
+        <span class="n">Kx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="n">X_data</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">)</span>
+        <span class="n">K</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="n">X_data</span><span class="p">)</span>
+
+        <span class="c1"># predictive mean</span>
+        <span class="n">f_mean</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">Kx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_alpha</span><span class="p">,</span> <span class="n">transpose_a</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_function</span><span class="p">(</span><span class="n">Xnew</span><span class="p">)</span>
+
+        <span class="c1"># predictive var</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="n">K</span> <span class="o">+</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q_lambda</span><span class="p">)))</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+        <span class="n">Kx_tiled</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">Kx</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">num_latent_gps</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="n">LiKx</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">triangular_solve</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">Kx_tiled</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">full_cov</span><span class="p">:</span>
+            <span class="n">f_var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="n">Xnew</span><span class="p">)</span> <span class="o">-</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">LiKx</span><span class="p">,</span> <span class="n">LiKx</span><span class="p">,</span> <span class="n">transpose_a</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">f_var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">LiKx</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">f_mean</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">f_var</span><span class="p">)</span></div></div>
+</pre></div>
+
+              </article>
+              
+
+              
+          </div>
+          
+      </div>
+    </div>
+
+  
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695"></script>
+
+<footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    <p class="copyright">
+    &copy; Copyright 2022, The GPflow Contributors.<br>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 6.1.3.<br>
+</p>
+  </div>
+  
+</div>
+</footer>
+  </body>
+</html>

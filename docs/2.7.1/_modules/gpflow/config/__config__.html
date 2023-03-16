@@ -1,0 +1,625 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>gpflow.config.__config__ &#8212; GPflow 2.7.1 documentation</title>
+<script>
+  document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+  document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
+</script>
+
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+
+
+  <link rel="stylesheet"
+    href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css" />
+
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
+
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="docsearch:language" content="en">
+  </head>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+    <div class="bd-header-announcement container-fluid" id="banner">
+      
+
+    </div>
+
+    
+    <nav class="bd-header navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="bd-header__inner container-xl">
+
+  <div id="navbar-start">
+    
+    
+  
+
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">GPflow 2.7.1 documentation</p>
+  
+</a>
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="fas fa-bars"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../getting_started.html">
+  Getting Started
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../user_guide.html">
+  User Guide
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../api/gpflow/index.html">
+  API reference
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../benchmarks.html">
+  Benchmarks
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../bibliography.html">
+  Bibliography
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <div class="dropdown" id="version_switcher">
+    <button type="button" class="btn btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+        2.7.1  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div id="version_switcher_menu" class="dropdown-menu list-group-flush py-0" aria-labelledby="version_switcher_button">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+
+<!-- NOTE: this JS must live here (not in our global JS file) because it relies
+     on being processed by Jinja before it is run (specifically for replacing
+     variables _modules/gpflow/config/__config__ and {'json_url': 'https://gpflow.github.io/GPflow/versions.json', 'version_match': '2.7.1'}.
+-->
+
+<script type="text/javascript">
+// Check if corresponding page path exists in other version of docs
+// and, if so, go there instead of the homepage of the other docs version
+function checkPageExistsAndRedirect(event) {
+    const currentFilePath = "_modules/gpflow/config/__config__.html",
+          tryUrl = event.target.getAttribute("href");
+    let otherDocsHomepage = tryUrl.replace(currentFilePath, "");
+    $.ajax({
+        type: 'HEAD',
+        url: tryUrl,
+        // if the page exists, go there
+        success: function() {
+            location.href = tryUrl;
+        }
+    }).fail(function() {
+        location.href = otherDocsHomepage;
+    });
+    // this prevents the browser from following the href of the clicked node
+    // (which is fine because this function takes care of redirecting)
+    return false;
+}
+
+// Populate the version switcher from the JSON config file
+(function () {
+    $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
+        const currentFilePath = "_modules/gpflow/config/__config__.html";
+        let btn = document.getElementById("version_switcher_button");
+        // Set empty strings by default so that these attributes exist and can be used in CSS selectors
+        btn.dataset["activeVersionName"] = "";
+        btn.dataset["activeVersion"] = "";
+        // create links to the corresponding page in the other docs versions
+        $.each(data, function(index, entry) {
+            // if no custom name specified (e.g., "latest"), use version string
+            if (!("name" in entry)) {
+                entry.name = entry.version;
+            }
+            // create the node
+            const node = document.createElement("a");
+            node.setAttribute("class", "list-group-item list-group-item-action py-1");
+            node.textContent = `${entry.name}`;
+            node.setAttribute("href", `${entry.url}${currentFilePath}`);
+            // on click, AJAX calls will check if the linked page exists before
+            // trying to redirect, and if not, will redirect to the homepage
+            // for that version of the docs.
+            node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
+            $("#version_switcher_menu").append(node);
+            // replace dropdown button text with the preferred display name of
+            // this version, rather than using sphinx's  variable.
+            // also highlight the dropdown entry for the currently-viewed
+            // version's entry
+            if (entry.version == "2.7.1") {
+                node.classList.add("active");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
+            }
+        });
+    });
+})();
+</script>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="bd-container container-xl">
+      <div class="bd-container__inner row">
+          
+
+<!-- Only show if we have sidebars configured, else just a small margin  -->
+<div class="bd-sidebar-primary col-12 col-md-3 bd-sidebar">
+  <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    
+  </div>
+</nav>
+  </div>
+  <div class="sidebar-end-items">
+  </div>
+</div>
+
+
+          
+
+
+<div class="bd-sidebar-secondary d-none d-xl-block col-xl-2 bd-toc">
+  
+</div>
+
+
+          
+          
+          <div class="bd-content col-12 col-md-9 col-xl-7">
+              
+              <article class="bd-article" role="main">
+                
+  <h1>Source code for gpflow.config.__config__</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2019-2020 The GPflow Contributors. All Rights Reserved.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This is a private module that manages GPflow configuration.</span>
+
+<span class="sd">The module provides functions to modify default settings of GPflow, such as:</span>
+<span class="sd">- the standard float precision and integer type</span>
+<span class="sd">- the type of positive transformation</span>
+<span class="sd">- a value for a minimum shift from zero for the positive transformation</span>
+<span class="sd">- an output format for `gpflow.utilities.print_summary`</span>
+
+<span class="sd">The module holds global configuration :class:`Config` variable that stores all</span>
+<span class="sd">setting values.</span>
+
+<span class="sd">Environment variables are an alternative way for changing the default GPflow</span>
+<span class="sd">configuration.</span>
+
+<span class="sd">.. warning::</span>
+<span class="sd">    The user has to set environment variables before running python</span>
+<span class="sd">    interpreter to modify the configuration.</span>
+
+<span class="sd">Full set of environment variables and available options:</span>
+
+<span class="sd">* ``GPFLOW_INT``: &quot;int16&quot;, &quot;int32&quot;, or &quot;int64&quot;</span>
+<span class="sd">* ``GPFLOW_FLOAT``: &quot;float16&quot;, &quot;float32&quot;, or &quot;float64&quot;</span>
+<span class="sd">* ``GPFLOW_POSITIVE_BIJECTOR``: &quot;exp&quot; or &quot;softplus&quot;</span>
+<span class="sd">* ``GPFLOW_POSITIVE_MINIMUM``: Any positive float number</span>
+<span class="sd">* ``GPFLOW_SUMMARY_FMT``: &quot;notebook&quot; or any other format that :mod:`tabulate` can handle.</span>
+<span class="sd">* ``GPFLOW_JITTER``: Any positive float number</span>
+
+<span class="sd">The user can also change the GPflow configuration temporarily with a context</span>
+<span class="sd">manager :func:`as_context`:</span>
+
+<span class="sd">&gt;&gt;&gt; config = Config(jitter=1e-5)</span>
+<span class="sd">&gt;&gt;&gt; with as_context(config):</span>
+<span class="sd">&gt;&gt;&gt;     # ...code here sees new config</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">contextlib</span>
+<span class="kn">import</span> <span class="nn">enum</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">replace</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">tabulate</span>
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span class="kn">import</span> <span class="nn">tensorflow_probability</span> <span class="k">as</span> <span class="nn">tfp</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;Config&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;as_context&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;config&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;default_float&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;default_int&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;default_jitter&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;default_positive_bijector&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;default_positive_minimum&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;default_summary_fmt&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;positive_bijector_type_map&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;set_config&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;set_default_float&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;set_default_int&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;set_default_jitter&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;set_default_positive_bijector&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;set_default_positive_minimum&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;set_default_summary_fmt&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="n">__config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;Config&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="k">class</span> <span class="nc">_Values</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Setting&#39;s names collection with default values. The `name` method returns name</span>
+<span class="sd">    of the environment variable. E.g. for `SUMMARY_FMT` field the environment variable</span>
+<span class="sd">    will be `GPFLOW_SUMMARY_FMT`.&quot;&quot;&quot;</span>
+
+    <span class="n">INT</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span>
+    <span class="n">FLOAT</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span>
+    <span class="n">POSITIVE_BIJECTOR</span> <span class="o">=</span> <span class="s2">&quot;softplus&quot;</span>
+    <span class="n">POSITIVE_MINIMUM</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">SUMMARY_FMT</span> <span class="o">=</span> <span class="s2">&quot;fancy_grid&quot;</span>
+    <span class="n">JITTER</span> <span class="o">=</span> <span class="mf">1e-6</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>  <span class="c1"># type: ignore[override]  # name is generated and has weird typing.</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;GPFLOW_</span><span class="si">{</span><span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">_default</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">_Values</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Checks if value is set in the environment.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">value</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_default_numeric_type_factory</span><span class="p">(</span>
+    <span class="n">valid_types</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">],</span> <span class="n">enum_key</span><span class="p">:</span> <span class="n">_Values</span><span class="p">,</span> <span class="n">type_name</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">:</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">]</span> <span class="o">=</span> <span class="n">_default</span><span class="p">(</span><span class="n">enum_key</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">value</span> <span class="ow">in</span> <span class="n">valid_types</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+        <span class="k">return</span> <span class="n">value</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>  <span class="c1"># Hint for mypy</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_types</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Config cannot recognize </span><span class="si">{</span><span class="n">type_name</span><span class="si">}</span><span class="s2"> type.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">valid_types</span><span class="p">[</span><span class="n">value</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">_default_int_factory</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">:</span>
+    <span class="n">valid_types</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">int16</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">,</span> <span class="n">int32</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="n">int64</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_default_numeric_type_factory</span><span class="p">(</span><span class="n">valid_types</span><span class="p">,</span> <span class="n">_Values</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span> <span class="s2">&quot;int&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_default_float_factory</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">:</span>
+    <span class="n">valid_types</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">float16</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float16</span><span class="p">,</span> <span class="n">float32</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">float64</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_default_numeric_type_factory</span><span class="p">(</span><span class="n">valid_types</span><span class="p">,</span> <span class="n">_Values</span><span class="o">.</span><span class="n">FLOAT</span><span class="p">,</span> <span class="s2">&quot;float&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_default_jitter_factory</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="n">_default</span><span class="p">(</span><span class="n">_Values</span><span class="o">.</span><span class="n">JITTER</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Config cannot set the jitter value with non float type.&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_default_positive_bijector_factory</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">bijector_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">_default</span><span class="p">(</span><span class="n">_Values</span><span class="o">.</span><span class="n">POSITIVE_BIJECTOR</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">bijector_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">positive_bijector_type_map</span><span class="p">()</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="s2">&quot;Config cannot set the passed value as a default positive bijector.&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Available options: </span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="n">positive_bijector_type_map</span><span class="p">()</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">bijector_type</span>
+
+
+<span class="k">def</span> <span class="nf">_default_positive_minimum_factory</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="n">_default</span><span class="p">(</span><span class="n">_Values</span><span class="o">.</span><span class="n">POSITIVE_MINIMUM</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Config cannot set the positive_minimum value with non float type.&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_default_summary_fmt_factory</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="n">result</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">_default</span><span class="p">(</span><span class="n">_Values</span><span class="o">.</span><span class="n">SUMMARY_FMT</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+
+<span class="c1"># The following type alias is for the Config class, to help a static analyser distinguish</span>
+<span class="c1"># between the built-in &#39;float&#39; type and the &#39;float&#39; type defined in the that class.</span>
+<span class="n">Float</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="Config"><a class="viewcode-back" href="../../../api/gpflow/config/index.html#gpflow.config.Config">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Immutable object for storing global GPflow settings</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nb">int</span><span class="p">:</span> <span class="nb">type</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">_default_int_factory</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Integer data type, int32 or int64.&quot;&quot;&quot;</span>
+
+    <span class="nb">float</span><span class="p">:</span> <span class="nb">type</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">_default_float_factory</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Float data type, float32 or float64&quot;&quot;&quot;</span>
+
+    <span class="n">jitter</span><span class="p">:</span> <span class="n">Float</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">_default_jitter_factory</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Jitter value. Mainly used for for making badly conditioned matrices more stable.</span>
+
+<span class="sd">    Default value is `1e-6`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">positive_bijector</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">_default_positive_bijector_factory</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Method for positive bijector, either &quot;softplus&quot; or &quot;exp&quot;.</span>
+
+<span class="sd">    Default is &quot;softplus&quot;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">positive_minimum</span><span class="p">:</span> <span class="n">Float</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">_default_positive_minimum_factory</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Lower bound for the positive transformation.&quot;&quot;&quot;</span>
+
+    <span class="n">summary_fmt</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">_default_summary_fmt_factory</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Summary format for module printing.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="config"><a class="viewcode-back" href="../../../api/gpflow/config/index.html#gpflow.config.config">[docs]</a><span class="k">def</span> <span class="nf">config</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Config</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns current active config.&quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">__config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;__config is None. This should never happen.&quot;</span>
+    <span class="k">return</span> <span class="n">__config</span></div>
+
+
+<div class="viewcode-block" id="default_int"><a class="viewcode-back" href="../../../api/gpflow/index.html#gpflow.config.default_int">[docs]</a><span class="k">def</span> <span class="nf">default_int</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns default integer type&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">config</span><span class="p">()</span><span class="o">.</span><span class="n">int</span></div>
+
+
+<div class="viewcode-block" id="default_float"><a class="viewcode-back" href="../../../api/gpflow/index.html#gpflow.config.default_float">[docs]</a><span class="k">def</span> <span class="nf">default_float</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns default float type&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">config</span><span class="p">()</span><span class="o">.</span><span class="n">float</span></div>
+
+
+<div class="viewcode-block" id="default_jitter"><a class="viewcode-back" href="../../../api/gpflow/index.html#gpflow.config.default_jitter">[docs]</a><span class="k">def</span> <span class="nf">default_jitter</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The jitter is a constant that GPflow adds to the diagonal of matrices</span>
+<span class="sd">    to achieve numerical stability of the system when the condition number</span>
+<span class="sd">    of the associated matrices is large, and therefore the matrices nearly singular.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">config</span><span class="p">()</span><span class="o">.</span><span class="n">jitter</span></div>
+
+
+<div class="viewcode-block" id="default_positive_bijector"><a class="viewcode-back" href="../../../api/gpflow/config/index.html#gpflow.config.default_positive_bijector">[docs]</a><span class="k">def</span> <span class="nf">default_positive_bijector</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Type of bijector used for positive constraints: exp or softplus.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">config</span><span class="p">()</span><span class="o">.</span><span class="n">positive_bijector</span></div>
+
+
+<div class="viewcode-block" id="default_positive_minimum"><a class="viewcode-back" href="../../../api/gpflow/config/index.html#gpflow.config.default_positive_minimum">[docs]</a><span class="k">def</span> <span class="nf">default_positive_minimum</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Shift constant that GPflow adds to all positive constraints.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">config</span><span class="p">()</span><span class="o">.</span><span class="n">positive_minimum</span></div>
+
+
+<div class="viewcode-block" id="default_summary_fmt"><a class="viewcode-back" href="../../../api/gpflow/config/index.html#gpflow.config.default_summary_fmt">[docs]</a><span class="k">def</span> <span class="nf">default_summary_fmt</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Summary printing format as understood by :mod:`tabulate` or a special case &quot;notebook&quot;.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">config</span><span class="p">()</span><span class="o">.</span><span class="n">summary_fmt</span></div>
+
+
+<div class="viewcode-block" id="set_config"><a class="viewcode-back" href="../../../api/gpflow/config/index.html#gpflow.config.set_config">[docs]</a><span class="k">def</span> <span class="nf">set_config</span><span class="p">(</span><span class="n">new_config</span><span class="p">:</span> <span class="n">Config</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Update GPflow config with new settings from `new_config`.&quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">__config</span>
+    <span class="n">__config</span> <span class="o">=</span> <span class="n">new_config</span></div>
+
+
+<div class="viewcode-block" id="set_default_int"><a class="viewcode-back" href="../../../api/gpflow/config/index.html#gpflow.config.set_default_int">[docs]</a><span class="k">def</span> <span class="nf">set_default_int</span><span class="p">(</span><span class="n">value_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets default integer type. Available options are ``np.int16``, ``np.int32``,</span>
+<span class="sd">    or ``np.int64``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">tf_dtype</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">as_dtype</span><span class="p">(</span><span class="n">value_type</span><span class="p">)</span>  <span class="c1"># Test that it&#39;s a tensorflow-valid dtype</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">value_type</span><span class="si">}</span><span class="s2"> is not a valid tf or np dtype&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">tf_dtype</span><span class="o">.</span><span class="n">is_integer</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">value_type</span><span class="si">}</span><span class="s2"> is not an integer dtype&quot;</span><span class="p">)</span>
+
+    <span class="n">set_config</span><span class="p">(</span><span class="n">replace</span><span class="p">(</span><span class="n">config</span><span class="p">(),</span> <span class="nb">int</span><span class="o">=</span><span class="n">tf_dtype</span><span class="o">.</span><span class="n">as_numpy_dtype</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="set_default_float"><a class="viewcode-back" href="../../../api/gpflow/config/index.html#gpflow.config.set_default_float">[docs]</a><span class="k">def</span> <span class="nf">set_default_float</span><span class="p">(</span><span class="n">value_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets default float type. Available options are `np.float16`, `np.float32`,</span>
+<span class="sd">    or `np.float64`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">tf_dtype</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">as_dtype</span><span class="p">(</span><span class="n">value_type</span><span class="p">)</span>  <span class="c1"># Test that it&#39;s a tensorflow-valid dtype</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">value_type</span><span class="si">}</span><span class="s2"> is not a valid tf or np dtype&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">tf_dtype</span><span class="o">.</span><span class="n">is_floating</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">value_type</span><span class="si">}</span><span class="s2"> is not a float dtype&quot;</span><span class="p">)</span>
+
+    <span class="n">set_config</span><span class="p">(</span><span class="n">replace</span><span class="p">(</span><span class="n">config</span><span class="p">(),</span> <span class="nb">float</span><span class="o">=</span><span class="n">tf_dtype</span><span class="o">.</span><span class="n">as_numpy_dtype</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="set_default_jitter"><a class="viewcode-back" href="../../../api/gpflow/config/index.html#gpflow.config.set_default_jitter">[docs]</a><span class="k">def</span> <span class="nf">set_default_jitter</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets constant jitter value.</span>
+<span class="sd">    The jitter is a constant that GPflow adds to the diagonal of matrices</span>
+<span class="sd">    to achieve numerical stability of the system when the condition number</span>
+<span class="sd">    of the associated matrices is large, and therefore the matrices nearly singular.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
+        <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">))</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+    <span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Expected float32 or float64 scalar value&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Jitter must be non-negative&quot;</span><span class="p">)</span>
+
+    <span class="n">set_config</span><span class="p">(</span><span class="n">replace</span><span class="p">(</span><span class="n">config</span><span class="p">(),</span> <span class="n">jitter</span><span class="o">=</span><span class="n">value</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="set_default_positive_bijector"><a class="viewcode-back" href="../../../api/gpflow/config/index.html#gpflow.config.set_default_positive_bijector">[docs]</a><span class="k">def</span> <span class="nf">set_default_positive_bijector</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets positive bijector type.</span>
+<span class="sd">    There are currently two options implemented: &quot;exp&quot; and &quot;softplus&quot;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">type_map</span> <span class="o">=</span> <span class="n">positive_bijector_type_map</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">type_map</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">` not in set of valid bijectors: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">type_map</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">set_config</span><span class="p">(</span><span class="n">replace</span><span class="p">(</span><span class="n">config</span><span class="p">(),</span> <span class="n">positive_bijector</span><span class="o">=</span><span class="n">value</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="set_default_positive_minimum"><a class="viewcode-back" href="../../../api/gpflow/config/index.html#gpflow.config.set_default_positive_minimum">[docs]</a><span class="k">def</span> <span class="nf">set_default_positive_minimum</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sets shift constant for positive transformation.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
+        <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">))</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+    <span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Expected float32 or float64 scalar value&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Positive minimum must be non-negative&quot;</span><span class="p">)</span>
+
+    <span class="n">set_config</span><span class="p">(</span><span class="n">replace</span><span class="p">(</span><span class="n">config</span><span class="p">(),</span> <span class="n">positive_minimum</span><span class="o">=</span><span class="n">value</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="set_default_summary_fmt"><a class="viewcode-back" href="../../../api/gpflow/config/index.html#gpflow.config.set_default_summary_fmt">[docs]</a><span class="k">def</span> <span class="nf">set_default_summary_fmt</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">formats</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">tabulate</span><span class="o">.</span><span class="n">tabulate_formats</span><span class="p">)</span>
+    <span class="n">formats</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;notebook&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">formats</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Summary does not support &#39;</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&#39; format&quot;</span><span class="p">)</span>
+
+    <span class="n">set_config</span><span class="p">(</span><span class="n">replace</span><span class="p">(</span><span class="n">config</span><span class="p">(),</span> <span class="n">summary_fmt</span><span class="o">=</span><span class="n">value</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="positive_bijector_type_map"><a class="viewcode-back" href="../../../api/gpflow/config/index.html#gpflow.config.positive_bijector_type_map">[docs]</a><span class="k">def</span> <span class="nf">positive_bijector_type_map</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">]:</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;exp&quot;</span><span class="p">:</span> <span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Exp</span><span class="p">,</span>
+        <span class="s2">&quot;softplus&quot;</span><span class="p">:</span> <span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Softplus</span><span class="p">,</span>
+    <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="as_context"><a class="viewcode-back" href="../../../api/gpflow/config/index.html#gpflow.config.as_context">[docs]</a><span class="nd">@contextlib</span><span class="o">.</span><span class="n">contextmanager</span>
+<span class="k">def</span> <span class="nf">as_context</span><span class="p">(</span><span class="n">temporary_config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Config</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Ensure that global configs defaults, with a context manager. Useful for testing.&quot;&quot;&quot;</span>
+    <span class="n">current_config</span> <span class="o">=</span> <span class="n">config</span><span class="p">()</span>
+    <span class="n">temporary_config</span> <span class="o">=</span> <span class="n">replace</span><span class="p">(</span><span class="n">current_config</span><span class="p">)</span> <span class="k">if</span> <span class="n">temporary_config</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">temporary_config</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">set_config</span><span class="p">(</span><span class="n">temporary_config</span><span class="p">)</span>
+        <span class="k">yield</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">set_config</span><span class="p">(</span><span class="n">current_config</span><span class="p">)</span></div>
+
+
+<span class="c1"># Set global config.</span>
+<span class="n">set_config</span><span class="p">(</span><span class="n">Config</span><span class="p">())</span>
+</pre></div>
+
+              </article>
+              
+
+              
+          </div>
+          
+      </div>
+    </div>
+
+  
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695"></script>
+
+<footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    <p class="copyright">
+    &copy; Copyright 2022, The GPflow Contributors.<br>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 6.1.3.<br>
+</p>
+  </div>
+  
+</div>
+</footer>
+  </body>
+</html>
