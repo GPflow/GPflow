@@ -26,12 +26,15 @@ Release notes for all past releases are available in the ['Releases' section](ht
 * <IF A CHANGE CLOSES A GITHUB ISSUE, IT SHOULD BE DOCUMENTED HERE>
 * <NOTES SHOULD BE GROUPED PER AREA>
 
+* change to `_natgrad_steps` within `NaturalGradient` class
+
 ## Thanks to our Contributors
 
 This release contains contributions from:
 
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
+ericpena
 
 # Release 2.8.0 (next release)
 
