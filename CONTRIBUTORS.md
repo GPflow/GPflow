@@ -87,5 +87,6 @@ Because GitHub's [graph of contributors](http://github.com/GPflow/GPflow/graphs/
 [@ChrisMorter](https://github.com/ChrisMorter)
 [@sethaxen](https://github.com/sethaxen)
 [@khurram-ghani](https://github.com/khurram-ghani)
+[@eric-peña](https://github.com/ericpena)
 
 Add yourself when you first contribute to GPflow's code, tests, or documentation!
