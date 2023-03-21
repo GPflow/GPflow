@@ -136,4 +136,4 @@ _ = plt.fill_between(
 # %% [markdown]
 # ## See also
 #
-# For more details on how to manipulate existing kernels (or the one you just created!), we refer to the [Manipulating kernels](../getting_started/kernels.ipynb) notebook.
+# For more details on how to manipulate existing kernels (or the one you just created!), please refer to the [kernels](../getting_started/kernels.ipynb) notebook.
