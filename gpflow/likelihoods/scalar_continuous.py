@@ -19,6 +19,7 @@ import numpy as np
 import tensorflow as tf
 
 from .. import logdensities
+from .. import config
 from ..base import MeanAndVariance, TensorType
 from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..utilities.parameter_or_function import (
@@ -49,7 +50,7 @@ class Gaussian(ScalarLikelihood):
         variance: Optional[ConstantOrFunction] = None,
         *,
         scale: Optional[ConstantOrFunction] = None,
-        variance_lower_bound: float = DEFAULT_LOWER_BOUND,
+        variance_lower_bound: float = None,
         **kwargs: Any,
     ) -> None:
         """
@@ -61,6 +62,9 @@ class Gaussian(ScalarLikelihood):
         :param kwargs: Keyword arguments forwarded to :class:`ScalarLikelihood`.
         """
         super().__init__(**kwargs)
+
+        if variance_lower_bound is None:
+            variance_lower_bound = config.default_positive_minimum()
 
         self.variance_lower_bound = variance_lower_bound
         self.scale_lower_bound = sqrt(variance_lower_bound)
