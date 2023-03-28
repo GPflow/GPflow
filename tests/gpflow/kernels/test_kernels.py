@@ -27,7 +27,6 @@ from gpflow.kernels import (
     RBF,
     AnisotropicStationary,
     ArcCosine,
-    Categorical,
     ChangePoints,
     Constant,
     Convolutional,
