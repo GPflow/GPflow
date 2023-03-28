@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 import tensorflow as tf
@@ -58,7 +58,12 @@ class Categorical(Kernel):
     """
 
     def __init__(
-        self, wrapped_kernel_1: Kernel, wrapped_kernel_2: Kernel, num_labels: int, *args: Any, **kwargs: Any
+        self,
+        wrapped_kernel_1: Kernel,
+        wrapped_kernel_2: Kernel,
+        num_labels: int,
+        *args: Any,
+        **kwargs: Any,
     ) -> None:
         # wrapped_kernel_2 is the one that trains the categorical variables
         set_trainable(wrapped_kernel_2, False)

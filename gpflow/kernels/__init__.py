@@ -17,7 +17,6 @@ kernel.K(X, None) is identical to kernel.K(X, X).)
 
 from . import multioutput
 from .base import Combination, Kernel, Product, Sum
-from .categorical import Categorical
 from .changepoints import ChangePoints
 from .convolutional import Convolutional
 from .linears import Linear, Polynomial
