@@ -27,6 +27,7 @@ from gpflow.kernels import (
     RBF,
     AnisotropicStationary,
     ArcCosine,
+    Categorical,
     ChangePoints,
     Constant,
     Convolutional,
@@ -50,7 +51,7 @@ from gpflow.kernels import (
     White,
 )
 from tests.gpflow.kernels.reference import ref_arccosine_kernel, ref_periodic_kernel, ref_rbf_kernel
-
+from gpflow.kernels.categorical import _concat_inputs_with_latents
 rng = np.random.RandomState(1)
 
 
@@ -744,4 +745,4 @@ def test_concat_inputs_with_latents() -> None:
         ],
         dtype=tf.float64,
     )
-    assert test_concat_inputs_with_latents(Z, X) == result
+    assert _concat_inputs_with_latents(Z, X) == result

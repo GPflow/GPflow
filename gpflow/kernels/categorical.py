@@ -42,7 +42,7 @@ def _concat_inputs_with_latents(Z: tf.Tensor, X: TensorType) -> TensorType:
     return tf.concat([X[..., :-1], latent_values], axis=-1)  # [..., N, x_dim + label_dim]
 
 
-class CategoricalKernel(Kernel):
+class Categorical(Kernel):
     """
     A class that implements a categorical latent space wrapper for other Kernels.  It works
      by dynamically replacing integer labels in the input data with values in a latent space (Z),
@@ -59,7 +59,7 @@ class CategoricalKernel(Kernel):
 
     def __init__(
         self, wrapped_kernel_1: Kernel, wrapped_kernel_2: Kernel, num_labels: int, *args, **kwargs
-    ):
+    ) -> None:
         # wrapped_kernel_2 is the one that trains the categorical variables
         set_trainable(wrapped_kernel_2, False)
         self.wrapped_kernel = wrapped_kernel_1 * wrapped_kernel_2
@@ -69,7 +69,7 @@ class CategoricalKernel(Kernel):
         )
         super().__init__(*args, **kwargs)
 
-    def _concat_inputs_with_latents(self, X):
+    def _concat_inputs_with_latents(self, X: TensorType) -> TensorType:
         return _concat_inputs_with_latents(self.Z, X)
 
     @property
