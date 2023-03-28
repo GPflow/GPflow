@@ -745,4 +745,4 @@ def test_concat_inputs_with_latents() -> None:
         ],
         dtype=tf.float64,
     )
-    assert _concat_inputs_with_latents(Z, X) == result
+    assert np.all(_concat_inputs_with_latents(Z, X) == result)
