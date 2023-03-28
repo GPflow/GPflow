@@ -24,8 +24,8 @@ from numpy.testing import assert_allclose
 import gpflow
 import gpflow.ci_utils
 from gpflow import kernels
-from gpflow.kernels.categorical import Categorical
 from gpflow.base import AnyNDArray, TensorType
+from gpflow.kernels.categorical import Categorical
 
 
 def create_kernels() -> Sequence[kernels.Kernel]:
@@ -62,9 +62,11 @@ def create_kernels() -> Sequence[kernels.Kernel]:
         kernels.SharedIndependent(kernels.Matern32(), output_dim=5),
         kernels.SeparateIndependent([kernels.Matern32() for _ in range(5)]),
         kernels.LinearCoregionalization([kernels.Matern32() for _ in range(3)], np.ones((5, 3))),
-        Categorical(wrapped_kernel_1=kernels.RBF(lengthscales=0.1),
+        Categorical(
+            wrapped_kernel_1=kernels.RBF(lengthscales=0.1),
             wrapped_kernel_2=kernels.RBF(lengthscales=0.1),
-            num_labels=3)
+            num_labels=3,
+        ),
     ]
     return result
 
