@@ -53,7 +53,6 @@ __all__ = [
     "AnisotropicStationary",
     "ArcCosine",
     "Bias",
-    "Categorical",
     "ChangePoints",
     "Combination",
     "Constant",
