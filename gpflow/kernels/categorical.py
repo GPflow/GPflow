@@ -26,12 +26,14 @@ from . import Kernel
 def latent_from_labels(Z: tf.Tensor, labels: TensorType) -> TensorType:
     """
     Converts a tensor of labels into a tensor of the latent space values of those labels.
-    
+
     :param Z: Z is a tensor whose entries are the latent space values of the relevant label
         i.e. Z[3] is the value of label 3.
-        [num_labels]
-    :param X: X is the input data.  The last column should contain the labels as integers.
-        [..., N, D+1]
+        [num_labels, label_dim=1]
+    :param labels: labels is a vector.  Each entry corresponds to one of the points in the data,
+        X.  The value is an integer that specifies which category that point belongs to.  Note
+        that the value will likely be stored as a float (or whatever the rest of the data is)
+        even though it represents an integer value.
     :return: [..., N, D + label_dim]
     """
     indices = tf.cast(labels, default_int())  # [..., N]
@@ -41,7 +43,7 @@ def latent_from_labels(Z: tf.Tensor, labels: TensorType) -> TensorType:
 def _concat_inputs_with_latents(Z: tf.Tensor, X: TensorType) -> TensorType:
     """
     Transforms a dataset X from category space into the latent space.
-    
+
     :param Z: Z is a tensor whose entries are the latent space values of the relevant label
         i.e. Z[3] is the value of label 3.
         [num_labels]
@@ -65,7 +67,7 @@ class Categorical(Kernel):
      of degrees of freedom in optimisation.  You may also find fixing the lengthscale to be useful here.
      Note that Z is parameterised by the differences of latent space values for each category for the same reason.
     Multiple categories can be included by wrapping multiple layers of CategoricalKernel.
-    
+
     :param wrapped_kernel_1: The non-categorical kernel.
     :param wrapped_kernel_2: The categorical kernel.  Set its active_dims to the label dimension.
     :param num_labels: The number of labels
