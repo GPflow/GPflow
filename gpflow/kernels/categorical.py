@@ -1,3 +1,17 @@
+# Copyright 2017-2020 The GPflow Contributors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from typing import Any, Optional
 
 import numpy as np
@@ -8,13 +22,11 @@ from .. import default_int, set_trainable
 from ..base import Parameter, TensorType
 from . import Kernel
 
-tfd = tfp.distributions
-st = tfp.bijectors.Softplus().inverse
-
 
 def latent_from_labels(Z: tf.Tensor, labels: TensorType) -> TensorType:
     """
     Converts a tensor of labels into a tensor of the latent space values of those labels.
+    
     :param Z: Z is a tensor whose entries are the latent space values of the relevant label
         i.e. Z[3] is the value of label 3.
         [num_labels]
@@ -29,6 +41,7 @@ def latent_from_labels(Z: tf.Tensor, labels: TensorType) -> TensorType:
 def _concat_inputs_with_latents(Z: tf.Tensor, X: TensorType) -> TensorType:
     """
     Transforms a dataset X from category space into the latent space.
+    
     :param Z: Z is a tensor whose entries are the latent space values of the relevant label
         i.e. Z[3] is the value of label 3.
         [num_labels]
@@ -52,6 +65,7 @@ class Categorical(Kernel):
      of degrees of freedom in optimisation.  You may also find fixing the lengthscale to be useful here.
      Note that Z is parameterised by the differences of latent space values for each category for the same reason.
     Multiple categories can be included by wrapping multiple layers of CategoricalKernel.
+    
     :param wrapped_kernel_1: The non-categorical kernel.
     :param wrapped_kernel_2: The categorical kernel.  Set its active_dims to the label dimension.
     :param num_labels: The number of labels
@@ -59,18 +73,18 @@ class Categorical(Kernel):
 
     def __init__(
         self,
-        wrapped_kernel_1: Kernel,
-        wrapped_kernel_2: Kernel,
+        non_categorical_kernel: Kernel,
+        categorical_kernel: Kernel,
         num_labels: int,
         *args: Any,
         **kwargs: Any,
     ) -> None:
-        # wrapped_kernel_2 is the one that trains the categorical variables
-        set_trainable(wrapped_kernel_2, False)
-        self.wrapped_kernel = wrapped_kernel_1 * wrapped_kernel_2
+        set_trainable(categorical_kernel, False)
+        self.non_categorical_kernel = non_categorical_kernel * categorical_kernel
         label_dim = 1
+        # parametrise by the `num_labels - 1` differences of latent space values
         self._Z_deltas = Parameter(
-            np.random.random((num_labels - 1, label_dim)) * wrapped_kernel_2.lengthscales * 10
+            np.random.random((num_labels - 1, label_dim)) * categorical_kernel.lengthscales * 10
         )
         super().__init__(*args, **kwargs)
 
@@ -83,6 +97,9 @@ class Categorical(Kernel):
         Z is a tensor whose entries are the latent space values of the relevant label
         i.e. Z[3] is the value of label 3.
         """
+        # This sets Z[0] = 0 and then creates Z[1:] by adding the deltas.
+        #  This is achieved by using a lower diagonal matrix of ones,
+        #  so Z[1] = _Z_deltas[0], Z[2] = _Z_deltas[0] + _Z_deltas[1], etc.
         Z = tf.concat([tf.constant(0, shape=(1,), dtype=tf.float64), tf.squeeze(self._Z_deltas)], 0)
         m = tf.linalg.band_part(tf.ones([tf.size(Z), tf.size(Z)], dtype=tf.float64), -1, 0)
         return tf.expand_dims(tf.linalg.matvec(m, Z), -1)
