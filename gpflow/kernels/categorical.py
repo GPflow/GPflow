@@ -68,8 +68,8 @@ class Categorical(Kernel):
      Note that Z is parameterised by the differences of latent space values for each category for the same reason.
     Multiple categories can be included by wrapping multiple layers of CategoricalKernel.
 
-    :param wrapped_kernel_1: The non-categorical kernel.
-    :param wrapped_kernel_2: The categorical kernel.  Set its active_dims to the label dimension.
+    :param non_categorical_kernel: The non-categorical kernel.
+    :param categorical_kernel: The categorical kernel.  Set its active_dims to the label dimension.
     :param num_labels: The number of labels
     """
 
@@ -82,7 +82,7 @@ class Categorical(Kernel):
         **kwargs: Any,
     ) -> None:
         set_trainable(categorical_kernel, False)
-        self.non_categorical_kernel = non_categorical_kernel * categorical_kernel
+        self.wrapped_kernel = non_categorical_kernel * categorical_kernel
         label_dim = 1
         # parametrise by the `num_labels - 1` differences of latent space values
         self._Z_deltas = Parameter(
