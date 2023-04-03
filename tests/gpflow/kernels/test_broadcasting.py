@@ -63,8 +63,8 @@ def create_kernels() -> Sequence[kernels.Kernel]:
         kernels.SeparateIndependent([kernels.Matern32() for _ in range(5)]),
         kernels.LinearCoregionalization([kernels.Matern32() for _ in range(3)], np.ones((5, 3))),
         Categorical(
-            wrapped_kernel_1=kernels.RBF(lengthscales=0.1),
-            wrapped_kernel_2=kernels.RBF(lengthscales=0.1),
+            non_categorical_kernel=kernels.RBF(lengthscales=0.1),
+            categorical_kernel=kernels.RBF(lengthscales=0.1),
             num_labels=3,
         ),
     ]
