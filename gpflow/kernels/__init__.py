@@ -82,6 +82,7 @@ __all__ = [
     "Sum",
     "White",
     "base",
+    "categorical",
     "changepoints",
     "convolutional",
     "linears",
