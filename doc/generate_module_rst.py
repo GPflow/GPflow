@@ -186,14 +186,19 @@ class DocumentableModule:
             new_classes = []
             for c in module.classes:
                 if id(c.obj) not in seen:
-                    seen.add(id(c.obj))
+                    # Special treatment for aliases, i.e. when names don't match.
+                    # Don't mark them as seen to avoid the original object being skipped.
+                    if c.name.endswith("." + c.obj.__name__):
+                        seen.add(id(c.obj))
                     new_classes.append(c)
             module.classes = new_classes
 
             new_functions = []
             for f in module.functions:
                 if id(f.obj) not in seen:
-                    seen.add(id(f.obj))
+                    # See comment above (for classes) about aliases.
+                    if f.name.endswith("." + f.obj.__name__):
+                        seen.add(id(f.obj))
                     new_functions.append(f)
             module.functions = new_functions
 
