@@ -170,9 +170,11 @@ class DocumentableModule:
             module.seen_in_dispatchers(seen)
         for function in self.functions:
             if isinstance(function, DocumentableDispatcher):
-                impls = function.obj.funcs.values()
-                for impl in impls:
-                    seen.add(id(impl))
+                # See comment below (for classes) about aliases.
+                if function.name.endswith("." + function.obj.__name__):
+                    impls = function.obj.funcs.values()
+                    for impl in impls:
+                        seen.add(id(impl))
 
     def prune_duplicates(self) -> None:
         seen: Set[int] = set()
