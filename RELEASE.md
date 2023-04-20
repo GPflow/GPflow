@@ -55,11 +55,13 @@ This release contains contributions from:
 ## Bug Fixes and Other Changes
 
 * Fixed bug related to `tf.saved_model` and methods wrapped in `@check_shapes`.
+* Added support for setting `tf.function` arguments for compilation in `Scipy` optimizer.
 
 ## Thanks to our Contributors
 
 This release contains contributions from:
 
+khurram-ghani
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
