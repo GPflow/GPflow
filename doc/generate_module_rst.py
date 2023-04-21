@@ -18,7 +18,7 @@ import inspect
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Deque, Dict, List, Mapping, Set, TextIO, Type, Union
+from typing import Any, Callable, Deque, Dict, List, Mapping, Set, TextIO, Tuple, Type, Union
 
 from gpflow.utilities import Dispatcher
 
@@ -165,7 +165,7 @@ class DocumentableModule:
 
         return DocumentableModule(root_name, root, modules, classes, functions)
 
-    def seen_in_dispatchers(self, seen: Set[int]) -> None:
+    def seen_in_dispatchers(self, seen: Set[Tuple[str, int]]) -> None:
         for module in self.modules:
             module.seen_in_dispatchers(seen)
         for function in self.functions:
@@ -177,7 +177,7 @@ class DocumentableModule:
                     seen.add(key)
 
     def prune_duplicates(self) -> None:
-        seen: Set[int] = set()
+        seen: Set[Tuple[str, int]] = set()
         self.seen_in_dispatchers(seen)
 
         # Breadth-first search so that we prefer objects with shorter names.
@@ -189,7 +189,7 @@ class DocumentableModule:
             for c in module.classes:
                 # Account for objects to have aliases, hence include the object name in the key.
                 # We want to generate documentation for both the alias and the original object.
-                key = (c.name[c.name.rfind(".")+1:], id(c.obj))
+                key = (c.name[c.name.rfind(".") + 1 :], id(c.obj))
                 if key not in seen:
                     seen.add(key)
                     new_classes.append(c)
@@ -198,7 +198,7 @@ class DocumentableModule:
             new_functions = []
             for f in module.functions:
                 # See comment above (for classes) about aliases.
-                key = (f.name[f.name.rfind(".")+1:], id(f.obj))
+                key = (f.name[f.name.rfind(".") + 1 :], id(f.obj))
                 if key not in seen:
                     seen.add(key)
                     new_functions.append(f)
