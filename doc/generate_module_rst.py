@@ -170,11 +170,11 @@ class DocumentableModule:
             module.seen_in_dispatchers(seen)
         for function in self.functions:
             if isinstance(function, DocumentableDispatcher):
-                # See comment below (for classes) about aliases.
-                if function.name.endswith("." + function.obj.__name__):
-                    impls = function.obj.funcs.values()
-                    for impl in impls:
-                        seen.add(id(impl))
+                impls = function.obj.funcs.values()
+                for impl in impls:
+                    # See comment below (for classes) about aliases.
+                    key = (impl.__name__, id(impl))
+                    seen.add(key)
 
     def prune_duplicates(self) -> None:
         seen: Set[int] = set()
@@ -187,20 +187,20 @@ class DocumentableModule:
 
             new_classes = []
             for c in module.classes:
-                if id(c.obj) not in seen:
-                    # Special treatment for aliases, i.e. when names don't match.
-                    # Don't mark them as seen to avoid the original object being skipped.
-                    if c.name.endswith("." + c.obj.__name__):
-                        seen.add(id(c.obj))
+                # Account for objects to have aliases, hence include the object name in the key.
+                # We want to generate documentation for both the alias and the original object.
+                key = (c.name[c.name.rfind(".")+1:], id(c.obj))
+                if key not in seen:
+                    seen.add(key)
                     new_classes.append(c)
             module.classes = new_classes
 
             new_functions = []
             for f in module.functions:
-                if id(f.obj) not in seen:
-                    # See comment above (for classes) about aliases.
-                    if f.name.endswith("." + f.obj.__name__):
-                        seen.add(id(f.obj))
+                # See comment above (for classes) about aliases.
+                key = (f.name[f.name.rfind(".")+1:], id(f.obj))
+                if key not in seen:
+                    seen.add(key)
                     new_functions.append(f)
             module.functions = new_functions
 
