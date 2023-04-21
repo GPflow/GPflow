@@ -20,6 +20,7 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 import tensorflow as tf
+from packaging.version import Version
 
 import gpflow
 from gpflow.base import AnyNDArray
@@ -27,6 +28,11 @@ from gpflow.config import default_float
 from gpflow.models import GPR, GPModel
 
 rng = np.random.RandomState(0)
+
+if Version(tf.__version__) >= Version("2.5"):
+    jit_compile_arg = 'jit_compile'
+else:
+    jit_compile_arg = 'experimental_compile'
 
 
 class Datum:
@@ -74,7 +80,7 @@ def test_scipy_jit() -> None:
         variables=m3.trainable_variables,
         options=dict(maxiter=50),
         compile=True,
-        tffun_args=dict(jit_compile=True),
+        tffun_args={jit_compile_arg: True},
     )
 
     def get_values(model: GPModel) -> AnyNDArray:
@@ -122,7 +128,7 @@ def test_scipy__optimal(compile: bool, jit: bool) -> None:
         return tf.reduce_sum((target1 - v1) ** 2) + tf.reduce_sum((target2 - v2) ** 2)
 
     opt = gpflow.optimizers.Scipy()
-    tffun_args = dict(jit_compile=True) if jit else {}
+    tffun_args = {jit_compile_arg: True} if jit else {}
     result = opt.minimize(f, [v1, v2], compile=compile, tffun_args=tffun_args)
 
     if compile:
@@ -148,7 +154,7 @@ def test_scipy__partially_disconnected_variable(compile: bool, jit: bool) -> Non
         return (target1 - v10) ** 2 + (target2 - v2) ** 2
 
     opt = gpflow.optimizers.Scipy()
-    tffun_args = dict(jit_compile=True) if jit else {}
+    tffun_args = {jit_compile_arg: True} if jit else {}
     result = opt.minimize(f, [v1, v2], compile=compile, tffun_args=tffun_args)
 
     assert result.success
@@ -171,7 +177,7 @@ def test_scipy__disconnected_variable(
         return tf.reduce_sum((target1 - v1) ** 2)
 
     opt = gpflow.optimizers.Scipy()
-    tffun_args = dict(jit_compile=True) if jit else {}
+    tffun_args = {jit_compile_arg: True} if jit else {}
 
     if allow_unused_variables:
         with warnings.catch_warnings(record=True) as w:
