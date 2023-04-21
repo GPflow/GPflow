@@ -30,9 +30,9 @@ from gpflow.models import GPR, GPModel
 rng = np.random.RandomState(0)
 
 if Version(tf.__version__) >= Version("2.5"):
-    jit_compile_arg = 'jit_compile'
+    jit_compile_arg = "jit_compile"
 else:
-    jit_compile_arg = 'experimental_compile'
+    jit_compile_arg = "experimental_compile"
 
 
 class Datum:
