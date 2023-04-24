@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import warnings
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Iterable, List, Mapping, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import scipy.optimize
@@ -39,7 +39,7 @@ class Scipy:
         step_callback: Optional[StepCallback] = None,
         compile: bool = True,
         allow_unused_variables: bool = False,
-        tffun_args: Dict[str, Any] = {},
+        tffun_args: Optional[Mapping[str, Any]] = None,
         **scipy_kwargs: Any,
     ) -> OptimizeResult:
         """
@@ -71,6 +71,8 @@ class Scipy:
             The optimization result represented as a Scipy ``OptimizeResult`` object.
             See the Scipy documentation for description of attributes.
         """
+        if tffun_args is None:
+            tffun_args = {}
         if not callable(closure):
             raise TypeError(
                 "The 'closure' argument is expected to be a callable object."
@@ -117,8 +119,10 @@ class Scipy:
         variables: Sequence[tf.Variable],
         compile: bool = True,
         allow_unused_variables: bool = False,
-        tffun_args: Dict[str, Any] = {},
+        tffun_args: Optional[Mapping[str, Any]] = None,
     ) -> Callable[[AnyNDArray], Tuple[AnyNDArray, AnyNDArray]]:
+        if tffun_args is None:
+            tffun_args = {}
         first_call = True
 
         def _tf_eval(x: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
