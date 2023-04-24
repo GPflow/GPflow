@@ -103,7 +103,17 @@ def test_scipy__tffun_args(
 
     m = _create_full_gp_model()
     opt = gpflow.optimizers.Scipy()
-    opt.minimize(m.training_loss, m.trainable_variables, compile=compile, tffun_args=tffun_args)
+    expect_raise = not compile and len(tffun_args)
+    if expect_raise:
+        with pytest.raises(
+            ValueError, match="`tffun_args` should only be set when `compile` is True"
+        ):
+            opt.minimize(
+                m.training_loss, m.trainable_variables, compile=compile, tffun_args=tffun_args
+            )
+    else:
+        opt.minimize(m.training_loss, m.trainable_variables, compile=compile, tffun_args=tffun_args)
+
     if compile:
         received_args = mocked_tffun.call_args[1]
         expected_args = tffun_args
