@@ -573,8 +573,8 @@ possible, - efficient, by allowing the most efficient custom code path to be spe
 <p>Here we assume a model of the form: <span class="math">\begin{equation}
 f(x) = W g(x),
 \end{equation}</span> where <span class="math notranslate nohighlight">\(g(x) \in \mathbb{R}^L\)</span>, <span class="math notranslate nohighlight">\(f(x) \in \mathbb{R}^P\)</span> and <span class="math notranslate nohighlight">\(W \in \mathbb{R}^{P \times L}\)</span>. We assume that the outputs of <span class="math notranslate nohighlight">\(g\)</span> are uncorrelated, and that by <em>mixing</em> them with <span class="math notranslate nohighlight">\(W\)</span> they become correlated. In this notebook, we show how to build this model using Sparse Variational Gaussian Process (SVGP) for <span class="math notranslate nohighlight">\(g\)</span>, which scales well with the numbers of data points and outputs.</p>
-<p>Here we have two options for <span class="math notranslate nohighlight">\(g\)</span>: 1. The output dimensions of <span class="math notranslate nohighlight">\(g\)</span> share the same kernel. 1. Each output of <span class="math notranslate nohighlight">\(g\)</span> has a separate kernel.</p>
-<p>In addition, we have two further suboptions for the inducing inputs of <span class="math notranslate nohighlight">\(g\)</span>: 1. The instances of <span class="math notranslate nohighlight">\(g\)</span> share the same inducing inputs. 1. Each output of <span class="math notranslate nohighlight">\(g\)</span> has its own set of inducing inputs.</p>
+<p>Here we have two options for <span class="math notranslate nohighlight">\(g\)</span>: 1. The output dimensions of <span class="math notranslate nohighlight">\(g\)</span> share the same kernel. 2. Each output of <span class="math notranslate nohighlight">\(g\)</span> has a separate kernel.</p>
+<p>In addition, we have two further suboptions for the inducing inputs of <span class="math notranslate nohighlight">\(g\)</span>: 1. The instances of <span class="math notranslate nohighlight">\(g\)</span> share the same inducing inputs. 2. Each output of <span class="math notranslate nohighlight">\(g\)</span> has its own set of inducing inputs.</p>
 <p>The notation is as follows: - <span class="math notranslate nohighlight">\(X \in \mathbb{R}^{N \times D}\)</span> denotes the input - <span class="math notranslate nohighlight">\(Y \in \RR^{N \times P}\)</span> denotes the output - <span class="math notranslate nohighlight">\(k_{1..L}\)</span>, <span class="math notranslate nohighlight">\(L\)</span> are kernels on <span class="math notranslate nohighlight">\(\RR^{N \times D}\)</span> - <span class="math notranslate nohighlight">\(g_{1..L}\)</span>, <span class="math notranslate nohighlight">\(L\)</span> are independent <span class="math notranslate nohighlight">\(\GP\)</span>s with <span class="math notranslate nohighlight">\(g_l \sim \GP(0,k_l)\)</span> - <span class="math notranslate nohighlight">\(f_{1..P}\)</span>, <span class="math notranslate nohighlight">\(P\)</span> are correlated <span class="math notranslate nohighlight">\(\GP\)</span>s with <span class="math notranslate nohighlight">\(\vf = \vW \vg\)</span></p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -601,14 +601,14 @@ f(x) = W g(x),
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2023-03-27 16:21:28.402951: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2023-04-25 12:38:23.096111: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
-2023-03-27 16:21:28.535402: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2023-03-27 16:21:28.535423: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
-2023-03-27 16:21:28.564677: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-2023-03-27 16:21:29.247715: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libnvinfer.so.7&#39;; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
-2023-03-27 16:21:29.247778: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libnvinfer_plugin.so.7&#39;; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
-2023-03-27 16:21:29.247786: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
+2023-04-25 12:38:23.258848: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2023-04-25 12:38:23.258874: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2023-04-25 12:38:23.294306: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2023-04-25 12:38:24.019096: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libnvinfer.so.7&#39;; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
+2023-04-25 12:38:24.019190: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libnvinfer_plugin.so.7&#39;; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
+2023-04-25 12:38:24.019202: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
 </pre></div></div>
 </div>
 </section>
@@ -706,10 +706,10 @@ f(x) = I g(x),
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2023-03-27 16:21:32.399841: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
-2023-03-27 16:21:32.399864: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)
-2023-03-27 16:21:32.399887: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (7b90450172ae): /proc/driver/nvidia/version does not exist
-2023-03-27 16:21:32.400150: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2023-04-25 12:38:26.942115: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2023-04-25 12:38:26.942140: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)
+2023-04-25 12:38:26.942163: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (438c698d3ac9): /proc/driver/nvidia/version does not exist
+2023-04-25 12:38:26.942433: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
 </pre></div></div>
 </div>
@@ -1409,7 +1409,7 @@ STOP: TOTAL NO. of ITERATIONS REACHED LIMIT
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-ListWrapper([&lt;gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7fb53c3cdab0&gt;, &lt;gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7fb53c243100&gt;, &lt;gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7fb53c240790&gt;])
+ListWrapper([&lt;gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7f2c405cbd00&gt;, &lt;gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7f2c405cae00&gt;, &lt;gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7f2c405c80d0&gt;])
 </pre></div></div>
 </div>
 </section>
@@ -1801,7 +1801,7 @@ with the mixing matrix W.</p></td>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;code object wrapped_function at 0x7fb562e9b730, file &#34;/tmp/max_venv/lib/python3.10/site-packages/check_shapes/decorator.py&#34;, line 118&gt;
+&lt;code object wrapped_function at 0x7f2c577194d0, file &#34;/tmp/max_venv/lib/python3.10/site-packages/check_shapes/decorator.py&#34;, line 118&gt;
 </pre></div></div>
 </div>
 </section>
@@ -1838,7 +1838,7 @@ with the mixing matrix W.</p></td>
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 6.1.3.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 6.2.1.<br>
 </p>
   </div>
   
