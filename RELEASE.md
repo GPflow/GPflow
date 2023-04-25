@@ -55,6 +55,7 @@ This release contains contributions from:
 ## Bug Fixes and Other Changes
 
 * Fixed bug related to `tf.saved_model` and methods wrapped in `@check_shapes`.
+* Fixed missing docs for `SquaredExponential` and `Constant` kernels.
 * Added support for setting `tf.function` arguments for compilation in `Scipy` optimizer.
 
 ## Thanks to our Contributors
