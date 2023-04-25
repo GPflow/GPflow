@@ -13,14 +13,15 @@
 # limitations under the License.
 
 import warnings
-from typing import Any, Callable, Iterable, List, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Iterable, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import scipy.optimize
 import tensorflow as tf
+from packaging.version import Version
 from scipy.optimize import OptimizeResult
 
-from ..base import AnyNDArray
+from ..base import AnyNDArray, GraphCompile
 from ..monitor.base import Monitor
 
 __all__ = ["Scipy"]
@@ -28,6 +29,11 @@ __all__ = ["Scipy"]
 Variables = Iterable[tf.Variable]  # deprecated
 StepCallback = Union[Callable[[int, Sequence[tf.Variable], Sequence[tf.Tensor]], None], Monitor]
 LossClosure = Callable[[], tf.Tensor]
+
+if Version(tf.__version__) >= Version("2.5"):
+    jit_compile_arg = "jit_compile"
+else:
+    jit_compile_arg = "experimental_compile"
 
 
 class Scipy:
@@ -37,9 +43,8 @@ class Scipy:
         variables: Sequence[tf.Variable],
         method: Optional[str] = "L-BFGS-B",
         step_callback: Optional[StepCallback] = None,
-        compile: bool = True,
+        compile: Union[bool, GraphCompile] = True,
         allow_unused_variables: bool = False,
-        tffun_args: Optional[Mapping[str, Any]] = None,
         **scipy_kwargs: Any,
     ) -> OptimizeResult:
         """
@@ -61,9 +66,12 @@ class Scipy:
         :param compile: If True, wraps the evaluation function (the passed `closure` as well as its
             gradient computation) inside a `tf.function()`, which will improve optimization speed in
             most cases.
+
+            Optionally accepts :class:`GraphCompile` enumeration to control the compilation method:
+            'off' to turn off the wrapping, 'default' for default compilation and 'xla' for XLA
+            compilation.
         :param allow_unused_variables: Whether to allow variables that are not actually used in the
             closure.
-        :param tffun_args: Arguments passed through to `tf.function()` when `compile` is True.
         :param scipy_kwargs: Arguments passed through to `scipy.optimize.minimize`.
             Note that Scipy's minimize() takes a `callback` argument, but you probably want to use
             our wrapper and pass in `step_callback`.
@@ -71,8 +79,6 @@ class Scipy:
             The optimization result represented as a Scipy ``OptimizeResult`` object.
             See the Scipy documentation for description of attributes.
         """
-        if tffun_args is None:
-            tffun_args = {}
         if not callable(closure):
             raise TypeError(
                 "The 'closure' argument is expected to be a callable object."
@@ -83,8 +89,6 @@ class Scipy:
                 "The 'variables' argument is expected to only contain tf.Variable instances"
                 " (use model.trainable_variables, not model.trainable_parameters)"
             )  # pragma: no cover
-        if not compile and len(tffun_args) > 0:
-            raise ValueError("`tffun_args` should only be set when `compile` is True")
         initial_params = self.initial_parameters(variables)
 
         func = self.eval_func(
@@ -92,7 +96,6 @@ class Scipy:
             variables,
             compile=compile,
             allow_unused_variables=allow_unused_variables,
-            tffun_args=tffun_args,
         )
         if step_callback is not None:
             if "callback" in scipy_kwargs:
@@ -117,12 +120,11 @@ class Scipy:
         cls,
         closure: LossClosure,
         variables: Sequence[tf.Variable],
-        compile: bool = True,
+        compile: Union[bool, GraphCompile] = True,
         allow_unused_variables: bool = False,
-        tffun_args: Optional[Mapping[str, Any]] = None,
     ) -> Callable[[AnyNDArray], Tuple[AnyNDArray, AnyNDArray]]:
-        if tffun_args is None:
-            tffun_args = {}
+        if isinstance(compile, bool):
+            compile = GraphCompile.DEFAULT if compile else GraphCompile.OFF
         first_call = True
 
         def _tf_eval(x: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
@@ -145,7 +147,8 @@ class Scipy:
 
             return loss, cls.pack_tensors(grads)
 
-        if compile:
+        if compile != GraphCompile.OFF:
+            tffun_args = {jit_compile_arg: True} if compile == GraphCompile.XLA else {}
             _tf_eval = tf.function(_tf_eval, **tffun_args)
 
         def _eval(x: AnyNDArray) -> Tuple[AnyNDArray, AnyNDArray]:

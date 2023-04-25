@@ -70,6 +70,19 @@ def _IS_TRAINABLE_PARAMETER(o: object) -> bool:
     return isinstance(o, Parameter) and o.trainable
 
 
+class GraphCompile(Enum):
+    """Methods available for compilation of functions into TensorFlow graphs."""
+
+    OFF = "off"
+    """`tf.function` compilation is turned off."""
+
+    DEFAULT = "default"
+    """Enable `tf.function` default compilation."""
+
+    XLA = "xla"
+    """Enable `tf.function` XLA compilation."""
+
+
 class Module(tf.Module):
     """
     Modules recursively compose other Modules and parameters to create models.

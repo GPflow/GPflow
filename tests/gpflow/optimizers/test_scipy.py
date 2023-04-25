@@ -14,7 +14,7 @@
 
 import unittest
 import warnings
-from typing import Any, Dict
+from typing import Any, Dict, Union
 from unittest.mock import MagicMock
 
 import numpy as np
@@ -23,7 +23,7 @@ import tensorflow as tf
 from packaging.version import Version
 
 import gpflow
-from gpflow.base import AnyNDArray
+from gpflow.base import AnyNDArray, GraphCompile
 from gpflow.config import default_float
 from gpflow.models import GPR, GPModel
 
@@ -79,8 +79,7 @@ def test_scipy_jit() -> None:
         m3.training_loss,
         variables=m3.trainable_variables,
         options=dict(maxiter=50),
-        compile=True,
-        tffun_args={jit_compile_arg: True},
+        compile=GraphCompile.XLA,
     )
 
     def get_values(model: GPModel) -> AnyNDArray:
@@ -91,41 +90,28 @@ def test_scipy_jit() -> None:
 
 
 @unittest.mock.patch("tensorflow.function")
-@pytest.mark.parametrize("compile", [True, False])
-@pytest.mark.parametrize(
-    "tffun_args",
-    [{}, dict(jit_compile=True), dict(jit_compile=False, other_arg="dummy")],
-)
-def test_scipy__tffun_args(
-    mocked_tffun: MagicMock, compile: bool, tffun_args: Dict[str, Any]
-) -> None:
+@pytest.mark.parametrize("compile", [True, False] + [m.value for m in GraphCompile])
+def test_scipy__tffun_args(mocked_tffun: MagicMock, compile: Union[bool, GraphCompile]) -> None:
     mocked_tffun.side_effect = lambda f, **_: f
 
     m = _create_full_gp_model()
     opt = gpflow.optimizers.Scipy()
-    expect_raise = not compile and len(tffun_args)
-    if expect_raise:
-        with pytest.raises(
-            ValueError, match="`tffun_args` should only be set when `compile` is True"
-        ):
-            opt.minimize(
-                m.training_loss, m.trainable_variables, compile=compile, tffun_args=tffun_args
-            )
-    else:
-        opt.minimize(m.training_loss, m.trainable_variables, compile=compile, tffun_args=tffun_args)
+    opt.minimize(m.training_loss, m.trainable_variables, compile=compile)
 
-    if compile:
-        received_args = mocked_tffun.call_args[1]
-        expected_args = tffun_args
-    else:
+    if isinstance(compile, bool):
+        compile = GraphCompile.OFF if not compile else GraphCompile.DEFAULT
+    if compile == GraphCompile.OFF:
         # When no-compile, don't expect tf.function to be called.
         received_args = mocked_tffun.call_args
         expected_args = None
+    else:
+        received_args = mocked_tffun.call_args[1]
+        expected_args = {jit_compile_arg: True} if compile == GraphCompile.XLA else {}
     assert received_args == expected_args
 
 
-@pytest.mark.parametrize("compile,jit", [(True, True), (True, False), (False, False)])
-def test_scipy__optimal(compile: bool, jit: bool) -> None:
+@pytest.mark.parametrize("compile", [True, False] + [m.value for m in GraphCompile])
+def test_scipy__optimal(compile: Union[bool, GraphCompile]) -> None:
     target1 = [0.2, 0.8]
     target2 = [0.6]
     v1 = tf.Variable([0.5, 0.5], dtype=default_float())
@@ -138,9 +124,10 @@ def test_scipy__optimal(compile: bool, jit: bool) -> None:
         return tf.reduce_sum((target1 - v1) ** 2) + tf.reduce_sum((target2 - v2) ** 2)
 
     opt = gpflow.optimizers.Scipy()
-    tffun_args = {jit_compile_arg: True} if jit else {}
-    result = opt.minimize(f, [v1, v2], compile=compile, tffun_args=tffun_args)
+    result = opt.minimize(f, [v1, v2], compile=compile)
 
+    if isinstance(compile, GraphCompile):
+        compile = compile != GraphCompile.OFF
     if compile:
         assert 1 == compilation_count
     else:
@@ -151,8 +138,8 @@ def test_scipy__optimal(compile: bool, jit: bool) -> None:
     np.testing.assert_allclose(target2, v2)
 
 
-@pytest.mark.parametrize("compile,jit", [(True, True), (True, False), (False, False)])
-def test_scipy__partially_disconnected_variable(compile: bool, jit: bool) -> None:
+@pytest.mark.parametrize("compile", [True, False] + [m.value for m in GraphCompile])
+def test_scipy__partially_disconnected_variable(compile: Union[bool, GraphCompile]) -> None:
     target1 = 0.2
     target2 = 0.6
     v1 = tf.Variable([0.5, 0.5], dtype=default_float())
@@ -164,8 +151,7 @@ def test_scipy__partially_disconnected_variable(compile: bool, jit: bool) -> Non
         return (target1 - v10) ** 2 + (target2 - v2) ** 2
 
     opt = gpflow.optimizers.Scipy()
-    tffun_args = {jit_compile_arg: True} if jit else {}
-    result = opt.minimize(f, [v1, v2], compile=compile, tffun_args=tffun_args)
+    result = opt.minimize(f, [v1, v2], compile=compile)
 
     assert result.success
     np.testing.assert_allclose([target1, 0.5, target2], result.x)
@@ -173,10 +159,10 @@ def test_scipy__partially_disconnected_variable(compile: bool, jit: bool) -> Non
     np.testing.assert_allclose(target2, v2)
 
 
-@pytest.mark.parametrize("compile,jit", [(True, True), (True, False), (False, False)])
+@pytest.mark.parametrize("compile", [True, False] + [m.value for m in GraphCompile])
 @pytest.mark.parametrize("allow_unused_variables", [True, False])
 def test_scipy__disconnected_variable(
-    compile: bool, jit: bool, allow_unused_variables: bool
+    compile: Union[bool, GraphCompile], allow_unused_variables: bool
 ) -> None:
     target1 = [0.2, 0.8]
     v1 = tf.Variable([0.5, 0.5], dtype=default_float(), name="v1")
@@ -187,7 +173,6 @@ def test_scipy__disconnected_variable(
         return tf.reduce_sum((target1 - v1) ** 2)
 
     opt = gpflow.optimizers.Scipy()
-    tffun_args = {jit_compile_arg: True} if jit else {}
 
     if allow_unused_variables:
         with warnings.catch_warnings(record=True) as w:
@@ -197,7 +182,6 @@ def test_scipy__disconnected_variable(
                 [v1, v2],
                 compile=compile,
                 allow_unused_variables=allow_unused_variables,
-                tffun_args=tffun_args,
             )
 
         (warning,) = w
@@ -217,5 +201,4 @@ def test_scipy__disconnected_variable(
                 [v1, v2],
                 compile=compile,
                 allow_unused_variables=allow_unused_variables,
-                tffun_args=tffun_args,
             )
