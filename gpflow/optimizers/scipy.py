@@ -64,6 +64,10 @@ class Scipy:
         :param allow_unused_variables: Whether to allow variables that are not actually used in the
             closure.
         :param tffun_args: Arguments passed through to `tf.function()` when `compile` is True.
+            For example, to enable XLA compilation::
+
+                opt = gpflow.optimizers.Scipy()
+                opt.minimize(..., compile=True, tffun_args=dict(jit_compile=True))
         :param scipy_kwargs: Arguments passed through to `scipy.optimize.minimize`.
             Note that Scipy's minimize() takes a `callback` argument, but you probably want to use
             our wrapper and pass in `step_callback`.
