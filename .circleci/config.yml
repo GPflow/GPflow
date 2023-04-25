@@ -6,10 +6,7 @@ parameters:
     default: "3.7"
   max_py_ver:
     type: string
-    # Using the specific Python version due to poor interactions between some versions of Python,
-    # NumPy, and MyPy. You should be able to set this to just "3.10", after MyPy "0.980" has been
-    # released. See: https://github.com/python/mypy/issues/13627
-    default: "3.10.6"
+    default: "3.10"
   min_tf_ver:
     type: string
     default: "2.4.0"
@@ -277,8 +274,8 @@ jobs:
             mkdir docs_tmp
             python doc/build_docs.py --shard collect <<pipeline.git.branch>> docs_tmp
       - add_ssh_keys:
-          fingerprints:  # Add key to give write-access below
-            - "b5:9b:f3:74:26:00:b3:c3:de:3a:b3:03:ee:0b:0b:64"
+          fingerprints:  # Add key to give write-access below 
+            - "19:0a:d4:e6:43:fa:a4:d3:31:a6:0d:5b:43:05:db:63"
       - run:
           name: Commit documentation
           command: |
@@ -353,7 +350,7 @@ jobs:
             python -m benchmark.run --no_plot --shard collect --no_subdir ci ${results_dir}
       - add_ssh_keys:
           fingerprints:  # Add key to give write-access below
-            - "b5:9b:f3:74:26:00:b3:c3:de:3a:b3:03:ee:0b:0b:64"
+            - "19:0a:d4:e6:43:fa:a4:d3:31:a6:0d:5b:43:05:db:63"
       - run:
           name: Generate and commit plots
           command: |
@@ -407,8 +404,8 @@ jobs:
           name: Init .pypirc
           command: |
             echo -e "[pypi]" >> ~/.pypirc
-            echo -e "username = artemav" >> ~/.pypirc
-            echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc
+            echo -e "username = __token__" >> ~/.pypirc
+            echo -e "password = $PYPI_TOKEN" >> ~/.pypirc
       - run:
           name: Create pip package
           command: |

@@ -3,11 +3,11 @@ from typing import Any, Optional, Tuple
 import numpy as np
 import pytest
 import tensorflow as tf
+from check_shapes import check_shapes
 
 import gpflow
 from gpflow import set_trainable
 from gpflow.config import default_float
-from gpflow.experimental.check_shapes import check_shapes
 from gpflow.kernels import Kernel, SquaredExponential
 from gpflow.likelihoods import Gaussian, Likelihood
 from gpflow.models import GPR, SGPR, SVGP, VGP, BayesianModel

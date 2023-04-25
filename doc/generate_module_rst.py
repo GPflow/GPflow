@@ -18,7 +18,7 @@ import inspect
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Deque, Dict, List, Mapping, Optional, Set, TextIO, Type, Union
+from typing import Any, Callable, Deque, Dict, List, Mapping, Set, TextIO, Tuple, Type, Union
 
 from gpflow.utilities import Dispatcher
 
@@ -140,10 +140,13 @@ class DocumentableModule:
             if child_name in IGNORE_MODULES:
                 continue
 
+            # pylint: disable=cell-var-from-loop
             def _should_ignore(child: Union[Callable[..., Any], Type[Any]]) -> bool:
                 declared_in_root = child.__module__ == root_name
                 explicitly_exported = key in exported_names
                 return not (declared_in_root or explicitly_exported)
+
+            # pylint: enable=cell-var-from-loop
 
             if isinstance(child, Dispatcher):
                 functions.append(DocumentableDispatcher(child_name, child))
@@ -162,17 +165,19 @@ class DocumentableModule:
 
         return DocumentableModule(root_name, root, modules, classes, functions)
 
-    def seen_in_dispatchers(self, seen: Set[int]) -> None:
+    def seen_in_dispatchers(self, seen: Set[Tuple[str, int]]) -> None:
         for module in self.modules:
             module.seen_in_dispatchers(seen)
         for function in self.functions:
             if isinstance(function, DocumentableDispatcher):
                 impls = function.obj.funcs.values()
                 for impl in impls:
-                    seen.add(id(impl))
+                    # See comment below (for classes) about aliases.
+                    key = (impl.__name__, id(impl))
+                    seen.add(key)
 
     def prune_duplicates(self) -> None:
-        seen: Set[int] = set()
+        seen: Set[Tuple[str, int]] = set()
         self.seen_in_dispatchers(seen)
 
         # Breadth-first search so that we prefer objects with shorter names.
@@ -182,15 +187,20 @@ class DocumentableModule:
 
             new_classes = []
             for c in module.classes:
-                if id(c.obj) not in seen:
-                    seen.add(id(c.obj))
+                # Account for objects to have aliases, hence include the object name in the key.
+                # We want to generate documentation for both the alias and the original object.
+                key = (c.name[c.name.rfind(".") + 1 :], id(c.obj))
+                if key not in seen:
+                    seen.add(key)
                     new_classes.append(c)
             module.classes = new_classes
 
             new_functions = []
             for f in module.functions:
-                if id(f.obj) not in seen:
-                    seen.add(id(f.obj))
+                # See comment above (for classes) about aliases.
+                key = (f.name[f.name.rfind(".") + 1 :], id(f.obj))
+                if key not in seen:
+                    seen.add(key)
                     new_functions.append(f)
             module.functions = new_functions
 

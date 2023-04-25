@@ -24,15 +24,15 @@ import matplotlib.pyplot as plt
 # %matplotlib inline
 plt.rcParams["figure.figsize"] = (12, 6)
 
+import logging
+
 import numpy as np
 import tensorflow as tf
 
 import gpflow
 from gpflow import set_trainable
-from gpflow.utilities import print_summary
 from gpflow.ci_utils import reduce_in_tests
-
-import logging
+from gpflow.utilities import print_summary
 
 logging.disable(logging.WARNING)
 
@@ -54,7 +54,9 @@ def plot_model(m, name=""):
         Z = m.inducing_variable.Z.numpy()
         plt.plot(Z, np.zeros_like(Z), "o")
     two_sigma = (2.0 * pYv ** 0.5)[:, 0]
-    plt.fill_between(pX[:, 0], pY[:, 0] - two_sigma, pY[:, 0] + two_sigma, alpha=0.15)
+    plt.fill_between(
+        pX[:, 0], pY[:, 0] - two_sigma, pY[:, 0] + two_sigma, alpha=0.15
+    )
     lml = m.maximum_log_likelihood_objective().numpy()
     plt.title("%s (lml = %f)" % (name, lml))
     return lml
@@ -66,7 +68,9 @@ def plot_model(m, name=""):
 # %%
 gpr = gpflow.models.GPR((X, Y), gpflow.kernels.SquaredExponential())
 gpflow.optimizers.Scipy().minimize(
-    gpr.training_loss, gpr.trainable_variables, options=dict(maxiter=reduce_in_tests(1000))
+    gpr.training_loss,
+    gpr.trainable_variables,
+    options=dict(maxiter=reduce_in_tests(1000)),
 )
 full_lml = plot_model(gpr)
 
@@ -81,7 +85,9 @@ vupper_lml = []
 vfe_hyps = []
 for M in Ms:
     Zinit = X[:M, :].copy()
-    vfe = gpflow.models.SGPR((X, Y), gpflow.kernels.SquaredExponential(), inducing_variable=Zinit)
+    vfe = gpflow.models.SGPR(
+        (X, Y), gpflow.kernels.SquaredExponential(), inducing_variable=Zinit
+    )
     gpflow.optimizers.Scipy().minimize(
         vfe.training_loss,
         vfe.trainable_variables,
@@ -121,9 +127,13 @@ del init_params[".inducing_variable.Z"]
 
 for M in fMs:
     Zinit = vfe.inducing_variable.Z.numpy()[:M, :]
-    Zinit = np.vstack((Zinit, X[np.random.permutation(len(X))[: (M - len(Zinit))], :].copy()))
+    Zinit = np.vstack(
+        (Zinit, X[np.random.permutation(len(X))[: (M - len(Zinit))], :].copy())
+    )
 
-    vfe = gpflow.models.SGPR((X, Y), gpflow.kernels.SquaredExponential(), inducing_variable=Zinit)
+    vfe = gpflow.models.SGPR(
+        (X, Y), gpflow.kernels.SquaredExponential(), inducing_variable=Zinit
+    )
 
     # copy hyperparameters (omitting inducing_variable.Z) from optimized model:
     gpflow.utilities.multiple_assign(vfe, init_params)
@@ -162,11 +172,16 @@ assert np.all(np.array(fvupper_lml) - np.array(fvfe_lml) > 0.0)
 # %%
 single_inducing_point = X[:1, :].copy()
 vfe = gpflow.models.SGPR(
-    (X, Y), gpflow.kernels.SquaredExponential(), inducing_variable=single_inducing_point
+    (X, Y),
+    gpflow.kernels.SquaredExponential(),
+    inducing_variable=single_inducing_point,
 )
 objective = tf.function(vfe.training_loss)
 gpflow.optimizers.Scipy().minimize(
-    objective, vfe.trainable_variables, options=dict(maxiter=reduce_in_tests(1000)), compile=False
+    objective,
+    vfe.trainable_variables,
+    options=dict(maxiter=reduce_in_tests(1000)),
+    compile=False,
 )
 # Note that we need to set compile=False here due to a discrepancy in compiling with tf.function
 # see https://github.com/GPflow/GPflow/issues/1260

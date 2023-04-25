@@ -17,14 +17,15 @@ from typing import Any, Callable, List, Sequence, Tuple, cast
 import numpy as np
 import pytest
 import tensorflow as tf
+from check_shapes import check_shape as cs
+from check_shapes import check_shapes
 from numpy.testing import assert_allclose
 
 import gpflow
 import gpflow.ci_utils
 from gpflow import kernels
 from gpflow.base import AnyNDArray, TensorType
-from gpflow.experimental.check_shapes import check_shape as cs
-from gpflow.experimental.check_shapes import check_shapes
+from gpflow.kernels.categorical import Categorical
 
 
 def create_kernels() -> Sequence[kernels.Kernel]:
@@ -61,6 +62,11 @@ def create_kernels() -> Sequence[kernels.Kernel]:
         kernels.SharedIndependent(kernels.Matern32(), output_dim=5),
         kernels.SeparateIndependent([kernels.Matern32() for _ in range(5)]),
         kernels.LinearCoregionalization([kernels.Matern32() for _ in range(3)], np.ones((5, 3))),
+        Categorical(
+            non_categorical_kernel=kernels.RBF(lengthscales=0.1),
+            categorical_kernel=kernels.RBF(lengthscales=0.1),
+            num_labels=3,
+        ),
     ]
     return result
 

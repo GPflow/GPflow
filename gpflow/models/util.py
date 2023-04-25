@@ -16,10 +16,10 @@ from typing import Any, Callable, Sequence, Union
 
 import numpy as np
 import tensorflow as tf
+from check_shapes import check_shapes
 
 from ..base import AnyNDArray
 from ..config import default_float
-from ..experimental.check_shapes import check_shapes
 from ..inducing_variables import InducingPoints, InducingVariables
 from .model import BayesianModel
 from .training_mixins import Data, ExternalDataTrainingLossMixin

@@ -1,9 +1,9 @@
 from typing import Any, Callable
 
 import tensorflow as tf
+from check_shapes import check_shapes
 
 from ..base import TensorType
-from ..experimental.check_shapes import check_shapes
 from ..likelihoods import Gaussian
 
 

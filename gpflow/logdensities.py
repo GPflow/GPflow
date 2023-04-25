@@ -14,9 +14,9 @@
 
 import numpy as np
 import tensorflow as tf
+from check_shapes import check_shapes
 
 from .base import TensorType
-from .experimental.check_shapes import check_shapes
 from .utilities import to_default_float
 
 

@@ -17,9 +17,9 @@
 from typing import Type, Union
 
 import tensorflow as tf
+from check_shapes import check_shapes
 
 from .. import mean_functions as mfn
-from ..experimental.check_shapes import check_shapes
 from ..probability_distributions import Gaussian
 from . import dispatch
 from .expectations import expectation

@@ -40,14 +40,13 @@
 #  * Augment the training data Y with an extra column that contains an integer index to indicate which likelihood an observation is associated with.
 
 # %%
-import gpflow
-import tensorflow as tf
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+
+import gpflow
+from gpflow.ci_utils import reduce_in_tests
 
 # %matplotlib inline
-
-from gpflow.ci_utils import reduce_in_tests
 
 plt.rcParams["figure.figsize"] = (12, 6)
 np.random.seed(123)
@@ -80,10 +79,14 @@ _ = plt.plot(X2, Y2, "x", mew=2)
 
 # %%
 # Augment the input with ones or zeros to indicate the required output dimension
-X_augmented = np.vstack((np.hstack((X1, np.zeros_like(X1))), np.hstack((X2, np.ones_like(X2)))))
+X_augmented = np.vstack(
+    (np.hstack((X1, np.zeros_like(X1))), np.hstack((X2, np.ones_like(X2))))
+)
 
 # Augment the Y data with ones or zeros that specify a likelihood from the list of likelihoods
-Y_augmented = np.vstack((np.hstack((Y1, np.zeros_like(Y1))), np.hstack((Y2, np.ones_like(Y2)))))
+Y_augmented = np.vstack(
+    (np.hstack((Y1, np.zeros_like(Y1))), np.hstack((Y2, np.ones_like(Y2))))
+)
 
 # %% [markdown]
 # ## Building the coregionalization kernel
@@ -97,7 +100,9 @@ rank = 1  # Rank of W
 k = gpflow.kernels.Matern32(active_dims=[0])
 
 # Coregion kernel
-coreg = gpflow.kernels.Coregion(output_dim=output_dim, rank=rank, active_dims=[1])
+coreg = gpflow.kernels.Coregion(
+    output_dim=output_dim, rank=rank, active_dims=[1]
+)
 
 kern = k * coreg
 

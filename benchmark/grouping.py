@@ -33,6 +33,10 @@ class GroupingKeySource(str, Enum):
     PLOTTER = "plotter"
 
 
+# FIXME: WARNING!  There is a [bug](https://github.com/python/cpython/issues/91267)
+# in cpython3.8 which causes this construction to fail on declaration, throwing
+# TypeError: 'GroupingKey': too many data types: [<class 'tuple'>, <class 'typing.Generic'>]
+# Using any other version of python fixes this.
 class GroupingKey(Tuple[GroupingKeySource, type, bool, float], Enum):
     """ Keys we can group by. """
 

@@ -91,9 +91,12 @@ class Scipy:
             callback = self.callback_func(variables, step_callback)
             scipy_kwargs.update(dict(callback=callback))
 
-        return scipy.optimize.minimize(
+        opt_result = scipy.optimize.minimize(
             func, initial_params, jac=True, method=method, **scipy_kwargs
         )
+        values = self.unpack_tensors(variables, opt_result.x)
+        self.assign_tensors(variables, values)
+        return opt_result
 
     @classmethod
     def initial_parameters(cls, variables: Sequence[tf.Variable]) -> tf.Tensor:

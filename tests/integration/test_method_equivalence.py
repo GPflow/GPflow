@@ -16,12 +16,12 @@ from typing import Optional, Tuple
 
 import numpy as np
 import pytest
+from check_shapes import ShapeChecker
 from numpy.testing import assert_allclose
 
 import gpflow
 from gpflow.base import AnyNDArray, TensorType
 from gpflow.config import default_jitter
-from gpflow.experimental.check_shapes import ShapeChecker
 from gpflow.kernels import Kernel
 from gpflow.likelihoods import Likelihood
 from gpflow.mean_functions import Constant

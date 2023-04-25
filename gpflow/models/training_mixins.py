@@ -32,10 +32,10 @@ to the objective function (ExternalDataTrainingLossMixin).
 from typing import Callable, TypeVar, Union
 
 import tensorflow as tf
+from check_shapes import check_shapes
 from tensorflow.python.data.ops.iterator_ops import OwnedIterator as DatasetOwnedIterator
 
 from ..base import InputData, OutputData, RegressionData
-from ..experimental.check_shapes import check_shapes
 
 Data = TypeVar("Data", RegressionData, InputData, OutputData)
 

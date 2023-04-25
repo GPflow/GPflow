@@ -15,11 +15,11 @@
 from typing import Optional, Tuple
 
 import tensorflow as tf
+from check_shapes import check_shape as cs
+from check_shapes import check_shapes
 
 from ..base import MeanAndVariance
 from ..config import default_float, default_jitter
-from ..experimental.check_shapes import check_shape as cs
-from ..experimental.check_shapes import check_shapes
 from ..utilities.ops import leading_transpose
 
 

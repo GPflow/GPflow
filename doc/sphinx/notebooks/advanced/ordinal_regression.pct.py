@@ -19,11 +19,10 @@
 # Ordinal regression aims to fit a model to some data $(X, Y)$, where $Y$ is an ordinal variable. To do so, we use a `VPG` model with a specific likelihood (`gpflow.likelihoods.Ordinal`).
 
 # %%
-import gpflow
-
-import tensorflow as tf
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+
+import gpflow
 
 # %matplotlib inline
 plt.rcParams["figure.figsize"] = (12, 6)
@@ -45,7 +44,9 @@ def generate_data(num_data):
     # Now generate values of a latent GP
     kern = gpflow.kernels.SquaredExponential(lengthscales=0.1)
     K = kern(X)
-    f = np.random.multivariate_normal(mean=np.zeros(num_data), cov=K).reshape(-1, 1)
+    f = np.random.multivariate_normal(mean=np.zeros(num_data), cov=K).reshape(
+        -1, 1
+    )
 
     # Finally convert f values into ordinal values Y
     Y = np.round((f + f.min()) * 3)
@@ -74,7 +75,9 @@ bin_edges = bin_edges - bin_edges.mean()
 likelihood = gpflow.likelihoods.Ordinal(bin_edges)
 
 # build a model with this likelihood
-m = gpflow.models.VGP(data=(X, Y), kernel=gpflow.kernels.Matern32(), likelihood=likelihood)
+m = gpflow.models.VGP(
+    data=(X, Y), kernel=gpflow.kernels.Matern32(), likelihood=likelihood
+)
 
 # fit the model
 opt = gpflow.optimizers.Scipy()

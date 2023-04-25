@@ -15,10 +15,10 @@
 from typing import Type, Union
 
 import tensorflow as tf
+from check_shapes import check_shapes
 
 from .. import kernels
 from .. import mean_functions as mfn
-from ..experimental.check_shapes import check_shapes
 from ..inducing_variables import InducingPoints
 from ..probability_distributions import DiagonalGaussian, Gaussian, MarkovGaussian
 from ..utilities.ops import square_distance

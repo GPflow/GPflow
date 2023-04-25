@@ -16,11 +16,11 @@ from typing import Any, Callable
 
 import numpy as np
 import tensorflow as tf
+from check_shapes import check_shapes, inherit_check_shapes
 
 from .. import logdensities
 from ..base import AnyNDArray, MeanAndVariance, Parameter, TensorType
 from ..config import default_float
-from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..utilities import positive, to_default_int
 from .base import ScalarLikelihood
 from .utils import inv_probit

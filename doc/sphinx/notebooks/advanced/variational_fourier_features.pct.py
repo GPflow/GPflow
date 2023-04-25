@@ -24,16 +24,17 @@
 # We cannot directly use Fourier features within the multi-output framework without losing the computational advantages, as `Kuu` and `Kuf` for SharedIndependent and SeparateIndependent inducing variables assume that the sub-inducing variable's covariances are simply computed as dense Tensors. However, there is nothing preventing a dedicated implementation of multi-output Fourier features that is computationally more efficient - feel free to discuss this within [the GPflow community](https://github.com/GPflow/GPflow/#the-gpflow-community)!
 
 # %%
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
+from check_shapes import Shape
+
 import gpflow
-from gpflow.inducing_variables import InducingVariables
-from gpflow.base import TensorLike
-from gpflow.utilities import to_default_float
 from gpflow import covariances as cov
 from gpflow import kullback_leiblers as kl
+from gpflow.base import TensorLike
 from gpflow.ci_utils import reduce_in_tests
-from gpflow.experimental.check_shapes import Shape
+from gpflow.inducing_variables import InducingVariables
+from gpflow.utilities import to_default_float
 
 # %%
 # VFF give structured covariance matrices that are computationally efficient.
@@ -90,15 +91,27 @@ def Kuu_matern12_fourierfeatures1d(inducing_variable, kernel, jitter=None):
     lamb = 1.0 / kernel.lengthscales
     two_or_four = to_default_float(tf.where(omegas == 0, 2.0, 4.0))
     d_cos = (
-        (b - a) * (tf.square(lamb) + tf.square(omegas)) / lamb / kernel.variance / two_or_four
+        (b - a)
+        * (tf.square(lamb) + tf.square(omegas))
+        / lamb
+        / kernel.variance
+        / two_or_four
     )  # eq. (111)
     v_cos = tf.ones_like(d_cos) / tf.sqrt(kernel.variance)  # eq. (110)
-    cosine_block = LowRank(Diag(d_cos, is_positive_definite=True), v_cos[:, None])
+    cosine_block = LowRank(
+        Diag(d_cos, is_positive_definite=True), v_cos[:, None]
+    )
 
     # Sine block:
-    omegas = omegas[tf.not_equal(omegas, 0)]  # the sine block does not include omega=0
+    omegas = omegas[
+        tf.not_equal(omegas, 0)
+    ]  # the sine block does not include omega=0
     d_sin = (
-        (b - a) * (tf.square(lamb) + tf.square(omegas)) / lamb / kernel.variance / 4.0
+        (b - a)
+        * (tf.square(lamb) + tf.square(omegas))
+        / lamb
+        / kernel.variance
+        / 4.0
     )  # eq. (113)
     sine_block = Diag(d_sin, is_positive_definite=True)
 
@@ -116,7 +129,9 @@ def Kuf_matern12_fourierfeatures1d(inducing_variable, kernel, X):
     Kuf_sin = tf.sin(omegas_sin[:, None] * (X[None, :] - a))
 
     # correct Kuf outside [a, b] -- see Table 1
-    Kuf_sin = tf.where((X < a) | (X > b), tf.zeros_like(Kuf_sin), Kuf_sin)  # just zero
+    Kuf_sin = tf.where(
+        (X < a) | (X > b), tf.zeros_like(Kuf_sin), Kuf_sin
+    )  # just zero
 
     left_tail = tf.exp(-tf.abs(X - a) / kernel.lengthscales)[None, :]
     right_tail = tf.exp(-tf.abs(X - b) / kernel.lengthscales)[None, :]
@@ -142,7 +157,9 @@ def Kuu_matern32_fourierfeatures1d(inducing_variable, kernel, jitter=None):
         / four_or_eight
     )
     v_cos = tf.ones_like(d_cos) / tf.sqrt(kernel.variance)
-    cosine_block = LowRank(Diag(d_cos, is_positive_definite=True), v_cos[:, None])
+    cosine_block = LowRank(
+        Diag(d_cos, is_positive_definite=True), v_cos[:, None]
+    )
 
     # Sine block: eq. (115)
     omegas = omegas[tf.not_equal(omegas, 0)]  # don't compute omega=0
@@ -192,7 +209,9 @@ def Kuf_matern32_fourierfeatures1d(inducing_variable, kernel, X):
 # In principle, this is all we need; however, to be able to take advantage of the structure of `Kuu`, we need to also implement new versions of the KL divergence from the prior to the approximate posterior (`prior_kl`) and the computation of the Gaussian process conditional (posterior) equations:
 
 # %%
-@kl.prior_kl.register(FourierFeatures1D, gpflow.kernels.Kernel, TensorLike, TensorLike)
+@kl.prior_kl.register(
+    FourierFeatures1D, gpflow.kernels.Kernel, TensorLike, TensorLike
+)
 def prior_kl_vff(inducing_variable, kernel, q_mu, q_sqrt, whiten=False):
     if whiten:
         raise NotImplementedError
@@ -229,7 +248,9 @@ def gauss_kl_vff(q_mu, q_sqrt, K):
     num_latent_gps = to_default_float(tf.shape(q_mu)[1])
     logdet_prior = num_latent_gps * K.log_abs_determinant()
 
-    product_of_dimensions__int = tf.reduce_prod(tf.shape(q_sqrt)[:-1])  # dimensions are integers
+    product_of_dimensions__int = tf.reduce_prod(
+        tf.shape(q_sqrt)[:-1]
+    )  # dimensions are integers
     constant_term = to_default_float(product_of_dimensions__int)
 
     Lq = tf.linalg.band_part(q_sqrt, -1, 0)  # force lower triangle
@@ -241,7 +262,9 @@ def gauss_kl_vff(q_mu, q_sqrt, K):
         tf.reduce_sum(Lq * K.solve(Lq), axis=[-1, -2])
     )  # [O(N²) instead of O(N³)
 
-    twoKL = trace_term + mahalanobis_term - constant_term + logdet_prior - logdet_q
+    twoKL = (
+        trace_term + mahalanobis_term - constant_term + logdet_prior - logdet_q
+    )
     return 0.5 * twoKL
 
 
@@ -270,7 +293,9 @@ class VFFPosterior(gpflow.posteriors.BasePosterior):
 
         # compute the covariance due to the conditioning
         if full_cov:
-            fvar = self.kernel(Xnew) - tf.matmul(Kuf, KuuInv_Kuf, transpose_a=True)
+            fvar = self.kernel(Xnew) - tf.matmul(
+                Kuf, KuuInv_Kuf, transpose_a=True
+            )
             shape = (num_func, 1, 1)
         else:
             KufT_KuuInv_Kuf_diag = tf.reduce_sum(Kuf * KuuInv_Kuf, axis=-2)
@@ -305,7 +330,10 @@ class VFFPosterior(gpflow.posteriors.BasePosterior):
                 # LTA = (A.T @ DenseMatrix(q_sqrt[:,:,0])).T.get()[None, :, :]
                 ATL = tf.matmul(A, q_sqrt, transpose_a=True)
             else:
-                raise ValueError("Bad dimension for q_sqrt: %s" % str(q_sqrt.get_shape().ndims))
+                raise ValueError(
+                    "Bad dimension for q_sqrt: %s"
+                    % str(q_sqrt.get_shape().ndims)
+                )
             if full_cov:
                 # fvar = fvar + tf.matmul(LTA, LTA, transpose_a=True)  # K x N x N
                 fvar = fvar + tf.matmul(ATL, ATL, transpose_b=True)  # K x N x N
@@ -338,13 +366,17 @@ class VFFPosterior(gpflow.posteriors.BasePosterior):
         else:
             # Qinv = Kuu⁻¹ - Kuu⁻¹ S Kuu⁻¹
             KuuInv_qsqrt = Kuu.solve(q_sqrt)
-            KuuInv_covu_KuuInv = tf.matmul(KuuInv_qsqrt, KuuInv_qsqrt, transpose_b=True)
+            KuuInv_covu_KuuInv = tf.matmul(
+                KuuInv_qsqrt, KuuInv_qsqrt, transpose_b=True
+            )
 
         Qinv = Kuu.inverse().to_dense() - KuuInv_covu_KuuInv
 
         return gpflow.posteriors.PrecomputedValue.wrap_alpha_Qinv(alpha, Qinv)
 
-    def _conditional_with_precompute(self, cache, Xnew, full_cov, full_output_cov):
+    def _conditional_with_precompute(
+        self, cache, Xnew, full_cov, full_output_cov
+    ):
         alpha, Qinv = cache
 
         if full_output_cov:
@@ -360,7 +392,9 @@ class VFFPosterior(gpflow.posteriors.BasePosterior):
 
         # compute the covariance due to the conditioning
         if full_cov:
-            fvar = self.kernel(Xnew) - tf.matmul(Kuf, Qinv_Kuf, transpose_a=True)
+            fvar = self.kernel(Xnew) - tf.matmul(
+                Kuf, Qinv_Kuf, transpose_a=True
+            )
         else:
             KufT_Qinv_Kuf_diag = tf.reduce_sum(Kuf * Qinv_Kuf, axis=-2)
             fvar = self.kernel(Xnew, full_cov=False) - KufT_Qinv_Kuf_diag
@@ -373,7 +407,9 @@ class VFFPosterior(gpflow.posteriors.BasePosterior):
 # We now have to register our Posterior object:
 
 # %%
-@gpflow.posteriors.get_posterior_class.register(gpflow.kernels.Kernel, FourierFeatures1D)
+@gpflow.posteriors.get_posterior_class.register(
+    gpflow.kernels.Kernel, FourierFeatures1D
+)
 def _get_posterior_vff(kernel, inducing_variable):
     return VFFPosterior
 
@@ -392,11 +428,21 @@ f = np.random.randn(M, 1)
 q_sqrt = tf.convert_to_tensor(np.tril(np.random.randn(1, M, M)))
 
 conditional_f_mean, conditional_f_var = gpflow.conditionals.conditional(
-    Xnew, inducing_variable, kernel, f, q_sqrt=q_sqrt, white=False, full_cov=True
+    Xnew,
+    inducing_variable,
+    kernel,
+    f,
+    q_sqrt=q_sqrt,
+    white=False,
+    full_cov=True,
 )
 
-posterior = VFFPosterior(kernel, inducing_variable, f, q_sqrt, whiten=False, precompute_cache=None)
-posterior_f_mean, posterior_f_var = posterior.fused_predict_f(Xnew, full_cov=True)
+posterior = VFFPosterior(
+    kernel, inducing_variable, f, q_sqrt, whiten=False, precompute_cache=None
+)
+posterior_f_mean, posterior_f_var = posterior.fused_predict_f(
+    Xnew, full_cov=True
+)
 
 np.testing.assert_array_equal(conditional_f_mean, posterior_f_mean)
 np.testing.assert_array_equal(conditional_f_var, posterior_f_var)
@@ -407,7 +453,9 @@ np.testing.assert_array_equal(conditional_f_var, posterior_f_var)
 
 # %%
 posterior.update_cache(gpflow.posteriors.PrecomputeCacheType.TENSOR)
-precomputed_posterior_f_mean, precomputed_posterior_f_var = posterior.predict_f(Xnew, full_cov=True)
+precomputed_posterior_f_mean, precomputed_posterior_f_var = posterior.predict_f(
+    Xnew, full_cov=True
+)
 
 np.testing.assert_allclose(precomputed_posterior_f_mean, posterior_f_mean)
 np.testing.assert_allclose(precomputed_posterior_f_var, posterior_f_var)
@@ -453,7 +501,9 @@ m = gpflow.models.SVGP(
 )
 gpflow.set_trainable(m.kernel, False)
 gpflow.set_trainable(m.likelihood, False)
-gpflow.set_trainable(m.inducing_variable, True)  # whether to optimize bounds [a, b]
+gpflow.set_trainable(
+    m.inducing_variable, True
+)  # whether to optimize bounds [a, b]
 
 # %%
 opt = gpflow.optimizers.Scipy()
@@ -478,7 +528,9 @@ m_ip = gpflow.models.SVGP(
 )
 gpflow.set_trainable(m_ip.kernel, False)
 gpflow.set_trainable(m_ip.likelihood, False)
-gpflow.set_trainable(m_ip.inducing_variable, True)  # whether to optimize inducing point locations
+gpflow.set_trainable(
+    m_ip.inducing_variable, True
+)  # whether to optimize inducing point locations
 
 # %%
 opt = gpflow.optimizers.Scipy()
@@ -491,7 +543,9 @@ opt.minimize(
 gpflow.utilities.print_summary(m_ip, fmt="notebook")
 
 # %%
-m_ref = gpflow.models.GPR((X.reshape(-1, 1), Y.reshape(-1, 1)), kernel=gpflow.kernels.Matern32())
+m_ref = gpflow.models.GPR(
+    (X.reshape(-1, 1), Y.reshape(-1, 1)), kernel=gpflow.kernels.Matern32()
+)
 m_ref.likelihood.variance = np.array(noise_scale ** 2).astype(np.float64)
 gpflow.set_trainable(m_ref.kernel, False)
 gpflow.set_trainable(m_ref.likelihood, False)
@@ -515,7 +569,11 @@ def plot_gp(m, Xnew, name=""):
     Fvar = Fvar.numpy().squeeze()
     (p,) = plt.plot(Xnew, Fmean, label=name)
     plt.fill_between(
-        Xnew, Fmean - 2 * np.sqrt(Fvar), Fmean + 2 * np.sqrt(Fvar), alpha=0.3, color=p.get_color()
+        Xnew,
+        Fmean - 2 * np.sqrt(Fvar),
+        Fmean + 2 * np.sqrt(Fvar),
+        alpha=0.3,
+        color=p.get_color(),
     )
 
 

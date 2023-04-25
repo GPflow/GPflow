@@ -15,12 +15,14 @@
 Code for building GPflow's documentation for a specified branch.
 """
 import argparse
+import json
 import shutil
 import subprocess
+from datetime import datetime
 from itertools import chain
 from pathlib import Path
 from time import perf_counter
-from typing import Collection, Optional
+from typing import Collection, Optional, Union
 
 from generate_module_rst import generate_module_rst
 from tabulate import tabulate
@@ -36,6 +38,94 @@ _TMP = Path("/tmp/gpflow_build_docs")
 _BUILD_TMP = _TMP / "build"
 _NOTEBOOKS_TMP = _BUILD_TMP / "notebooks"
 _DOCTREE_TMP = _TMP / "doctree"
+
+
+def _post_process_ipynb(ipynb_relative_path: Path) -> None:
+    """
+    Post processes notebooks, mostly to remove stuff the end-user shouln't see.
+
+    I've kind of got a hunch there should be a prettier way to do this, but this is simple enough
+    and it works...
+    """
+    ipynb_path = _NOTEBOOKS_TMP / ipynb_relative_path
+
+    with open(ipynb_path, "rt") as f_read:
+        notebook = json.load(f_read)
+
+    new_cells = []
+    execution_count = 0
+    hide_input_count = 0
+    remove_cell_count = 0
+
+    for cell in notebook["cells"]:
+        remove_cell = False
+
+        if cell["cell_type"] == "code":
+            print("--------------------------------------------------")
+            print("".join(cell["source"]))
+            execution_times = cell["metadata"]["execution"]
+            start = datetime.fromisoformat(execution_times["iopub.execute_input"][:-1])
+            end = datetime.fromisoformat(execution_times["iopub.status.idle"][:-1])
+            print("Execution time:", end - start)
+
+            hiding: Union[bool, int] = False
+            source = cell["source"]
+            new_source = []
+            for line in source:
+                if line.startswith("#"):
+                    tokens = line[1:].split()
+                    if tokens[0] == "hide:":
+                        if tokens[1] == "begin":
+                            assert not hiding, "Missing: # hide: end"
+                            hide_input_count += 1
+                            hiding = True
+                        else:
+                            assert hiding, "Missing: # hide: begin"
+                            assert tokens[1] == "end"
+                            hiding = 1
+                    if tokens[0] == "remove-cell":
+                        remove_cell = True
+                elif line.startswith("_ = "):
+                    line = line[4:]
+
+                if not hiding:
+                    new_source.append(line)
+                elif not isinstance(hiding, bool):
+                    hiding -= 1
+
+            assert not hiding, "Missing: # hide: end"
+
+            while new_source and new_source[0].strip() == "":
+                new_source.pop(0)
+            while new_source and new_source[-1].strip() == "":
+                new_source.pop()
+                while new_source and new_source[-1][-1] == "\n":
+                    new_source[-1] = new_source[-1][:-1]
+
+            cell["source"] = new_source
+
+            if not new_source:
+                remove_cell = True
+
+            if not remove_cell:
+                # Fix execution counts that may have been distorted by 'remove-cell':
+                execution_count += 1
+                cell["execution_count"] = execution_count
+
+        if remove_cell:
+            print("Removing cell")
+            remove_cell_count += 1
+        else:
+            new_cells.append(cell)
+
+    if hide_input_count > 0:
+        print(f"Removed {hide_input_count} sections tagged with `# hide`.")
+    if remove_cell_count > 0:
+        print(f"Removed {remove_cell_count} cells tagged with `# remove-cell`.")
+
+    notebook["cells"] = new_cells
+    with open(ipynb_path, "wt") as f_write:
+        json.dump(notebook, f_write, indent=1)
 
 
 class ShardingStrategy:
@@ -82,7 +172,7 @@ def _create_fake_notebook(
     destination_relative_path: Path, limit_notebooks: Collection[str]
 ) -> None:
     limiting_command = f"--limit_notebooks {' '.join(limit_notebooks)}"
-    print(f"Generating fake, due to {limiting_command}")
+    print(f'Generating fake, due to: "{limiting_command}"')
 
     destination = _NOTEBOOKS_TMP / destination_relative_path
     title = f"Fake {destination.name}"
@@ -136,6 +226,7 @@ def _build_notebooks(
                 ],
                 cwd=_NOTEBOOKS_TMP,
             ).check_returncode()
+            _post_process_ipynb(destination_relative_path)
         else:
             _create_fake_notebook(destination_relative_path, limit_notebooks)
 
@@ -171,7 +262,7 @@ def main() -> None:
         "--limit-notebooks",
         type=str,
         nargs="*",
-        help="Only process the notebooks with this base/stem name. Useful when debugging.",
+        help="Only process the notebooks with this base/stem name; this is typically much faster and is useful when debugging.  For example, to process notebooks/tailor/external-mean-function.pct.py, use --limit_notebooks external-mean-function\n",
     )
     parser.add_argument(
         "--fail_on_warning",
@@ -206,7 +297,9 @@ def main() -> None:
     # Type-ignore below is because the `dirs_exist_ok` parameter was added in Python 3.8, and we
     # still support Python 3.7. However, we only build our documentation using Python3.10+, so
     # actually this is ok.
+    # pylint: disable=unexpected-keyword-arg
     shutil.copytree(_SPHINX_SRC, _BUILD_TMP, dirs_exist_ok=True)  # type: ignore[call-arg]
+    # pylint: enable=unexpected-keyword-arg
 
     if sharding.build_notebooks:
         _build_notebooks(args.limit_notebooks, sharding)

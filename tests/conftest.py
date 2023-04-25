@@ -15,8 +15,7 @@ from typing import Iterable
 
 import pytest
 from _pytest.logging import LogCaptureFixture
-
-from gpflow.experimental.check_shapes.config import (
+from check_shapes.config import (
     DocstringFormat,
     ShapeCheckingState,
     get_enable_check_shapes,
@@ -33,7 +32,10 @@ def test_auto_graph_compile(caplog: LogCaptureFixture) -> Iterable[None]:
     yield
 
     for when in ["setup", "call", "teardown"]:
-        for record in caplog.get_records(when):
+        # Type ignore below is because `when` should have type
+        # `Literal['setup', 'call', 'teardown']`. We should be able to remove this when we no longer
+        # need to support Python 3.7.
+        for record in caplog.get_records(when):  # type: ignore[arg-type]
             assert not record.msg.startswith("AutoGraph could not transform"), record.getMessage()
 
 

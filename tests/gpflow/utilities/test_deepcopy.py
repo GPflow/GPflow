@@ -5,11 +5,11 @@ from typing import Any, Type
 import pytest
 import tensorflow as tf
 import tensorflow_probability as tfp
+from check_shapes import check_shapes
 from packaging.version import Version
 
 import gpflow
 from gpflow.base import TensorType
-from gpflow.experimental.check_shapes import check_shapes
 
 
 class A(tf.Module):

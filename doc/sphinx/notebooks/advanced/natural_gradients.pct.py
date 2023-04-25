@@ -19,16 +19,15 @@
 # This notebook shows some basic usage of the natural gradient optimizer, both on its own and in combination with Adam optimizer.
 
 # %%
-import warnings
 import numpy as np
-import gpflow
 import tensorflow as tf
 
+import gpflow
+from gpflow import set_trainable
 from gpflow.ci_utils import reduce_in_tests
-from gpflow.models import VGP, GPR, SGPR, SVGP
+from gpflow.models import GPR, SGPR, SVGP, VGP
 from gpflow.optimizers import NaturalGradient
 from gpflow.optimizers.natgrad import XiSqrtMeanVar
-from gpflow import set_trainable
 
 # %matplotlib inline
 # %precision 4
@@ -73,7 +72,11 @@ gpr.log_marginal_likelihood().numpy()
 # Now we will create an approximate model which approximates the true posterior via a variational Gaussian distribution.<br>We initialize the distribution to be zero mean and unit variance.
 
 # %%
-vgp = VGP(data, kernel=gpflow.kernels.Matern52(), likelihood=gpflow.likelihoods.Gaussian())
+vgp = VGP(
+    data,
+    kernel=gpflow.kernels.Matern52(),
+    likelihood=gpflow.likelihoods.Gaussian(),
+)
 # (Note that GPflow's NaturalGradient optimizer does not implement diagonal covariance parametrization, i.e., it does not work for `q_diag=True`.)
 
 # %% [markdown]
@@ -117,16 +120,22 @@ adam_opt_for_gpr = tf.optimizers.Adam(adam_learning_rate)
 
 # %%
 for i in range(iterations):
-    adam_opt_for_gpr.minimize(gpr.training_loss, var_list=gpr.trainable_variables)
+    adam_opt_for_gpr.minimize(
+        gpr.training_loss, var_list=gpr.trainable_variables
+    )
     likelihood = gpr.log_marginal_likelihood()
     tf.print(f"GPR with Adam: iteration {i + 1} likelihood {likelihood:.04f}")
 
 # %%
 for i in range(iterations):
     natgrad_opt.minimize(vgp.training_loss, var_list=variational_params)
-    adam_opt_for_vgp.minimize(vgp.training_loss, var_list=vgp.trainable_variables)
+    adam_opt_for_vgp.minimize(
+        vgp.training_loss, var_list=vgp.trainable_variables
+    )
     likelihood = vgp.elbo()
-    tf.print(f"VGP with NaturalGradient and Adam: iteration {i + 1} likelihood {likelihood:.04f}")
+    tf.print(
+        f"VGP with NaturalGradient and Adam: iteration {i + 1} likelihood {likelihood:.04f}"
+    )
 
 # %% [markdown]
 # Compare GPR and VGP lengthscales after optimization:
@@ -147,7 +156,9 @@ svgp = SVGP(
     likelihood=gpflow.likelihoods.Gaussian(),
     inducing_variable=inducing_variable,
 )
-sgpr = SGPR(data, kernel=gpflow.kernels.Matern52(), inducing_variable=inducing_variable)
+sgpr = SGPR(
+    data, kernel=gpflow.kernels.Matern52(), inducing_variable=inducing_variable
+)
 
 for model in svgp, sgpr:
     model.likelihood.variance.assign(0.1)
@@ -168,7 +179,9 @@ svgp.elbo(data).numpy()
 variational_params = [(svgp.q_mu, svgp.q_sqrt)]
 
 natgrad_opt = NaturalGradient(gamma=1.0)
-natgrad_opt.minimize(svgp.training_loss_closure(data), var_list=variational_params)
+natgrad_opt.minimize(
+    svgp.training_loss_closure(data), var_list=variational_params
+)
 
 # %% [markdown]
 # SVGP ELBO after a single natural gradient step:
@@ -202,7 +215,9 @@ for _ in range(reduce_in_tests(100)):
 # Minibatch SVGP ELBO after NatGrad optimization:
 
 # %%
-np.average([svgp.elbo(next(data_minibatch_it)) for _ in range(reduce_in_tests(100))])
+np.average(
+    [svgp.elbo(next(data_minibatch_it)) for _ in range(reduce_in_tests(100))]
+)
 
 # %% [markdown]
 # ## Comparison with ordinary gradients in the conjugate case
@@ -260,24 +275,38 @@ svgp_natgrad_loss = svgp_natgrad.training_loss_closure(data_minibatch_it)
 
 
 for _ in range(reduce_in_tests(100)):
-    ordinary_adam_opt.minimize(svgp_ordinary_loss, var_list=svgp_ordinary.trainable_variables)
+    ordinary_adam_opt.minimize(
+        svgp_ordinary_loss, var_list=svgp_ordinary.trainable_variables
+    )
 
 
 for _ in range(reduce_in_tests(100)):
-    natgrad_adam_opt.minimize(svgp_natgrad_loss, var_list=svgp_natgrad.trainable_variables)
+    natgrad_adam_opt.minimize(
+        svgp_natgrad_loss, var_list=svgp_natgrad.trainable_variables
+    )
     natgrad_opt.minimize(svgp_natgrad_loss, var_list=variational_params)
 
 # %% [markdown]
 # SVGP ELBO after ordinary `Adam` optimization:
 
 # %%
-np.average([svgp_ordinary.elbo(next(data_minibatch_it)) for _ in range(reduce_in_tests(100))])
+np.average(
+    [
+        svgp_ordinary.elbo(next(data_minibatch_it))
+        for _ in range(reduce_in_tests(100))
+    ]
+)
 
 # %% [markdown]
 # SVGP ELBO after `NaturalGradient` and `Adam` optimization:
 
 # %%
-np.average([svgp_natgrad.elbo(next(data_minibatch_it)) for _ in range(reduce_in_tests(100))])
+np.average(
+    [
+        svgp_natgrad.elbo(next(data_minibatch_it))
+        for _ in range(reduce_in_tests(100))
+    ]
+)
 
 # %% [markdown]
 # ## Comparison with ordinary gradients in the non-conjugate case
@@ -293,10 +322,14 @@ y_binary = np.random.choice([1.0, -1], size=x.shape)
 vgp_data = (x, y_binary)
 
 vgp_bernoulli = VGP(
-    vgp_data, kernel=gpflow.kernels.Matern52(), likelihood=gpflow.likelihoods.Bernoulli()
+    vgp_data,
+    kernel=gpflow.kernels.Matern52(),
+    likelihood=gpflow.likelihoods.Bernoulli(),
 )
 vgp_bernoulli_natgrad = VGP(
-    vgp_data, kernel=gpflow.kernels.Matern52(), likelihood=gpflow.likelihoods.Bernoulli()
+    vgp_data,
+    kernel=gpflow.kernels.Matern52(),
+    likelihood=gpflow.likelihoods.Bernoulli(),
 )
 
 # ordinary gradients with Adam for VGP with Bernoulli likelihood
@@ -310,19 +343,26 @@ set_trainable(vgp_bernoulli_natgrad.q_sqrt, False)
 # Create the optimize_tensors for VGP with natural gradients
 natgrad_adam_opt = tf.optimizers.Adam(adam_learning_rate)
 natgrad_opt = NaturalGradient(gamma=0.1)
-variational_params = [(vgp_bernoulli_natgrad.q_mu, vgp_bernoulli_natgrad.q_sqrt)]
+variational_params = [
+    (vgp_bernoulli_natgrad.q_mu, vgp_bernoulli_natgrad.q_sqrt)
+]
 
 # %%
 # Optimize vgp_bernoulli
 for _ in range(reduce_in_tests(100)):
-    adam_opt.minimize(vgp_bernoulli.training_loss, var_list=vgp_bernoulli.trainable_variables)
+    adam_opt.minimize(
+        vgp_bernoulli.training_loss, var_list=vgp_bernoulli.trainable_variables
+    )
 
 # Optimize vgp_bernoulli_natgrad
 for _ in range(reduce_in_tests(100)):
     adam_opt.minimize(
-        vgp_bernoulli_natgrad.training_loss, var_list=vgp_bernoulli_natgrad.trainable_variables
+        vgp_bernoulli_natgrad.training_loss,
+        var_list=vgp_bernoulli_natgrad.trainable_variables,
     )
-    natgrad_opt.minimize(vgp_bernoulli_natgrad.training_loss, var_list=variational_params)
+    natgrad_opt.minimize(
+        vgp_bernoulli_natgrad.training_loss, var_list=variational_params
+    )
 
 # %% [markdown]
 # VGP ELBO after ordinary `Adam` optimization:
@@ -342,7 +382,9 @@ vgp_bernoulli_natgrad.elbo().numpy()
 
 # %%
 vgp_bernoulli_natgrads_xi = VGP(
-    vgp_data, kernel=gpflow.kernels.Matern52(), likelihood=gpflow.likelihoods.Bernoulli()
+    vgp_data,
+    kernel=gpflow.kernels.Matern52(),
+    likelihood=gpflow.likelihoods.Bernoulli(),
 )
 
 # Stop Adam from optimizing the variational parameters
@@ -354,7 +396,11 @@ adam_opt = tf.optimizers.Adam(adam_learning_rate)
 natgrad_opt = NaturalGradient(gamma=0.01)
 
 variational_params = [
-    (vgp_bernoulli_natgrads_xi.q_mu, vgp_bernoulli_natgrads_xi.q_sqrt, XiSqrtMeanVar())
+    (
+        vgp_bernoulli_natgrads_xi.q_mu,
+        vgp_bernoulli_natgrads_xi.q_sqrt,
+        XiSqrtMeanVar(),
+    )
 ]
 
 # %%
@@ -365,7 +411,9 @@ for _ in range(reduce_in_tests(100)):
         var_list=vgp_bernoulli_natgrads_xi.trainable_variables,
     )
 
-    natgrad_opt.minimize(vgp_bernoulli_natgrads_xi.training_loss, var_list=variational_params)
+    natgrad_opt.minimize(
+        vgp_bernoulli_natgrads_xi.training_loss, var_list=variational_params
+    )
 
 # %% [markdown]
 # VGP ELBO after `NaturalGradient` with `XiSqrtMeanVar` + `Adam` optimization:

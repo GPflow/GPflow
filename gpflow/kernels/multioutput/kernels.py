@@ -16,10 +16,10 @@ import abc
 from typing import Optional, Sequence, Tuple
 
 import tensorflow as tf
+from check_shapes import check_shape as cs
+from check_shapes import check_shapes, inherit_check_shapes
 
 from ...base import Parameter, TensorType
-from ...experimental.check_shapes import check_shape as cs
-from ...experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..base import Combination, Kernel
 
 

@@ -16,12 +16,12 @@ from typing import Any, Callable, Optional, Type, Union, cast
 
 import numpy as np
 import tensorflow as tf
+from check_shapes import check_shapes
 
 from .. import kernels
 from .. import mean_functions as mfn
 from ..base import TensorType
 from ..covariances import Kuf
-from ..experimental.check_shapes import check_shapes
 from ..inducing_variables import InducingVariables
 from ..probability_distributions import DiagonalGaussian, Gaussian, MarkovGaussian
 from ..quadrature import mvnquad

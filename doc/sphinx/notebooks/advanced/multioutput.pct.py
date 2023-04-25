@@ -74,12 +74,12 @@
 #
 # Here we have two options for $g$:
 # 1. The output dimensions of $g$ share the same kernel.
-# 1. Each output of $g$ has a separate kernel.
+# 2. Each output of $g$ has a separate kernel.
 #
 #
 # In addition, we have two further suboptions for the inducing inputs of $g$:
 # 1. The instances of $g$ share the same inducing inputs.
-# 1. Each output of $g$ has its own set of inducing inputs.
+# 2. Each output of $g$ has its own set of inducing inputs.
 #
 # The notation is as follows:
 # - $X \in \mathbb{R}^{N \times D}$ denotes the input
@@ -89,13 +89,12 @@
 # - $f_{1..P}$, $P$ are correlated  $\GP$s  with $\vf = \vW \vg$
 
 # %%
-import numpy as np
 import matplotlib.pyplot as plt
-import gpflow as gpf
-import tensorflow as tf
+import numpy as np
 
-from gpflow.utilities import print_summary
+import gpflow as gpf
 from gpflow.ci_utils import reduce_in_tests
+from gpflow.utilities import print_summary
 
 gpf.config.set_default_float(np.float64)
 gpf.config.set_default_summary_fmt("notebook")
@@ -180,7 +179,9 @@ iv = gpf.inducing_variables.SharedIndependentInducingVariables(
 
 # %%
 # create SVGP model as usual and optimize
-m = gpf.models.SVGP(kernel, gpf.likelihoods.Gaussian(), inducing_variable=iv, num_latent_gps=P)
+m = gpf.models.SVGP(
+    kernel, gpf.likelihoods.Gaussian(), inducing_variable=iv, num_latent_gps=P
+)
 print_summary(m)
 
 
@@ -214,7 +215,9 @@ m.kernel.kernel.kernels[0].lengthscales
 
 # %%
 # Create list of kernels for each output
-kern_list = [gpf.kernels.SquaredExponential() + gpf.kernels.Linear() for _ in range(P)]
+kern_list = [
+    gpf.kernels.SquaredExponential() + gpf.kernels.Linear() for _ in range(P)
+]
 # Create multi-output kernel from kernel list
 kernel = gpf.kernels.SeparateIndependent(kern_list)
 # initialization of inducing input locations (M random points from the training inputs)
@@ -226,7 +229,9 @@ iv = gpf.inducing_variables.SharedIndependentInducingVariables(
 
 # %%
 # create SVGP model as usual and optimize
-m = gpf.models.SVGP(kernel, gpf.likelihoods.Gaussian(), inducing_variable=iv, num_latent_gps=P)
+m = gpf.models.SVGP(
+    kernel, gpf.likelihoods.Gaussian(), inducing_variable=iv, num_latent_gps=P
+)
 
 # %%
 optimize_model_with_scipy(m)
@@ -246,7 +251,9 @@ plot_model(m)
 
 # %%
 # Create list of kernels for each output
-kern_list = [gpf.kernels.SquaredExponential() + gpf.kernels.Linear() for _ in range(P)]
+kern_list = [
+    gpf.kernels.SquaredExponential() + gpf.kernels.Linear() for _ in range(P)
+]
 # Create multi-output kernel from kernel list
 kernel = gpf.kernels.SeparateIndependent(kern_list)
 # initialization of inducing input locations, one set of locations per output
@@ -261,7 +268,9 @@ iv = gpf.inducing_variables.SeparateIndependentInducingVariables(iv_list)
 
 # %%
 # create SVGP model as usual and optimize
-m = gpf.models.SVGP(kernel, gpf.likelihoods.Gaussian(), inducing_variable=iv, num_latent_gps=P)
+m = gpf.models.SVGP(
+    kernel, gpf.likelihoods.Gaussian(), inducing_variable=iv, num_latent_gps=P
+)
 
 # %%
 optimize_model_with_scipy(m)
@@ -274,7 +283,9 @@ plot_model(m)
 
 # %%
 for i in range(len(m.inducing_variable.inducing_variable_list)):
-    q_mu_unwhitened, q_var_unwhitened = m.predict_f(m.inducing_variable.inducing_variable_list[i].Z)
+    q_mu_unwhitened, q_var_unwhitened = m.predict_f(
+        m.inducing_variable.inducing_variable_list[i].Z
+    )
     plt.plot(
         m.inducing_variable.inducing_variable_list[i].Z.numpy(),
         q_mu_unwhitened[:, i, None].numpy(),
@@ -300,7 +311,9 @@ m.inducing_variable.inducing_variable_list
 
 # %%
 # Create list of kernels for each output
-kern_list = [gpf.kernels.SquaredExponential() + gpf.kernels.Linear() for _ in range(L)]
+kern_list = [
+    gpf.kernels.SquaredExponential() + gpf.kernels.Linear() for _ in range(L)
+]
 # Create multi-output kernel from kernel list
 kernel = gpf.kernels.LinearCoregionalization(
     kern_list, W=np.random.randn(P, L)
@@ -320,7 +333,11 @@ q_sqrt = np.repeat(np.eye(M)[None, ...], L, axis=0) * 1.0
 
 # create SVGP model as usual and optimize
 m = gpf.models.SVGP(
-    kernel, gpf.likelihoods.Gaussian(), inducing_variable=iv, q_mu=q_mu, q_sqrt=q_sqrt
+    kernel,
+    gpf.likelihoods.Gaussian(),
+    inducing_variable=iv,
+    q_mu=q_mu,
+    q_sqrt=q_sqrt,
 )
 
 # %%
@@ -407,16 +424,20 @@ def inspect_conditional(inducing_variable_type, kernel_type):
         implementation.
     """
     import inspect
+
     from gpflow.conditionals import conditional
 
-    implementation = conditional.dispatch(object, inducing_variable_type, kernel_type, object)
+    implementation = conditional.dispatch(
+        object, inducing_variable_type, kernel_type, object
+    )
     info = dict(inspect.getmembers(implementation))
     return info["__code__"]
 
 
 # Example:
 inspect_conditional(
-    gpf.inducing_variables.SharedIndependentInducingVariables, gpf.kernels.SharedIndependent
+    gpf.inducing_variables.SharedIndependentInducingVariables,
+    gpf.kernels.SharedIndependent,
 )
 
 # %% [markdown]

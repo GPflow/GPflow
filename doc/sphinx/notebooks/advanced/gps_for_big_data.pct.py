@@ -22,11 +22,13 @@
 # %%
 # %matplotlib inline
 import itertools
-import numpy as np
 import time
-import gpflow
-import tensorflow as tf
+
 import matplotlib.pyplot as plt
+import numpy as np
+import tensorflow as tf
+
+import gpflow
 from gpflow.ci_utils import reduce_in_tests
 
 plt.style.use("ggplot")
@@ -44,7 +46,11 @@ tf.random.set_seed(42)
 
 # %%
 def func(x):
-    return np.sin(x * 3 * 3.14) + 0.3 * np.cos(x * 9 * 3.14) + 0.5 * np.sin(x * 7 * 3.14)
+    return (
+        np.sin(x * 3 * 3.14)
+        + 0.3 * np.cos(x * 9 * 3.14)
+        + 0.5 * np.sin(x * 7 * 3.14)
+    )
 
 
 N = 10000  # Number of training observations
@@ -70,7 +76,9 @@ _ = plt.plot(Xt, Yt, c="k")
 M = 50  # Number of inducing locations
 
 kernel = gpflow.kernels.SquaredExponential()
-Z = X[:M, :].copy()  # Initialize inducing locations to the first M inputs in the dataset
+Z = X[
+    :M, :
+].copy()  # Initialize inducing locations to the first M inputs in the dataset
 
 m = gpflow.models.SVGP(kernel, gpflow.likelihoods.Gaussian(), Z, num_data=N)
 
@@ -111,7 +119,9 @@ elbo(next(train_iter))
 # The minibatch estimate should be an unbiased estimator of the `ground_truth`. Here we show a histogram of the value from different evaluations, together with its mean and the ground truth. The small difference between the mean of the minibatch estimations and the ground truth shows that the minibatch estimator is working as expected.
 
 # %%
-evals = [elbo(minibatch).numpy() for minibatch in itertools.islice(train_iter, 100)]
+evals = [
+    elbo(minibatch).numpy() for minibatch in itertools.islice(train_iter, 100)
+]
 
 # %%
 plt.hist(evals, label="Minibatch estimations")
@@ -119,7 +129,10 @@ plt.axvline(ground_truth, c="k", label="Ground truth")
 plt.axvline(np.mean(evals), c="g", ls="--", label="Minibatch mean")
 plt.legend()
 plt.title("Histogram of ELBO evaluations using minibatches")
-print("Discrepancy between ground truth and minibatch estimate:", ground_truth - np.mean(evals))
+print(
+    "Discrepancy between ground truth and minibatch estimate:",
+    ground_truth - np.mean(evals),
+)
 
 # %% [markdown]
 # ### Minibatches speed up computation
@@ -134,7 +147,9 @@ for mbp in minibatch_proportions:
     batchsize = int(N * mbp)
     train_iter = iter(train_dataset.batch(batchsize))
     start_time = time.time()
-    objs.append([elbo(minibatch) for minibatch in itertools.islice(train_iter, 20)])
+    objs.append(
+        [elbo(minibatch) for minibatch in itertools.islice(train_iter, 20)]
+    )
     times.append(time.time() - start_time)
 
 # %%
