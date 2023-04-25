@@ -121,12 +121,10 @@ class Scipy:
         cls,
         closure: LossClosure,
         variables: Sequence[tf.Variable],
+        tffun_args: Mapping[str, Any],
         compile: bool = True,
         allow_unused_variables: bool = False,
-        tffun_args: Optional[Mapping[str, Any]] = None,
     ) -> Callable[[AnyNDArray], Tuple[AnyNDArray, AnyNDArray]]:
-        if tffun_args is None:
-            tffun_args = {}
         first_call = True
 
         def _tf_eval(x: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
