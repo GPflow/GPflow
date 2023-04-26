@@ -52,8 +52,9 @@ import contextlib
 import enum
 import os
 from dataclasses import dataclass, field, replace
-from typing import Any, Dict, Generator, List, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Mapping, Optional, Union
 
+import aenum
 import numpy as np
 import tabulate
 import tensorflow as tf
@@ -82,13 +83,24 @@ __all__ = [
 __config: Optional["Config"] = None
 
 
-class _Values(enum.Enum):
+# aenum package is not supported by mypy. Whereas stdlib Enum has a dedicated mypy plugin.
+# Use stdlib Enum for type checking.
+# See https://github.com/ethanfurman/aenum/issues/10
+if TYPE_CHECKING:  # pragma: no cover
+    Constant = enum.Enum
+else:
+    # Use Constant from aenum package since it supports duplicate entries correctly, i.e. members
+    # can have the same value.
+    Constant = aenum.Constant
+
+
+class _Values(Constant):
     """Setting's names collection with default values. The `name` method returns name
     of the environment variable. E.g. for `SUMMARY_FMT` field the environment variable
     will be `GPFLOW_SUMMARY_FMT`."""
 
-    INT = np.int32
-    FLOAT = np.float64
+    INT = "int32"
+    FLOAT = "float64"
     POSITIVE_BIJECTOR = "softplus"
     POSITIVE_MINIMUM = 0.0
     SUMMARY_FMT = "fancy_grid"
@@ -96,7 +108,11 @@ class _Values(enum.Enum):
 
     @property
     def name(self) -> str:  # type: ignore[override]  # name is generated and has weird typing.
-        return f"GPFLOW_{super().name}"
+        return f"GPFLOW_{self._name_}"
+
+    @property
+    def value(self) -> Any:
+        return self._value_
 
 
 def _default(value: _Values) -> Any:
@@ -107,10 +123,7 @@ def _default(value: _Values) -> Any:
 def _default_numeric_type_factory(
     valid_types: Mapping[str, type], enum_key: _Values, type_name: str
 ) -> type:
-    value: Union[str, type] = _default(enum_key)
-    if isinstance(value, type) and (value in valid_types.values()):
-        return value
-    assert isinstance(value, str)  # Hint for mypy
+    value: str = _default(enum_key)
     if value not in valid_types:
         raise TypeError(f"Config cannot recognize {type_name} type.")
     return valid_types[value]
