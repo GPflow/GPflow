@@ -52,7 +52,7 @@ import contextlib
 import enum
 import os
 from dataclasses import dataclass, field, replace
-from typing import Any, Dict, Generator, List, Mapping, Optional, Union
+from typing import Any, Dict, Generator, List, Mapping, Optional, Tuple, Union
 
 import numpy as np
 import tabulate
@@ -82,30 +82,32 @@ __all__ = [
 __config: Optional["Config"] = None
 
 
-class _Values(enum.Enum):
-    """Setting's names collection with default values. The `name` method returns name
-    of the environment variable. E.g. for `SUMMARY_FMT` field the environment variable
-    will be `GPFLOW_SUMMARY_FMT`."""
+@dataclass(frozen=True)
+class _Value:
+    """Individual setting's environment variable name and default value."""
 
-    INT = np.int32
-    FLOAT = np.float64
-    POSITIVE_BIJECTOR = "softplus"
-    POSITIVE_MINIMUM = 0.0
-    SUMMARY_FMT = "fancy_grid"
-    JITTER = 1e-6
-
-    @property
-    def name(self) -> str:  # type: ignore[override]  # name is generated and has weird typing.
-        return f"GPFLOW_{super().name}"
+    name: str
+    value: Any
 
 
-def _default(value: _Values) -> Any:
+class _Values:
+    """Collection of default settings."""
+
+    INT = _Value("GPFLOW_INT", np.int32)
+    FLOAT = _Value("GPFLOW_FLOAT", np.float64)
+    POSITIVE_BIJECTOR = _Value("GPFLOW_POSITIVE_BIJECTOR", "softplus")
+    POSITIVE_MINIMUM = _Value("GPFLOW_POSITIVE_MINIMUM", 0.0)
+    SUMMARY_FMT = _Value("GPFLOW_SUMMARY_FMT", "fancy_grid")
+    JITTER = _Value("GPFLOW_JITTER", 1e-6)
+
+
+def _default(value: _Value) -> Any:
     """Checks if value is set in the environment."""
     return os.getenv(value.name, default=value.value)
 
 
 def _default_numeric_type_factory(
-    valid_types: Mapping[str, type], enum_key: _Values, type_name: str
+    valid_types: Mapping[str, type], enum_key: _Value, type_name: str
 ) -> type:
     value: Union[str, type] = _default(enum_key)
     if isinstance(value, type) and (value in valid_types.values()):
