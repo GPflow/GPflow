@@ -293,7 +293,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="kn">import</span> <span class="nn">enum</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">replace</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">tabulate</span>
@@ -323,30 +323,32 @@ function checkPageExistsAndRedirect(event) {
 <span class="n">__config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;Config&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
 
-<span class="k">class</span> <span class="nc">_Values</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Setting&#39;s names collection with default values. The `name` method returns name</span>
-<span class="sd">    of the environment variable. E.g. for `SUMMARY_FMT` field the environment variable</span>
-<span class="sd">    will be `GPFLOW_SUMMARY_FMT`.&quot;&quot;&quot;</span>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">_Value</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Individual setting&#39;s environment variable name and default value.&quot;&quot;&quot;</span>
 
-    <span class="n">INT</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span>
-    <span class="n">FLOAT</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span>
-    <span class="n">POSITIVE_BIJECTOR</span> <span class="o">=</span> <span class="s2">&quot;softplus&quot;</span>
-    <span class="n">POSITIVE_MINIMUM</span> <span class="o">=</span> <span class="mf">0.0</span>
-    <span class="n">SUMMARY_FMT</span> <span class="o">=</span> <span class="s2">&quot;fancy_grid&quot;</span>
-    <span class="n">JITTER</span> <span class="o">=</span> <span class="mf">1e-6</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>  <span class="c1"># type: ignore[override]  # name is generated and has weird typing.</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;GPFLOW_</span><span class="si">{</span><span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">Any</span>
 
 
-<span class="k">def</span> <span class="nf">_default</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">_Values</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="k">class</span> <span class="nc">_Values</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Collection of default settings.&quot;&quot;&quot;</span>
+
+    <span class="n">INT</span> <span class="o">=</span> <span class="n">_Value</span><span class="p">(</span><span class="s2">&quot;GPFLOW_INT&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+    <span class="n">FLOAT</span> <span class="o">=</span> <span class="n">_Value</span><span class="p">(</span><span class="s2">&quot;GPFLOW_FLOAT&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">POSITIVE_BIJECTOR</span> <span class="o">=</span> <span class="n">_Value</span><span class="p">(</span><span class="s2">&quot;GPFLOW_POSITIVE_BIJECTOR&quot;</span><span class="p">,</span> <span class="s2">&quot;softplus&quot;</span><span class="p">)</span>
+    <span class="n">POSITIVE_MINIMUM</span> <span class="o">=</span> <span class="n">_Value</span><span class="p">(</span><span class="s2">&quot;GPFLOW_POSITIVE_MINIMUM&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+    <span class="n">SUMMARY_FMT</span> <span class="o">=</span> <span class="n">_Value</span><span class="p">(</span><span class="s2">&quot;GPFLOW_SUMMARY_FMT&quot;</span><span class="p">,</span> <span class="s2">&quot;fancy_grid&quot;</span><span class="p">)</span>
+    <span class="n">JITTER</span> <span class="o">=</span> <span class="n">_Value</span><span class="p">(</span><span class="s2">&quot;GPFLOW_JITTER&quot;</span><span class="p">,</span> <span class="mf">1e-6</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_default</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">_Value</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Checks if value is set in the environment.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">value</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">_default_numeric_type_factory</span><span class="p">(</span>
-    <span class="n">valid_types</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">],</span> <span class="n">enum_key</span><span class="p">:</span> <span class="n">_Values</span><span class="p">,</span> <span class="n">type_name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">valid_types</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">],</span> <span class="n">enum_key</span><span class="p">:</span> <span class="n">_Value</span><span class="p">,</span> <span class="n">type_name</span><span class="p">:</span> <span class="nb">str</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">:</span>
     <span class="n">value</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">]</span> <span class="o">=</span> <span class="n">_default</span><span class="p">(</span><span class="n">enum_key</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">value</span> <span class="ow">in</span> <span class="n">valid_types</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
