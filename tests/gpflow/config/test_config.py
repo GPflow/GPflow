@@ -26,12 +26,16 @@ from gpflow.config import (
     default_float,
     default_int,
     default_jitter,
+    default_likelihoods_positive_minimum,
     default_positive_bijector,
+    default_positive_minimum,
     default_summary_fmt,
     set_default_float,
     set_default_int,
     set_default_jitter,
+    set_default_likelihoods_positive_minimum,
     set_default_positive_bijector,
+    set_default_positive_minimum,
     set_default_summary_fmt,
 )
 from gpflow.utilities import to_default_float, to_default_int
@@ -104,18 +108,35 @@ def test_dtype_errorcheck(setter: Callable[[type], None], invalid_type: Any) -> 
         setter(invalid_type)
 
 
-def test_jitter_setting() -> None:
-    set_default_jitter(1e-3)
-    assert default_jitter() == 1e-3
-    set_default_jitter(1e-6)
-    assert default_jitter() == 1e-6
+@pytest.mark.parametrize(
+    "setter, getter",
+    [
+        (set_default_jitter, default_jitter),
+        (set_default_likelihoods_positive_minimum, default_likelihoods_positive_minimum),
+        (set_default_positive_minimum, default_positive_minimum),
+    ],
+)
+@pytest.mark.parametrize("value", [1e-3, 1e-6])
+def test_floats_setting(
+    setter: Callable[[float], None], getter: Callable[[], float], value: float
+) -> None:
+    setter(value)
+    assert getter() == value
 
 
-def test_jitter_errorcheck() -> None:
+@pytest.mark.parametrize(
+    "setter",
+    [
+        set_default_jitter,
+        set_default_likelihoods_positive_minimum,
+        set_default_positive_minimum,
+    ],
+)
+def test_floats_errorcheck(setter: Callable[[float], None]) -> None:
     with pytest.raises(TypeError):
-        set_default_jitter("not a float")  # type: ignore[arg-type]
+        setter("not a float")  # type: ignore[arg-type]
     with pytest.raises(ValueError):
-        set_default_jitter(-1e-10)
+        setter(-1e-10)
 
 
 @pytest.mark.parametrize(
