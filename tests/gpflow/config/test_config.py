@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import os
-from typing import Any, Callable
+from typing import Any, Callable, Iterable
 from unittest import mock
 
 import numpy as np
@@ -23,6 +23,7 @@ import tensorflow as tf
 import gpflow
 from gpflow.base import TensorData
 from gpflow.config import (
+    config,
     default_float,
     default_int,
     default_jitter,
@@ -30,6 +31,7 @@ from gpflow.config import (
     default_positive_bijector,
     default_positive_minimum,
     default_summary_fmt,
+    set_config,
     set_default_float,
     set_default_int,
     set_default_jitter,
@@ -52,6 +54,15 @@ _env_values = [
     ("likelihoods_positive_minimum", "5e-4", 5e-4),
     ("jitter", "1e-2", 1e-2),
 ]
+
+
+# Fixture to reset config back to default. Some tests change global config and can otherwise
+# effect subsequent tests.
+@pytest.fixture(autouse=True)
+def reset_config() -> Iterable[None]:
+    default_config = config()
+    yield
+    set_config(default_config)
 
 
 @pytest.mark.parametrize("attr_name, value, expected_value", _env_values)
