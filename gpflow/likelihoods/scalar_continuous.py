@@ -21,7 +21,7 @@ from check_shapes import check_shapes, inherit_check_shapes
 
 from .. import logdensities
 from ..base import MeanAndVariance, TensorType
-from ..config import default_likelihoods_positive_minimum
+from ..config import default_likelihood_positive_minimum
 from ..utilities.parameter_or_function import (
     ConstantOrFunction,
     ParameterOrFunction,
@@ -34,7 +34,7 @@ from .utils import inv_probit
 
 def _lower_bound(value: Optional[float] = None) -> float:
     if value is None:
-        return default_likelihoods_positive_minimum()
+        return default_likelihood_positive_minimum()
     return value
 
 

@@ -27,7 +27,7 @@ from gpflow.config import (
     default_float,
     default_int,
     default_jitter,
-    default_likelihoods_positive_minimum,
+    default_likelihood_positive_minimum,
     default_positive_bijector,
     default_positive_minimum,
     default_summary_fmt,
@@ -35,7 +35,7 @@ from gpflow.config import (
     set_default_float,
     set_default_int,
     set_default_jitter,
-    set_default_likelihoods_positive_minimum,
+    set_default_likelihood_positive_minimum,
     set_default_positive_bijector,
     set_default_positive_minimum,
     set_default_summary_fmt,
@@ -51,7 +51,7 @@ _env_values = [
     ("positive_bijector", "softplus", "softplus"),
     ("summary_fmt", "simple", "simple"),
     ("positive_minimum", "1e-3", 1e-3),
-    ("likelihoods_positive_minimum", "5e-4", 5e-4),
+    ("likelihood_positive_minimum", "5e-4", 5e-4),
     ("jitter", "1e-2", 1e-2),
 ]
 
@@ -123,7 +123,7 @@ def test_dtype_errorcheck(setter: Callable[[type], None], invalid_type: Any) -> 
     "setter, getter",
     [
         (set_default_jitter, default_jitter),
-        (set_default_likelihoods_positive_minimum, default_likelihoods_positive_minimum),
+        (set_default_likelihood_positive_minimum, default_likelihood_positive_minimum),
         (set_default_positive_minimum, default_positive_minimum),
     ],
 )
@@ -139,7 +139,7 @@ def test_floats_setting(
     "setter",
     [
         set_default_jitter,
-        set_default_likelihoods_positive_minimum,
+        set_default_likelihood_positive_minimum,
         set_default_positive_minimum,
     ],
 )

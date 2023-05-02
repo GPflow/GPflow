@@ -37,7 +37,7 @@ Full set of environment variables and available options:
 * ``GPFLOW_FLOAT``: "float16", "float32", or "float64"
 * ``GPFLOW_POSITIVE_BIJECTOR``: "exp" or "softplus"
 * ``GPFLOW_POSITIVE_MINIMUM``: Any positive float number
-* ``GPFLOW_LIKELIHOODS_POSITIVE_MINIMUM``: Any positive float number
+* ``GPFLOW_LIKELIHOOD_POSITIVE_MINIMUM``: Any positive float number
 * ``GPFLOW_SUMMARY_FMT``: "notebook" or any other format that :mod:`tabulate` can handle.
 * ``GPFLOW_JITTER``: Any positive float number
 
@@ -67,7 +67,7 @@ __all__ = [
     "default_float",
     "default_int",
     "default_jitter",
-    "default_likelihoods_positive_minimum",
+    "default_likelihood_positive_minimum",
     "default_positive_bijector",
     "default_positive_minimum",
     "default_summary_fmt",
@@ -76,7 +76,7 @@ __all__ = [
     "set_default_float",
     "set_default_int",
     "set_default_jitter",
-    "set_default_likelihoods_positive_minimum",
+    "set_default_likelihood_positive_minimum",
     "set_default_positive_bijector",
     "set_default_positive_minimum",
     "set_default_summary_fmt",
@@ -100,7 +100,7 @@ class _Values:
     FLOAT = _Value("GPFLOW_FLOAT", np.float64)
     POSITIVE_BIJECTOR = _Value("GPFLOW_POSITIVE_BIJECTOR", "softplus")
     POSITIVE_MINIMUM = _Value("GPFLOW_POSITIVE_MINIMUM", 0.0)
-    LIKELIHOODS_POSITIVE_MINIMUM = _Value("GPFLOW_LIKELIHOODS_POSITIVE_MINIMUM", 1e-6)
+    LIKELIHOOD_POSITIVE_MINIMUM = _Value("GPFLOW_LIKELIHOOD_POSITIVE_MINIMUM", 1e-6)
     SUMMARY_FMT = _Value("GPFLOW_SUMMARY_FMT", "fancy_grid")
     JITTER = _Value("GPFLOW_JITTER", 1e-6)
 
@@ -158,13 +158,13 @@ def _default_positive_minimum_factory() -> float:
         raise TypeError("Config cannot set the positive_minimum value with non float type.")
 
 
-def _default_likelihoods_positive_minimum_factory() -> float:
-    value = _default(_Values.LIKELIHOODS_POSITIVE_MINIMUM)
+def _default_likelihood_positive_minimum_factory() -> float:
+    value = _default(_Values.LIKELIHOOD_POSITIVE_MINIMUM)
     try:
         return float(value)
     except ValueError:
         raise TypeError(
-            "Config cannot set the likelihoods_positive_minimum value with non float type."
+            "Config cannot set the likelihood_positive_minimum value with non float type."
         )
 
 
@@ -207,8 +207,8 @@ class Config:
     positive_minimum: Float = field(default_factory=_default_positive_minimum_factory)
     """Lower bound for the positive transformation."""
 
-    likelihoods_positive_minimum: Float = field(
-        default_factory=_default_likelihoods_positive_minimum_factory
+    likelihood_positive_minimum: Float = field(
+        default_factory=_default_likelihood_positive_minimum_factory
     )
     """Lower bound for the positive transformation for positive likelihood parameters."""
 
@@ -251,9 +251,9 @@ def default_positive_minimum() -> float:
     return config().positive_minimum
 
 
-def default_likelihoods_positive_minimum() -> float:
+def default_likelihood_positive_minimum() -> float:
     """Shift constant that GPflow adds to all positive likelihood parameter constraints."""
-    return config().likelihoods_positive_minimum
+    return config().likelihood_positive_minimum
 
 
 def default_summary_fmt() -> Optional[str]:
@@ -344,7 +344,7 @@ def set_default_positive_minimum(value: float) -> None:
     set_config(replace(config(), positive_minimum=value))
 
 
-def set_default_likelihoods_positive_minimum(value: float) -> None:
+def set_default_likelihood_positive_minimum(value: float) -> None:
     """Sets shift constant for positive likelihood transformation."""
     if not (
         isinstance(value, (tf.Tensor, np.ndarray)) and len(value.shape) == 0
@@ -352,9 +352,9 @@ def set_default_likelihoods_positive_minimum(value: float) -> None:
         raise TypeError("Expected float32 or float64 scalar value")
 
     if value < 0:
-        raise ValueError("Likelihoods positive minimum must be non-negative")
+        raise ValueError("Likelihood positive minimum must be non-negative")
 
-    set_config(replace(config(), likelihoods_positive_minimum=value))
+    set_config(replace(config(), likelihood_positive_minimum=value))
 
 
 def set_default_summary_fmt(value: Optional[str]) -> None:
