@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "59dedb15",
+   "id": "f226fe04",
    "metadata": {},
    "source": [
     "# Discussion of the GP marginal likelihood upper bound\n",
@@ -13,13 +13,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "265bd5f6",
+   "id": "56bdc4ce",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-04-27T17:41:08.985237Z",
-     "iopub.status.busy": "2023-04-27T17:41:08.985042Z",
-     "iopub.status.idle": "2023-04-27T17:41:13.056776Z",
-     "shell.execute_reply": "2023-04-27T17:41:13.056228Z"
+     "iopub.execute_input": "2023-05-02T13:50:23.065206Z",
+     "iopub.status.busy": "2023-05-02T13:50:23.064720Z",
+     "iopub.status.idle": "2023-05-02T13:50:27.946907Z",
+     "shell.execute_reply": "2023-05-02T13:50:27.945836Z"
     }
    },
    "outputs": [
@@ -27,20 +27,26 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2023-04-27 17:41:09.529483: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2023-05-02 13:50:23.747071: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n",
-      "2023-04-27 17:41:09.653048: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
-      "2023-04-27 17:41:09.653071: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n",
-      "2023-04-27 17:41:09.682672: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n"
+      "2023-05-02 13:50:23.901015: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2023-04-27 17:41:10.340168: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory\n",
-      "2023-04-27 17:41:10.340230: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory\n",
-      "2023-04-27 17:41:10.340240: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.\n"
+      "2023-05-02 13:50:23.901036: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n",
+      "2023-05-02 13:50:23.932726: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2023-05-02 13:50:24.707169: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory\n",
+      "2023-05-02 13:50:24.707235: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory\n",
+      "2023-05-02 13:50:24.707243: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.\n"
      ]
     }
    ],
@@ -70,13 +76,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "186303d6",
+   "id": "bca8798b",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-04-27T17:41:13.059668Z",
-     "iopub.status.busy": "2023-04-27T17:41:13.059452Z",
-     "iopub.status.idle": "2023-04-27T17:41:13.062770Z",
-     "shell.execute_reply": "2023-04-27T17:41:13.062307Z"
+     "iopub.execute_input": "2023-05-02T13:50:27.950855Z",
+     "iopub.status.busy": "2023-05-02T13:50:27.950623Z",
+     "iopub.status.idle": "2023-05-02T13:50:27.954756Z",
+     "shell.execute_reply": "2023-05-02T13:50:27.954094Z"
     }
    },
    "outputs": [],
@@ -87,13 +93,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "e28d554d",
+   "id": "52705a65",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-04-27T17:41:13.064895Z",
-     "iopub.status.busy": "2023-04-27T17:41:13.064605Z",
-     "iopub.status.idle": "2023-04-27T17:41:13.069103Z",
-     "shell.execute_reply": "2023-04-27T17:41:13.068656Z"
+     "iopub.execute_input": "2023-05-02T13:50:27.957893Z",
+     "iopub.status.busy": "2023-05-02T13:50:27.957744Z",
+     "iopub.status.idle": "2023-05-02T13:50:27.962913Z",
+     "shell.execute_reply": "2023-05-02T13:50:27.962271Z"
     }
    },
    "outputs": [],
@@ -117,7 +123,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ca1befe8",
+   "id": "9da3e57b",
    "metadata": {},
    "source": [
     "## Full model"
@@ -126,13 +132,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "1e720062",
+   "id": "f765ae33",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-04-27T17:41:13.071396Z",
-     "iopub.status.busy": "2023-04-27T17:41:13.071144Z",
-     "iopub.status.idle": "2023-04-27T17:41:15.451336Z",
-     "shell.execute_reply": "2023-04-27T17:41:15.450836Z"
+     "iopub.execute_input": "2023-05-02T13:50:27.966136Z",
+     "iopub.status.busy": "2023-05-02T13:50:27.965719Z",
+     "iopub.status.idle": "2023-05-02T13:50:30.971165Z",
+     "shell.execute_reply": "2023-05-02T13:50:30.970633Z"
     }
    },
    "outputs": [
@@ -140,10 +146,10 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2023-04-27 17:41:13.073371: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
-      "2023-04-27 17:41:13.073394: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)\n",
-      "2023-04-27 17:41:13.073413: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (20c7c45c984e): /proc/driver/nvidia/version does not exist\n",
-      "2023-04-27 17:41:13.073697: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2023-05-02 13:50:27.968346: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2023-05-02 13:50:27.968369: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2023-05-02 13:50:27.968387: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (313c01471097): /proc/driver/nvidia/version does not exist\n",
+      "2023-05-02 13:50:27.968639: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     },
@@ -170,7 +176,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "787e7712",
+   "id": "20e1ef54",
    "metadata": {},
    "source": [
     "## Upper bounds for sparse variational models\n",
@@ -180,13 +186,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "41d3dfe2",
+   "id": "4faf72d1",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-04-27T17:41:15.454399Z",
-     "iopub.status.busy": "2023-04-27T17:41:15.454179Z",
-     "iopub.status.idle": "2023-04-27T17:41:28.583250Z",
-     "shell.execute_reply": "2023-04-27T17:41:28.582716Z"
+     "iopub.execute_input": "2023-05-02T13:50:30.974524Z",
+     "iopub.status.busy": "2023-05-02T13:50:30.974142Z",
+     "iopub.status.idle": "2023-05-02T13:50:46.472523Z",
+     "shell.execute_reply": "2023-05-02T13:50:46.471673Z"
     }
    },
    "outputs": [
@@ -336,13 +342,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "6fb03ce0",
+   "id": "5adc91d1",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-04-27T17:41:28.585659Z",
-     "iopub.status.busy": "2023-04-27T17:41:28.585428Z",
-     "iopub.status.idle": "2023-04-27T17:41:28.850306Z",
-     "shell.execute_reply": "2023-04-27T17:41:28.849716Z"
+     "iopub.execute_input": "2023-05-02T13:50:46.475236Z",
+     "iopub.status.busy": "2023-05-02T13:50:46.475017Z",
+     "iopub.status.idle": "2023-05-02T13:50:46.751102Z",
+     "shell.execute_reply": "2023-05-02T13:50:46.750129Z"
     }
    },
    "outputs": [
@@ -369,7 +375,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "33c7a5e2",
+   "id": "38cb9a22",
    "metadata": {},
    "source": [
     "We see that the lower bound increases as more inducing points are added. Note that the upper bound does _not_ monotonically decrease! This is because as we train the sparse model, we also get better estimates of the hyperparameters. The upper bound will be different for this different setting of the hyperparameters, and is sometimes looser. The upper bound also converges to the true lml slower than the lower bound."
@@ -377,7 +383,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "75f524ea",
+   "id": "bcbb6125",
    "metadata": {},
    "source": [
     "### Upper bounds for fixed hyperparameters\n",
@@ -387,13 +393,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "1d238a72",
+   "id": "7283b051",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-04-27T17:41:28.852778Z",
-     "iopub.status.busy": "2023-04-27T17:41:28.852567Z",
-     "iopub.status.idle": "2023-04-27T17:41:38.670952Z",
-     "shell.execute_reply": "2023-04-27T17:41:38.670345Z"
+     "iopub.execute_input": "2023-05-02T13:50:46.754429Z",
+     "iopub.status.busy": "2023-05-02T13:50:46.754177Z",
+     "iopub.status.idle": "2023-05-02T13:50:58.384460Z",
+     "shell.execute_reply": "2023-05-02T13:50:58.383776Z"
     }
    },
    "outputs": [
@@ -558,13 +564,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "3877b71c",
+   "id": "18428b76",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-04-27T17:41:38.674076Z",
-     "iopub.status.busy": "2023-04-27T17:41:38.673852Z",
-     "iopub.status.idle": "2023-04-27T17:41:38.878576Z",
-     "shell.execute_reply": "2023-04-27T17:41:38.877997Z"
+     "iopub.execute_input": "2023-05-02T13:50:58.387105Z",
+     "iopub.status.busy": "2023-05-02T13:50:58.386857Z",
+     "iopub.status.idle": "2023-05-02T13:50:58.651242Z",
+     "shell.execute_reply": "2023-05-02T13:50:58.648039Z"
     }
    },
    "outputs": [
@@ -591,13 +597,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "78cfd8db",
+   "id": "f5385c63",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-04-27T17:41:38.881016Z",
-     "iopub.status.busy": "2023-04-27T17:41:38.880798Z",
-     "iopub.status.idle": "2023-04-27T17:41:38.884118Z",
-     "shell.execute_reply": "2023-04-27T17:41:38.883614Z"
+     "iopub.execute_input": "2023-05-02T13:50:58.655573Z",
+     "iopub.status.busy": "2023-05-02T13:50:58.655002Z",
+     "iopub.status.idle": "2023-05-02T13:50:58.659158Z",
+     "shell.execute_reply": "2023-05-02T13:50:58.658361Z"
     }
    },
    "outputs": [],
@@ -607,7 +613,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d0433d35",
+   "id": "d3becaf5",
    "metadata": {},
    "source": [
     "Now, as the hyperparameters are fixed, the bound _does_ monotonically decrease. We chose the optimal hyperparameters here, but the picture should be the same for any hyperparameter setting. This shows that we increasingly get a better estimate of the marginal likelihood as we add more inducing points."
@@ -615,7 +621,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "f0d0f7ef",
+   "id": "2dc907e4",
    "metadata": {},
    "source": [
     "### A tight estimate bound does not imply a converged model"
@@ -624,13 +630,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "c01466b2",
+   "id": "5526296d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-04-27T17:41:38.886472Z",
-     "iopub.status.busy": "2023-04-27T17:41:38.886158Z",
-     "iopub.status.idle": "2023-04-27T17:41:39.949486Z",
-     "shell.execute_reply": "2023-04-27T17:41:39.948951Z"
+     "iopub.execute_input": "2023-05-02T13:50:58.662320Z",
+     "iopub.status.busy": "2023-05-02T13:50:58.662050Z",
+     "iopub.status.idle": "2023-05-02T13:51:00.070087Z",
+     "shell.execute_reply": "2023-05-02T13:51:00.069268Z"
     }
    },
    "outputs": [
@@ -666,7 +672,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a0e2fc3c",
+   "id": "274441b5",
    "metadata": {},
    "source": [
     "In this case we show that for the hyperparameter setting, the bound is very tight. However, this does _not_ imply that we have enough inducing points, but simply that we have correctly identified the marginal likelihood for this particular hyperparameter setting. In this specific case, where we used a single inducing point, the model collapses to not using the GP at all (lengthscale is really long to model only the mean). The rest of the variance is explained by noise. This GP can be perfectly approximated with a single inducing point."
@@ -675,13 +681,13 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "987c211f",
+   "id": "4189faa5",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-04-27T17:41:39.951972Z",
-     "iopub.status.busy": "2023-04-27T17:41:39.951756Z",
-     "iopub.status.idle": "2023-04-27T17:41:40.228137Z",
-     "shell.execute_reply": "2023-04-27T17:41:40.227620Z"
+     "iopub.execute_input": "2023-05-02T13:51:00.073752Z",
+     "iopub.status.busy": "2023-05-02T13:51:00.073175Z",
+     "iopub.status.idle": "2023-05-02T13:51:00.407677Z",
+     "shell.execute_reply": "2023-05-02T13:51:00.407156Z"
     }
    },
    "outputs": [
@@ -713,13 +719,13 @@
   {
    "cell_type": "code",
    "execution_count": 12,
-   "id": "aa013bc3",
+   "id": "7b6cfe6c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-04-27T17:41:40.230515Z",
-     "iopub.status.busy": "2023-04-27T17:41:40.230310Z",
-     "iopub.status.idle": "2023-04-27T17:41:40.240629Z",
-     "shell.execute_reply": "2023-04-27T17:41:40.240024Z"
+     "iopub.execute_input": "2023-05-02T13:51:00.410294Z",
+     "iopub.status.busy": "2023-05-02T13:51:00.410075Z",
+     "iopub.status.idle": "2023-05-02T13:51:00.420456Z",
+     "shell.execute_reply": "2023-05-02T13:51:00.419964Z"
     }
    },
    "outputs": [
@@ -752,7 +758,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ebe18a36",
+   "id": "53cf8612",
    "metadata": {},
    "source": [
     "This can be diagnosed by showing that there are other hyperparameter settings with higher upper bounds. This indicates that there might be better hyperparameter settings, but we cannot identify them due to the lack of inducing points. An example of this can be seen in the previous section."

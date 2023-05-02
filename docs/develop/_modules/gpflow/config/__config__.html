@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 
 <html lang="en">
@@ -278,6 +277,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">* ``GPFLOW_FLOAT``: &quot;float16&quot;, &quot;float32&quot;, or &quot;float64&quot;</span>
 <span class="sd">* ``GPFLOW_POSITIVE_BIJECTOR``: &quot;exp&quot; or &quot;softplus&quot;</span>
 <span class="sd">* ``GPFLOW_POSITIVE_MINIMUM``: Any positive float number</span>
+<span class="sd">* ``GPFLOW_LIKELIHOOD_POSITIVE_MINIMUM``: Any positive float number</span>
 <span class="sd">* ``GPFLOW_SUMMARY_FMT``: &quot;notebook&quot; or any other format that :mod:`tabulate` can handle.</span>
 <span class="sd">* ``GPFLOW_JITTER``: Any positive float number</span>
 
@@ -307,6 +307,7 @@ function checkPageExistsAndRedirect(event) {
     <span class="s2">&quot;default_float&quot;</span><span class="p">,</span>
     <span class="s2">&quot;default_int&quot;</span><span class="p">,</span>
     <span class="s2">&quot;default_jitter&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;default_likelihood_positive_minimum&quot;</span><span class="p">,</span>
     <span class="s2">&quot;default_positive_bijector&quot;</span><span class="p">,</span>
     <span class="s2">&quot;default_positive_minimum&quot;</span><span class="p">,</span>
     <span class="s2">&quot;default_summary_fmt&quot;</span><span class="p">,</span>
@@ -315,6 +316,7 @@ function checkPageExistsAndRedirect(event) {
     <span class="s2">&quot;set_default_float&quot;</span><span class="p">,</span>
     <span class="s2">&quot;set_default_int&quot;</span><span class="p">,</span>
     <span class="s2">&quot;set_default_jitter&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;set_default_likelihood_positive_minimum&quot;</span><span class="p">,</span>
     <span class="s2">&quot;set_default_positive_bijector&quot;</span><span class="p">,</span>
     <span class="s2">&quot;set_default_positive_minimum&quot;</span><span class="p">,</span>
     <span class="s2">&quot;set_default_summary_fmt&quot;</span><span class="p">,</span>
@@ -338,6 +340,7 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">FLOAT</span> <span class="o">=</span> <span class="n">_Value</span><span class="p">(</span><span class="s2">&quot;GPFLOW_FLOAT&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
     <span class="n">POSITIVE_BIJECTOR</span> <span class="o">=</span> <span class="n">_Value</span><span class="p">(</span><span class="s2">&quot;GPFLOW_POSITIVE_BIJECTOR&quot;</span><span class="p">,</span> <span class="s2">&quot;softplus&quot;</span><span class="p">)</span>
     <span class="n">POSITIVE_MINIMUM</span> <span class="o">=</span> <span class="n">_Value</span><span class="p">(</span><span class="s2">&quot;GPFLOW_POSITIVE_MINIMUM&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+    <span class="n">LIKELIHOOD_POSITIVE_MINIMUM</span> <span class="o">=</span> <span class="n">_Value</span><span class="p">(</span><span class="s2">&quot;GPFLOW_LIKELIHOOD_POSITIVE_MINIMUM&quot;</span><span class="p">,</span> <span class="mf">1e-6</span><span class="p">)</span>
     <span class="n">SUMMARY_FMT</span> <span class="o">=</span> <span class="n">_Value</span><span class="p">(</span><span class="s2">&quot;GPFLOW_SUMMARY_FMT&quot;</span><span class="p">,</span> <span class="s2">&quot;fancy_grid&quot;</span><span class="p">)</span>
     <span class="n">JITTER</span> <span class="o">=</span> <span class="n">_Value</span><span class="p">(</span><span class="s2">&quot;GPFLOW_JITTER&quot;</span><span class="p">,</span> <span class="mf">1e-6</span><span class="p">)</span>
 
@@ -395,6 +398,16 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Config cannot set the positive_minimum value with non float type.&quot;</span><span class="p">)</span>
 
 
+<span class="k">def</span> <span class="nf">_default_likelihood_positive_minimum_factory</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="n">_default</span><span class="p">(</span><span class="n">_Values</span><span class="o">.</span><span class="n">LIKELIHOOD_POSITIVE_MINIMUM</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="s2">&quot;Config cannot set the likelihood_positive_minimum value with non float type.&quot;</span>
+        <span class="p">)</span>
+
+
 <span class="k">def</span> <span class="nf">_default_summary_fmt_factory</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
     <span class="n">result</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">_default</span><span class="p">(</span><span class="n">_Values</span><span class="o">.</span><span class="n">SUMMARY_FMT</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">result</span>
@@ -434,6 +447,11 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">positive_minimum</span><span class="p">:</span> <span class="n">Float</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">_default_positive_minimum_factory</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Lower bound for the positive transformation.&quot;&quot;&quot;</span>
 
+    <span class="n">likelihood_positive_minimum</span><span class="p">:</span> <span class="n">Float</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+        <span class="n">default_factory</span><span class="o">=</span><span class="n">_default_likelihood_positive_minimum_factory</span>
+    <span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Lower bound for the positive transformation for positive likelihood parameters.&quot;&quot;&quot;</span>
+
     <span class="n">summary_fmt</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">_default_summary_fmt_factory</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Summary format for module printing.&quot;&quot;&quot;</span></div>
 
@@ -471,6 +489,11 @@ function checkPageExistsAndRedirect(event) {
 <div class="viewcode-block" id="default_positive_minimum"><a class="viewcode-back" href="../../../api/gpflow/config/index.html#gpflow.config.default_positive_minimum">[docs]</a><span class="k">def</span> <span class="nf">default_positive_minimum</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Shift constant that GPflow adds to all positive constraints.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">config</span><span class="p">()</span><span class="o">.</span><span class="n">positive_minimum</span></div>
+
+
+<div class="viewcode-block" id="default_likelihood_positive_minimum"><a class="viewcode-back" href="../../../api/gpflow/config/index.html#gpflow.config.default_likelihood_positive_minimum">[docs]</a><span class="k">def</span> <span class="nf">default_likelihood_positive_minimum</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Shift constant that GPflow adds to all positive likelihood parameter constraints.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">config</span><span class="p">()</span><span class="o">.</span><span class="n">likelihood_positive_minimum</span></div>
 
 
 <div class="viewcode-block" id="default_summary_fmt"><a class="viewcode-back" href="../../../api/gpflow/config/index.html#gpflow.config.default_summary_fmt">[docs]</a><span class="k">def</span> <span class="nf">default_summary_fmt</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
@@ -561,6 +584,19 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">set_config</span><span class="p">(</span><span class="n">replace</span><span class="p">(</span><span class="n">config</span><span class="p">(),</span> <span class="n">positive_minimum</span><span class="o">=</span><span class="n">value</span><span class="p">))</span></div>
 
 
+<div class="viewcode-block" id="set_default_likelihood_positive_minimum"><a class="viewcode-back" href="../../../api/gpflow/config/index.html#gpflow.config.set_default_likelihood_positive_minimum">[docs]</a><span class="k">def</span> <span class="nf">set_default_likelihood_positive_minimum</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sets shift constant for positive likelihood transformation.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
+        <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">))</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+    <span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Expected float32 or float64 scalar value&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Likelihood positive minimum must be non-negative&quot;</span><span class="p">)</span>
+
+    <span class="n">set_config</span><span class="p">(</span><span class="n">replace</span><span class="p">(</span><span class="n">config</span><span class="p">(),</span> <span class="n">likelihood_positive_minimum</span><span class="o">=</span><span class="n">value</span><span class="p">))</span></div>
+
+
 <div class="viewcode-block" id="set_default_summary_fmt"><a class="viewcode-back" href="../../../api/gpflow/config/index.html#gpflow.config.set_default_summary_fmt">[docs]</a><span class="k">def</span> <span class="nf">set_default_summary_fmt</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="n">formats</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">tabulate</span><span class="o">.</span><span class="n">tabulate_formats</span><span class="p">)</span>
     <span class="n">formats</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;notebook&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span>
@@ -617,7 +653,7 @@ function checkPageExistsAndRedirect(event) {
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 6.2.1.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.0.0.<br>
 </p>
   </div>
   
