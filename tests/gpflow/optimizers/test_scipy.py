@@ -80,7 +80,7 @@ def test_scipy_jit() -> None:
         variables=m3.trainable_variables,
         options=dict(maxiter=50),
         compile=True,
-        tffun_args={jit_compile_arg: True},
+        tf_fun_args={jit_compile_arg: True},
     )
 
     def get_values(model: GPModel) -> AnyNDArray:
@@ -93,33 +93,35 @@ def test_scipy_jit() -> None:
 @unittest.mock.patch("tensorflow.function")
 @pytest.mark.parametrize("compile", [True, False])
 @pytest.mark.parametrize(
-    "tffun_args",
+    "tf_fun_args",
     [{}, dict(jit_compile=True), dict(jit_compile=False, other_arg="dummy")],
 )
-def test_scipy__tffun_args(
-    mocked_tffun: MagicMock, compile: bool, tffun_args: Dict[str, Any]
+def test_scipy__tf_fun_args(
+    mocked_tf_fun: MagicMock, compile: bool, tf_fun_args: Dict[str, Any]
 ) -> None:
-    mocked_tffun.side_effect = lambda f, **_: f
+    mocked_tf_fun.side_effect = lambda f, **_: f
 
     m = _create_full_gp_model()
     opt = gpflow.optimizers.Scipy()
-    expect_raise = not compile and len(tffun_args)
+    expect_raise = not compile and len(tf_fun_args)
     if expect_raise:
         with pytest.raises(
-            ValueError, match="`tffun_args` should only be set when `compile` is True"
+            ValueError, match="`tf_fun_args` should only be set when `compile` is True"
         ):
             opt.minimize(
-                m.training_loss, m.trainable_variables, compile=compile, tffun_args=tffun_args
+                m.training_loss, m.trainable_variables, compile=compile, tf_fun_args=tf_fun_args
             )
     else:
-        opt.minimize(m.training_loss, m.trainable_variables, compile=compile, tffun_args=tffun_args)
+        opt.minimize(
+            m.training_loss, m.trainable_variables, compile=compile, tf_fun_args=tf_fun_args
+        )
 
     if compile:
-        received_args = mocked_tffun.call_args[1]
-        expected_args = tffun_args
+        received_args = mocked_tf_fun.call_args[1]
+        expected_args = tf_fun_args
     else:
         # When no-compile, don't expect tf.function to be called.
-        received_args = mocked_tffun.call_args
+        received_args = mocked_tf_fun.call_args
         expected_args = None
     assert received_args == expected_args
 
@@ -138,8 +140,8 @@ def test_scipy__optimal(compile: bool, jit: bool) -> None:
         return tf.reduce_sum((target1 - v1) ** 2) + tf.reduce_sum((target2 - v2) ** 2)
 
     opt = gpflow.optimizers.Scipy()
-    tffun_args = {jit_compile_arg: True} if jit else {}
-    result = opt.minimize(f, [v1, v2], compile=compile, tffun_args=tffun_args)
+    tf_fun_args = {jit_compile_arg: True} if jit else {}
+    result = opt.minimize(f, [v1, v2], compile=compile, tf_fun_args=tf_fun_args)
 
     if compile:
         assert 1 == compilation_count
@@ -164,8 +166,8 @@ def test_scipy__partially_disconnected_variable(compile: bool, jit: bool) -> Non
         return (target1 - v10) ** 2 + (target2 - v2) ** 2
 
     opt = gpflow.optimizers.Scipy()
-    tffun_args = {jit_compile_arg: True} if jit else {}
-    result = opt.minimize(f, [v1, v2], compile=compile, tffun_args=tffun_args)
+    tf_fun_args = {jit_compile_arg: True} if jit else {}
+    result = opt.minimize(f, [v1, v2], compile=compile, tf_fun_args=tf_fun_args)
 
     assert result.success
     np.testing.assert_allclose([target1, 0.5, target2], result.x)
@@ -187,7 +189,7 @@ def test_scipy__disconnected_variable(
         return tf.reduce_sum((target1 - v1) ** 2)
 
     opt = gpflow.optimizers.Scipy()
-    tffun_args = {jit_compile_arg: True} if jit else {}
+    tf_fun_args = {jit_compile_arg: True} if jit else {}
 
     if allow_unused_variables:
         with warnings.catch_warnings(record=True) as w:
@@ -197,7 +199,7 @@ def test_scipy__disconnected_variable(
                 [v1, v2],
                 compile=compile,
                 allow_unused_variables=allow_unused_variables,
-                tffun_args=tffun_args,
+                tf_fun_args=tf_fun_args,
             )
 
         (warning,) = w
@@ -217,5 +219,5 @@ def test_scipy__disconnected_variable(
                 [v1, v2],
                 compile=compile,
                 allow_unused_variables=allow_unused_variables,
-                tffun_args=tffun_args,
+                tf_fun_args=tf_fun_args,
             )

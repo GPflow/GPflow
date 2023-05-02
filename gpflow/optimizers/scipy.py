@@ -39,7 +39,7 @@ class Scipy:
         step_callback: Optional[StepCallback] = None,
         compile: bool = True,
         allow_unused_variables: bool = False,
-        tffun_args: Optional[Mapping[str, Any]] = None,
+        tf_fun_args: Optional[Mapping[str, Any]] = None,
         **scipy_kwargs: Any,
     ) -> OptimizeResult:
         """
@@ -63,11 +63,11 @@ class Scipy:
             most cases.
         :param allow_unused_variables: Whether to allow variables that are not actually used in the
             closure.
-        :param tffun_args: Arguments passed through to `tf.function()` when `compile` is True.
+        :param tf_fun_args: Arguments passed through to `tf.function()` when `compile` is True.
             For example, to enable XLA compilation::
 
                 opt = gpflow.optimizers.Scipy()
-                opt.minimize(..., compile=True, tffun_args=dict(jit_compile=True))
+                opt.minimize(..., compile=True, tf_fun_args=dict(jit_compile=True))
         :param scipy_kwargs: Arguments passed through to `scipy.optimize.minimize`.
             Note that Scipy's minimize() takes a `callback` argument, but you probably want to use
             our wrapper and pass in `step_callback`.
@@ -75,8 +75,8 @@ class Scipy:
             The optimization result represented as a Scipy ``OptimizeResult`` object.
             See the Scipy documentation for description of attributes.
         """
-        if tffun_args is None:
-            tffun_args = {}
+        if tf_fun_args is None:
+            tf_fun_args = {}
         if not callable(closure):
             raise TypeError(
                 "The 'closure' argument is expected to be a callable object."
@@ -87,8 +87,8 @@ class Scipy:
                 "The 'variables' argument is expected to only contain tf.Variable instances"
                 " (use model.trainable_variables, not model.trainable_parameters)"
             )  # pragma: no cover
-        if not compile and len(tffun_args) > 0:
-            raise ValueError("`tffun_args` should only be set when `compile` is True")
+        if not compile and len(tf_fun_args) > 0:
+            raise ValueError("`tf_fun_args` should only be set when `compile` is True")
         initial_params = self.initial_parameters(variables)
 
         func = self.eval_func(
@@ -96,7 +96,7 @@ class Scipy:
             variables,
             compile=compile,
             allow_unused_variables=allow_unused_variables,
-            tffun_args=tffun_args,
+            tf_fun_args=tf_fun_args,
         )
         if step_callback is not None:
             if "callback" in scipy_kwargs:
@@ -121,7 +121,7 @@ class Scipy:
         cls,
         closure: LossClosure,
         variables: Sequence[tf.Variable],
-        tffun_args: Mapping[str, Any],
+        tf_fun_args: Mapping[str, Any],
         compile: bool = True,
         allow_unused_variables: bool = False,
     ) -> Callable[[AnyNDArray], Tuple[AnyNDArray, AnyNDArray]]:
@@ -148,7 +148,7 @@ class Scipy:
             return loss, cls.pack_tensors(grads)
 
         if compile:
-            _tf_eval = tf.function(_tf_eval, **tffun_args)
+            _tf_eval = tf.function(_tf_eval, **tf_fun_args)
 
         def _eval(x: AnyNDArray) -> Tuple[AnyNDArray, AnyNDArray]:
             loss, grad = _tf_eval(tf.convert_to_tensor(x))
