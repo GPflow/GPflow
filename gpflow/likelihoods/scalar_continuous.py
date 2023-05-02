@@ -21,6 +21,7 @@ from check_shapes import check_shapes, inherit_check_shapes
 
 from .. import logdensities
 from ..base import MeanAndVariance, TensorType
+from ..config import default_likelihood_positive_minimum
 from ..utilities.parameter_or_function import (
     ConstantOrFunction,
     ParameterOrFunction,
@@ -30,7 +31,11 @@ from ..utilities.parameter_or_function import (
 from .base import ScalarLikelihood
 from .utils import inv_probit
 
-DEFAULT_LOWER_BOUND = 1e-6
+
+def _lower_bound(value: Optional[float] = None) -> float:
+    if value is None:
+        return default_likelihood_positive_minimum()
+    return value
 
 
 class Gaussian(ScalarLikelihood):
@@ -49,7 +54,7 @@ class Gaussian(ScalarLikelihood):
         variance: Optional[ConstantOrFunction] = None,
         *,
         scale: Optional[ConstantOrFunction] = None,
-        variance_lower_bound: float = DEFAULT_LOWER_BOUND,
+        variance_lower_bound: Optional[float] = None,
         **kwargs: Any,
     ) -> None:
         """
@@ -62,8 +67,8 @@ class Gaussian(ScalarLikelihood):
         """
         super().__init__(**kwargs)
 
-        self.variance_lower_bound = variance_lower_bound
-        self.scale_lower_bound = sqrt(variance_lower_bound)
+        self.variance_lower_bound = _lower_bound(variance_lower_bound)
+        self.scale_lower_bound = sqrt(self.variance_lower_bound)
         if scale is None:
             if variance is None:
                 variance = 1.0
@@ -174,7 +179,7 @@ class StudentT(ScalarLikelihood):
         self,
         scale: ConstantOrFunction = 1.0,
         df: float = 3.0,
-        scale_lower_bound: float = DEFAULT_LOWER_BOUND,
+        scale_lower_bound: Optional[float] = None,
         **kwargs: Any,
     ) -> None:
         """
@@ -183,7 +188,7 @@ class StudentT(ScalarLikelihood):
         """
         super().__init__(**kwargs)
         self.df = df
-        self.scale_lower_bound = scale_lower_bound
+        self.scale_lower_bound = _lower_bound(scale_lower_bound)
         self.scale = prepare_parameter_or_function(scale, lower_bound=self.scale_lower_bound)
 
     @check_shapes(
@@ -217,12 +222,12 @@ class Gamma(ScalarLikelihood):
         self,
         invlink: Callable[[tf.Tensor], tf.Tensor] = tf.exp,
         shape: ConstantOrFunction = 1.0,
-        shape_lower_bound: float = DEFAULT_LOWER_BOUND,
+        shape_lower_bound: Optional[float] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
         self.invlink = invlink
-        self.shape_lower_bound = shape_lower_bound
+        self.shape_lower_bound = _lower_bound(shape_lower_bound)
         self.shape = prepare_parameter_or_function(shape, lower_bound=self.shape_lower_bound)
 
     @check_shapes(
@@ -283,11 +288,11 @@ class Beta(ScalarLikelihood):
         self,
         invlink: Callable[[tf.Tensor], tf.Tensor] = inv_probit,
         scale: ConstantOrFunction = 1.0,
-        scale_lower_bound: float = DEFAULT_LOWER_BOUND,
+        scale_lower_bound: Optional[float] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
-        self.scale_lower_bound = DEFAULT_LOWER_BOUND
+        self.scale_lower_bound = _lower_bound(scale_lower_bound)
         self.scale = prepare_parameter_or_function(scale, lower_bound=self.scale_lower_bound)
         self.invlink = invlink
 
