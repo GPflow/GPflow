@@ -253,7 +253,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="c1"># limitations under the License.</span>
 
 <span class="kn">import</span> <span class="nn">warnings</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">scipy.optimize</span>
@@ -279,6 +279,7 @@ function checkPageExistsAndRedirect(event) {
         <span class="n">step_callback</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">StepCallback</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="nb">compile</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">allow_unused_variables</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">tf_fun_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">scipy_kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OptimizeResult</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -302,6 +303,11 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">            most cases.</span>
 <span class="sd">        :param allow_unused_variables: Whether to allow variables that are not actually used in the</span>
 <span class="sd">            closure.</span>
+<span class="sd">        :param tf_fun_args: Arguments passed through to `tf.function()` when `compile` is True.</span>
+<span class="sd">            For example, to enable XLA compilation::</span>
+
+<span class="sd">                opt = gpflow.optimizers.Scipy()</span>
+<span class="sd">                opt.minimize(..., compile=True, tf_fun_args=dict(jit_compile=True))</span>
 <span class="sd">        :param scipy_kwargs: Arguments passed through to `scipy.optimize.minimize`.</span>
 <span class="sd">            Note that Scipy&#39;s minimize() takes a `callback` argument, but you probably want to use</span>
 <span class="sd">            our wrapper and pass in `step_callback`.</span>
@@ -309,6 +315,8 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">            The optimization result represented as a Scipy ``OptimizeResult`` object.</span>
 <span class="sd">            See the Scipy documentation for description of attributes.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">tf_fun_args</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tf_fun_args</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">callable</span><span class="p">(</span><span class="n">closure</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
                 <span class="s2">&quot;The &#39;closure&#39; argument is expected to be a callable object.&quot;</span>
@@ -319,10 +327,16 @@ function checkPageExistsAndRedirect(event) {
                 <span class="s2">&quot;The &#39;variables&#39; argument is expected to only contain tf.Variable instances&quot;</span>
                 <span class="s2">&quot; (use model.trainable_variables, not model.trainable_parameters)&quot;</span>
             <span class="p">)</span>  <span class="c1"># pragma: no cover</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">compile</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">tf_fun_args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`tf_fun_args` should only be set when `compile` is True&quot;</span><span class="p">)</span>
         <span class="n">initial_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_parameters</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
 
         <span class="n">func</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eval_func</span><span class="p">(</span>
-            <span class="n">closure</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="nb">compile</span><span class="o">=</span><span class="nb">compile</span><span class="p">,</span> <span class="n">allow_unused_variables</span><span class="o">=</span><span class="n">allow_unused_variables</span>
+            <span class="n">closure</span><span class="p">,</span>
+            <span class="n">variables</span><span class="p">,</span>
+            <span class="nb">compile</span><span class="o">=</span><span class="nb">compile</span><span class="p">,</span>
+            <span class="n">allow_unused_variables</span><span class="o">=</span><span class="n">allow_unused_variables</span><span class="p">,</span>
+            <span class="n">tf_fun_args</span><span class="o">=</span><span class="n">tf_fun_args</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">step_callback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="s2">&quot;callback&quot;</span> <span class="ow">in</span> <span class="n">scipy_kwargs</span><span class="p">:</span>
@@ -347,6 +361,7 @@ function checkPageExistsAndRedirect(event) {
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">closure</span><span class="p">:</span> <span class="n">LossClosure</span><span class="p">,</span>
         <span class="n">variables</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">],</span>
+        <span class="n">tf_fun_args</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
         <span class="nb">compile</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">allow_unused_variables</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">AnyNDArray</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">AnyNDArray</span><span class="p">]]:</span>
@@ -373,7 +388,7 @@ function checkPageExistsAndRedirect(event) {
             <span class="k">return</span> <span class="n">loss</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">pack_tensors</span><span class="p">(</span><span class="n">grads</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">compile</span><span class="p">:</span>
-            <span class="n">_tf_eval</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="n">_tf_eval</span><span class="p">)</span>
+            <span class="n">_tf_eval</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="n">_tf_eval</span><span class="p">,</span> <span class="o">**</span><span class="n">tf_fun_args</span><span class="p">)</span>
 
         <span class="k">def</span> <span class="nf">_eval</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">AnyNDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">AnyNDArray</span><span class="p">]:</span>
             <span class="n">loss</span><span class="p">,</span> <span class="n">grad</span> <span class="o">=</span> <span class="n">_tf_eval</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>

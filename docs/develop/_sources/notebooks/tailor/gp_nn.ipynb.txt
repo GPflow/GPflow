@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "a6b68219",
+   "id": "5d4019c8",
    "metadata": {},
    "source": [
     "# Mixing TensorFlow models with GPflow\n",
@@ -13,13 +13,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "b79508e6",
+   "id": "161921d3",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-05-02T13:48:52.178013Z",
-     "iopub.status.busy": "2023-05-02T13:48:52.177466Z",
-     "iopub.status.idle": "2023-05-02T13:48:57.309974Z",
-     "shell.execute_reply": "2023-05-02T13:48:57.308981Z"
+     "iopub.execute_input": "2023-05-03T09:40:28.049375Z",
+     "iopub.status.busy": "2023-05-03T09:40:28.048885Z",
+     "iopub.status.idle": "2023-05-03T09:40:33.155063Z",
+     "shell.execute_reply": "2023-05-03T09:40:33.154432Z"
     }
    },
    "outputs": [
@@ -27,20 +27,26 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2023-05-02 13:48:52.414953: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
-      "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n",
-      "2023-05-02 13:48:52.579325: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
-      "2023-05-02 13:48:52.579348: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n",
-      "2023-05-02 13:48:52.624668: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n"
+      "2023-05-03 09:40:28.307893: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2023-05-02 13:48:53.453944: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory\n",
-      "2023-05-02 13:48:53.454058: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory\n",
-      "2023-05-02 13:48:53.454067: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.\n"
+      "2023-05-03 09:40:28.481023: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2023-05-03 09:40:28.481112: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n",
+      "2023-05-03 09:40:28.514826: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2023-05-03 09:40:29.290697: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory\n",
+      "2023-05-03 09:40:29.290789: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory\n",
+      "2023-05-03 09:40:29.290798: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.\n"
      ]
     }
    ],
@@ -61,7 +67,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "282dbf6c",
+   "id": "ee121dbf",
    "metadata": {},
    "source": [
     "## Convolutional network inside a GPflow model"
@@ -70,13 +76,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "536d66e7",
+   "id": "39b7e8fd",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-05-02T13:48:57.314793Z",
-     "iopub.status.busy": "2023-05-02T13:48:57.314123Z",
-     "iopub.status.idle": "2023-05-02T13:48:59.131670Z",
-     "shell.execute_reply": "2023-05-02T13:48:59.130849Z"
+     "iopub.execute_input": "2023-05-03T09:40:33.158290Z",
+     "iopub.status.busy": "2023-05-03T09:40:33.157842Z",
+     "iopub.status.idle": "2023-05-03T09:40:35.097951Z",
+     "shell.execute_reply": "2023-05-03T09:40:35.096998Z"
     }
    },
    "outputs": [
@@ -84,7 +90,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2023-05-02 13:48:57.330681: W tensorflow/core/platform/cloud/google_auth_provider.cc:184] All attempts to get a Google authentication bearer token failed, returning an empty token. Retrieving token from files failed with \"NOT_FOUND: Could not locate the credentials file.\". Retrieving token from GCE failed with \"FAILED_PRECONDITION: Error executing an HTTP request: libcurl code 6 meaning 'Couldn't resolve host name', error details: Could not resolve host: metadata\".\n"
+      "2023-05-03 09:40:33.190008: W tensorflow/core/platform/cloud/google_auth_provider.cc:184] All attempts to get a Google authentication bearer token failed, returning an empty token. Retrieving token from files failed with \"NOT_FOUND: Could not locate the credentials file.\". Retrieving token from GCE failed with \"FAILED_PRECONDITION: Error executing an HTTP request: libcurl code 6 meaning 'Couldn't resolve host name', error details: Could not resolve host: metadata\".\n"
      ]
     },
     {
@@ -97,7 +103,7 @@
     {
      "data": {
       "application/vnd.jupyter.widget-view+json": {
-       "model_id": "3311a8baf2044244a93c18456ad056d0",
+       "model_id": "887bbefe97e141fea65e90926c85e8f7",
        "version_major": 2,
        "version_minor": 0
       },
@@ -119,10 +125,10 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2023-05-02 13:48:58.169470: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
-      "2023-05-02 13:48:58.169508: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)\n",
-      "2023-05-02 13:48:58.169527: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (1d3549e9594d): /proc/driver/nvidia/version does not exist\n",
-      "2023-05-02 13:48:58.169744: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2023-05-03 09:40:34.149487: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2023-05-03 09:40:34.149517: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2023-05-03 09:40:34.149536: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (e2a8f23deb6f): /proc/driver/nvidia/version does not exist\n",
+      "2023-05-03 09:40:34.149772: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     }
@@ -156,7 +162,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "0174adbe",
+   "id": "4c47a9e8",
    "metadata": {},
    "source": [
     "Here we'll use the GPflow functionality, but put a non-GPflow model inside the kernel.\\\n",
@@ -166,13 +172,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "7f0d0c02",
+   "id": "4a336bec",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-05-02T13:48:59.135554Z",
-     "iopub.status.busy": "2023-05-02T13:48:59.135220Z",
-     "iopub.status.idle": "2023-05-02T13:48:59.145370Z",
-     "shell.execute_reply": "2023-05-02T13:48:59.144436Z"
+     "iopub.execute_input": "2023-05-03T09:40:35.101211Z",
+     "iopub.status.busy": "2023-05-03T09:40:35.100889Z",
+     "iopub.status.idle": "2023-05-03T09:40:35.109459Z",
+     "shell.execute_reply": "2023-05-03T09:40:35.108819Z"
     }
    },
    "outputs": [],
@@ -233,7 +239,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7f4d8676",
+   "id": "35ccd68c",
    "metadata": {},
    "source": [
     "$K_{uf}$ is in ConvNN output space, therefore we need to update `Kuf` multidispatch."
@@ -242,13 +248,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "2f6ac7ad",
+   "id": "47088449",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-05-02T13:48:59.148882Z",
-     "iopub.status.busy": "2023-05-02T13:48:59.148502Z",
-     "iopub.status.idle": "2023-05-02T13:48:59.154897Z",
-     "shell.execute_reply": "2023-05-02T13:48:59.154117Z"
+     "iopub.execute_input": "2023-05-03T09:40:35.111996Z",
+     "iopub.status.busy": "2023-05-03T09:40:35.111683Z",
+     "iopub.status.idle": "2023-05-03T09:40:35.116585Z",
+     "shell.execute_reply": "2023-05-03T09:40:35.116033Z"
     }
    },
    "outputs": [],
@@ -274,7 +280,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "c54def1f",
+   "id": "b738c101",
    "metadata": {},
    "source": [
     "Now we are ready to create and initialize the model:"
@@ -283,13 +289,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "65d848c7",
+   "id": "c19364e7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-05-02T13:48:59.158218Z",
-     "iopub.status.busy": "2023-05-02T13:48:59.157885Z",
-     "iopub.status.idle": "2023-05-02T13:49:03.294356Z",
-     "shell.execute_reply": "2023-05-02T13:49:03.293650Z"
+     "iopub.execute_input": "2023-05-03T09:40:35.119008Z",
+     "iopub.status.busy": "2023-05-03T09:40:35.118795Z",
+     "iopub.status.idle": "2023-05-03T09:40:39.940954Z",
+     "shell.execute_reply": "2023-05-03T09:40:39.940333Z"
     }
    },
    "outputs": [
@@ -297,7 +303,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2023-05-02 13:48:59.352498: W tensorflow/core/kernels/data/cache_dataset_ops.cc:856] The calling iterator did not fully read the dataset being cached. In order to avoid unexpected truncation of the dataset, the partially cached contents of the dataset  will be discarded. This can happen if you have an input pipeline similar to `dataset.cache().take(k).repeat()`. You should use `dataset.take(k).cache().repeat()` instead.\n"
+      "2023-05-03 09:40:35.297679: W tensorflow/core/kernels/data/cache_dataset_ops.cc:856] The calling iterator did not fully read the dataset being cached. In order to avoid unexpected truncation of the dataset, the partially cached contents of the dataset  will be discarded. This can happen if you have an input pipeline similar to `dataset.cache().take(k).repeat()`. You should use `dataset.take(k).cache().repeat()` instead.\n"
      ]
     }
    ],
@@ -335,7 +341,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e51096c9",
+   "id": "cdc6fdd0",
    "metadata": {},
    "source": [
     "And start optimization:"
@@ -344,13 +350,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "5ac3ec30",
+   "id": "b6177b91",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-05-02T13:49:03.306325Z",
-     "iopub.status.busy": "2023-05-02T13:49:03.297478Z",
-     "iopub.status.idle": "2023-05-02T13:49:35.752683Z",
-     "shell.execute_reply": "2023-05-02T13:49:35.751998Z"
+     "iopub.execute_input": "2023-05-03T09:40:39.943926Z",
+     "iopub.status.busy": "2023-05-03T09:40:39.943646Z",
+     "iopub.status.idle": "2023-05-03T09:41:14.088038Z",
+     "shell.execute_reply": "2023-05-03T09:41:14.086587Z"
     }
    },
    "outputs": [],
@@ -372,7 +378,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "265cb095",
+   "id": "79c9ab46",
    "metadata": {},
    "source": [
     "Let's do predictions after training. Don't expect that we will get a good accuracy, because we haven't run training for long enough."
@@ -381,13 +387,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "4a0156a1",
+   "id": "d651fc92",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-05-02T13:49:35.755997Z",
-     "iopub.status.busy": "2023-05-02T13:49:35.755679Z",
-     "iopub.status.idle": "2023-05-02T13:49:43.554571Z",
-     "shell.execute_reply": "2023-05-02T13:49:43.553648Z"
+     "iopub.execute_input": "2023-05-03T09:41:14.093492Z",
+     "iopub.status.busy": "2023-05-03T09:41:14.093065Z",
+     "iopub.status.idle": "2023-05-03T09:41:21.436035Z",
+     "shell.execute_reply": "2023-05-03T09:41:21.435419Z"
     }
    },
    "outputs": [
@@ -395,7 +401,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "Accuracy is 9.3750%\n"
+      "Accuracy is 63.0859%\n"
      ]
     }
    ],
@@ -433,31 +439,60 @@
   "widgets": {
    "application/vnd.jupyter.widget-state+json": {
     "state": {
-     "3311a8baf2044244a93c18456ad056d0": {
-      "model_module": "@jupyter-widgets/controls",
+     "38879b9f8fbf404a87f2d31778e787d1": {
+      "model_module": "@jupyter-widgets/base",
       "model_module_version": "2.0.0",
-      "model_name": "HBoxModel",
+      "model_name": "LayoutModel",
       "state": {
-       "_dom_classes": [],
-       "_model_module": "@jupyter-widgets/controls",
+       "_model_module": "@jupyter-widgets/base",
        "_model_module_version": "2.0.0",
-       "_model_name": "HBoxModel",
+       "_model_name": "LayoutModel",
        "_view_count": null,
-       "_view_module": "@jupyter-widgets/controls",
+       "_view_module": "@jupyter-widgets/base",
        "_view_module_version": "2.0.0",
-       "_view_name": "HBoxView",
-       "box_style": "",
-       "children": [
-        "IPY_MODEL_38628fdd31514d28b304918044daf5c6",
-        "IPY_MODEL_b942460eb9ed435cac1ae5c17b4cbfee",
-        "IPY_MODEL_868696e261ed441387b7452a65d1c6a1"
-       ],
-       "layout": "IPY_MODEL_e7c6a2ba2e564fe0acfd3187be0028fc",
-       "tabbable": null,
-       "tooltip": null
+       "_view_name": "LayoutView",
+       "align_content": null,
+       "align_items": null,
+       "align_self": null,
+       "border_bottom": null,
+       "border_left": null,
+       "border_right": null,
+       "border_top": null,
+       "bottom": null,
+       "display": null,
+       "flex": null,
+       "flex_flow": null,
+       "grid_area": null,
+       "grid_auto_columns": null,
+       "grid_auto_flow": null,
+       "grid_auto_rows": null,
+       "grid_column": null,
+       "grid_gap": null,
+       "grid_row": null,
+       "grid_template_areas": null,
+       "grid_template_columns": null,
+       "grid_template_rows": null,
+       "height": null,
+       "justify_content": null,
+       "justify_items": null,
+       "left": null,
+       "margin": null,
+       "max_height": null,
+       "max_width": null,
+       "min_height": null,
+       "min_width": null,
+       "object_fit": null,
+       "object_position": null,
+       "order": null,
+       "overflow": null,
+       "padding": null,
+       "right": null,
+       "top": null,
+       "visibility": null,
+       "width": null
       }
      },
-     "38628fdd31514d28b304918044daf5c6": {
+     "3cbe6f079ed44c8d8e2b0f61ab00da9f": {
       "model_module": "@jupyter-widgets/controls",
       "model_module_version": "2.0.0",
       "model_name": "HTMLModel",
@@ -472,15 +507,15 @@
        "_view_name": "HTMLView",
        "description": "",
        "description_allow_html": false,
-       "layout": "IPY_MODEL_6e98a6318427418dbf79d0e9c4f58d78",
+       "layout": "IPY_MODEL_caeae47721a548e29fb02ec2935b98dd",
        "placeholder": "\u200b",
-       "style": "IPY_MODEL_6203ba27069b44f6b91b70568ea1bd9c",
+       "style": "IPY_MODEL_7327b5e8af9e4033860b6888f03528b9",
        "tabbable": null,
        "tooltip": null,
        "value": "Dl Completed...: 100%"
       }
      },
-     "3c90e7b22d3f455c9f929ff5049e7f9c": {
+     "4b3b912b639141f9b490712a83784cb2": {
       "model_module": "@jupyter-widgets/controls",
       "model_module_version": "2.0.0",
       "model_name": "HTMLStyleModel",
@@ -498,7 +533,7 @@
        "text_color": null
       }
      },
-     "414ccc0a7b6146959bd704f37e986944": {
+     "602a871ec5cc4e738d95c2d0254efb5e": {
       "model_module": "@jupyter-widgets/controls",
       "model_module_version": "2.0.0",
       "model_name": "ProgressStyleModel",
@@ -514,60 +549,7 @@
        "description_width": ""
       }
      },
-     "47b41af191f448baa7729ba6615dbb07": {
-      "model_module": "@jupyter-widgets/base",
-      "model_module_version": "2.0.0",
-      "model_name": "LayoutModel",
-      "state": {
-       "_model_module": "@jupyter-widgets/base",
-       "_model_module_version": "2.0.0",
-       "_model_name": "LayoutModel",
-       "_view_count": null,
-       "_view_module": "@jupyter-widgets/base",
-       "_view_module_version": "2.0.0",
-       "_view_name": "LayoutView",
-       "align_content": null,
-       "align_items": null,
-       "align_self": null,
-       "border_bottom": null,
-       "border_left": null,
-       "border_right": null,
-       "border_top": null,
-       "bottom": null,
-       "display": null,
-       "flex": null,
-       "flex_flow": null,
-       "grid_area": null,
-       "grid_auto_columns": null,
-       "grid_auto_flow": null,
-       "grid_auto_rows": null,
-       "grid_column": null,
-       "grid_gap": null,
-       "grid_row": null,
-       "grid_template_areas": null,
-       "grid_template_columns": null,
-       "grid_template_rows": null,
-       "height": null,
-       "justify_content": null,
-       "justify_items": null,
-       "left": null,
-       "margin": null,
-       "max_height": null,
-       "max_width": null,
-       "min_height": null,
-       "min_width": null,
-       "object_fit": null,
-       "object_position": null,
-       "order": null,
-       "overflow": null,
-       "padding": null,
-       "right": null,
-       "top": null,
-       "visibility": null,
-       "width": null
-      }
-     },
-     "6203ba27069b44f6b91b70568ea1bd9c": {
+     "7327b5e8af9e4033860b6888f03528b9": {
       "model_module": "@jupyter-widgets/controls",
       "model_module_version": "2.0.0",
       "model_name": "HTMLStyleModel",
@@ -585,7 +567,54 @@
        "text_color": null
       }
      },
-     "6e98a6318427418dbf79d0e9c4f58d78": {
+     "869c086ddbe34fdeb9d87fa2cfdc5613": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "2.0.0",
+      "model_name": "HTMLModel",
+      "state": {
+       "_dom_classes": [],
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "2.0.0",
+       "_model_name": "HTMLModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/controls",
+       "_view_module_version": "2.0.0",
+       "_view_name": "HTMLView",
+       "description": "",
+       "description_allow_html": false,
+       "layout": "IPY_MODEL_af379eed724747d1846af87306ec58c8",
+       "placeholder": "\u200b",
+       "style": "IPY_MODEL_4b3b912b639141f9b490712a83784cb2",
+       "tabbable": null,
+       "tooltip": null,
+       "value": " 5/5 [00:00&lt;00:00, 13.19 file/s]"
+      }
+     },
+     "887bbefe97e141fea65e90926c85e8f7": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "2.0.0",
+      "model_name": "HBoxModel",
+      "state": {
+       "_dom_classes": [],
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "2.0.0",
+       "_model_name": "HBoxModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/controls",
+       "_view_module_version": "2.0.0",
+       "_view_name": "HBoxView",
+       "box_style": "",
+       "children": [
+        "IPY_MODEL_3cbe6f079ed44c8d8e2b0f61ab00da9f",
+        "IPY_MODEL_d75f592698514c39b47ecca1efc91379",
+        "IPY_MODEL_869c086ddbe34fdeb9d87fa2cfdc5613"
+       ],
+       "layout": "IPY_MODEL_38879b9f8fbf404a87f2d31778e787d1",
+       "tabbable": null,
+       "tooltip": null
+      }
+     },
+     "af379eed724747d1846af87306ec58c8": {
       "model_module": "@jupyter-widgets/base",
       "model_module_version": "2.0.0",
       "model_name": "LayoutModel",
@@ -638,30 +667,113 @@
        "width": null
       }
      },
-     "868696e261ed441387b7452a65d1c6a1": {
-      "model_module": "@jupyter-widgets/controls",
+     "caeae47721a548e29fb02ec2935b98dd": {
+      "model_module": "@jupyter-widgets/base",
       "model_module_version": "2.0.0",
-      "model_name": "HTMLModel",
+      "model_name": "LayoutModel",
       "state": {
-       "_dom_classes": [],
-       "_model_module": "@jupyter-widgets/controls",
+       "_model_module": "@jupyter-widgets/base",
        "_model_module_version": "2.0.0",
-       "_model_name": "HTMLModel",
+       "_model_name": "LayoutModel",
        "_view_count": null,
-       "_view_module": "@jupyter-widgets/controls",
+       "_view_module": "@jupyter-widgets/base",
        "_view_module_version": "2.0.0",
-       "_view_name": "HTMLView",
-       "description": "",
-       "description_allow_html": false,
-       "layout": "IPY_MODEL_bd5022670bef4e08952a088496c4e565",
-       "placeholder": "\u200b",
-       "style": "IPY_MODEL_3c90e7b22d3f455c9f929ff5049e7f9c",
-       "tabbable": null,
-       "tooltip": null,
-       "value": " 5/5 [00:00&lt;00:00, 14.27 file/s]"
+       "_view_name": "LayoutView",
+       "align_content": null,
+       "align_items": null,
+       "align_self": null,
+       "border_bottom": null,
+       "border_left": null,
+       "border_right": null,
+       "border_top": null,
+       "bottom": null,
+       "display": null,
+       "flex": null,
+       "flex_flow": null,
+       "grid_area": null,
+       "grid_auto_columns": null,
+       "grid_auto_flow": null,
+       "grid_auto_rows": null,
+       "grid_column": null,
+       "grid_gap": null,
+       "grid_row": null,
+       "grid_template_areas": null,
+       "grid_template_columns": null,
+       "grid_template_rows": null,
+       "height": null,
+       "justify_content": null,
+       "justify_items": null,
+       "left": null,
+       "margin": null,
+       "max_height": null,
+       "max_width": null,
+       "min_height": null,
+       "min_width": null,
+       "object_fit": null,
+       "object_position": null,
+       "order": null,
+       "overflow": null,
+       "padding": null,
+       "right": null,
+       "top": null,
+       "visibility": null,
+       "width": null
       }
      },
-     "b942460eb9ed435cac1ae5c17b4cbfee": {
+     "d285e8b5153b449d8db9209e39bcf61f": {
+      "model_module": "@jupyter-widgets/base",
+      "model_module_version": "2.0.0",
+      "model_name": "LayoutModel",
+      "state": {
+       "_model_module": "@jupyter-widgets/base",
+       "_model_module_version": "2.0.0",
+       "_model_name": "LayoutModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/base",
+       "_view_module_version": "2.0.0",
+       "_view_name": "LayoutView",
+       "align_content": null,
+       "align_items": null,
+       "align_self": null,
+       "border_bottom": null,
+       "border_left": null,
+       "border_right": null,
+       "border_top": null,
+       "bottom": null,
+       "display": null,
+       "flex": null,
+       "flex_flow": null,
+       "grid_area": null,
+       "grid_auto_columns": null,
+       "grid_auto_flow": null,
+       "grid_auto_rows": null,
+       "grid_column": null,
+       "grid_gap": null,
+       "grid_row": null,
+       "grid_template_areas": null,
+       "grid_template_columns": null,
+       "grid_template_rows": null,
+       "height": null,
+       "justify_content": null,
+       "justify_items": null,
+       "left": null,
+       "margin": null,
+       "max_height": null,
+       "max_width": null,
+       "min_height": null,
+       "min_width": null,
+       "object_fit": null,
+       "object_position": null,
+       "order": null,
+       "overflow": null,
+       "padding": null,
+       "right": null,
+       "top": null,
+       "visibility": null,
+       "width": null
+      }
+     },
+     "d75f592698514c39b47ecca1efc91379": {
       "model_module": "@jupyter-widgets/controls",
       "model_module_version": "2.0.0",
       "model_name": "FloatProgressModel",
@@ -677,120 +789,14 @@
        "bar_style": "success",
        "description": "",
        "description_allow_html": false,
-       "layout": "IPY_MODEL_47b41af191f448baa7729ba6615dbb07",
+       "layout": "IPY_MODEL_d285e8b5153b449d8db9209e39bcf61f",
        "max": 5.0,
        "min": 0.0,
        "orientation": "horizontal",
-       "style": "IPY_MODEL_414ccc0a7b6146959bd704f37e986944",
+       "style": "IPY_MODEL_602a871ec5cc4e738d95c2d0254efb5e",
        "tabbable": null,
        "tooltip": null,
        "value": 5.0
-      }
-     },
-     "bd5022670bef4e08952a088496c4e565": {
-      "model_module": "@jupyter-widgets/base",
-      "model_module_version": "2.0.0",
-      "model_name": "LayoutModel",
-      "state": {
-       "_model_module": "@jupyter-widgets/base",
-       "_model_module_version": "2.0.0",
-       "_model_name": "LayoutModel",
-       "_view_count": null,
-       "_view_module": "@jupyter-widgets/base",
-       "_view_module_version": "2.0.0",
-       "_view_name": "LayoutView",
-       "align_content": null,
-       "align_items": null,
-       "align_self": null,
-       "border_bottom": null,
-       "border_left": null,
-       "border_right": null,
-       "border_top": null,
-       "bottom": null,
-       "display": null,
-       "flex": null,
-       "flex_flow": null,
-       "grid_area": null,
-       "grid_auto_columns": null,
-       "grid_auto_flow": null,
-       "grid_auto_rows": null,
-       "grid_column": null,
-       "grid_gap": null,
-       "grid_row": null,
-       "grid_template_areas": null,
-       "grid_template_columns": null,
-       "grid_template_rows": null,
-       "height": null,
-       "justify_content": null,
-       "justify_items": null,
-       "left": null,
-       "margin": null,
-       "max_height": null,
-       "max_width": null,
-       "min_height": null,
-       "min_width": null,
-       "object_fit": null,
-       "object_position": null,
-       "order": null,
-       "overflow": null,
-       "padding": null,
-       "right": null,
-       "top": null,
-       "visibility": null,
-       "width": null
-      }
-     },
-     "e7c6a2ba2e564fe0acfd3187be0028fc": {
-      "model_module": "@jupyter-widgets/base",
-      "model_module_version": "2.0.0",
-      "model_name": "LayoutModel",
-      "state": {
-       "_model_module": "@jupyter-widgets/base",
-       "_model_module_version": "2.0.0",
-       "_model_name": "LayoutModel",
-       "_view_count": null,
-       "_view_module": "@jupyter-widgets/base",
-       "_view_module_version": "2.0.0",
-       "_view_name": "LayoutView",
-       "align_content": null,
-       "align_items": null,
-       "align_self": null,
-       "border_bottom": null,
-       "border_left": null,
-       "border_right": null,
-       "border_top": null,
-       "bottom": null,
-       "display": null,
-       "flex": null,
-       "flex_flow": null,
-       "grid_area": null,
-       "grid_auto_columns": null,
-       "grid_auto_flow": null,
-       "grid_auto_rows": null,
-       "grid_column": null,
-       "grid_gap": null,
-       "grid_row": null,
-       "grid_template_areas": null,
-       "grid_template_columns": null,
-       "grid_template_rows": null,
-       "height": null,
-       "justify_content": null,
-       "justify_items": null,
-       "left": null,
-       "margin": null,
-       "max_height": null,
-       "max_width": null,
-       "min_height": null,
-       "min_width": null,
-       "object_fit": null,
-       "object_position": null,
-       "order": null,
-       "overflow": null,
-       "padding": null,
-       "right": null,
-       "top": null,
-       "visibility": null,
-       "width": null
       }
      }
     },

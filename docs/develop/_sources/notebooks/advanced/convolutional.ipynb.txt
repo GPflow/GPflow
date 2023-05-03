@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "cf57819f",
+   "id": "9a1e232d",
    "metadata": {},
    "source": [
     "# Convolutional Gaussian Processes\n",
@@ -15,7 +15,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d0f04397",
+   "id": "cb24ba35",
    "metadata": {},
    "source": [
     "## Generate dataset\n",
@@ -25,13 +25,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "6f466bef",
+   "id": "abb8f83c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-05-02T13:36:27.606115Z",
-     "iopub.status.busy": "2023-05-02T13:36:27.605790Z",
-     "iopub.status.idle": "2023-05-02T13:36:32.727041Z",
-     "shell.execute_reply": "2023-05-02T13:36:32.726434Z"
+     "iopub.execute_input": "2023-05-03T09:12:18.697180Z",
+     "iopub.status.busy": "2023-05-03T09:12:18.696912Z",
+     "iopub.status.idle": "2023-05-03T09:12:23.760739Z",
+     "shell.execute_reply": "2023-05-03T09:12:23.760024Z"
     }
    },
    "outputs": [
@@ -39,20 +39,20 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2023-05-02 13:36:28.511721: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2023-05-03 09:12:19.930434: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n",
-      "2023-05-02 13:36:28.658353: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
-      "2023-05-02 13:36:28.658391: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n",
-      "2023-05-02 13:36:28.695546: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n"
+      "2023-05-03 09:12:20.073899: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2023-05-03 09:12:20.073921: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n",
+      "2023-05-03 09:12:20.112317: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2023-05-02 13:36:29.496093: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory\n",
-      "2023-05-02 13:36:29.496158: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory\n",
-      "2023-05-02 13:36:29.496166: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.\n"
+      "2023-05-03 09:12:20.824992: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory\n",
+      "2023-05-03 09:12:20.825051: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory\n",
+      "2023-05-03 09:12:20.825059: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.\n"
      ]
     }
    ],
@@ -88,13 +88,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "6a9ec0f9",
+   "id": "29ccd545",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-05-02T13:36:32.730166Z",
-     "iopub.status.busy": "2023-05-02T13:36:32.729698Z",
-     "iopub.status.idle": "2023-05-02T13:36:32.737664Z",
-     "shell.execute_reply": "2023-05-02T13:36:32.737138Z"
+     "iopub.execute_input": "2023-05-03T09:12:23.764574Z",
+     "iopub.status.busy": "2023-05-03T09:12:23.764110Z",
+     "iopub.status.idle": "2023-05-03T09:12:23.772827Z",
+     "shell.execute_reply": "2023-05-03T09:12:23.772217Z"
     }
    },
    "outputs": [],
@@ -145,13 +145,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "ff0d6d5e",
+   "id": "fff0b3d2",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-05-02T13:36:32.740156Z",
-     "iopub.status.busy": "2023-05-02T13:36:32.739730Z",
-     "iopub.status.idle": "2023-05-02T13:36:32.751426Z",
-     "shell.execute_reply": "2023-05-02T13:36:32.750868Z"
+     "iopub.execute_input": "2023-05-03T09:12:23.775702Z",
+     "iopub.status.busy": "2023-05-03T09:12:23.775436Z",
+     "iopub.status.idle": "2023-05-03T09:12:23.793343Z",
+     "shell.execute_reply": "2023-05-03T09:12:23.792598Z"
     }
    },
    "outputs": [],
@@ -163,13 +163,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "cbc3d336",
+   "id": "3089dad6",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-05-02T13:36:32.754575Z",
-     "iopub.status.busy": "2023-05-02T13:36:32.754301Z",
-     "iopub.status.idle": "2023-05-02T13:36:33.261524Z",
-     "shell.execute_reply": "2023-05-02T13:36:33.260878Z"
+     "iopub.execute_input": "2023-05-03T09:12:23.796447Z",
+     "iopub.status.busy": "2023-05-03T09:12:23.796148Z",
+     "iopub.status.idle": "2023-05-03T09:12:24.375771Z",
+     "shell.execute_reply": "2023-05-03T09:12:24.375224Z"
     }
    },
    "outputs": [
@@ -194,7 +194,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d0fd8353",
+   "id": "c66eb24e",
    "metadata": {},
    "source": [
     "## Squared Exponential kernel"
@@ -203,13 +203,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "5fcbba73",
+   "id": "bc3e7100",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-05-02T13:36:33.264525Z",
-     "iopub.status.busy": "2023-05-02T13:36:33.264230Z",
-     "iopub.status.idle": "2023-05-02T13:36:33.363485Z",
-     "shell.execute_reply": "2023-05-02T13:36:33.362600Z"
+     "iopub.execute_input": "2023-05-03T09:12:24.383752Z",
+     "iopub.status.busy": "2023-05-03T09:12:24.382148Z",
+     "iopub.status.idle": "2023-05-03T09:12:24.525052Z",
+     "shell.execute_reply": "2023-05-03T09:12:24.524435Z"
     }
    },
    "outputs": [
@@ -217,10 +217,10 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2023-05-02 13:36:33.267727: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
-      "2023-05-02 13:36:33.267752: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)\n",
-      "2023-05-02 13:36:33.267774: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (27719c838b4f): /proc/driver/nvidia/version does not exist\n",
-      "2023-05-02 13:36:33.268061: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2023-05-03 09:12:24.390079: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2023-05-03 09:12:24.390373: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2023-05-03 09:12:24.390420: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (531175cb15c2): /proc/driver/nvidia/version does not exist\n",
+      "2023-05-03 09:12:24.391463: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     }
@@ -236,13 +236,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "c326166c",
+   "id": "c6f14e7f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-05-02T13:36:33.366205Z",
-     "iopub.status.busy": "2023-05-02T13:36:33.365905Z",
-     "iopub.status.idle": "2023-05-02T13:36:37.706279Z",
-     "shell.execute_reply": "2023-05-02T13:36:37.705687Z"
+     "iopub.execute_input": "2023-05-03T09:12:24.527790Z",
+     "iopub.status.busy": "2023-05-03T09:12:24.527355Z",
+     "iopub.status.idle": "2023-05-03T09:12:29.157702Z",
+     "shell.execute_reply": "2023-05-03T09:12:29.157083Z"
     }
    },
    "outputs": [
@@ -263,13 +263,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "1f255033",
+   "id": "879b4474",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-05-02T13:36:37.709852Z",
-     "iopub.status.busy": "2023-05-02T13:36:37.709564Z",
-     "iopub.status.idle": "2023-05-02T13:36:39.272930Z",
-     "shell.execute_reply": "2023-05-02T13:36:39.272308Z"
+     "iopub.execute_input": "2023-05-03T09:12:29.160270Z",
+     "iopub.status.busy": "2023-05-03T09:12:29.159956Z",
+     "iopub.status.idle": "2023-05-03T09:12:30.797964Z",
+     "shell.execute_reply": "2023-05-03T09:12:30.797340Z"
     }
    },
    "outputs": [
@@ -332,7 +332,9 @@
       "\n",
       "At iterate   22    f=  6.04028D+01    |proj g|=  1.52839D-01\n",
       "\n",
-      "At iterate   23    f=  6.03795D+01    |proj g|=  4.28437D-02\n"
+      "At iterate   23    f=  6.03795D+01    |proj g|=  4.28437D-02\n",
+      "\n",
+      "At iterate   24    f=  6.03764D+01    |proj g|=  4.87340D-02\n"
      ]
     },
     {
@@ -346,8 +348,6 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "\n",
-      "At iterate   24    f=  6.03764D+01    |proj g|=  4.87340D-02\n",
       "\n",
       "At iterate   25    f=  6.03741D+01    |proj g|=  3.66168D-02\n",
       "\n",
@@ -398,7 +398,7 @@
       "  F =   60.371382131218326     \n",
       "\n",
       "CONVERGENCE: REL_REDUCTION_OF_F_<=_FACTR*EPSMCH             \n",
-      "30.948 iter/s\n"
+      "29.575 iter/s\n"
      ]
     }
    ],
@@ -417,13 +417,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "887212de",
+   "id": "e71c069f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-05-02T13:36:39.275704Z",
-     "iopub.status.busy": "2023-05-02T13:36:39.275395Z",
-     "iopub.status.idle": "2023-05-02T13:36:39.372921Z",
-     "shell.execute_reply": "2023-05-02T13:36:39.372321Z"
+     "iopub.execute_input": "2023-05-03T09:12:30.800511Z",
+     "iopub.status.busy": "2023-05-03T09:12:30.800240Z",
+     "iopub.status.idle": "2023-05-03T09:12:30.896687Z",
+     "shell.execute_reply": "2023-05-03T09:12:30.896059Z"
     }
    },
    "outputs": [
@@ -446,7 +446,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "63ab10b0",
+   "id": "ac1641a4",
    "metadata": {},
    "source": [
     "## Convolutional kernel"
@@ -455,13 +455,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "2a5a1862",
+   "id": "65ef30ed",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-05-02T13:36:39.376283Z",
-     "iopub.status.busy": "2023-05-02T13:36:39.376003Z",
-     "iopub.status.idle": "2023-05-02T13:36:39.477651Z",
-     "shell.execute_reply": "2023-05-02T13:36:39.477001Z"
+     "iopub.execute_input": "2023-05-03T09:12:30.899230Z",
+     "iopub.status.busy": "2023-05-03T09:12:30.899006Z",
+     "iopub.status.idle": "2023-05-03T09:12:31.006845Z",
+     "shell.execute_reply": "2023-05-03T09:12:31.006130Z"
     }
    },
    "outputs": [],
@@ -495,13 +495,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "ff7c251c",
+   "id": "af668e65",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-05-02T13:36:39.480590Z",
-     "iopub.status.busy": "2023-05-02T13:36:39.480270Z",
-     "iopub.status.idle": "2023-05-02T13:36:39.501423Z",
-     "shell.execute_reply": "2023-05-02T13:36:39.500808Z"
+     "iopub.execute_input": "2023-05-03T09:12:31.009582Z",
+     "iopub.status.busy": "2023-05-03T09:12:31.009326Z",
+     "iopub.status.idle": "2023-05-03T09:12:31.030546Z",
+     "shell.execute_reply": "2023-05-03T09:12:31.029978Z"
     }
    },
    "outputs": [],
@@ -512,13 +512,13 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "94f53f47",
+   "id": "21300748",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-05-02T13:36:39.504381Z",
-     "iopub.status.busy": "2023-05-02T13:36:39.504072Z",
-     "iopub.status.idle": "2023-05-02T13:36:39.523707Z",
-     "shell.execute_reply": "2023-05-02T13:36:39.523047Z"
+     "iopub.execute_input": "2023-05-03T09:12:31.033106Z",
+     "iopub.status.busy": "2023-05-03T09:12:31.032852Z",
+     "iopub.status.idle": "2023-05-03T09:12:31.051924Z",
+     "shell.execute_reply": "2023-05-03T09:12:31.051165Z"
     }
    },
    "outputs": [],
@@ -531,13 +531,13 @@
   {
    "cell_type": "code",
    "execution_count": 12,
-   "id": "14353c16",
+   "id": "0ad148d9",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-05-02T13:36:39.526155Z",
-     "iopub.status.busy": "2023-05-02T13:36:39.525854Z",
-     "iopub.status.idle": "2023-05-02T13:36:40.409184Z",
-     "shell.execute_reply": "2023-05-02T13:36:40.408589Z"
+     "iopub.execute_input": "2023-05-03T09:12:31.054513Z",
+     "iopub.status.busy": "2023-05-03T09:12:31.054260Z",
+     "iopub.status.idle": "2023-05-03T09:12:32.013084Z",
+     "shell.execute_reply": "2023-05-03T09:12:32.012253Z"
     }
    },
    "outputs": [
@@ -558,13 +558,13 @@
   {
    "cell_type": "code",
    "execution_count": 13,
-   "id": "6be89466",
+   "id": "c7d855ea",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-05-02T13:36:40.411806Z",
-     "iopub.status.busy": "2023-05-02T13:36:40.411510Z",
-     "iopub.status.idle": "2023-05-02T13:36:42.671528Z",
-     "shell.execute_reply": "2023-05-02T13:36:42.670710Z"
+     "iopub.execute_input": "2023-05-03T09:12:32.016274Z",
+     "iopub.status.busy": "2023-05-03T09:12:32.016005Z",
+     "iopub.status.idle": "2023-05-03T09:12:34.508552Z",
+     "shell.execute_reply": "2023-05-03T09:12:34.507956Z"
     }
    },
    "outputs": [
@@ -657,7 +657,7 @@
       "  F =   64.845328136876162     \n",
       "\n",
       "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT                 \n",
-      "4.876 iter/s\n"
+      "4.420 iter/s\n"
      ]
     }
    ],
@@ -675,13 +675,13 @@
   {
    "cell_type": "code",
    "execution_count": 14,
-   "id": "40e6cdd9",
+   "id": "7b9c0953",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-05-02T13:36:42.674992Z",
-     "iopub.status.busy": "2023-05-02T13:36:42.674265Z",
-     "iopub.status.idle": "2023-05-02T13:36:58.079883Z",
-     "shell.execute_reply": "2023-05-02T13:36:58.079036Z"
+     "iopub.execute_input": "2023-05-03T09:12:34.511082Z",
+     "iopub.status.busy": "2023-05-03T09:12:34.510811Z",
+     "iopub.status.idle": "2023-05-03T09:12:50.320806Z",
+     "shell.execute_reply": "2023-05-03T09:12:50.319993Z"
     }
    },
    "outputs": [
@@ -871,7 +871,13 @@
       "\n",
       "At iterate   31    f=  2.71225D+01    |proj g|=  1.25368D+00\n",
       "\n",
-      "At iterate   32    f=  2.70691D+01    |proj g|=  3.44551D+00\n",
+      "At iterate   32    f=  2.70691D+01    |proj g|=  3.44551D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate   33    f=  2.70246D+01    |proj g|=  3.99899D+00\n"
      ]
@@ -941,9 +947,7 @@
       "\n",
       "At iterate   45    f=  2.68164D+01    |proj g|=  2.93859D+00\n",
       "\n",
-      "At iterate   46    f=  2.68066D+01    |proj g|=  1.14149D+00\n",
-      "\n",
-      "At iterate   47    f=  2.68038D+01    |proj g|=  2.29234D-01\n"
+      "At iterate   46    f=  2.68066D+01    |proj g|=  1.14149D+00\n"
      ]
     },
     {
@@ -951,9 +955,9 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   48    f=  2.68031D+01    |proj g|=  6.60556D-02\n",
+      "At iterate   47    f=  2.68038D+01    |proj g|=  2.29234D-01\n",
       "\n",
-      "At iterate   49    f=  2.68025D+01    |proj g|=  6.92338D-01\n"
+      "At iterate   48    f=  2.68031D+01    |proj g|=  6.60556D-02\n"
      ]
     },
     {
@@ -961,9 +965,9 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   50    f=  2.68010D+01    |proj g|=  7.83827D-01\n",
+      "At iterate   49    f=  2.68025D+01    |proj g|=  6.92338D-01\n",
       "\n",
-      "At iterate   51    f=  2.67992D+01    |proj g|=  2.75352D+00\n"
+      "At iterate   50    f=  2.68010D+01    |proj g|=  7.83827D-01\n"
      ]
     },
     {
@@ -971,9 +975,9 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   52    f=  2.67965D+01    |proj g|=  1.09880D+00\n",
+      "At iterate   51    f=  2.67992D+01    |proj g|=  2.75352D+00\n",
       "\n",
-      "At iterate   53    f=  2.67954D+01    |proj g|=  1.38053D-01\n"
+      "At iterate   52    f=  2.67965D+01    |proj g|=  1.09880D+00\n"
      ]
     },
     {
@@ -981,15 +985,17 @@
      "output_type": "stream",
      "text": [
       "\n",
+      "At iterate   53    f=  2.67954D+01    |proj g|=  1.38053D-01\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "At iterate   54    f=  2.67951D+01    |proj g|=  1.82728D-01\n",
       "\n",
-      "At iterate   55    f=  2.67943D+01    |proj g|=  2.35894D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate   55    f=  2.67943D+01    |proj g|=  2.35894D-01\n",
       "\n",
       "At iterate   56    f=  2.67915D+01    |proj g|=  1.36174D+00\n"
      ]
@@ -1001,7 +1007,9 @@
       "\n",
       "At iterate   57    f=  2.67888D+01    |proj g|=  1.44453D+00\n",
       "\n",
-      "At iterate   58    f=  2.67867D+01    |proj g|=  6.69400D-01\n"
+      "At iterate   58    f=  2.67867D+01    |proj g|=  6.69400D-01\n",
+      "\n",
+      "At iterate   59    f=  2.67852D+01    |proj g|=  2.49436D-01\n"
      ]
     },
     {
@@ -1009,9 +1017,9 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   59    f=  2.67852D+01    |proj g|=  2.49436D-01\n",
+      "At iterate   60    f=  2.67849D+01    |proj g|=  1.30110D-01\n",
       "\n",
-      "At iterate   60    f=  2.67849D+01    |proj g|=  1.30110D-01\n"
+      "At iterate   61    f=  2.67838D+01    |proj g|=  3.45478D-01\n"
      ]
     },
     {
@@ -1019,15 +1027,7 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   61    f=  2.67838D+01    |proj g|=  3.45478D-01\n",
-      "\n",
-      "At iterate   62    f=  2.67818D+01    |proj g|=  7.66751D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate   62    f=  2.67818D+01    |proj g|=  7.66751D-01\n",
       "\n",
       "At iterate   63    f=  2.67784D+01    |proj g|=  9.01109D-01\n"
      ]
@@ -1097,7 +1097,9 @@
       "\n",
       "At iterate   75    f=  2.67653D+01    |proj g|=  1.22312D+00\n",
       "\n",
-      "At iterate   76    f=  2.67642D+01    |proj g|=  5.35684D-01\n"
+      "At iterate   76    f=  2.67642D+01    |proj g|=  5.35684D-01\n",
+      "\n",
+      "At iterate   77    f=  2.67634D+01    |proj g|=  5.13194D-02\n"
      ]
     },
     {
@@ -1105,9 +1107,9 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   77    f=  2.67634D+01    |proj g|=  5.13194D-02\n",
+      "At iterate   78    f=  2.67632D+01    |proj g|=  1.30113D-01\n",
       "\n",
-      "At iterate   78    f=  2.67632D+01    |proj g|=  1.30113D-01\n"
+      "At iterate   79    f=  2.67626D+01    |proj g|=  1.95710D-01\n"
      ]
     },
     {
@@ -1115,17 +1117,15 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   79    f=  2.67626D+01    |proj g|=  1.95710D-01\n",
+      "At iterate   80    f=  2.67625D+01    |proj g|=  5.88159D-01\n",
       "\n",
-      "At iterate   80    f=  2.67625D+01    |proj g|=  5.88159D-01\n"
+      "At iterate   81    f=  2.67616D+01    |proj g|=  3.65936D-01\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "\n",
-      "At iterate   81    f=  2.67616D+01    |proj g|=  3.65936D-01\n",
       "\n",
       "At iterate   82    f=  2.67614D+01    |proj g|=  2.95283D-01\n",
       "\n",
@@ -1169,7 +1169,13 @@
       "\n",
       "At iterate   90    f=  2.67567D+01    |proj g|=  8.60409D-02\n",
       "\n",
-      "At iterate   91    f=  2.67563D+01    |proj g|=  2.82486D-01\n",
+      "At iterate   91    f=  2.67563D+01    |proj g|=  2.82486D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate   92    f=  2.67559D+01    |proj g|=  2.57009D-01\n"
      ]
@@ -1191,9 +1197,7 @@
       "\n",
       "At iterate   95    f=  2.67549D+01    |proj g|=  1.35560D-01\n",
       "\n",
-      "At iterate   96    f=  2.67545D+01    |proj g|=  1.33563D-01\n",
-      "\n",
-      "At iterate   97    f=  2.67542D+01    |proj g|=  2.03929D-01\n"
+      "At iterate   96    f=  2.67545D+01    |proj g|=  1.33563D-01\n"
      ]
     },
     {
@@ -1201,15 +1205,17 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   98    f=  2.67540D+01    |proj g|=  4.02593D-01\n",
+      "At iterate   97    f=  2.67542D+01    |proj g|=  2.03929D-01\n",
       "\n",
-      "At iterate   99    f=  2.67536D+01    |proj g|=  3.68131D-01\n"
+      "At iterate   98    f=  2.67540D+01    |proj g|=  4.02593D-01\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
+      "\n",
+      "At iterate   99    f=  2.67536D+01    |proj g|=  3.68131D-01\n",
       "\n",
       "At iterate  100    f=  2.67533D+01    |proj g|=  3.69556D-01\n",
       "\n",
@@ -1261,16 +1267,23 @@
   {
    "cell_type": "code",
    "execution_count": 15,
-   "id": "f43f4cfc",
+   "id": "c922b3c4",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-05-02T13:36:58.083208Z",
-     "iopub.status.busy": "2023-05-02T13:36:58.082931Z",
-     "iopub.status.idle": "2023-05-02T13:37:11.759131Z",
-     "shell.execute_reply": "2023-05-02T13:37:11.758134Z"
+     "iopub.execute_input": "2023-05-03T09:12:50.323669Z",
+     "iopub.status.busy": "2023-05-03T09:12:50.323325Z",
+     "iopub.status.idle": "2023-05-03T09:13:05.092300Z",
+     "shell.execute_reply": "2023-05-03T09:13:05.091108Z"
     }
    },
    "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      " This problem is unconstrained.\n"
+     ]
+    },
     {
      "name": "stdout",
      "output_type": "stream",
@@ -1285,13 +1298,6 @@
       "At X0         0 variables are exactly at the bounds\n",
       "\n",
       "At iterate    0    f=  2.67533D+01    |proj g|=  3.69556D-01\n"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      " This problem is unconstrained.\n"
      ]
     },
     {
@@ -1341,9 +1347,7 @@
       "\n",
       "At iterate    9    f=  2.67522D+01    |proj g|=  1.23353D-01\n",
       "\n",
-      "At iterate   10    f=  2.67522D+01    |proj g|=  1.71282D-01\n",
-      "\n",
-      "At iterate   11    f=  2.67521D+01    |proj g|=  3.07164D-01\n"
+      "At iterate   10    f=  2.67522D+01    |proj g|=  1.71282D-01\n"
      ]
     },
     {
@@ -1351,9 +1355,9 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   12    f=  2.67519D+01    |proj g|=  3.64874D-01\n",
+      "At iterate   11    f=  2.67521D+01    |proj g|=  3.07164D-01\n",
       "\n",
-      "At iterate   13    f=  2.67517D+01    |proj g|=  2.46018D-01\n"
+      "At iterate   12    f=  2.67519D+01    |proj g|=  3.64874D-01\n"
      ]
     },
     {
@@ -1361,7 +1365,15 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   14    f=  2.67515D+01    |proj g|=  7.57820D-02\n",
+      "At iterate   13    f=  2.67517D+01    |proj g|=  2.46018D-01\n",
+      "\n",
+      "At iterate   14    f=  2.67515D+01    |proj g|=  7.57820D-02\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate   15    f=  2.67514D+01    |proj g|=  1.00336D-01\n",
       "\n",
@@ -1435,7 +1447,13 @@
       "\n",
       "At iterate   29    f=  2.67496D+01    |proj g|=  4.57636D-02\n",
       "\n",
-      "At iterate   30    f=  2.67496D+01    |proj g|=  4.40242D-02\n",
+      "At iterate   30    f=  2.67496D+01    |proj g|=  4.40242D-02\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate   31    f=  2.67496D+01    |proj g|=  1.94792D-02\n"
      ]
@@ -1507,9 +1525,7 @@
       "\n",
       "At iterate   44    f=  2.67493D+01    |proj g|=  8.52702D-02\n",
       "\n",
-      "At iterate   45    f=  2.67493D+01    |proj g|=  2.24150D-01\n",
-      "\n",
-      "At iterate   46    f=  2.67492D+01    |proj g|=  2.77971D-02\n"
+      "At iterate   45    f=  2.67493D+01    |proj g|=  2.24150D-01\n"
      ]
     },
     {
@@ -1517,9 +1533,9 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   47    f=  2.67492D+01    |proj g|=  7.01161D-02\n",
+      "At iterate   46    f=  2.67492D+01    |proj g|=  2.77971D-02\n",
       "\n",
-      "At iterate   48    f=  2.67492D+01    |proj g|=  5.04371D-02\n"
+      "At iterate   47    f=  2.67492D+01    |proj g|=  7.01161D-02\n"
      ]
     },
     {
@@ -1527,7 +1543,15 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   49    f=  2.67492D+01    |proj g|=  5.91164D-02\n",
+      "At iterate   48    f=  2.67492D+01    |proj g|=  5.04371D-02\n",
+      "\n",
+      "At iterate   49    f=  2.67492D+01    |proj g|=  5.91164D-02\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate   50    f=  2.67492D+01    |proj g|=  3.42234D-02\n",
       "\n",
@@ -1551,15 +1575,15 @@
       "\n",
       "At iterate   54    f=  2.67490D+01    |proj g|=  1.75642D-01\n",
       "\n",
-      "At iterate   55    f=  2.67490D+01    |proj g|=  8.25489D-02\n",
-      "\n",
-      "At iterate   56    f=  2.67489D+01    |proj g|=  5.03603D-02\n"
+      "At iterate   55    f=  2.67490D+01    |proj g|=  8.25489D-02\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
+      "\n",
+      "At iterate   56    f=  2.67489D+01    |proj g|=  5.03603D-02\n",
       "\n",
       "At iterate   57    f=  2.67489D+01    |proj g|=  9.15719D-02\n"
      ]
@@ -1602,14 +1626,14 @@
       "At iterate   64    f=  2.67482D+01    |proj g|=  1.50787D-01\n",
       "\n",
       "At iterate   65    f=  2.67481D+01    |proj g|=  3.88446D-01\n",
-      "\n"
+      "\n",
+      "At iterate   66    f=  2.67477D+01    |proj g|=  1.76959D-01\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "At iterate   66    f=  2.67477D+01    |proj g|=  1.76959D-01\n",
       "\n",
       "At iterate   67    f=  2.67475D+01    |proj g|=  4.17387D-02\n",
       "\n",
@@ -1643,9 +1667,7 @@
       "\n",
       "At iterate   73    f=  2.67466D+01    |proj g|=  3.05473D-01\n",
       "\n",
-      "At iterate   74    f=  2.67465D+01    |proj g|=  1.82233D-01\n",
-      "\n",
-      "At iterate   75    f=  2.67463D+01    |proj g|=  6.06469D-02\n"
+      "At iterate   74    f=  2.67465D+01    |proj g|=  1.82233D-01\n"
      ]
     },
     {
@@ -1653,9 +1675,9 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   76    f=  2.67461D+01    |proj g|=  1.38709D-01\n",
+      "At iterate   75    f=  2.67463D+01    |proj g|=  6.06469D-02\n",
       "\n",
-      "At iterate   77    f=  2.67456D+01    |proj g|=  3.56594D-01\n"
+      "At iterate   76    f=  2.67461D+01    |proj g|=  1.38709D-01\n"
      ]
     },
     {
@@ -1663,11 +1685,21 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   78    f=  2.67451D+01    |proj g|=  3.11022D-01\n",
+      "At iterate   77    f=  2.67456D+01    |proj g|=  3.56594D-01\n",
+      "\n",
+      "At iterate   78    f=  2.67451D+01    |proj g|=  3.11022D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate   79    f=  2.67450D+01    |proj g|=  5.90648D-01\n",
       "\n",
-      "At iterate   80    f=  2.67444D+01    |proj g|=  2.48865D-01\n"
+      "At iterate   80    f=  2.67444D+01    |proj g|=  2.48865D-01\n",
+      "\n",
+      "At iterate   81    f=  2.67443D+01    |proj g|=  7.33044D-02\n"
      ]
     },
     {
@@ -1675,9 +1707,9 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   81    f=  2.67443D+01    |proj g|=  7.33044D-02\n",
+      "At iterate   82    f=  2.67442D+01    |proj g|=  9.89315D-02\n",
       "\n",
-      "At iterate   82    f=  2.67442D+01    |proj g|=  9.89315D-02\n"
+      "At iterate   83    f=  2.67440D+01    |proj g|=  2.31826D-01\n"
      ]
     },
     {
@@ -1685,15 +1717,7 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   83    f=  2.67440D+01    |proj g|=  2.31826D-01\n",
-      "\n",
-      "At iterate   84    f=  2.67435D+01    |proj g|=  3.62591D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate   84    f=  2.67435D+01    |proj g|=  3.62591D-01\n",
       "\n",
       "At iterate   85    f=  2.67428D+01    |proj g|=  6.75926D-01\n"
      ]
@@ -1745,7 +1769,13 @@
       "\n",
       "At iterate   94    f=  2.67387D+01    |proj g|=  7.62589D-02\n",
       "\n",
-      "At iterate   95    f=  2.67385D+01    |proj g|=  9.58118D-02\n",
+      "At iterate   95    f=  2.67385D+01    |proj g|=  9.58118D-02\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate   96    f=  2.67383D+01    |proj g|=  1.18687D-01\n"
      ]
@@ -1816,16 +1846,23 @@
   {
    "cell_type": "code",
    "execution_count": 16,
-   "id": "b527d32e",
+   "id": "7f028b65",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-05-02T13:37:11.762960Z",
-     "iopub.status.busy": "2023-05-02T13:37:11.762632Z",
-     "iopub.status.idle": "2023-05-02T13:37:30.455609Z",
-     "shell.execute_reply": "2023-05-02T13:37:30.454425Z"
+     "iopub.execute_input": "2023-05-03T09:13:05.096331Z",
+     "iopub.status.busy": "2023-05-03T09:13:05.095594Z",
+     "iopub.status.idle": "2023-05-03T09:13:24.593972Z",
+     "shell.execute_reply": "2023-05-03T09:13:24.593198Z"
     }
    },
    "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      " This problem is unconstrained.\n"
+     ]
+    },
     {
      "name": "stdout",
      "output_type": "stream",
@@ -1840,13 +1877,6 @@
       "At X0         0 variables are exactly at the bounds\n",
       "\n",
       "At iterate    0    f=  2.67363D+01    |proj g|=  3.15890D-01\n"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      " This problem is unconstrained.\n"
      ]
     },
     {
@@ -1996,7 +2026,9 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   27    f=  1.75438D+01    |proj g|=  1.03329D+00\n"
+      "At iterate   27    f=  1.75438D+01    |proj g|=  1.03329D+00\n",
+      "\n",
+      "At iterate   28    f=  1.75401D+01    |proj g|=  3.09040D-01\n"
      ]
     },
     {
@@ -2004,9 +2036,9 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   28    f=  1.75401D+01    |proj g|=  3.09040D-01\n",
+      "At iterate   29    f=  1.75372D+01    |proj g|=  2.97689D-01\n",
       "\n",
-      "At iterate   29    f=  1.75372D+01    |proj g|=  2.97689D-01\n"
+      "At iterate   30    f=  1.75283D+01    |proj g|=  3.93077D-01\n"
      ]
     },
     {
@@ -2014,17 +2046,15 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   30    f=  1.75283D+01    |proj g|=  3.93077D-01\n",
+      "At iterate   31    f=  1.75172D+01    |proj g|=  4.99012D-01\n",
       "\n",
-      "At iterate   31    f=  1.75172D+01    |proj g|=  4.99012D-01\n"
+      "At iterate   32    f=  1.75019D+01    |proj g|=  4.42903D-01\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "\n",
-      "At iterate   32    f=  1.75019D+01    |proj g|=  4.42903D-01\n",
       "\n",
       "At iterate   33    f=  1.74767D+01    |proj g|=  8.11521D-01\n"
      ]
@@ -2092,9 +2122,7 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   45    f=  1.74124D+01    |proj g|=  7.85410D-01\n",
-      "\n",
-      "At iterate   46    f=  1.74061D+01    |proj g|=  1.72040D+00\n"
+      "At iterate   45    f=  1.74124D+01    |proj g|=  7.85410D-01\n"
      ]
     },
     {
@@ -2102,9 +2130,9 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   47    f=  1.74016D+01    |proj g|=  9.82946D-01\n",
+      "At iterate   46    f=  1.74061D+01    |proj g|=  1.72040D+00\n",
       "\n",
-      "At iterate   48    f=  1.73960D+01    |proj g|=  3.56201D-01\n"
+      "At iterate   47    f=  1.74016D+01    |proj g|=  9.82946D-01\n"
      ]
     },
     {
@@ -2112,15 +2140,17 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   49    f=  1.73897D+01    |proj g|=  4.66155D-01\n",
+      "At iterate   48    f=  1.73960D+01    |proj g|=  3.56201D-01\n",
       "\n",
-      "At iterate   50    f=  1.73790D+01    |proj g|=  8.06765D-01\n"
+      "At iterate   49    f=  1.73897D+01    |proj g|=  4.66155D-01\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
+      "\n",
+      "At iterate   50    f=  1.73790D+01    |proj g|=  8.06765D-01\n",
       "\n",
       "At iterate   51    f=  1.73687D+01    |proj g|=  6.68134D-01\n"
      ]
@@ -2432,13 +2462,13 @@
   {
    "cell_type": "code",
    "execution_count": 17,
-   "id": "48d44fef",
+   "id": "83a53ded",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-05-02T13:37:30.459713Z",
-     "iopub.status.busy": "2023-05-02T13:37:30.459370Z",
-     "iopub.status.idle": "2023-05-02T13:37:30.473013Z",
-     "shell.execute_reply": "2023-05-02T13:37:30.472495Z"
+     "iopub.execute_input": "2023-05-03T09:13:24.596971Z",
+     "iopub.status.busy": "2023-05-03T09:13:24.596588Z",
+     "iopub.status.idle": "2023-05-03T09:13:24.614532Z",
+     "shell.execute_reply": "2023-05-03T09:13:24.613862Z"
     }
    },
    "outputs": [
@@ -2473,13 +2503,13 @@
   {
    "cell_type": "code",
    "execution_count": 18,
-   "id": "4cfa12ad",
+   "id": "5c445fe1",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-05-02T13:37:30.475633Z",
-     "iopub.status.busy": "2023-05-02T13:37:30.475235Z",
-     "iopub.status.idle": "2023-05-02T13:37:30.498379Z",
-     "shell.execute_reply": "2023-05-02T13:37:30.497895Z"
+     "iopub.execute_input": "2023-05-03T09:13:24.617079Z",
+     "iopub.status.busy": "2023-05-03T09:13:24.616799Z",
+     "iopub.status.idle": "2023-05-03T09:13:24.651327Z",
+     "shell.execute_reply": "2023-05-03T09:13:24.650449Z"
     }
    },
    "outputs": [
@@ -2514,7 +2544,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d215e51b",
+   "id": "653fe2db",
    "metadata": {},
    "source": [
     "## Conclusion\n",
