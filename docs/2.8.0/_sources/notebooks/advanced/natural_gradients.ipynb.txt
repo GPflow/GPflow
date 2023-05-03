@@ -1,0 +1,1244 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "6689fe2d",
+   "metadata": {},
+   "source": [
+    "# Natural gradients\n",
+    "\n",
+    "This notebook shows some basic usage of the natural gradient optimizer, both on its own and in combination with Adam optimizer."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "e63f3fce",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-05-03T23:17:43.442302Z",
+     "iopub.status.busy": "2023-05-03T23:17:43.441834Z",
+     "iopub.status.idle": "2023-05-03T23:17:47.981820Z",
+     "shell.execute_reply": "2023-05-03T23:17:47.981211Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2023-05-03 23:17:43.698400: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n",
+      "2023-05-03 23:17:43.840899: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2023-05-03 23:17:43.840926: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n",
+      "2023-05-03 23:17:43.871306: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2023-05-03 23:17:44.563858: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory\n",
+      "2023-05-03 23:17:44.563918: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory\n",
+      "2023-05-03 23:17:44.563927: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2023-05-03 23:17:47.959725: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2023-05-03 23:17:47.959748: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2023-05-03 23:17:47.959767: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (820db4dfbca6): /proc/driver/nvidia/version does not exist\n",
+      "2023-05-03 23:17:47.960016: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
+     ]
+    }
+   ],
+   "source": [
+    "import numpy as np\n",
+    "import tensorflow as tf\n",
+    "\n",
+    "import gpflow\n",
+    "from gpflow import set_trainable\n",
+    "from gpflow.ci_utils import reduce_in_tests\n",
+    "from gpflow.models import GPR, SGPR, SVGP, VGP\n",
+    "from gpflow.optimizers import NaturalGradient\n",
+    "from gpflow.optimizers.natgrad import XiSqrtMeanVar\n",
+    "\n",
+    "%matplotlib inline\n",
+    "%precision 4\n",
+    "\n",
+    "np.random.seed(0)\n",
+    "tf.random.set_seed(0)\n",
+    "\n",
+    "N, D = 100, 2\n",
+    "batch_size = 50\n",
+    "\n",
+    "# inducing points\n",
+    "M = 10\n",
+    "\n",
+    "x = np.random.uniform(size=(N, D))\n",
+    "y = np.sin(10 * x[:, :1]) + 5 * x[:, 1:] ** 2\n",
+    "\n",
+    "data = (x, y)\n",
+    "inducing_variable = tf.random.uniform((M, D))\n",
+    "adam_learning_rate = 0.01\n",
+    "iterations = reduce_in_tests(5)\n",
+    "autotune = tf.data.experimental.AUTOTUNE"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "3aa60a28",
+   "metadata": {},
+   "source": [
+    "## VGP is a GPR"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "80c354c4",
+   "metadata": {},
+   "source": [
+    "The following section demonstrates how natural gradients can turn VGP into GPR *in a single step, if the likelihood is Gaussian*."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "0f14852c",
+   "metadata": {},
+   "source": [
+    "Let's start by first creating a standard GPR model with Gaussian likelihood:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "7bb897ab",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-05-03T23:17:47.985619Z",
+     "iopub.status.busy": "2023-05-03T23:17:47.985181Z",
+     "iopub.status.idle": "2023-05-03T23:17:48.042231Z",
+     "shell.execute_reply": "2023-05-03T23:17:48.041437Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "gpr = GPR(data, kernel=gpflow.kernels.Matern52())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "6987042a",
+   "metadata": {},
+   "source": [
+    "The log marginal likelihood of the exact GP model is:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "fa9c432d",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-05-03T23:17:48.046202Z",
+     "iopub.status.busy": "2023-05-03T23:17:48.045710Z",
+     "iopub.status.idle": "2023-05-03T23:17:48.082405Z",
+     "shell.execute_reply": "2023-05-03T23:17:48.081706Z"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "-139.5640"
+      ]
+     },
+     "execution_count": 3,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "gpr.log_marginal_likelihood().numpy()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f31ce45f",
+   "metadata": {},
+   "source": [
+    "Now we will create an approximate model which approximates the true posterior via a variational Gaussian distribution.<br>We initialize the distribution to be zero mean and unit variance."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "2ec2a3a7",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-05-03T23:17:48.085769Z",
+     "iopub.status.busy": "2023-05-03T23:17:48.085476Z",
+     "iopub.status.idle": "2023-05-03T23:17:48.146506Z",
+     "shell.execute_reply": "2023-05-03T23:17:48.145744Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "vgp = VGP(\n",
+    "    data,\n",
+    "    kernel=gpflow.kernels.Matern52(),\n",
+    "    likelihood=gpflow.likelihoods.Gaussian(),\n",
+    ")\n",
+    "# (Note that GPflow's NaturalGradient optimizer does not implement diagonal covariance parametrization, i.e., it does not work for `q_diag=True`.)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "1cbe6a17",
+   "metadata": {},
+   "source": [
+    "The log marginal likelihood lower bound (evidence lower bound or ELBO) of the approximate GP model is:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "7694815f",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-05-03T23:17:48.149660Z",
+     "iopub.status.busy": "2023-05-03T23:17:48.149324Z",
+     "iopub.status.idle": "2023-05-03T23:17:48.191397Z",
+     "shell.execute_reply": "2023-05-03T23:17:48.190765Z"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "-426.9017"
+      ]
+     },
+     "execution_count": 5,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "vgp.elbo().numpy()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "7466e9ea",
+   "metadata": {},
+   "source": [
+    "Obviously, our initial guess for the variational distribution is not correct, which results in a lower bound to the likelihood of the exact GPR model. We can optimize the variational parameters in order to get a tighter bound."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a027d431",
+   "metadata": {},
+   "source": [
+    "In fact, we only need to take **one step** in the natural gradient direction to recover the exact posterior:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "753559e1",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-05-03T23:17:48.194207Z",
+     "iopub.status.busy": "2023-05-03T23:17:48.193693Z",
+     "iopub.status.idle": "2023-05-03T23:17:48.279827Z",
+     "shell.execute_reply": "2023-05-03T23:17:48.278782Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "natgrad_opt = NaturalGradient(gamma=1.0)\n",
+    "variational_params = [(vgp.q_mu, vgp.q_sqrt)]\n",
+    "natgrad_opt.minimize(vgp.training_loss, var_list=variational_params)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e119ef40",
+   "metadata": {},
+   "source": [
+    "The ELBO of the approximate GP model after a single NatGrad step:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "b38e2b6a",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-05-03T23:17:48.283515Z",
+     "iopub.status.busy": "2023-05-03T23:17:48.282754Z",
+     "iopub.status.idle": "2023-05-03T23:17:48.309412Z",
+     "shell.execute_reply": "2023-05-03T23:17:48.308881Z"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "-139.5641"
+      ]
+     },
+     "execution_count": 7,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "vgp.elbo().numpy()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "10c69050",
+   "metadata": {},
+   "source": [
+    "## Optimize both variational parameters and kernel hyperparameters together\n",
+    "\n",
+    "In the Gaussian likelihood case we can iterate between an Adam update for the hyperparameters and a NatGrad update for the variational parameters. That way, we achieve optimization of hyperparameters as if the model were a GPR."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "5d30f0a0",
+   "metadata": {},
+   "source": [
+    "The trick is to forbid Adam from updating the variational parameters by setting them to not trainable."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "e9cc2371",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-05-03T23:17:48.312092Z",
+     "iopub.status.busy": "2023-05-03T23:17:48.311804Z",
+     "iopub.status.idle": "2023-05-03T23:17:48.328275Z",
+     "shell.execute_reply": "2023-05-03T23:17:48.327627Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "# Stop Adam from optimizing the variational parameters\n",
+    "set_trainable(vgp.q_mu, False)\n",
+    "set_trainable(vgp.q_sqrt, False)\n",
+    "\n",
+    "adam_opt_for_vgp = tf.optimizers.Adam(adam_learning_rate)\n",
+    "adam_opt_for_gpr = tf.optimizers.Adam(adam_learning_rate)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "33b1189f",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-05-03T23:17:48.331453Z",
+     "iopub.status.busy": "2023-05-03T23:17:48.331187Z",
+     "iopub.status.idle": "2023-05-03T23:17:48.765563Z",
+     "shell.execute_reply": "2023-05-03T23:17:48.764247Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "GPR with Adam: iteration 1 likelihood -139.2548\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "GPR with Adam: iteration 2 likelihood -138.9456\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "GPR with Adam: iteration 3 likelihood -138.6363\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "GPR with Adam: iteration 4 likelihood -138.3270\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "GPR with Adam: iteration 5 likelihood -138.0177\n"
+     ]
+    }
+   ],
+   "source": [
+    "for i in range(iterations):\n",
+    "    adam_opt_for_gpr.minimize(\n",
+    "        gpr.training_loss, var_list=gpr.trainable_variables\n",
+    "    )\n",
+    "    likelihood = gpr.log_marginal_likelihood()\n",
+    "    tf.print(f\"GPR with Adam: iteration {i + 1} likelihood {likelihood:.04f}\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "a58bb68e",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-05-03T23:17:48.769313Z",
+     "iopub.status.busy": "2023-05-03T23:17:48.768651Z",
+     "iopub.status.idle": "2023-05-03T23:17:49.572934Z",
+     "shell.execute_reply": "2023-05-03T23:17:49.572106Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "VGP with NaturalGradient and Adam: iteration 1 likelihood -139.2581\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "VGP with NaturalGradient and Adam: iteration 2 likelihood -138.9489\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "VGP with NaturalGradient and Adam: iteration 3 likelihood -138.6397\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "VGP with NaturalGradient and Adam: iteration 4 likelihood -138.3305\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "VGP with NaturalGradient and Adam: iteration 5 likelihood -138.0213\n"
+     ]
+    }
+   ],
+   "source": [
+    "for i in range(iterations):\n",
+    "    natgrad_opt.minimize(vgp.training_loss, var_list=variational_params)\n",
+    "    adam_opt_for_vgp.minimize(\n",
+    "        vgp.training_loss, var_list=vgp.trainable_variables\n",
+    "    )\n",
+    "    likelihood = vgp.elbo()\n",
+    "    tf.print(\n",
+    "        f\"VGP with NaturalGradient and Adam: iteration {i + 1} likelihood {likelihood:.04f}\"\n",
+    "    )"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "d3f0a802",
+   "metadata": {},
+   "source": [
+    "Compare GPR and VGP lengthscales after optimization:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "fb865757",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-05-03T23:17:49.576165Z",
+     "iopub.status.busy": "2023-05-03T23:17:49.575862Z",
+     "iopub.status.idle": "2023-05-03T23:17:49.582073Z",
+     "shell.execute_reply": "2023-05-03T23:17:49.581471Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "GPR lengthscales = 0.9687\n",
+      "VGP lengthscales = 0.9687\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(f\"GPR lengthscales = {gpr.kernel.lengthscales.numpy():.04f}\")\n",
+    "print(f\"VGP lengthscales = {vgp.kernel.lengthscales.numpy():.04f}\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e1a220fa",
+   "metadata": {},
+   "source": [
+    "## Natural gradients also work for the sparse model\n",
+    "Similarly, natural gradients turn SVGP into SGPR in the Gaussian likelihood case. <br>\n",
+    "We can again combine natural gradients with Adam to update both variational parameters and hyperparameters too.<br>\n",
+    "Here we'll just do a single natural step demonstration."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "id": "85b0af21",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-05-03T23:17:49.584970Z",
+     "iopub.status.busy": "2023-05-03T23:17:49.584681Z",
+     "iopub.status.idle": "2023-05-03T23:17:49.660277Z",
+     "shell.execute_reply": "2023-05-03T23:17:49.659505Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "svgp = SVGP(\n",
+    "    kernel=gpflow.kernels.Matern52(),\n",
+    "    likelihood=gpflow.likelihoods.Gaussian(),\n",
+    "    inducing_variable=inducing_variable,\n",
+    ")\n",
+    "sgpr = SGPR(\n",
+    "    data, kernel=gpflow.kernels.Matern52(), inducing_variable=inducing_variable\n",
+    ")\n",
+    "\n",
+    "for model in svgp, sgpr:\n",
+    "    model.likelihood.variance.assign(0.1)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "8701e68d",
+   "metadata": {},
+   "source": [
+    "Analytically optimal sparse model ELBO:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "id": "c4acff95",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-05-03T23:17:49.664197Z",
+     "iopub.status.busy": "2023-05-03T23:17:49.663849Z",
+     "iopub.status.idle": "2023-05-03T23:17:49.705927Z",
+     "shell.execute_reply": "2023-05-03T23:17:49.705177Z"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "-227.9840"
+      ]
+     },
+     "execution_count": 13,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "sgpr.elbo().numpy()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "ba8d3968",
+   "metadata": {},
+   "source": [
+    "SVGP ELBO before natural gradient step:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "id": "ed2917e9",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-05-03T23:17:49.708733Z",
+     "iopub.status.busy": "2023-05-03T23:17:49.708432Z",
+     "iopub.status.idle": "2023-05-03T23:17:49.765067Z",
+     "shell.execute_reply": "2023-05-03T23:17:49.764483Z"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "-3326.8429"
+      ]
+     },
+     "execution_count": 14,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "svgp.elbo(data).numpy()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "id": "b4123585",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-05-03T23:17:49.767765Z",
+     "iopub.status.busy": "2023-05-03T23:17:49.767474Z",
+     "iopub.status.idle": "2023-05-03T23:17:54.408272Z",
+     "shell.execute_reply": "2023-05-03T23:17:54.407623Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "variational_params = [(svgp.q_mu, svgp.q_sqrt)]\n",
+    "\n",
+    "natgrad_opt = NaturalGradient(gamma=1.0)\n",
+    "natgrad_opt.minimize(\n",
+    "    svgp.training_loss_closure(data), var_list=variational_params\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "56c2ee7a",
+   "metadata": {},
+   "source": [
+    "SVGP ELBO after a single natural gradient step:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "id": "d83f476a",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-05-03T23:17:54.412354Z",
+     "iopub.status.busy": "2023-05-03T23:17:54.412056Z",
+     "iopub.status.idle": "2023-05-03T23:17:54.463174Z",
+     "shell.execute_reply": "2023-05-03T23:17:54.462363Z"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "-227.9840"
+      ]
+     },
+     "execution_count": 16,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "svgp.elbo(data).numpy()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "47ff65de",
+   "metadata": {},
+   "source": [
+    "## Minibatches\n",
+    "A crucial property of the natural gradient method is that it still works with minibatches.\n",
+    "In practice though, we need to use a smaller gamma."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "id": "a0aa32f5",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-05-03T23:17:54.467090Z",
+     "iopub.status.busy": "2023-05-03T23:17:54.466754Z",
+     "iopub.status.idle": "2023-05-03T23:17:59.657348Z",
+     "shell.execute_reply": "2023-05-03T23:17:59.656701Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "natgrad_opt = NaturalGradient(gamma=0.1)\n",
+    "\n",
+    "data_minibatch = (\n",
+    "    tf.data.Dataset.from_tensor_slices(data)\n",
+    "    .prefetch(autotune)\n",
+    "    .repeat()\n",
+    "    .shuffle(N)\n",
+    "    .batch(batch_size)\n",
+    ")\n",
+    "data_minibatch_it = iter(data_minibatch)\n",
+    "\n",
+    "\n",
+    "svgp_objective = svgp.training_loss_closure(data_minibatch_it)\n",
+    "for _ in range(reduce_in_tests(100)):\n",
+    "    natgrad_opt.minimize(svgp_objective, var_list=variational_params)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "93ec123a",
+   "metadata": {},
+   "source": [
+    "Minibatch SVGP ELBO after NatGrad optimization:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "id": "e39461c6",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-05-03T23:17:59.660299Z",
+     "iopub.status.busy": "2023-05-03T23:17:59.659966Z",
+     "iopub.status.idle": "2023-05-03T23:18:03.655781Z",
+     "shell.execute_reply": "2023-05-03T23:18:03.655099Z"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "-136.1650"
+      ]
+     },
+     "execution_count": 18,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "np.average(\n",
+    "    [svgp.elbo(next(data_minibatch_it)) for _ in range(reduce_in_tests(100))]\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "36882d96",
+   "metadata": {},
+   "source": [
+    "## Comparison with ordinary gradients in the conjugate case\n",
+    "\n",
+    "(Take home message: natural gradients are always better)\n",
+    "\n",
+    "Compared to SVGP with ordinary gradients with minibatches, the natural gradient optimizer is much faster in the Gaussian case.\n",
+    "\n",
+    "Here we'll do hyperparameter learning together with optimization of the variational parameters, comparing the interleaved natural gradient approach and the one using ordinary gradients for the hyperparameters and variational parameters jointly.\n",
+    "\n",
+    "**NOTE:** Again we need to compromise for smaller gamma value, which we'll keep *fixed* during the optimization."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "id": "4e6a3a72",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-05-03T23:18:03.659120Z",
+     "iopub.status.busy": "2023-05-03T23:18:03.658833Z",
+     "iopub.status.idle": "2023-05-03T23:18:03.725779Z",
+     "shell.execute_reply": "2023-05-03T23:18:03.724800Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "svgp_ordinary = SVGP(\n",
+    "    kernel=gpflow.kernels.Matern52(),\n",
+    "    likelihood=gpflow.likelihoods.Gaussian(),\n",
+    "    inducing_variable=inducing_variable,\n",
+    ")\n",
+    "svgp_natgrad = SVGP(\n",
+    "    kernel=gpflow.kernels.Matern52(),\n",
+    "    likelihood=gpflow.likelihoods.Gaussian(),\n",
+    "    inducing_variable=inducing_variable,\n",
+    ")\n",
+    "\n",
+    "# ordinary gradients with Adam for SVGP\n",
+    "ordinary_adam_opt = tf.optimizers.Adam(adam_learning_rate)\n",
+    "\n",
+    "# NatGrads and Adam for SVGP\n",
+    "# Stop Adam from optimizing the variational parameters\n",
+    "set_trainable(svgp_natgrad.q_mu, False)\n",
+    "set_trainable(svgp_natgrad.q_sqrt, False)\n",
+    "\n",
+    "# Create the optimize_tensors for SVGP\n",
+    "natgrad_adam_opt = tf.optimizers.Adam(adam_learning_rate)\n",
+    "\n",
+    "natgrad_opt = NaturalGradient(gamma=0.1)\n",
+    "variational_params = [(svgp_natgrad.q_mu, svgp_natgrad.q_sqrt)]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "8a09fb3d",
+   "metadata": {},
+   "source": [
+    "Let's optimize the models:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "id": "ebd5e04b",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-05-03T23:18:03.730083Z",
+     "iopub.status.busy": "2023-05-03T23:18:03.729575Z",
+     "iopub.status.idle": "2023-05-03T23:18:12.337005Z",
+     "shell.execute_reply": "2023-05-03T23:18:12.335844Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "data_minibatch = (\n",
+    "    tf.data.Dataset.from_tensor_slices(data)\n",
+    "    .prefetch(autotune)\n",
+    "    .repeat()\n",
+    "    .shuffle(N)\n",
+    "    .batch(batch_size)\n",
+    ")\n",
+    "data_minibatch_it = iter(data_minibatch)\n",
+    "\n",
+    "\n",
+    "svgp_ordinary_loss = svgp_ordinary.training_loss_closure(data_minibatch_it)\n",
+    "svgp_natgrad_loss = svgp_natgrad.training_loss_closure(data_minibatch_it)\n",
+    "\n",
+    "\n",
+    "for _ in range(reduce_in_tests(100)):\n",
+    "    ordinary_adam_opt.minimize(\n",
+    "        svgp_ordinary_loss, var_list=svgp_ordinary.trainable_variables\n",
+    "    )\n",
+    "\n",
+    "\n",
+    "for _ in range(reduce_in_tests(100)):\n",
+    "    natgrad_adam_opt.minimize(\n",
+    "        svgp_natgrad_loss, var_list=svgp_natgrad.trainable_variables\n",
+    "    )\n",
+    "    natgrad_opt.minimize(svgp_natgrad_loss, var_list=variational_params)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "3b8b445a",
+   "metadata": {},
+   "source": [
+    "SVGP ELBO after ordinary `Adam` optimization:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "id": "c43e7ec5",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-05-03T23:18:12.341191Z",
+     "iopub.status.busy": "2023-05-03T23:18:12.340836Z",
+     "iopub.status.idle": "2023-05-03T23:18:16.406930Z",
+     "shell.execute_reply": "2023-05-03T23:18:16.406360Z"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "-82.7712"
+      ]
+     },
+     "execution_count": 21,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "np.average(\n",
+    "    [\n",
+    "        svgp_ordinary.elbo(next(data_minibatch_it))\n",
+    "        for _ in range(reduce_in_tests(100))\n",
+    "    ]\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "9e9c9ac8",
+   "metadata": {},
+   "source": [
+    "SVGP ELBO after `NaturalGradient` and `Adam` optimization:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "id": "015a9a3c",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-05-03T23:18:16.409677Z",
+     "iopub.status.busy": "2023-05-03T23:18:16.409264Z",
+     "iopub.status.idle": "2023-05-03T23:18:20.627116Z",
+     "shell.execute_reply": "2023-05-03T23:18:20.626109Z"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "-73.0862"
+      ]
+     },
+     "execution_count": 22,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "np.average(\n",
+    "    [\n",
+    "        svgp_natgrad.elbo(next(data_minibatch_it))\n",
+    "        for _ in range(reduce_in_tests(100))\n",
+    "    ]\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e358c6d4",
+   "metadata": {},
+   "source": [
+    "## Comparison with ordinary gradients in the non-conjugate case\n",
+    "\n",
+    "### Binary classification\n",
+    "\n",
+    "(Take home message: natural gradients are usually better)\n",
+    "\n",
+    "We can use natural gradients even when the likelihood isn't Gaussian. It isn't guaranteed to be better, but it usually is better in practical situations."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "id": "c9559a56",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-05-03T23:18:20.631466Z",
+     "iopub.status.busy": "2023-05-03T23:18:20.631120Z",
+     "iopub.status.idle": "2023-05-03T23:18:20.699023Z",
+     "shell.execute_reply": "2023-05-03T23:18:20.698170Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "y_binary = np.random.choice([1.0, -1], size=x.shape)\n",
+    "vgp_data = (x, y_binary)\n",
+    "\n",
+    "vgp_bernoulli = VGP(\n",
+    "    vgp_data,\n",
+    "    kernel=gpflow.kernels.Matern52(),\n",
+    "    likelihood=gpflow.likelihoods.Bernoulli(),\n",
+    ")\n",
+    "vgp_bernoulli_natgrad = VGP(\n",
+    "    vgp_data,\n",
+    "    kernel=gpflow.kernels.Matern52(),\n",
+    "    likelihood=gpflow.likelihoods.Bernoulli(),\n",
+    ")\n",
+    "\n",
+    "# ordinary gradients with Adam for VGP with Bernoulli likelihood\n",
+    "adam_opt = tf.optimizers.Adam(adam_learning_rate)\n",
+    "\n",
+    "# NatGrads and Adam for VGP with Bernoulli likelihood\n",
+    "# Stop Adam from optimizing the variational parameters\n",
+    "set_trainable(vgp_bernoulli_natgrad.q_mu, False)\n",
+    "set_trainable(vgp_bernoulli_natgrad.q_sqrt, False)\n",
+    "\n",
+    "# Create the optimize_tensors for VGP with natural gradients\n",
+    "natgrad_adam_opt = tf.optimizers.Adam(adam_learning_rate)\n",
+    "natgrad_opt = NaturalGradient(gamma=0.1)\n",
+    "variational_params = [\n",
+    "    (vgp_bernoulli_natgrad.q_mu, vgp_bernoulli_natgrad.q_sqrt)\n",
+    "]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "id": "fa13ef9e",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-05-03T23:18:20.702955Z",
+     "iopub.status.busy": "2023-05-03T23:18:20.702545Z",
+     "iopub.status.idle": "2023-05-03T23:18:38.625841Z",
+     "shell.execute_reply": "2023-05-03T23:18:38.624718Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "# Optimize vgp_bernoulli\n",
+    "for _ in range(reduce_in_tests(100)):\n",
+    "    adam_opt.minimize(\n",
+    "        vgp_bernoulli.training_loss, var_list=vgp_bernoulli.trainable_variables\n",
+    "    )\n",
+    "\n",
+    "# Optimize vgp_bernoulli_natgrad\n",
+    "for _ in range(reduce_in_tests(100)):\n",
+    "    adam_opt.minimize(\n",
+    "        vgp_bernoulli_natgrad.training_loss,\n",
+    "        var_list=vgp_bernoulli_natgrad.trainable_variables,\n",
+    "    )\n",
+    "    natgrad_opt.minimize(\n",
+    "        vgp_bernoulli_natgrad.training_loss, var_list=variational_params\n",
+    "    )"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "c53cf0e1",
+   "metadata": {},
+   "source": [
+    "VGP ELBO after ordinary `Adam` optimization:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "id": "49f7284b",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-05-03T23:18:38.630562Z",
+     "iopub.status.busy": "2023-05-03T23:18:38.629788Z",
+     "iopub.status.idle": "2023-05-03T23:18:38.655293Z",
+     "shell.execute_reply": "2023-05-03T23:18:38.654633Z"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "-144.2140"
+      ]
+     },
+     "execution_count": 25,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "vgp_bernoulli.elbo().numpy()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "5dc41035",
+   "metadata": {},
+   "source": [
+    "VGP ELBO after `NaturalGradient` + `Adam` optimization:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 26,
+   "id": "5f8e9b69",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-05-03T23:18:38.658719Z",
+     "iopub.status.busy": "2023-05-03T23:18:38.658389Z",
+     "iopub.status.idle": "2023-05-03T23:18:38.683332Z",
+     "shell.execute_reply": "2023-05-03T23:18:38.682653Z"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "-142.8380"
+      ]
+     },
+     "execution_count": 26,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "vgp_bernoulli_natgrad.elbo().numpy()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "b03911a5",
+   "metadata": {},
+   "source": [
+    "We can also choose to run natural gradients in another parameterization.<br>\n",
+    "The sensible choice is the model parameters (q_mu, q_sqrt), which is already in GPflow."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 27,
+   "id": "7703f7f2",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-05-03T23:18:38.686101Z",
+     "iopub.status.busy": "2023-05-03T23:18:38.685798Z",
+     "iopub.status.idle": "2023-05-03T23:18:38.715661Z",
+     "shell.execute_reply": "2023-05-03T23:18:38.714802Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "vgp_bernoulli_natgrads_xi = VGP(\n",
+    "    vgp_data,\n",
+    "    kernel=gpflow.kernels.Matern52(),\n",
+    "    likelihood=gpflow.likelihoods.Bernoulli(),\n",
+    ")\n",
+    "\n",
+    "# Stop Adam from optimizing the variational parameters\n",
+    "set_trainable(vgp_bernoulli_natgrads_xi.q_mu, False)\n",
+    "set_trainable(vgp_bernoulli_natgrads_xi.q_sqrt, False)\n",
+    "\n",
+    "# Create the optimize_tensors for VGP with Bernoulli likelihood\n",
+    "adam_opt = tf.optimizers.Adam(adam_learning_rate)\n",
+    "natgrad_opt = NaturalGradient(gamma=0.01)\n",
+    "\n",
+    "variational_params = [\n",
+    "    (\n",
+    "        vgp_bernoulli_natgrads_xi.q_mu,\n",
+    "        vgp_bernoulli_natgrads_xi.q_sqrt,\n",
+    "        XiSqrtMeanVar(),\n",
+    "    )\n",
+    "]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 28,
+   "id": "779a8dec",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-05-03T23:18:38.719446Z",
+     "iopub.status.busy": "2023-05-03T23:18:38.719072Z",
+     "iopub.status.idle": "2023-05-03T23:18:55.104461Z",
+     "shell.execute_reply": "2023-05-03T23:18:55.103737Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "WARNING:tensorflow:Calling GradientTape.gradient on a persistent tape inside its context is significantly less efficient than calling it outside the context (it causes the gradient ops to be recorded on the tape, leading to increased CPU and memory usage). Only call GradientTape.gradient inside the context if you actually want to trace the gradient in order to compute higher order derivatives.\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Optimize vgp_bernoulli_natgrads_xi\n",
+    "for _ in range(reduce_in_tests(100)):\n",
+    "    adam_opt.minimize(\n",
+    "        vgp_bernoulli_natgrads_xi.training_loss,\n",
+    "        var_list=vgp_bernoulli_natgrads_xi.trainable_variables,\n",
+    "    )\n",
+    "\n",
+    "    natgrad_opt.minimize(\n",
+    "        vgp_bernoulli_natgrads_xi.training_loss, var_list=variational_params\n",
+    "    )"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "80577e8d",
+   "metadata": {},
+   "source": [
+    "VGP ELBO after `NaturalGradient` with `XiSqrtMeanVar` + `Adam` optimization:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 29,
+   "id": "c4d0bb73",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-05-03T23:18:55.107876Z",
+     "iopub.status.busy": "2023-05-03T23:18:55.107588Z",
+     "iopub.status.idle": "2023-05-03T23:18:55.139126Z",
+     "shell.execute_reply": "2023-05-03T23:18:55.138435Z"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "-143.0989"
+      ]
+     },
+     "execution_count": 29,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "vgp_bernoulli_natgrads_xi.elbo().numpy()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "37b4e59c",
+   "metadata": {},
+   "source": [
+    "With sufficiently small steps, it shouldn't make a difference which transform is used, but for large\n",
+    "steps this can make a difference in practice."
+   ]
+  }
+ ],
+ "metadata": {
+  "jupytext": {
+   "formats": "ipynb,.pct.py:percent"
+  },
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.10.11"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

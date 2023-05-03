@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>Parameters and Their Optimisation &#8212; GPflow 2.8.0 documentation</title>
+<script>
+  document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+  document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
+</script>
+
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+
+
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css" />
+
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Large Data with SGPR" href="large_data.html" />
+    <link rel="prev" title="Mean Functions" href="mean_functions.html" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="docsearch:language" content="en">
+  </head>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+    <div class="bd-header-announcement container-fluid" id="banner">
+      
+
+    </div>
+
+    
+    <nav class="bd-header navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="bd-header__inner container-xl">
+
+  <div id="navbar-start">
+    
+    
+  
+
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">GPflow 2.8.0 documentation</p>
+  
+</a>
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="fas fa-bars"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 current active nav-item">
+ <a class="reference internal nav-link" href="../../getting_started.html">
+  Getting Started
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../user_guide.html">
+  User Guide
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../api/gpflow/index.html">
+  API reference
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../benchmarks.html">
+  Benchmarks
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../bibliography.html">
+  Bibliography
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <div class="dropdown" id="version_switcher">
+    <button type="button" class="btn btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+        2.8.0  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div id="version_switcher_menu" class="dropdown-menu list-group-flush py-0" aria-labelledby="version_switcher_button">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+
+<!-- NOTE: this JS must live here (not in our global JS file) because it relies
+     on being processed by Jinja before it is run (specifically for replacing
+     variables notebooks/getting_started/parameters_and_their_optimisation and {'json_url': 'https://gpflow.github.io/GPflow/versions.json', 'version_match': '2.8.0'}.
+-->
+
+<script type="text/javascript">
+// Check if corresponding page path exists in other version of docs
+// and, if so, go there instead of the homepage of the other docs version
+function checkPageExistsAndRedirect(event) {
+    const currentFilePath = "notebooks/getting_started/parameters_and_their_optimisation.html",
+          tryUrl = event.target.getAttribute("href");
+    let otherDocsHomepage = tryUrl.replace(currentFilePath, "");
+    $.ajax({
+        type: 'HEAD',
+        url: tryUrl,
+        // if the page exists, go there
+        success: function() {
+            location.href = tryUrl;
+        }
+    }).fail(function() {
+        location.href = otherDocsHomepage;
+    });
+    // this prevents the browser from following the href of the clicked node
+    // (which is fine because this function takes care of redirecting)
+    return false;
+}
+
+// Populate the version switcher from the JSON config file
+(function () {
+    $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
+        const currentFilePath = "notebooks/getting_started/parameters_and_their_optimisation.html";
+        let btn = document.getElementById("version_switcher_button");
+        // Set empty strings by default so that these attributes exist and can be used in CSS selectors
+        btn.dataset["activeVersionName"] = "";
+        btn.dataset["activeVersion"] = "";
+        // create links to the corresponding page in the other docs versions
+        $.each(data, function(index, entry) {
+            // if no custom name specified (e.g., "latest"), use version string
+            if (!("name" in entry)) {
+                entry.name = entry.version;
+            }
+            // create the node
+            const node = document.createElement("a");
+            node.setAttribute("class", "list-group-item list-group-item-action py-1");
+            node.textContent = `${entry.name}`;
+            node.setAttribute("href", `${entry.url}${currentFilePath}`);
+            // on click, AJAX calls will check if the linked page exists before
+            // trying to redirect, and if not, will redirect to the homepage
+            // for that version of the docs.
+            node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
+            $("#version_switcher_menu").append(node);
+            // replace dropdown button text with the preferred display name of
+            // this version, rather than using sphinx's  variable.
+            // also highlight the dropdown entry for the currently-viewed
+            // version's entry
+            if (entry.version == "2.8.0") {
+                node.classList.add("active");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
+            }
+        });
+    });
+})();
+</script>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="bd-container container-xl">
+      <div class="bd-container__inner row">
+          
+
+<!-- Only show if we have sidebars configured, else just a small margin  -->
+<div class="bd-sidebar-primary col-12 col-md-3 bd-sidebar">
+  <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    <ul class="current nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../installation.html">
+   Installation
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="basic_usage.html">
+   Basic Usage with GPR
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="kernels.html">
+   Kernels
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="mean_functions.html">
+   Mean Functions
+  </a>
+ </li>
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
+   Parameters and Their Optimisation
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="large_data.html">
+   Large Data with SGPR
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="classification_and_other_data_distributions.html">
+   Classification, other data distributions, VGP and SVGP
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="monitoring.html">
+   Monitoring
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="saving_and_loading.html">
+   Saving and Loading Models
+  </a>
+ </li>
+</ul>
+
+  </div>
+</nav>
+  </div>
+  <div class="sidebar-end-items">
+  </div>
+</div>
+
+
+          
+
+
+<div class="bd-sidebar-secondary d-none d-xl-block col-xl-2 bd-toc">
+  
+    
+    <div class="toc-item">
+      
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#The-Module-and-Parameter-classes">
+   The Module and Parameter classes
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#Inspecting-parameters">
+     Inspecting parameters
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#Setting-parameters">
+     Setting parameters
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#Optimisation">
+     Optimisation
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#What-to-do-if-you-model-fails-to-fit">
+   What to do if you model fails to fit
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#Dataset:-CO_2-levels">
+     Dataset:
+     <span class="math notranslate nohighlight">
+      \(CO_2\)
+     </span>
+     levels
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#Setting-the-initial-value">
+     Setting the initial value
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#Priors">
+     Priors
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#Transforms">
+     Transforms
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#Trainable-parameters">
+     Trainable parameters
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Advanced-training">
+   Advanced training
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#Multi-stage-training">
+     Multi-stage training
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#The-Keras-optimisers">
+     The Keras optimisers
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+</nav>
+    </div>
+    
+    <div class="toc-item">
+      
+    </div>
+    
+  
+</div>
+
+
+          
+          
+          <div class="bd-content col-12 col-md-9 col-xl-7">
+              
+              <article class="bd-article" role="main">
+                
+  <section id="Parameters-and-Their-Optimisation">
+<h1>Parameters and Their Optimisation<a class="headerlink" href="#Parameters-and-Their-Optimisation" title="Permalink to this heading">#</a></h1>
+<p>In this chapter we will talk about what happens when you train your model, and what you can do if the optimisation process fails to find a good fit.</p>
+<p>As usual we start with some imports:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span class="kn">import</span> <span class="nn">tensorflow_probability</span> <span class="k">as</span> <span class="nn">tfp</span>
+<span class="kn">from</span> <span class="nn">check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span>
+<span class="kn">from</span> <span class="nn">matplotlib.axes</span> <span class="kn">import</span> <span class="n">Axes</span>
+
+<span class="kn">import</span> <span class="nn">gpflow</span>
+</pre></div>
+</div>
+</div>
+<section id="The-Module-and-Parameter-classes">
+<h2>The Module and Parameter classes<a class="headerlink" href="#The-Module-and-Parameter-classes" title="Permalink to this heading">#</a></h2>
+<p>The two fundamental classes of GPflow are: * <a class="reference internal" href="../../api/gpflow/index.html#gpflow-parameter"><span class="std std-ref">gpflow.Parameter</span></a>. Parameters are leaf nodes holding numerical values, that can be tuned / trained to make the model fit the data. * <a class="reference internal" href="../../api/gpflow/index.html#gpflow-module"><span class="std std-ref">gpflow.Module</span></a>. Modules recursively composes other modules and parameters to create models. All the GPflow models, kernels, mean functions, etc. are modules.</p>
+<p>As an example, let’s build a simple linear model:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">LinearModel</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;slope: [n_inputs, n_outputs]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;bias: [n_outputs]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">slope</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">TensorData</span><span class="p">,</span> <span class="n">bias</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">TensorData</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">slope</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">slope</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bias</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">bias</span><span class="p">)</span>
+
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;X: [n_rows, n_inputs]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: [n_rows, n_outputs]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">TensorData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">X</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">slope</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">bias</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<p>Notice that in <code class="docutils literal notranslate"><span class="pre">__init__</span></code> we directly pass data to the parameters. The <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> class takes many arguments (which we will discuss below), but it is reasonably intelligent as in: We can pass it “raw” numerical values with a Python list, a NumPy array, or a TensorFlow tensor; or we can pass it another <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> and it will take values from that. Being able to pass a <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> to <code class="docutils literal notranslate"><span class="pre">__init__</span></code> gives us a convenient way to configure the parameter in detail.</p>
+<section id="Inspecting-parameters">
+<h3>Inspecting parameters<a class="headerlink" href="#Inspecting-parameters" title="Permalink to this heading">#</a></h3>
+<p>Let’s first create an instance of our <code class="docutils literal notranslate"><span class="pre">LinearModel</span></code>:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">2.0</span><span class="p">]],</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<p>We can use the GPflow utility functions <code class="docutils literal notranslate"><span class="pre">print_summary</span></code> to see a summary of anything extending the GPflow <code class="docutils literal notranslate"><span class="pre">Module</span></code>:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+╒═══════════════════╤═══════════╤═════════════╤═════════╤═════════════╤═════════╤═════════╤═════════╕
+│ name              │ class     │ transform   │ prior   │ trainable   │ shape   │ dtype   │ value   │
+╞═══════════════════╪═══════════╪═════════════╪═════════╪═════════════╪═════════╪═════════╪═════════╡
+│ LinearModel.slope │ Parameter │ Identity    │         │ True        │ (2, 1)  │ float64 │ [[1.]   │
+│                   │           │             │         │             │         │         │  [2.]]  │
+├───────────────────┼───────────┼─────────────┼─────────┼─────────────┼─────────┼─────────┼─────────┤
+│ LinearModel.bias  │ Parameter │ Identity    │         │ True        │ (1,)    │ float64 │ [0.5]   │
+╘═══════════════════╧═══════════╧═════════════╧═════════╧═════════════╧═════════╧═════════╧═════════╛
+</pre></div></div>
+</div>
+<p>Looking at the output of <code class="docutils literal notranslate"><span class="pre">print_summary</span></code>. The <code class="docutils literal notranslate"><span class="pre">name</span></code> and <code class="docutils literal notranslate"><span class="pre">class</span></code> columns should be obvious if you’re familiar with Python. We’re also assuming that you’re comfortable with NumPy and TensorFlow so the last three columns <code class="docutils literal notranslate"><span class="pre">shape</span></code>, <code class="docutils literal notranslate"><span class="pre">dtype</span></code>, and <code class="docutils literal notranslate"><span class="pre">value</span></code> should also be obvious. The three middle columns <code class="docutils literal notranslate"><span class="pre">transform</span></code>, <code class="docutils literal notranslate"><span class="pre">prior</span></code> and <code class="docutils literal notranslate"><span class="pre">trainable</span></code> will be explained below.</p>
+<p>We generally recommend printing your parameter values after model traning, to sanity check them, and to develop a feel for what parameters are a good fit for your data.</p>
+<p><code class="docutils literal notranslate"><span class="pre">print_summary</span></code> has nice integration with Jupyter Notebooks:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;notebook&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area rendered_html docutils container">
+<table>
+<thead>
+<tr><th>name             </th><th>class    </th><th>transform  </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th>value  </th></tr>
+</thead>
+<tbody>
+<tr><td>LinearModel.slope</td><td>Parameter</td><td>Identity   </td><td>       </td><td>True       </td><td>(2, 1) </td><td>float64</td><td>[[1.]
+ [2.]]        </td></tr>
+<tr><td>LinearModel.bias </td><td>Parameter</td><td>Identity   </td><td>       </td><td>True       </td><td>(1,)   </td><td>float64</td><td>[0.5]  </td></tr>
+</tbody>
+</table></div>
+</div>
+<p>And we can configure GPflow to use the <code class="docutils literal notranslate"><span class="pre">notebook</span></code> format by default:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set_default_summary_fmt</span><span class="p">(</span><span class="s2">&quot;notebook&quot;</span><span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area rendered_html docutils container">
+<table>
+<thead>
+<tr><th>name             </th><th>class    </th><th>transform  </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th>value  </th></tr>
+</thead>
+<tbody>
+<tr><td>LinearModel.slope</td><td>Parameter</td><td>Identity   </td><td>       </td><td>True       </td><td>(2, 1) </td><td>float64</td><td>[[1.]
+ [2.]]        </td></tr>
+<tr><td>LinearModel.bias </td><td>Parameter</td><td>Identity   </td><td>       </td><td>True       </td><td>(1,)   </td><td>float64</td><td>[0.5]  </td></tr>
+</tbody>
+</table></div>
+</div>
+<p>Alternatively <code class="docutils literal notranslate"><span class="pre">Module</span></code>s know how to print themselves nicely in a notebook:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+&lt;__main__.LinearModel object at 0x7fd4a0dbbd30&gt;
+<table>
+<thead>
+<tr><th>name             </th><th>class    </th><th>transform  </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th>value  </th></tr>
+</thead>
+<tbody>
+<tr><td>LinearModel.slope</td><td>Parameter</td><td>Identity   </td><td>       </td><td>True       </td><td>(2, 1) </td><td>float64</td><td>[[1.]
+ [2.]]        </td></tr>
+<tr><td>LinearModel.bias </td><td>Parameter</td><td>Identity   </td><td>       </td><td>True       </td><td>(1,)   </td><td>float64</td><td>[0.5]  </td></tr>
+</tbody>
+</table></div>
+</div>
+<p>Finally, a <code class="docutils literal notranslate"><span class="pre">Module</span></code> has two properties that allows easy access to its leaf parameters:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(&lt;Parameter: name=identity, dtype=float64, shape=[1], fn=&#34;identity&#34;, numpy=array([0.5])&gt;,
+ &lt;Parameter: name=identity, dtype=float64, shape=[2, 1], fn=&#34;identity&#34;, numpy=
+ array([[1.],
+        [2.]])&gt;)
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(&lt;Parameter: name=identity, dtype=float64, shape=[1], fn=&#34;identity&#34;, numpy=array([0.5])&gt;,
+ &lt;Parameter: name=identity, dtype=float64, shape=[2, 1], fn=&#34;identity&#34;, numpy=
+ array([[1.],
+        [2.]])&gt;)
+</pre></div></div>
+</div>
+<p>The difference between trainable and non-trainable parameters will be explained further below. For now you may notice that both our parameters are marked “trainable” in the <code class="docutils literal notranslate"><span class="pre">print_summary</span></code> output, and both of them are returned by <code class="docutils literal notranslate"><span class="pre">.trainable_parameters</span></code>.</p>
+<p>Generally you should use <code class="docutils literal notranslate"><span class="pre">print_summary</span></code> to manually inspect your models, and <code class="docutils literal notranslate"><span class="pre">.parameters</span></code> and <code class="docutils literal notranslate"><span class="pre">.trainable_parameters</span></code> if you need programmatic access.</p>
+</section>
+<section id="Setting-parameters">
+<h3>Setting parameters<a class="headerlink" href="#Setting-parameters" title="Permalink to this heading">#</a></h3>
+<p>Parameters have a <code class="docutils literal notranslate"><span class="pre">.assign</span></code> method you can use to set them:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">bias</span><span class="o">.</span><span class="n">assign</span><span class="p">([</span><span class="mf">5.0</span><span class="p">])</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area rendered_html docutils container">
+<table>
+<thead>
+<tr><th>name             </th><th>class    </th><th>transform  </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th>value  </th></tr>
+</thead>
+<tbody>
+<tr><td>LinearModel.slope</td><td>Parameter</td><td>Identity   </td><td>       </td><td>True       </td><td>(2, 1) </td><td>float64</td><td>[[1.]
+ [2.]]        </td></tr>
+<tr><td>LinearModel.bias </td><td>Parameter</td><td>Identity   </td><td>       </td><td>True       </td><td>(1,)   </td><td>float64</td><td>[5.]   </td></tr>
+</tbody>
+</table></div>
+</div>
+</section>
+<section id="Optimisation">
+<h3>Optimisation<a class="headerlink" href="#Optimisation" title="Permalink to this heading">#</a></h3>
+<p>The objective of optimisation is to change the parameters so that your model fits the data. Generally an optimiser takes a “loss” function and a list of parameters, it then changes the parameters to minimise the loss function.</p>
+<p>Let’s us try to optimise our <code class="docutils literal notranslate"><span class="pre">LinearModel</span></code>.</p>
+<p>First we need some data. This data is computed manually, given <span class="math notranslate nohighlight">\(y_i = 2x_{i0} + 3x_{i1} + 1\)</span>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">X_train</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">]])</span>
+<span class="n">Y_train</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">7</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">13</span><span class="p">]])</span>
+</pre></div>
+</div>
+</div>
+<p>Next we need our loss function. A common choice is the mean squared error:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">loss</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="n">Y_predicted</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span>
+    <span class="n">squared_error</span> <span class="o">=</span> <span class="p">(</span><span class="n">Y_predicted</span> <span class="o">-</span> <span class="n">Y_train</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_mean</span><span class="p">(</span><span class="n">squared_error</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Be aware that GPflow models come with a loss-function built in — use <code class="docutils literal notranslate"><span class="pre">model.training_loss</span></code>.</p>
+<p>Now we can plug this into the default GPflow optimiser:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area rendered_html docutils container">
+<table>
+<thead>
+<tr><th>name             </th><th>class    </th><th>transform  </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th>value  </th></tr>
+</thead>
+<tbody>
+<tr><td>LinearModel.slope</td><td>Parameter</td><td>Identity   </td><td>       </td><td>True       </td><td>(2, 1) </td><td>float64</td><td>[[2.]
+ [3.]]        </td></tr>
+<tr><td>LinearModel.bias </td><td>Parameter</td><td>Identity   </td><td>       </td><td>True       </td><td>(1,)   </td><td>float64</td><td>[1.]   </td></tr>
+</tbody>
+</table></div>
+</div>
+<p>Notice how the optimiser recovered the slope of <span class="math notranslate nohighlight">\((2, 3)\)</span> and bias of <span class="math notranslate nohighlight">\(1\)</span> from the equation we used to generate the data: <span class="math notranslate nohighlight">\(y_i = 2x_{i0} + 3x_{i1} + 1\)</span>.</p>
+<p>The default GPflow optimiser uses a gradient descent method called <a class="reference external" href="https://en.wikipedia.org/wiki/Broyden%E2%80%93Fletcher%E2%80%93Goldfarb%E2%80%93Shanno_algorithm">BFGS</a>. For this algoritm to work well you need:</p>
+<ul class="simple">
+<li><p>A deterministic loss function. Notice this rules out mini-batching, because the random batches inject randomness into the loss function.</p></li>
+<li><p>Not too many parameters. You will probably be fine up to a couple of thousand parameters.</p></li>
+</ul>
+</section>
+</section>
+<section id="What-to-do-if-you-model-fails-to-fit">
+<h2>What to do if you model fails to fit<a class="headerlink" href="#What-to-do-if-you-model-fails-to-fit" title="Permalink to this heading">#</a></h2>
+<p>In our above example the optimiser perfectly recovered the parameters of the process that generated our data. However, it was a very easy problem we were solving. As you start working with more complicated data sets you may find that the optimiser fails to find a good fit for you model. In this section we will discuss what you can do to help the optimiser a bit.</p>
+<section id="Dataset:-CO_2-levels">
+<h3>Dataset: <span class="math notranslate nohighlight">\(CO_2\)</span> levels<a class="headerlink" href="#Dataset:-CO_2-levels" title="Permalink to this heading">#</a></h3>
+<p>As an example we will use a dataset of atmospheric <span class="math notranslate nohighlight">\(CO_2\)</span> levels, as measured at the <a class="reference external" href="https://gml.noaa.gov/obop/mlo/">Mauna Loa observatory</a> in Hawaii:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">co2_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
+    <span class="s2">&quot;https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.csv&quot;</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;#&quot;</span>
+<span class="p">)</span>
+<span class="n">Xco2</span> <span class="o">=</span> <span class="n">co2_data</span><span class="p">[</span><span class="s2">&quot;decimal date&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+<span class="n">Yco2</span> <span class="o">=</span> <span class="n">co2_data</span><span class="p">[</span><span class="s2">&quot;average&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<p>And we will define some helper functions to train and plot a model with the data:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_co2_model_prediction</span><span class="p">(</span>
+    <span class="n">ax</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPModel</span><span class="p">,</span> <span class="n">start</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">stop</span><span class="p">:</span> <span class="nb">float</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">Xplot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="mi">200</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="n">idx_plot</span> <span class="o">=</span> <span class="p">(</span><span class="n">start</span> <span class="o">&lt;</span> <span class="n">Xco2</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">Xco2</span> <span class="o">&lt;</span> <span class="n">stop</span><span class="p">)</span>
+
+    <span class="n">y_mean</span><span class="p">,</span> <span class="n">y_var</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_y</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">y_lower</span> <span class="o">=</span> <span class="n">y_mean</span> <span class="o">-</span> <span class="mf">1.96</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">y_var</span><span class="p">)</span>
+    <span class="n">y_upper</span> <span class="o">=</span> <span class="n">y_mean</span> <span class="o">+</span> <span class="mf">1.96</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">y_var</span><span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xco2</span><span class="p">[</span><span class="n">idx_plot</span><span class="p">],</span> <span class="n">Yco2</span><span class="p">[</span><span class="n">idx_plot</span><span class="p">],</span> <span class="s2">&quot;kx&quot;</span><span class="p">,</span> <span class="n">mew</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">mean_line</span><span class="p">,)</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">y_mean</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span>
+    <span class="n">color</span> <span class="o">=</span> <span class="n">mean_line</span><span class="o">.</span><span class="n">get_color</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">y_lower</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">y_upper</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span>
+        <span class="n">Xplot</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">y_lower</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">y_upper</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span>
+    <span class="p">)</span>
+
+
+<span class="n">opt_options</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">plot_co2_kernel</span><span class="p">(</span>
+    <span class="n">kernel</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Kernel</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">optimize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">Xco2</span><span class="p">,</span> <span class="n">Yco2</span><span class="p">),</span>
+        <span class="n">kernel</span><span class="o">=</span><span class="n">kernel</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">optimize</span><span class="p">:</span>
+        <span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
+        <span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">opt_options</span>
+        <span class="p">)</span>
+    <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;notebook&quot;</span><span class="p">)</span>
+
+    <span class="n">_</span><span class="p">,</span> <span class="p">(</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">plot_co2_model_prediction</span><span class="p">(</span><span class="n">ax1</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="mi">1950</span><span class="p">,</span> <span class="mi">2050</span><span class="p">)</span>
+    <span class="n">plot_co2_model_prediction</span><span class="p">(</span><span class="n">ax2</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="mi">2015</span><span class="p">,</span> <span class="mi">2030</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Let us start by trying to fit our favourite kernel: the squared exponential:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_co2_kernel</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(),</span> <span class="n">optimize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area rendered_html docutils container">
+<table>
+<thead>
+<tr><th>name                   </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style="text-align: right;">      value</th></tr>
+</thead>
+<tbody>
+<tr><td>GPR.kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">92513.3    </td></tr>
+<tr><td>GPR.kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   48.0442 </td></tr>
+<tr><td>GPR.likelihood.variance</td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    4.72387</td></tr>
+</tbody>
+</table></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_parameters_and_their_optimisation_42_1.png" src="../../_images/notebooks_getting_started_parameters_and_their_optimisation_42_1.png" />
+</div>
+</div>
+<p>We are off to a good start. From the left plot it is clear that the kernel has captured the long-term trend of the data. However, on the zoomed-in plot on the right it is also clear that the data has some kind of yearly cycle that our model has failed to capture.</p>
+<p>Let us try adding a periodic kernel to capture the yearly cycle:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_co2_kernel</span><span class="p">(</span>
+    <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">()</span>
+    <span class="o">+</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Periodic</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">()),</span>
+    <span class="n">optimize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area rendered_html docutils container">
+<table>
+<thead>
+<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style="text-align: right;">     value</th></tr>
+</thead>
+<tbody>
+<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">26084.8   </td></tr>
+<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   42.5836</td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">34955.9   </td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;"> 2065.66  </td></tr>
+<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;"> 7355.72  </td></tr>
+<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    4.7221</td></tr>
+</tbody>
+</table></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_parameters_and_their_optimisation_44_1.png" src="../../_images/notebooks_getting_started_parameters_and_their_optimisation_44_1.png" />
+</div>
+</div>
+<p>Huh. What happened? The optimiser has failed to find a good fit. With the extended model the loss function has become too complicated for the optimiser.</p>
+<p>Below we will look at what we can do to help the optimiser.</p>
+</section>
+<section id="Setting-the-initial-value">
+<h3>Setting the initial value<a class="headerlink" href="#Setting-the-initial-value" title="Permalink to this heading">#</a></h3>
+<p>The simplest thing you can do to help the optimiser is to set your parameters to good inital values.</p>
+<ul class="simple">
+<li><p>When we just fit a single <code class="docutils literal notranslate"><span class="pre">SquaredExponential</span></code> to the data we got great values for the long term trend. Let us reuse those parameters.</p></li>
+<li><p>We know that we intend the periodic kernel to capture a yearly cycle. The units on the X-axis are years, so the period should be 1.</p></li>
+</ul>
+<p>Let us try simply setting the parameters of our long-term-trend kernel to approximately those learned when it was trained individually, and the period to 1:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_co2_kernel</span><span class="p">(</span>
+    <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(</span><span class="n">variance</span><span class="o">=</span><span class="mi">280_000</span><span class="p">,</span> <span class="n">lengthscales</span><span class="o">=</span><span class="mf">140.0</span><span class="p">)</span>
+    <span class="o">+</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Periodic</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(),</span> <span class="n">period</span><span class="o">=</span><span class="mf">1.0</span><span class="p">),</span>
+    <span class="n">optimize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area rendered_html docutils container">
+<table>
+<thead>
+<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style="text-align: right;">       value</th></tr>
+</thead>
+<tbody>
+<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">280000      </td></tr>
+<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   114.796  </td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    37.4775 </td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     2.51031</td></tr>
+<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.99961</td></tr>
+<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.3673 </td></tr>
+</tbody>
+</table></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_parameters_and_their_optimisation_47_1.png" src="../../_images/notebooks_getting_started_parameters_and_their_optimisation_47_1.png" />
+</div>
+</div>
+</section>
+<section id="Priors">
+<h3>Priors<a class="headerlink" href="#Priors" title="Permalink to this heading">#</a></h3>
+<p>It it always a good idea to try to set reasonable initial values on your parameters. However, it is not always enough. An initial value is just a starting point, and the optimiser may in principle choose any value whatsever for the final value. Another, possibly more principled, approach to guiding the optimiser is to set a “prior” on your parameters. A prior is a probability distribution that represents your belief of what the parameter should be, before the optimiser takes the data into
+account. We use the <a class="reference external" href="https://www.tensorflow.org/probability/api_docs/python/tfp/distributions/Distribution">TensorFlow Probability Distribution</a> class to represent priors.</p>
+<p>There are two ways to apply a prior to your parameters. First, you can create the parameter with the prior:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">prior</span><span class="o">=</span><span class="n">tfp</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">10.0</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<p>Or you can create the parameter first, and then set the prior:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="n">p</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">tfp</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">10.0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Let us try using priors on our <span class="math notranslate nohighlight">\(CO_2\)</span> model:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">long_term_kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">()</span>
+<span class="n">long_term_kernel</span><span class="o">.</span><span class="n">variance</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">tfp</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span>
+    <span class="n">tf</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">to_default_float</span><span class="p">(</span><span class="mf">280_000.0</span><span class="p">)),</span> <span class="mf">1.0</span>
+<span class="p">)</span>
+<span class="n">long_term_kernel</span><span class="o">.</span><span class="n">lengthscales</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">tfp</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span>
+    <span class="n">tf</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">to_default_float</span><span class="p">(</span><span class="mf">140.0</span><span class="p">)),</span> <span class="mf">0.05</span>
+<span class="p">)</span>
+<span class="n">periodic_kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Periodic</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">())</span>
+<span class="n">periodic_kernel</span><span class="o">.</span><span class="n">period</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">tfp</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span>
+    <span class="n">tf</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">to_default_float</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)),</span> <span class="mf">0.1</span>
+<span class="p">)</span>
+
+<span class="n">plot_co2_kernel</span><span class="p">(</span><span class="n">long_term_kernel</span> <span class="o">+</span> <span class="n">periodic_kernel</span><span class="p">,</span> <span class="n">optimize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area rendered_html docutils container">
+<table>
+<thead>
+<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior    </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style="text-align: right;">      value</th></tr>
+</thead>
+<tbody>
+<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>LogNormal</td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">12561.7    </td></tr>
+<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>LogNormal</td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">  131.466  </td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>         </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">10151.2    </td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>         </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">  502.05   </td></tr>
+<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>LogNormal</td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    1.02258</td></tr>
+<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>         </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    4.93419</td></tr>
+</tbody>
+</table></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_parameters_and_their_optimisation_54_1.png" src="../../_images/notebooks_getting_started_parameters_and_their_optimisation_54_1.png" />
+</div>
+</div>
+<p>Notice that many parameters have constraints on what values are valid. In this case all of <code class="docutils literal notranslate"><span class="pre">variance</span></code>, <code class="docutils literal notranslate"><span class="pre">lengthscales</span></code> and <code class="docutils literal notranslate"><span class="pre">period</span></code> should be non-negative. That is why we chose the <code class="docutils literal notranslate"><span class="pre">LogNormal</span></code> distribution for our prior - it only allows positive values.</p>
+<p>Also notice in our table of parameters, that the <code class="docutils literal notranslate"><span class="pre">prior</span></code> column now shows <code class="docutils literal notranslate"><span class="pre">LogNormal</span></code> for the parameters we set the prior on.</p>
+</section>
+<section id="Transforms">
+<h3>Transforms<a class="headerlink" href="#Transforms" title="Permalink to this heading">#</a></h3>
+<p>As mentioned above, some parameters have constraints on what values are valid. GPflow uses “transforms” to enforce this. The parameter stores a raw value that can be anything. When you read the parameter that value is sent through a function, the “transform”, that maps the entire real line to the set of valid values. We use the <a class="reference external" href="https://www.tensorflow.org/probability/api_docs/python/tfp/bijectors/Bijector">TensorFlow Probability Bijector</a> class for the transform.</p>
+<p>You can only set the transform of a parameter when you create it. For example:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Exp</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<p>In this example we used the exponential function as a transform. Since the exponential functions maps the entire real line to positive values this transform will ensure that the parameter always take positive values.</p>
+<p>We can access the untransformed value of the parameter:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span><span class="o">.</span><span class="n">unconstrained_variable</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;tf.Variable &#39;exp:0&#39; shape=() dtype=float64, numpy=0.0&gt;
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span><span class="o">.</span><span class="n">unconstrained_variable</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;tf.Variable &#39;UnreadVariable&#39; shape=() dtype=float64, numpy=-3.0&gt;
+</pre></div></div>
+</div>
+<p>When we read the parameter we will read the transformed value, which is positive, even though we just set the untransformed value to a negative number:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;Parameter: name=exp, dtype=float64, shape=[], fn=&#34;exp&#34;, numpy=0.049787068367863944&gt;
+</pre></div></div>
+</div>
+<p>Let us try and use transforms on our <span class="math notranslate nohighlight">\(CO_2\)</span> problem:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">long_term_kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">()</span>
+<span class="n">long_term_kernel</span><span class="o">.</span><span class="n">variance</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span>
+    <span class="mi">280_000</span><span class="p">,</span>
+    <span class="n">transform</span><span class="o">=</span><span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">SoftClip</span><span class="p">(</span>
+        <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">to_default_float</span><span class="p">(</span><span class="mi">200_000</span><span class="p">),</span>
+        <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">to_default_float</span><span class="p">(</span><span class="mi">400_000</span><span class="p">),</span>
+    <span class="p">),</span>
+<span class="p">)</span>
+<span class="n">long_term_kernel</span><span class="o">.</span><span class="n">lengthscales</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span>
+    <span class="mi">140</span><span class="p">,</span>
+    <span class="n">transform</span><span class="o">=</span><span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">SoftClip</span><span class="p">(</span>
+        <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">to_default_float</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span>
+        <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">to_default_float</span><span class="p">(</span><span class="mi">200</span><span class="p">),</span>
+    <span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">periodic_kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Periodic</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">())</span>
+<span class="n">periodic_kernel</span><span class="o">.</span><span class="n">period</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span>
+    <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">transform</span><span class="o">=</span><span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">SoftClip</span><span class="p">(</span>
+        <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">to_default_float</span><span class="p">(</span><span class="mf">0.9</span><span class="p">),</span>
+        <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">to_default_float</span><span class="p">(</span><span class="mf">1.1</span><span class="p">),</span>
+    <span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">plot_co2_kernel</span><span class="p">(</span><span class="n">long_term_kernel</span> <span class="o">+</span> <span class="n">periodic_kernel</span><span class="p">,</span> <span class="n">optimize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area rendered_html docutils container">
+<table>
+<thead>
+<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style="text-align: right;">       value</th></tr>
+</thead>
+<tbody>
+<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>SoftClip        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">280000      </td></tr>
+<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>SoftClip        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   100.005  </td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    60.7353 </td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     1.43323</td></tr>
+<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>SoftClip        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.99962</td></tr>
+<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.37395</td></tr>
+</tbody>
+</table></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_parameters_and_their_optimisation_67_1.png" src="../../_images/notebooks_getting_started_parameters_and_their_optimisation_67_1.png" />
+</div>
+</div>
+<p>Again, be aware that many parameters have constraints on what kind of values they logically can take, and if you replace the transform of a parameter you must make sure that the transform only allows values that are logically valid in the context in which they are used.</p>
+<p>Also, notice how the values of the <code class="docutils literal notranslate"><span class="pre">transform</span></code> column in our parameter summary has updated to reflect our new transforms.</p>
+</section>
+<section id="Trainable-parameters">
+<h3>Trainable parameters<a class="headerlink" href="#Trainable-parameters" title="Permalink to this heading">#</a></h3>
+<p>In this section we have been going from setting initial parameter values, which are a very soft hint, over priors to transforms, which are more forceful ways of constraining the training process. The last step is to completely prevent the optimiser from changing a value. We can do that by setting the parameter to not be “trainable”.</p>
+<p>You can set the trainability of a parameter either when you create it, or using the <code class="docutils literal notranslate"><span class="pre">gpflow.set_trainable</span></code> function:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">trainable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">set_trainable</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">gpflow.set_trainable</span></code> function can both be applied directly to parameters, or to modules, in which case all parameters held in the module are affected.</p>
+<p>Let us try setting the trainability on our <span class="math notranslate nohighlight">\(CO_2\)</span> model:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">long_term_kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(</span>
+    <span class="n">variance</span><span class="o">=</span><span class="mi">280_000</span><span class="p">,</span> <span class="n">lengthscales</span><span class="o">=</span><span class="mi">140</span>
+<span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">set_trainable</span><span class="p">(</span><span class="n">long_term_kernel</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+<span class="n">periodic_kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Periodic</span><span class="p">(</span>
+    <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(),</span> <span class="n">period</span><span class="o">=</span><span class="mi">1</span>
+<span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">set_trainable</span><span class="p">(</span><span class="n">periodic_kernel</span><span class="o">.</span><span class="n">period</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+<span class="n">plot_co2_kernel</span><span class="p">(</span><span class="n">long_term_kernel</span> <span class="o">+</span> <span class="n">periodic_kernel</span><span class="p">,</span> <span class="n">optimize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area rendered_html docutils container">
+<table>
+<thead>
+<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style="text-align: right;">       value</th></tr>
+</thead>
+<tbody>
+<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>False      </td><td>()     </td><td>float64</td><td style="text-align: right;">280000      </td></tr>
+<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>False      </td><td>()     </td><td>float64</td><td style="text-align: right;">   140      </td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    44.421  </td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     1.32248</td></tr>
+<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>False      </td><td>()     </td><td>float64</td><td style="text-align: right;">     1      </td></tr>
+<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.4655 </td></tr>
+</tbody>
+</table></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_parameters_and_their_optimisation_73_1.png" src="../../_images/notebooks_getting_started_parameters_and_their_optimisation_73_1.png" />
+</div>
+</div>
+<p>Notice how the <code class="docutils literal notranslate"><span class="pre">trainable</span></code> column of the parameter table reflects the whether the parameters are trainable. Also notice how the final value of the un-trainable parameters have exactly the value we initialised them to. Setting a parameter untrainable is a heavy-handed tool, and we generally recommend using one of the softer methods demonstrated above.</p>
+</section>
+</section>
+<section id="Advanced-training">
+<h2>Advanced training<a class="headerlink" href="#Advanced-training" title="Permalink to this heading">#</a></h2>
+<section id="Multi-stage-training">
+<h3>Multi-stage training<a class="headerlink" href="#Multi-stage-training" title="Permalink to this heading">#</a></h3>
+<p>Remember how we first trained a model with only a <code class="docutils literal notranslate"><span class="pre">SquaredExponential</span></code> kernel, and in the above subsections we have been using parameters learned from that experiment for the initial values in a more complicated kernel?</p>
+<p>What if you do not have access to the data when you write your code, and you can not “copy and paste” from a previous experiment? Well, it is possible to run optimisation multiple times, so we can start by running optimisation on a smaller set of parameters, which is a simpler problem to optimise; and then optimise all the parameters in a second run.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># First we only use, and optimise, the long_term_kernel:</span>
+<span class="n">long_term_kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">()</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">((</span><span class="n">Xco2</span><span class="p">,</span> <span class="n">Yco2</span><span class="p">),</span> <span class="n">kernel</span><span class="o">=</span><span class="n">long_term_kernel</span><span class="p">)</span>
+<span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">opt_options</span>
+<span class="p">)</span>
+
+<span class="c1"># And then we use, and optimise, the full kernel:</span>
+<span class="n">periodic_kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Periodic</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">())</span>
+
+<span class="n">kernel</span> <span class="o">=</span> <span class="n">long_term_kernel</span> <span class="o">+</span> <span class="n">periodic_kernel</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">((</span><span class="n">Xco2</span><span class="p">,</span> <span class="n">Yco2</span><span class="p">),</span> <span class="n">kernel</span><span class="o">=</span><span class="n">long_term_kernel</span><span class="p">)</span>
+<span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">opt_options</span>
+<span class="p">)</span>
+
+<span class="n">plot_co2_kernel</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">optimize</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area rendered_html docutils container">
+<table>
+<thead>
+<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style="text-align: right;">     value</th></tr>
+</thead>
+<tbody>
+<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">92513.3   </td></tr>
+<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   48.0395</td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    1     </td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    1     </td></tr>
+<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    1     </td></tr>
+<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">    1     </td></tr>
+</tbody>
+</table></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_parameters_and_their_optimisation_77_1.png" src="../../_images/notebooks_getting_started_parameters_and_their_optimisation_77_1.png" />
+</div>
+</div>
+</section>
+<section id="The-Keras-optimisers">
+<h3>The Keras optimisers<a class="headerlink" href="#The-Keras-optimisers" title="Permalink to this heading">#</a></h3>
+<p>So far we have been using the optimiser from GPflow. However, GPflow is built on TensorFlow variables and automatic differentiation, and you can use any other optimiser built on those as well. Here is an example of using a Keras optimiser with a TensorFlow model:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">(</span>
+    <span class="p">(</span><span class="n">Xco2</span><span class="p">,</span> <span class="n">Yco2</span><span class="p">),</span>
+    <span class="n">kernel</span><span class="o">=</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(</span>
+        <span class="n">variance</span><span class="o">=</span><span class="mi">280_000</span><span class="p">,</span> <span class="n">lengthscales</span><span class="o">=</span><span class="mf">140.0</span>
+    <span class="p">)</span>
+    <span class="o">+</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Periodic</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(),</span> <span class="n">period</span><span class="o">=</span><span class="mf">1.0</span><span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">opt</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Adam</span><span class="p">()</span>
+
+
+<span class="nd">@tf</span><span class="o">.</span><span class="n">function</span>
+<span class="k">def</span> <span class="nf">step</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">)</span>
+
+
+<span class="n">maxiter</span> <span class="o">=</span> <span class="mi">2_000</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">maxiter</span><span class="p">):</span>
+    <span class="n">step</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+
+<span class="n">kernel</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">kernel</span>
+<span class="n">plot_co2_kernel</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">optimize</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0 991.6587875215864
+100 971.9910386028221
+200 955.9178055509464
+300 941.8204325739473
+400 929.5057035124845
+500 918.8294335017132
+600 909.679549048432
+700 901.956899470478
+800 895.5752538595432
+900 890.3761504518077
+1000 886.2685896202352
+1100 883.0965909910033
+1200 880.6896240611487
+1300 878.8973556082773
+1400 877.569250078476
+1500 876.5711075129618
+1600 875.800275638866
+1700 875.1779723305933
+1800 874.6476276793144
+1900 874.1743326914917
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area rendered_html docutils container">
+<table>
+<thead>
+<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style="text-align: right;">       value</th></tr>
+</thead>
+<tbody>
+<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">280002      </td></tr>
+<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">   137.551  </td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     1.80473</td></tr>
+<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.55246</td></tr>
+<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     0.99962</td></tr>
+<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">     1      </td></tr>
+</tbody>
+</table></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_parameters_and_their_optimisation_79_2.png" src="../../_images/notebooks_getting_started_parameters_and_their_optimisation_79_2.png" />
+</div>
+</div>
+</section>
+</section>
+</section>
+
+
+              </article>
+              
+
+              
+          </div>
+          
+      </div>
+    </div>
+
+  
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695"></script>
+
+<footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    <p class="copyright">
+    &copy; Copyright 2023, The GPflow Contributors.<br>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.0.0.<br>
+</p>
+  </div>
+  
+</div>
+</footer>
+  </body>
+</html>
