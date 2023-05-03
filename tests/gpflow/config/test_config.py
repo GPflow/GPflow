@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import os
-from typing import Any, Callable
+from typing import Any, Callable, Iterable
 from unittest import mock
 
 import numpy as np
@@ -23,15 +23,21 @@ import tensorflow as tf
 import gpflow
 from gpflow.base import TensorData
 from gpflow.config import (
+    config,
     default_float,
     default_int,
     default_jitter,
+    default_likelihood_positive_minimum,
     default_positive_bijector,
+    default_positive_minimum,
     default_summary_fmt,
+    set_config,
     set_default_float,
     set_default_int,
     set_default_jitter,
+    set_default_likelihood_positive_minimum,
     set_default_positive_bijector,
+    set_default_positive_minimum,
     set_default_summary_fmt,
 )
 from gpflow.utilities import to_default_float, to_default_int
@@ -45,8 +51,18 @@ _env_values = [
     ("positive_bijector", "softplus", "softplus"),
     ("summary_fmt", "simple", "simple"),
     ("positive_minimum", "1e-3", 1e-3),
+    ("likelihood_positive_minimum", "5e-4", 5e-4),
     ("jitter", "1e-2", 1e-2),
 ]
+
+
+# Fixture to reset config back to default. Some tests change global config and can otherwise
+# effect subsequent tests.
+@pytest.fixture(autouse=True)
+def reset_config() -> Iterable[None]:
+    default_config = config()
+    yield
+    set_config(default_config)
 
 
 @pytest.mark.parametrize("attr_name, value, expected_value", _env_values)
@@ -103,18 +119,35 @@ def test_dtype_errorcheck(setter: Callable[[type], None], invalid_type: Any) -> 
         setter(invalid_type)
 
 
-def test_jitter_setting() -> None:
-    set_default_jitter(1e-3)
-    assert default_jitter() == 1e-3
-    set_default_jitter(1e-6)
-    assert default_jitter() == 1e-6
+@pytest.mark.parametrize(
+    "setter, getter",
+    [
+        (set_default_jitter, default_jitter),
+        (set_default_likelihood_positive_minimum, default_likelihood_positive_minimum),
+        (set_default_positive_minimum, default_positive_minimum),
+    ],
+)
+@pytest.mark.parametrize("value", [1e-3, 1e-6])
+def test_floats_setting(
+    setter: Callable[[float], None], getter: Callable[[], float], value: float
+) -> None:
+    setter(value)
+    assert getter() == value
 
 
-def test_jitter_errorcheck() -> None:
+@pytest.mark.parametrize(
+    "setter",
+    [
+        set_default_jitter,
+        set_default_likelihood_positive_minimum,
+        set_default_positive_minimum,
+    ],
+)
+def test_floats_errorcheck(setter: Callable[[float], None]) -> None:
     with pytest.raises(TypeError):
-        set_default_jitter("not a float")  # type: ignore[arg-type]
+        setter("not a float")  # type: ignore[arg-type]
     with pytest.raises(ValueError):
-        set_default_jitter(-1e-10)
+        setter(-1e-10)
 
 
 @pytest.mark.parametrize(
