@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "e4e7b1ee",
+   "id": "d81790d4",
    "metadata": {},
    "source": [
     "# Kernel Design\n",
@@ -17,13 +17,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "50ed8ee0",
+   "id": "404fd1cd",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-05-03T09:13:31.217851Z",
-     "iopub.status.busy": "2023-05-03T09:13:31.217540Z",
-     "iopub.status.idle": "2023-05-03T09:13:35.999952Z",
-     "shell.execute_reply": "2023-05-03T09:13:35.998046Z"
+     "iopub.execute_input": "2023-05-03T21:58:42.256790Z",
+     "iopub.status.busy": "2023-05-03T21:58:42.256512Z",
+     "iopub.status.idle": "2023-05-03T21:58:46.964658Z",
+     "shell.execute_reply": "2023-05-03T21:58:46.963854Z"
     }
    },
    "outputs": [
@@ -31,26 +31,20 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2023-05-03 09:13:31.907414: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2023-05-03 21:58:42.865207: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n",
-      "2023-05-03 09:13:32.061309: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n"
+      "2023-05-03 21:58:43.018258: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2023-05-03 21:58:43.018291: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n",
+      "2023-05-03 21:58:43.049567: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2023-05-03 09:13:32.061332: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n",
-      "2023-05-03 09:13:32.090840: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "2023-05-03 09:13:32.866717: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory\n",
-      "2023-05-03 09:13:32.866779: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory\n",
-      "2023-05-03 09:13:32.866786: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.\n"
+      "2023-05-03 21:58:43.827545: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory\n",
+      "2023-05-03 21:58:43.827621: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory\n",
+      "2023-05-03 21:58:43.827630: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.\n"
      ]
     }
    ],
@@ -68,7 +62,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "833d2ff4",
+   "id": "7de41641",
    "metadata": {},
    "source": [
     "To make this new kernel class, we inherit from the base class `gpflow.kernels.Kernel` and implement the three functions below. **NOTE:** Depending on the kernel to be implemented, other classes can be more adequate. For example, if the kernel to be implemented is isotropic stationary, you can immediately subclass `gpflow.kernels.IsotropicStationary` (at which point you\n",
@@ -91,13 +85,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "b3ae65b1",
+   "id": "c73206ad",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-05-03T09:13:36.005938Z",
-     "iopub.status.busy": "2023-05-03T09:13:36.004758Z",
-     "iopub.status.idle": "2023-05-03T09:13:36.073511Z",
-     "shell.execute_reply": "2023-05-03T09:13:36.072922Z"
+     "iopub.execute_input": "2023-05-03T21:58:46.968393Z",
+     "iopub.status.busy": "2023-05-03T21:58:46.967601Z",
+     "iopub.status.idle": "2023-05-03T21:58:47.044939Z",
+     "shell.execute_reply": "2023-05-03T21:58:47.044035Z"
     }
    },
    "outputs": [
@@ -105,10 +99,10 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2023-05-03 09:13:36.012185: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
-      "2023-05-03 09:13:36.012219: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)\n",
-      "2023-05-03 09:13:36.012245: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (223e56fe2b8a): /proc/driver/nvidia/version does not exist\n",
-      "2023-05-03 09:13:36.012631: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2023-05-03 21:58:46.971971: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2023-05-03 21:58:46.971997: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2023-05-03 21:58:46.972017: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (a9d5efee9572): /proc/driver/nvidia/version does not exist\n",
+      "2023-05-03 21:58:46.972292: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     },
@@ -155,7 +149,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "6d9e85ba",
+   "id": "b8eaad6d",
    "metadata": {},
    "source": [
     "We can now evaluate our new kernel function and draw samples from a Gaussian process with this covariance:"
@@ -164,13 +158,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "918929a0",
+   "id": "d32cddce",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-05-03T09:13:36.078366Z",
-     "iopub.status.busy": "2023-05-03T09:13:36.078071Z",
-     "iopub.status.idle": "2023-05-03T09:14:01.475976Z",
-     "shell.execute_reply": "2023-05-03T09:14:01.475233Z"
+     "iopub.execute_input": "2023-05-03T21:58:47.048147Z",
+     "iopub.status.busy": "2023-05-03T21:58:47.047812Z",
+     "iopub.status.idle": "2023-05-03T21:59:18.495655Z",
+     "shell.execute_reply": "2023-05-03T21:59:18.494803Z"
     }
    },
    "outputs": [
@@ -209,7 +203,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ea2d7b09",
+   "id": "a2af79c4",
    "metadata": {},
    "source": [
     "## Using the kernel in a model\n",
@@ -226,13 +220,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "1cd0b99c",
+   "id": "32012155",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-05-03T09:14:01.479166Z",
-     "iopub.status.busy": "2023-05-03T09:14:01.478942Z",
-     "iopub.status.idle": "2023-05-03T09:14:04.010236Z",
-     "shell.execute_reply": "2023-05-03T09:14:04.009432Z"
+     "iopub.execute_input": "2023-05-03T21:59:18.498981Z",
+     "iopub.status.busy": "2023-05-03T21:59:18.498325Z",
+     "iopub.status.idle": "2023-05-03T21:59:21.192467Z",
+     "shell.execute_reply": "2023-05-03T21:59:21.191819Z"
     }
    },
    "outputs": [
@@ -299,7 +293,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "494adabf",
+   "id": "4b25596a",
    "metadata": {},
    "source": [
     "## See also\n",
