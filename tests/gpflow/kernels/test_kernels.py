@@ -22,7 +22,7 @@ from numpy.testing import assert_allclose
 
 import gpflow.ci_utils
 from gpflow.base import AnyNDArray, TensorType
-from gpflow.config import default_float
+from gpflow.config import default_float, default_positive_bijector
 from gpflow.kernels import (
     RBF,
     AnisotropicStationary,
@@ -254,6 +254,29 @@ kernel_setups: Tuple[Kernel, ...] = tuple(
     Polynomial(),
     ArcCosine(),
 )
+
+
+@pytest.mark.parametrize("kernel_type", gpflow.ci_utils.subclasses(Stationary))
+@pytest.mark.parametrize("transform", ["exp", "softplus", None])
+def test_kernel_lengthscale_transform(kernel_type: Type[Stationary], transform: str):
+    kernel = kernel_type(
+        lengthscales=[1.0],
+        lengthscale_transform=transform,
+    )
+    expected_transform = transform or default_positive_bijector()
+    assert kernel.lengthscales.transform.name == expected_transform
+
+
+@pytest.mark.parametrize("ard", [True, False])
+@pytest.mark.parametrize("transform", ["exp", "softplus", None])
+def test_anisotropic_kernel_lengthscale_transform_when_using_ard(ard: bool, transform: str):
+    kernel = AnisotropicStationary(
+        lengthscales=[1.0, 1.0] if ard else 1.0,
+        lengthscale_transform=transform,
+        active_dims=[0, 1] if ard else None,
+    )
+    expected_transform = transform or default_positive_bijector()
+    assert kernel.lengthscales.transform.name == expected_transform
 
 
 @pytest.mark.parametrize("D", [1, 5])
