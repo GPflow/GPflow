@@ -53,13 +53,19 @@ class Stationary(Kernel):
             slice of indices which controls which columns of X are used (by
             default, all columns are used).
         """
+
+        self._lengthscale_transform = kwargs.pop("lengthscale_transform", None)
+
         for kwarg in kwargs:
             if kwarg not in {"name", "active_dims"}:
                 raise TypeError(f"Unknown keyword argument: {kwarg}")
 
         super().__init__(**kwargs)
         self.variance = Parameter(variance, transform=positive())
-        self.lengthscales = Parameter(lengthscales, transform=positive())
+
+        self.lengthscales = Parameter(
+            lengthscales, transform=positive(base=self._lengthscale_transform)
+        )
         self._validate_ard_active_dims(self.lengthscales)
 
     @property
@@ -165,7 +171,9 @@ class AnisotropicStationary(Stationary):
         super().__init__(variance, lengthscales, **kwargs)
 
         if self.ard:
-            self.lengthscales = Parameter(self.lengthscales.numpy())
+            self.lengthscales = Parameter(
+                self.lengthscales.numpy(), transform=positive(base=self._lengthscale_transform)
+            )
 
     @inherit_check_shapes
     def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
@@ -229,8 +237,11 @@ class RationalQuadratic(IsotropicStationary):
         lengthscales: TensorType = 1.0,
         alpha: TensorType = 1.0,
         active_dims: Optional[ActiveDims] = None,
+        **kwargs: Any,
     ) -> None:
-        super().__init__(variance=variance, lengthscales=lengthscales, active_dims=active_dims)
+        super().__init__(
+            variance=variance, lengthscales=lengthscales, active_dims=active_dims, **kwargs
+        )
         self.alpha = Parameter(alpha, transform=positive())
 
     @inherit_check_shapes
