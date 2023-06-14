@@ -26,7 +26,7 @@ try:
     # use legacy Adam optimizer to support old TF versions
     from tensorflow.keras.optimizers.legacy import Adam
 except ImportError:
-    from tensorflow.optimizers import Adam
+    from keras.optimizers import Adam
 
 import gpflow
 from gpflow import set_trainable
