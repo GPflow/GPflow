@@ -201,6 +201,8 @@ class NaturalGradient(tf.optimizers.Optimizer):
         """
         name = self.__class__.__name__ if name is None else name
         super().__init__(name)
+        # explicitly store name (as TF <2.12 stores it differently from TF 2.12+)
+        self.natgrad_name = name
         self.gamma = gamma
         self.xi_transform = xi_transform
 
@@ -263,7 +265,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
         q_mu_grads, q_sqrt_grads = tape.gradient(loss, [q_mu_vars, q_sqrt_vars])
         # NOTE that these are the gradients in *unconstrained* space
 
-        with tf.name_scope(f"{self._name}/natural_gradient_steps"):
+        with tf.name_scope(f"{self.natgrad_name}/natural_gradient_steps"):
             for q_mu_grad, q_sqrt_grad, q_mu, q_sqrt, xi_transform in zip(
                 q_mu_grads, q_sqrt_grads, q_mus, q_sqrts, xis
             ):

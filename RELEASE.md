@@ -56,14 +56,13 @@ This release contains contributions from:
 
 * Fixed bug related to `tf.saved_model` and methods wrapped in `@check_shapes`.
 * Fixed missing docs for `SquaredExponential` and `Constant` kernels.
+* Tested with TensorFlow 2.12.
 
 ## Thanks to our Contributors
 
 This release contains contributions from:
 
-khurram-ghani
-<INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
-
+khurram-ghani, uri-granta
 
 # Release 2.7.1
 
