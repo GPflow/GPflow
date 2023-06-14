@@ -33,7 +33,7 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
-# Release 2.8.0 (next release)
+# Release 2.9.0 (next release)
 
 <INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
 
@@ -50,19 +50,45 @@ This release contains contributions from:
 
 ## Major Features and Improvements
 
-* Major rework of documentation landing page and "getting started" section.
+* <INSERT MAJOR FEATURE HERE, USING MARKDOWN SYNTAX>
+* <IF RELEASE CONTAINS MULTIPLE FEATURES FROM SAME AREA, GROUP THEM TOGETHER>
 
 ## Bug Fixes and Other Changes
 
-* Fixed bug related to `tf.saved_model` and methods wrapped in `@check_shapes`.
-* Fixed missing docs for `SquaredExponential` and `Constant` kernels.
-* Tested with TensorFlow 2.12.
+* Test with Tensorflow 2.12
 
 ## Thanks to our Contributors
 
 This release contains contributions from:
 
-khurram-ghani, uri-granta
+uri-granta
+
+
+# Release 2.8.0
+
+The main focus of this release is to provide users control over arguments for `tf.function`
+compilation inside the Scipy minimize wrapper. It also adds support for a new categorical kernel.
+
+## Major Features and Improvements
+
+* Added a new categorical kernel that implements categorical variables by mapping them to values in
+  a latent space. (#2055)
+* Added support for passing `tf.function` arguments for compilation in `gpflow.optimizers.Scipy`.
+  (#2064)
+* Default lower bound for parameters of scalar likelihoods can now be set via configuration.
+  (#1985, #2066)
+
+## Bug Fixes and Other Changes
+
+* Fixed some notebook typos and a link. (#2052, #2057)
+* Fixed missing docs for `SquaredExponential` and `Constant` kernels. (#2056, #2063)
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+sc336, partev, khurram-ghani, uri-granta, awav, jesnie
+
 
 # Release 2.7.1
 
