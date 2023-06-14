@@ -333,7 +333,7 @@ vgp_bernoulli_natgrad = VGP(
 )
 
 # ordinary gradients with Adam for VGP with Bernoulli likelihood
-adam_opt = tf.optimizers.Adam(adam_learning_rate)
+adam_opt = tf.keras.optimizers.legacy.Adam(adam_learning_rate)
 
 # NatGrads and Adam for VGP with Bernoulli likelihood
 # Stop Adam from optimizing the variational parameters
@@ -341,7 +341,7 @@ set_trainable(vgp_bernoulli_natgrad.q_mu, False)
 set_trainable(vgp_bernoulli_natgrad.q_sqrt, False)
 
 # Create the optimize_tensors for VGP with natural gradients
-natgrad_adam_opt = tf.optimizers.Adam(adam_learning_rate)
+natgrad_adam_opt = tf.keras.optimizers.legacy.Adam(adam_learning_rate)
 natgrad_opt = NaturalGradient(gamma=0.1)
 variational_params = [
     (vgp_bernoulli_natgrad.q_mu, vgp_bernoulli_natgrad.q_sqrt)

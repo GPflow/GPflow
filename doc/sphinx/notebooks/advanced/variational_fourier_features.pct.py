@@ -314,11 +314,11 @@ class VFFPosterior(gpflow.posteriors.BasePosterior):
         fmean = tf.matmul(A, f, transpose_a=True)
 
         if q_sqrt is not None:
-            if q_sqrt.get_shape().ndims == 2:
+            if q_sqrt.shape.ndims == 2:
                 # LTA = A * tf.expand_dims(q_sqrt, 2)  # K x M x N
                 # won't work  # make ticket for this?
                 raise NotImplementedError
-            elif q_sqrt.get_shape().ndims == 3:
+            elif q_sqrt.shape.ndims == 3:
                 # L = tf.matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # K x M x M
 
                 # K x M x N
@@ -332,7 +332,7 @@ class VFFPosterior(gpflow.posteriors.BasePosterior):
             else:
                 raise ValueError(
                     "Bad dimension for q_sqrt: %s"
-                    % str(q_sqrt.get_shape().ndims)
+                    % str(q_sqrt.shape.ndims)
                 )
             if full_cov:
                 # fvar = fvar + tf.matmul(LTA, LTA, transpose_a=True)  # K x N x N
