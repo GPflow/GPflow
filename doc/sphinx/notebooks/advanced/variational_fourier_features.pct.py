@@ -331,8 +331,7 @@ class VFFPosterior(gpflow.posteriors.BasePosterior):
                 ATL = tf.matmul(A, q_sqrt, transpose_a=True)
             else:
                 raise ValueError(
-                    "Bad dimension for q_sqrt: %s"
-                    % str(q_sqrt.shape.ndims)
+                    "Bad dimension for q_sqrt: %s" % str(q_sqrt.shape.ndims)
                 )
             if full_cov:
                 # fvar = fvar + tf.matmul(LTA, LTA, transpose_a=True)  # K x N x N
