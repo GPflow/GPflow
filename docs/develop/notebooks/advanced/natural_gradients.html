@@ -3,9 +3,9 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Natural gradients &#8212; GPflow 2.8.0 documentation</title>
+    <title>Natural gradients &#8212; GPflow 2.8.1 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -67,7 +67,7 @@
   
   
   
-    <p class="title logo__title">GPflow 2.8.0 documentation</p>
+    <p class="title logo__title">GPflow 2.8.1 documentation</p>
   
 </a>
     
@@ -471,6 +471,12 @@ function checkPageExistsAndRedirect(event) {
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
 
+<span class="k">try</span><span class="p">:</span>
+    <span class="c1"># use legacy Adam optimizer to support old TF versions</span>
+    <span class="kn">from</span> <span class="nn">tensorflow.keras.optimizers.legacy</span> <span class="kn">import</span> <span class="n">Adam</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">tensorflow.keras.optimizers</span> <span class="kn">import</span> <span class="n">Adam</span>
+
 <span class="kn">import</span> <span class="nn">gpflow</span>
 <span class="kn">from</span> <span class="nn">gpflow</span> <span class="kn">import</span> <span class="n">set_trainable</span>
 <span class="kn">from</span> <span class="nn">gpflow.ci_utils</span> <span class="kn">import</span> <span class="n">reduce_in_tests</span>
@@ -506,19 +512,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2023-05-03 22:01:12.345162: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
-To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
-2023-05-03 22:01:12.503786: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2023-05-03 22:01:12.503826: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
-2023-05-03 22:01:12.546510: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-2023-05-03 22:01:13.397917: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libnvinfer.so.7&#39;; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
-2023-05-03 22:01:13.397979: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libnvinfer_plugin.so.7&#39;; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
-2023-05-03 22:01:13.397988: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
-2023-05-03 22:01:17.394545: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
-2023-05-03 22:01:17.394585: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)
-2023-05-03 22:01:17.394604: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (b9da79e18550): /proc/driver/nvidia/version does not exist
-2023-05-03 22:01:17.394858: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
-To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2023-06-27 10:45:01.229936: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
 </pre></div></div>
 </div>
 <section id="VGP-is-a-GPR">
@@ -626,8 +620,8 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 <span class="n">set_trainable</span><span class="p">(</span><span class="n">vgp</span><span class="o">.</span><span class="n">q_mu</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 <span class="n">set_trainable</span><span class="p">(</span><span class="n">vgp</span><span class="o">.</span><span class="n">q_sqrt</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 
-<span class="n">adam_opt_for_vgp</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">adam_learning_rate</span><span class="p">)</span>
-<span class="n">adam_opt_for_gpr</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">adam_learning_rate</span><span class="p">)</span>
+<span class="n">adam_opt_for_vgp</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">(</span><span class="n">adam_learning_rate</span><span class="p">)</span>
+<span class="n">adam_opt_for_gpr</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">(</span><span class="n">adam_learning_rate</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -861,7 +855,7 @@ VGP lengthscales = 0.9687
 <span class="p">)</span>
 
 <span class="c1"># ordinary gradients with Adam for SVGP</span>
-<span class="n">ordinary_adam_opt</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">adam_learning_rate</span><span class="p">)</span>
+<span class="n">ordinary_adam_opt</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">(</span><span class="n">adam_learning_rate</span><span class="p">)</span>
 
 <span class="c1"># NatGrads and Adam for SVGP</span>
 <span class="c1"># Stop Adam from optimizing the variational parameters</span>
@@ -869,7 +863,7 @@ VGP lengthscales = 0.9687
 <span class="n">set_trainable</span><span class="p">(</span><span class="n">svgp_natgrad</span><span class="o">.</span><span class="n">q_sqrt</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 
 <span class="c1"># Create the optimize_tensors for SVGP</span>
-<span class="n">natgrad_adam_opt</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">adam_learning_rate</span><span class="p">)</span>
+<span class="n">natgrad_adam_opt</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">(</span><span class="n">adam_learning_rate</span><span class="p">)</span>
 
 <span class="n">natgrad_opt</span> <span class="o">=</span> <span class="n">NaturalGradient</span><span class="p">(</span><span class="n">gamma</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
 <span class="n">variational_params</span> <span class="o">=</span> <span class="p">[(</span><span class="n">svgp_natgrad</span><span class="o">.</span><span class="n">q_mu</span><span class="p">,</span> <span class="n">svgp_natgrad</span><span class="o">.</span><span class="n">q_sqrt</span><span class="p">)]</span>
@@ -981,7 +975,7 @@ VGP lengthscales = 0.9687
 <span class="p">)</span>
 
 <span class="c1"># ordinary gradients with Adam for VGP with Bernoulli likelihood</span>
-<span class="n">adam_opt</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">adam_learning_rate</span><span class="p">)</span>
+<span class="n">adam_opt</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">(</span><span class="n">adam_learning_rate</span><span class="p">)</span>
 
 <span class="c1"># NatGrads and Adam for VGP with Bernoulli likelihood</span>
 <span class="c1"># Stop Adam from optimizing the variational parameters</span>
@@ -989,7 +983,7 @@ VGP lengthscales = 0.9687
 <span class="n">set_trainable</span><span class="p">(</span><span class="n">vgp_bernoulli_natgrad</span><span class="o">.</span><span class="n">q_sqrt</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 
 <span class="c1"># Create the optimize_tensors for VGP with natural gradients</span>
-<span class="n">natgrad_adam_opt</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">adam_learning_rate</span><span class="p">)</span>
+<span class="n">natgrad_adam_opt</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">(</span><span class="n">adam_learning_rate</span><span class="p">)</span>
 <span class="n">natgrad_opt</span> <span class="o">=</span> <span class="n">NaturalGradient</span><span class="p">(</span><span class="n">gamma</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
 <span class="n">variational_params</span> <span class="o">=</span> <span class="p">[</span>
     <span class="p">(</span><span class="n">vgp_bernoulli_natgrad</span><span class="o">.</span><span class="n">q_mu</span><span class="p">,</span> <span class="n">vgp_bernoulli_natgrad</span><span class="o">.</span><span class="n">q_sqrt</span><span class="p">)</span>
@@ -1071,7 +1065,7 @@ VGP lengthscales = 0.9687
 <span class="n">set_trainable</span><span class="p">(</span><span class="n">vgp_bernoulli_natgrads_xi</span><span class="o">.</span><span class="n">q_sqrt</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 
 <span class="c1"># Create the optimize_tensors for VGP with Bernoulli likelihood</span>
-<span class="n">adam_opt</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">adam_learning_rate</span><span class="p">)</span>
+<span class="n">adam_opt</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">(</span><span class="n">adam_learning_rate</span><span class="p">)</span>
 <span class="n">natgrad_opt</span> <span class="o">=</span> <span class="n">NaturalGradient</span><span class="p">(</span><span class="n">gamma</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
 
 <span class="n">variational_params</span> <span class="o">=</span> <span class="p">[</span>
@@ -1157,7 +1151,7 @@ WARNING:tensorflow:Calling GradientTape.gradient on a persistent tape inside its
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.0.0.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.0.1.<br>
 </p>
   </div>
   

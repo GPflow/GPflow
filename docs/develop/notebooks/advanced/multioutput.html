@@ -3,9 +3,9 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Multi-output Gaussian processes in GPflow &#8212; GPflow 2.8.0 documentation</title>
+    <title>Multi-output Gaussian processes in GPflow &#8212; GPflow 2.8.1 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -67,7 +67,7 @@
   
   
   
-    <p class="title logo__title">GPflow 2.8.0 documentation</p>
+    <p class="title logo__title">GPflow 2.8.1 documentation</p>
   
 </a>
     
@@ -600,14 +600,7 @@ f(x) = W g(x),
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2023-05-03 21:57:40.691578: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
-To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
-2023-05-03 21:57:40.856830: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2023-05-03 21:57:40.856886: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
-2023-05-03 21:57:40.890584: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-2023-05-03 21:57:41.783299: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libnvinfer.so.7&#39;; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
-2023-05-03 21:57:41.783376: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libnvinfer_plugin.so.7&#39;; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
-2023-05-03 21:57:41.783385: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
+2023-06-27 10:42:19.235145: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
 </pre></div></div>
 </div>
 </section>
@@ -683,7 +676,7 @@ f(x) = I g(x),
 <section id="1.-Shared-independent-multi-output-kernel-(MOK)-and-shared-independent-inducing-variables">
 <h3>1. Shared independent multi-output kernel (MOK) and shared independent inducing variables<a class="headerlink" href="#1.-Shared-independent-multi-output-kernel-(MOK)-and-shared-independent-inducing-variables" title="Permalink to this heading">#</a></h3>
 <p>Here the priors on all outputs are constrained to have the same kernel hyperparameters. We also share the inducing inputs between all outputs. The different GPs are independent both in the prior and the approximate posterior.</p>
-<div class="nbinput docutils container">
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
@@ -699,18 +692,6 @@ f(x) = I g(x),
 <span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-2023-05-03 21:57:45.286834: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
-2023-05-03 21:57:45.287151: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)
-2023-05-03 21:57:45.287194: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (0cfb382d9002): /proc/driver/nvidia/version does not exist
-2023-05-03 21:57:45.287952: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
-To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
-</pre></div></div>
 </div>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
@@ -995,7 +976,7 @@ CONVERGENCE: REL_REDUCTION_OF_F_&lt;=_FACTR*EPSMCH
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-WARNING:tensorflow:From /tmp/max_venv/lib/python3.10/site-packages/tensorflow/python/util/deprecation.py:629: calling map_fn_v2 (from tensorflow.python.ops.map_fn) with dtype is deprecated and will be removed in a future version.
+WARNING:tensorflow:From /tmp/max_venv/lib/python3.10/site-packages/tensorflow/python/util/deprecation.py:648: calling map_fn_v2 (from tensorflow.python.ops.map_fn) with dtype is deprecated and will be removed in a future version.
 Instructions for updating:
 Use fn_output_signature instead
 </pre></div></div>
@@ -1408,7 +1389,7 @@ STOP: TOTAL NO. of ITERATIONS REACHED LIMIT
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-ListWrapper([&lt;gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7f3ab47c04f0&gt;, &lt;gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7f3ab47c08e0&gt;, &lt;gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7f3ac7c85a50&gt;])
+ListWrapper([&lt;gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7ff7045af940&gt;, &lt;gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7ff7045aef80&gt;, &lt;gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7ff7045af0d0&gt;])
 </pre></div></div>
 </div>
 </section>
@@ -1800,7 +1781,7 @@ with the mixing matrix W.</p></td>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;code object wrapped_function at 0x7f3ac95e5f20, file &#34;/tmp/max_venv/lib/python3.10/site-packages/check_shapes/decorator.py&#34;, line 118&gt;
+&lt;code object wrapped_function at 0x7ff7228aed90, file &#34;/tmp/max_venv/lib/python3.10/site-packages/check_shapes/decorator.py&#34;, line 118&gt;
 </pre></div></div>
 </div>
 </section>
@@ -1837,7 +1818,7 @@ with the mixing matrix W.</p></td>
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.0.0.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.0.1.<br>
 </p>
   </div>
   
