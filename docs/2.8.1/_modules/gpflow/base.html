@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>gpflow.base &#8212; GPflow 2.8.1 documentation</title>
+<script>
+  document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+  document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
+</script>
+
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+
+
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css" />
+
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="docsearch:language" content="en">
+  </head>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+    <div class="bd-header-announcement container-fluid" id="banner">
+      
+
+    </div>
+
+    
+    <nav class="bd-header navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="bd-header__inner container-xl">
+
+  <div id="navbar-start">
+    
+    
+  
+
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">GPflow 2.8.1 documentation</p>
+  
+</a>
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="fas fa-bars"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../getting_started.html">
+  Getting Started
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../user_guide.html">
+  User Guide
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../api/gpflow/index.html">
+  API reference
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../benchmarks.html">
+  Benchmarks
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../bibliography.html">
+  Bibliography
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <div class="dropdown" id="version_switcher">
+    <button type="button" class="btn btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+        2.8.1  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div id="version_switcher_menu" class="dropdown-menu list-group-flush py-0" aria-labelledby="version_switcher_button">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+
+<!-- NOTE: this JS must live here (not in our global JS file) because it relies
+     on being processed by Jinja before it is run (specifically for replacing
+     variables _modules/gpflow/base and {'json_url': 'https://gpflow.github.io/GPflow/versions.json', 'version_match': '2.8.1'}.
+-->
+
+<script type="text/javascript">
+// Check if corresponding page path exists in other version of docs
+// and, if so, go there instead of the homepage of the other docs version
+function checkPageExistsAndRedirect(event) {
+    const currentFilePath = "_modules/gpflow/base.html",
+          tryUrl = event.target.getAttribute("href");
+    let otherDocsHomepage = tryUrl.replace(currentFilePath, "");
+    $.ajax({
+        type: 'HEAD',
+        url: tryUrl,
+        // if the page exists, go there
+        success: function() {
+            location.href = tryUrl;
+        }
+    }).fail(function() {
+        location.href = otherDocsHomepage;
+    });
+    // this prevents the browser from following the href of the clicked node
+    // (which is fine because this function takes care of redirecting)
+    return false;
+}
+
+// Populate the version switcher from the JSON config file
+(function () {
+    $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
+        const currentFilePath = "_modules/gpflow/base.html";
+        let btn = document.getElementById("version_switcher_button");
+        // Set empty strings by default so that these attributes exist and can be used in CSS selectors
+        btn.dataset["activeVersionName"] = "";
+        btn.dataset["activeVersion"] = "";
+        // create links to the corresponding page in the other docs versions
+        $.each(data, function(index, entry) {
+            // if no custom name specified (e.g., "latest"), use version string
+            if (!("name" in entry)) {
+                entry.name = entry.version;
+            }
+            // create the node
+            const node = document.createElement("a");
+            node.setAttribute("class", "list-group-item list-group-item-action py-1");
+            node.textContent = `${entry.name}`;
+            node.setAttribute("href", `${entry.url}${currentFilePath}`);
+            // on click, AJAX calls will check if the linked page exists before
+            // trying to redirect, and if not, will redirect to the homepage
+            // for that version of the docs.
+            node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
+            $("#version_switcher_menu").append(node);
+            // replace dropdown button text with the preferred display name of
+            // this version, rather than using sphinx's  variable.
+            // also highlight the dropdown entry for the currently-viewed
+            // version's entry
+            if (entry.version == "2.8.1") {
+                node.classList.add("active");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
+            }
+        });
+    });
+})();
+</script>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="bd-container container-xl">
+      <div class="bd-container__inner row">
+          
+
+<!-- Only show if we have sidebars configured, else just a small margin  -->
+<div class="bd-sidebar-primary col-12 col-md-3 bd-sidebar">
+  <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    
+  </div>
+</nav>
+  </div>
+  <div class="sidebar-end-items">
+  </div>
+</div>
+
+
+          
+
+
+<div class="bd-sidebar-secondary d-none d-xl-block col-xl-2 bd-toc">
+  
+</div>
+
+
+          
+          
+          <div class="bd-content col-12 col-md-9 col-xl-7">
+              
+              <article class="bd-article" role="main">
+                
+  <h1>Source code for gpflow.base</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2017-2020 The GPflow Contributors. All Rights Reserved.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span class="kn">import</span> <span class="nn">tensorflow_probability</span> <span class="k">as</span> <span class="nn">tfp</span>
+<span class="kn">from</span> <span class="nn">check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Final</span>
+
+<span class="kn">from</span> <span class="nn">.config</span> <span class="kn">import</span> <span class="n">default_float</span><span class="p">,</span> <span class="n">default_summary_fmt</span>
+<span class="kn">from</span> <span class="nn">.type_flags</span> <span class="kn">import</span> <span class="n">GENERIC_NP_ARRAYS</span><span class="p">,</span> <span class="n">NP_TYPE_CHECKING</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+    <span class="kn">from</span> <span class="nn">IPython.lib</span> <span class="kn">import</span> <span class="n">pretty</span>
+
+<span class="n">DType</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">DType</span><span class="p">]</span>
+
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="n">NP_TYPE_CHECKING</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+    <span class="n">AnyNDArray</span> <span class="o">=</span> <span class="n">Any</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">GENERIC_NP_ARRAYS</span><span class="p">:</span>
+        <span class="c1"># It would be nice to use something more interesting than `Any` here, but it looks like</span>
+        <span class="c1"># the infrastructure in the rest of the ecosystem isn&#39;t really set up for this</span>
+        <span class="c1"># yet. Maybe when we get Python 3.11?</span>
+        <span class="n">AnyNDArray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>  <span class="c1"># type: ignore[misc]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">AnyNDArray</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span>  <span class="c1"># type: ignore[misc]</span>
+
+<span class="n">VariableData</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">AnyNDArray</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>  <span class="c1"># deprecated</span>
+<span class="n">Transform</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Bijector</span><span class="p">]</span>
+<span class="n">Prior</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">tfp</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">Distribution</span><span class="p">]</span>
+
+
+<span class="c1"># We&#39;ve left this as object until we&#39;ve tested the performance consequences of using the full set</span>
+<span class="c1"># (np.ndarray, tf.Tensor, tf.Variable, Parameter), see https://github.com/GPflow/GPflow/issues/1434</span>
+<span class="n">TensorLike</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">type</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span><span class="nb">object</span><span class="p">,)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">:var TensorLike: Collection of tensor-like types for registering implementations with</span>
+<span class="sd">    `multipledispatch` dispatchers.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="n">_NativeScalar</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>
+<span class="n">_Array</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span>  <span class="c1"># a nested array of int, float, bool etc. kept simple for readability</span>
+
+<span class="n">MeanAndVariance</span> <span class="o">=</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span>
+<span class="n">SamplesMeanAndVariance</span> <span class="o">=</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">_IS_PARAMETER</span><span class="p">(</span><span class="n">o</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_IS_TRAINABLE_PARAMETER</span><span class="p">(</span><span class="n">o</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">)</span> <span class="ow">and</span> <span class="n">o</span><span class="o">.</span><span class="n">trainable</span>
+
+
+<div class="viewcode-block" id="Module"><a class="viewcode-back" href="../../api/gpflow/index.html#gpflow.base.Module">[docs]</a><span class="k">class</span> <span class="nc">Module</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Modules recursively compose other Modules and parameters to create models.</span>
+<span class="sd">    Compared to the `tf.Module` base class, `gpflow.Module` includes additional support for handling `gpflow.Parameter` attributes, see :py:attr:`~parameters` and :py:attr:`~trainable_parameters`.</span>
+<span class="sd">    It also adds pretty-printing within IPython and Jupyter notebooks.</span>
+<span class="sd">    All GPflow models, kernels, mean functions etc. are Modules.</span>
+<span class="sd">    See `this guide &lt;https://gpflow.github.io/GPflow/develop/notebooks/getting_started/parameters_and_their_optimisation.html#The-Module-and-Parameter-classes&gt;`_</span>
+<span class="sd">    for an introduction to this class.</span>
+<span class="sd">    See also `TensorFlow&#39;s documentation &lt;https://www.tensorflow.org/api_docs/python/tf/Module&gt;`_ for the base class</span>
+<span class="sd">    which goes into more detail as to why we use Module objects to compose things.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="s2">&quot;Parameter&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_flatten</span><span class="p">(</span><span class="n">predicate</span><span class="o">=</span><span class="n">_IS_PARAMETER</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">trainable_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="s2">&quot;Parameter&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_flatten</span><span class="p">(</span><span class="n">predicate</span><span class="o">=</span><span class="n">_IS_TRAINABLE_PARAMETER</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_representation_table</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tablefmt</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">.utilities</span> <span class="kn">import</span> <span class="n">leaf_components</span><span class="p">,</span> <span class="n">tabulate_module_summary</span>
+
+        <span class="n">repr_components</span> <span class="o">=</span> <span class="p">[</span><span class="n">object_name</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">leaf_components</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="n">repr_components</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tabulate_module_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="n">tablefmt</span><span class="p">))</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">repr_components</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_repr_html_</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Nice representation of GPflow objects in IPython/Jupyter notebooks &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">html</span> <span class="kn">import</span> <span class="n">escape</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_representation_table</span><span class="p">(</span><span class="n">escape</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)),</span> <span class="s2">&quot;html&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_repr_pretty_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="s2">&quot;pretty.RepresentationPrinter&quot;</span><span class="p">,</span> <span class="n">cycle</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Nice representation of GPflow objects in the IPython shell &quot;&quot;&quot;</span>
+        <span class="n">repr_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_representation_table</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">default_summary_fmt</span><span class="p">())</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">repr_str</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PriorOn"><a class="viewcode-back" href="../../api/gpflow/base/index.html#gpflow.base.PriorOn">[docs]</a><span class="k">class</span> <span class="nc">PriorOn</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="n">CONSTRAINED</span> <span class="o">=</span> <span class="s2">&quot;constrained&quot;</span>
+    <span class="n">UNCONSTRAINED</span> <span class="o">=</span> <span class="s2">&quot;unconstrained&quot;</span></div>
+
+
+<div class="viewcode-block" id="Parameter"><a class="viewcode-back" href="../../api/gpflow/index.html#gpflow.base.Parameter">[docs]</a><span class="k">class</span> <span class="nc">Parameter</span><span class="p">(</span><span class="n">tfp</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">TransformedVariable</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A parameter retains both constrained and unconstrained representations. If no transform</span>
+<span class="sd">    is provided, these two values will be the same.  It is often challenging for humans to operate with</span>
+<span class="sd">    unconstrained parameters, although this is typically easier for the optimiser. For example, a variance cannot be negative, therefore we need a</span>
+<span class="sd">    positive constraint and it is natural to use constrained values.  A prior can be imposed</span>
+<span class="sd">    either on the constrained version (default) or on the unconstrained version of the</span>
+<span class="sd">    parameter.</span>
+
+<span class="sd">    See `this guide &lt;https://gpflow.github.io/GPflow/develop/notebooks/getting_started/parameters_and_their_optimisation.html#The-Module-and-Parameter-classes&gt;`_</span>
+<span class="sd">    for an introduction to this class.</span>
+
+<span class="sd">    :param unconstrained_shape: Declare the shape of the unconstrained / pre-transformed values.</span>
+<span class="sd">        Useful for setting dynamic shapes.</span>
+<span class="sd">    :param constrained_shape: Declare the shape of the constrained / transformed values. Useful</span>
+<span class="sd">        for setting dynamic shapes.</span>
+<span class="sd">    :param shape: Convenience shortcut for setting both `unconstrained_shape` and</span>
+<span class="sd">        `constrained_shape` to the same value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">value</span><span class="p">:</span> <span class="s2">&quot;TensorData&quot;</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Transform</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">prior</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Prior</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">prior_on</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">PriorOn</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">trainable</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">dtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">unconstrained_shape</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">constrained_shape</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">shape</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+
+        <span class="k">if</span> <span class="n">transform</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="n">transform</span><span class="o">.</span><span class="n">name</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">):</span>
+            <span class="n">transform</span> <span class="o">=</span> <span class="n">transform</span> <span class="ow">or</span> <span class="n">value</span><span class="o">.</span><span class="n">transform</span>
+            <span class="n">prior</span> <span class="o">=</span> <span class="n">prior</span> <span class="ow">or</span> <span class="n">value</span><span class="o">.</span><span class="n">prior</span>
+            <span class="n">prior_on</span> <span class="o">=</span> <span class="n">prior_on</span> <span class="ow">or</span> <span class="n">value</span><span class="o">.</span><span class="n">prior_on</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="n">value</span><span class="o">.</span><span class="n">bijector</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">trainable</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">trainable</span> <span class="k">if</span> <span class="n">trainable</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">trainable</span>
+
+            <span class="k">if</span> <span class="n">dtype</span><span class="p">:</span>
+                <span class="n">tensor_value</span><span class="p">:</span> <span class="n">TensorType</span> <span class="o">=</span> <span class="n">_cast_to_dtype</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">tensor_value</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">transform</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">transform</span> <span class="o">=</span> <span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
+
+            <span class="n">prior_on</span> <span class="o">=</span> <span class="n">prior_on</span> <span class="k">if</span> <span class="n">prior_on</span> <span class="k">else</span> <span class="n">PriorOn</span><span class="o">.</span><span class="n">CONSTRAINED</span>
+            <span class="n">trainable</span> <span class="o">=</span> <span class="n">trainable</span> <span class="k">if</span> <span class="n">trainable</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">True</span>
+
+            <span class="n">tensor_value</span> <span class="o">=</span> <span class="n">_cast_to_dtype</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="p">)</span>
+
+        <span class="n">_validate_unconstrained_value</span><span class="p">(</span><span class="n">tensor_value</span><span class="p">,</span> <span class="n">transform</span><span class="p">,</span> <span class="n">dtype</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">shape</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">unconstrained_shape</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Cannot set both `shape` and `unconstrained_shape`.&quot;</span>
+            <span class="k">assert</span> <span class="n">constrained_shape</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Cannot set both `shape` and `constrained_shape`.&quot;</span>
+            <span class="n">unconstrained_shape</span> <span class="o">=</span> <span class="n">shape</span>
+            <span class="n">constrained_shape</span> <span class="o">=</span> <span class="n">shape</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">tensor_value</span><span class="p">,</span>
+            <span class="n">transform</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">tensor_value</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+            <span class="n">trainable</span><span class="o">=</span><span class="n">trainable</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">shape</span><span class="o">=</span><span class="n">unconstrained_shape</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># TransformedVariable.__init__ doesn&#39;t allow us to pass an unconstrained / pre-transformed</span>
+        <span class="c1"># shape, so we manually override it.</span>
+        <span class="k">if</span> <span class="n">constrained_shape</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_shape</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">TensorShape</span><span class="p">(</span><span class="n">constrained_shape</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Prior</span><span class="p">]</span> <span class="o">=</span> <span class="n">prior</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prior_on</span> <span class="o">=</span> <span class="n">prior_on</span>  <span class="c1"># type: ignore[assignment]  # see https://github.com/python/mypy/issues/3004</span>
+
+<div class="viewcode-block" id="Parameter.log_prior_density"><a class="viewcode-back" href="../../api/gpflow/index.html#gpflow.base.Parameter.log_prior_density">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span><span class="s2">&quot;return: []&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">log_prior_density</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Log of the prior probability density of the constrained variable. &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+
+        <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_on</span> <span class="o">==</span> <span class="n">PriorOn</span><span class="o">.</span><span class="n">CONSTRAINED</span><span class="p">:</span>
+            <span class="c1"># evaluation is in same space as prior</span>
+            <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># prior on unconstrained, but evaluating log-prior in constrained space</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unconstrained_variable</span>
+            <span class="n">log_p</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># need to include log|Jacobian| to account for coordinate transform</span>
+                <span class="n">log_det_jacobian</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">inverse_log_det_jacobian</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="o">.</span><span class="n">ndims</span><span class="p">)</span>
+                <span class="n">log_p</span> <span class="o">+=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">log_det_jacobian</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">log_p</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">prior_on</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PriorOn</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prior_on</span>
+
+    <span class="nd">@prior_on</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">prior_on</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">PriorOn</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_prior_on</span> <span class="o">=</span> <span class="n">PriorOn</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">unconstrained_variable</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pretransformed_input</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Transform</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bijector</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">trainable</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        `True` if this instance is trainable, else `False`.</span>
+
+<span class="sd">        This attribute cannot be set directly. Use :func:`gpflow.set_trainable`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">unconstrained_variable</span><span class="o">.</span><span class="n">trainable</span>  <span class="c1"># type: ignore[no-any-return]</span>
+
+<div class="viewcode-block" id="Parameter.assign"><a class="viewcode-back" href="../../api/gpflow/index.html#gpflow.base.Parameter.assign">[docs]</a>    <span class="k">def</span> <span class="nf">assign</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">value</span><span class="p">:</span> <span class="s2">&quot;TensorData&quot;</span><span class="p">,</span>
+        <span class="n">use_locking</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">read_value</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Assigns constrained `value` to the unconstrained parameter&#39;s variable.</span>
+<span class="sd">        It passes constrained value through parameter&#39;s transform first.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            a = Parameter(2.0, transform=tfp.bijectors.Softplus())</span>
+<span class="sd">            b = Parameter(3.0)</span>
+
+<span class="sd">            a.assign(4.0)               # `a` parameter to `2.0` value.</span>
+<span class="sd">            a.assign(tf.constant(5.0))  # `a` parameter to `5.0` value.</span>
+<span class="sd">            a.assign(b)                 # `a` parameter to constrained value of `b`.</span>
+
+
+<span class="sd">        :param value: Constrained tensor-like value.</span>
+<span class="sd">        :param use_locking: If `True`, use locking during the assignment.</span>
+<span class="sd">        :param name: The name of the operation to be created.</span>
+<span class="sd">        :param read_value: if True, will return something which evaluates to the new</span>
+<span class="sd">            value of the variable; if False will return the assign op.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">unconstrained_value</span> <span class="o">=</span> <span class="n">_validate_unconstrained_value</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">unconstrained_variable</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
+            <span class="n">unconstrained_value</span><span class="p">,</span> <span class="n">use_locking</span><span class="o">=</span><span class="n">use_locking</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">read_value</span><span class="o">=</span><span class="n">read_value</span>
+        <span class="p">)</span></div></div>
+
+
+<span class="c1"># These types are defined after &quot;Parameter&quot; to avoid forward references that breaks our</span>
+<span class="c1"># documentation build:</span>
+<span class="n">TensorType</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">]</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Type alias for tensor-like types that are supported by most TensorFlow and GPflow operations.</span>
+
+<span class="sd">NOTE: Union types like this do not work with the `register` method of `multipledispatch`&#39;s</span>
+<span class="sd">`Dispatcher` class. Instead use `TensorLike`.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">TensorData</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">_NativeScalar</span><span class="p">,</span> <span class="n">_Array</span><span class="p">,</span> <span class="n">TensorType</span><span class="p">]</span>
+<span class="n">InputData</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">TensorType</span><span class="p">]</span>
+<span class="n">OutputData</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">TensorType</span><span class="p">]</span>
+<span class="n">RegressionData</span> <span class="o">=</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">InputData</span><span class="p">,</span> <span class="n">OutputData</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">_cast_to_dtype</span><span class="p">(</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">TensorData</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="n">dtype</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">dtype</span> <span class="o">=</span> <span class="n">default_float</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">tf</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+        <span class="c1"># NOTE(awav) TF2.2 resolves issue with cast.</span>
+        <span class="c1"># From TF2.2, `tf.cast` can be used alone instead of this auxiliary function.</span>
+        <span class="c1"># workaround for https://github.com/tensorflow/tensorflow/issues/35938</span>
+        <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_validate_unconstrained_value</span><span class="p">(</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">TensorData</span><span class="p">,</span> <span class="n">transform</span><span class="p">:</span> <span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Bijector</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">DType</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="n">_cast_to_dtype</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="p">)</span>
+    <span class="n">unconstrained_value</span> <span class="o">=</span> <span class="n">_to_unconstrained</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">transform</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">unconstrained_value</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">is_integer</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">unconstrained_value</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;gpflow.Parameter: the value to be assigned is incompatible with this parameter&#39;s &quot;</span>
+        <span class="s2">&quot;transform (the corresponding unconstrained value has NaN or Inf) and hence cannot be &quot;</span>
+        <span class="s2">&quot;assigned.&quot;</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">debugging</span><span class="o">.</span><span class="n">assert_all_finite</span><span class="p">(</span><span class="n">unconstrained_value</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="n">message</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_to_constrained</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Transform</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">TensorType</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">transform</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">value</span>
+
+
+<span class="k">def</span> <span class="nf">_to_unconstrained</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Transform</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">TensorType</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">transform</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">value</span>
+</pre></div>
+
+              </article>
+              
+
+              
+          </div>
+          
+      </div>
+    </div>
+
+  
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695"></script>
+
+<footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    <p class="copyright">
+    &copy; Copyright 2023, The GPflow Contributors.<br>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.0.1.<br>
+</p>
+  </div>
+  
+</div>
+</footer>
+  </body>
+</html>

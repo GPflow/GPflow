@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Basic Usage with GPR &#8212; GPflow 2.8.1 documentation</title>
+<script>
+  document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+  document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
+</script>
+
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+
+
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css" />
+
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Kernels" href="kernels.html" />
+    <link rel="prev" title="Installation" href="../../installation.html" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="docsearch:language" content="en">
+  </head>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+    <div class="bd-header-announcement container-fluid" id="banner">
+      
+
+    </div>
+
+    
+    <nav class="bd-header navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="bd-header__inner container-xl">
+
+  <div id="navbar-start">
+    
+    
+  
+
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">GPflow 2.8.1 documentation</p>
+  
+</a>
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="fas fa-bars"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 current active nav-item">
+ <a class="reference internal nav-link" href="../../getting_started.html">
+  Getting Started
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../user_guide.html">
+  User Guide
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../api/gpflow/index.html">
+  API reference
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../benchmarks.html">
+  Benchmarks
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../bibliography.html">
+  Bibliography
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <div class="dropdown" id="version_switcher">
+    <button type="button" class="btn btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+        2.8.1  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div id="version_switcher_menu" class="dropdown-menu list-group-flush py-0" aria-labelledby="version_switcher_button">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+
+<!-- NOTE: this JS must live here (not in our global JS file) because it relies
+     on being processed by Jinja before it is run (specifically for replacing
+     variables notebooks/getting_started/basic_usage and {'json_url': 'https://gpflow.github.io/GPflow/versions.json', 'version_match': '2.8.1'}.
+-->
+
+<script type="text/javascript">
+// Check if corresponding page path exists in other version of docs
+// and, if so, go there instead of the homepage of the other docs version
+function checkPageExistsAndRedirect(event) {
+    const currentFilePath = "notebooks/getting_started/basic_usage.html",
+          tryUrl = event.target.getAttribute("href");
+    let otherDocsHomepage = tryUrl.replace(currentFilePath, "");
+    $.ajax({
+        type: 'HEAD',
+        url: tryUrl,
+        // if the page exists, go there
+        success: function() {
+            location.href = tryUrl;
+        }
+    }).fail(function() {
+        location.href = otherDocsHomepage;
+    });
+    // this prevents the browser from following the href of the clicked node
+    // (which is fine because this function takes care of redirecting)
+    return false;
+}
+
+// Populate the version switcher from the JSON config file
+(function () {
+    $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
+        const currentFilePath = "notebooks/getting_started/basic_usage.html";
+        let btn = document.getElementById("version_switcher_button");
+        // Set empty strings by default so that these attributes exist and can be used in CSS selectors
+        btn.dataset["activeVersionName"] = "";
+        btn.dataset["activeVersion"] = "";
+        // create links to the corresponding page in the other docs versions
+        $.each(data, function(index, entry) {
+            // if no custom name specified (e.g., "latest"), use version string
+            if (!("name" in entry)) {
+                entry.name = entry.version;
+            }
+            // create the node
+            const node = document.createElement("a");
+            node.setAttribute("class", "list-group-item list-group-item-action py-1");
+            node.textContent = `${entry.name}`;
+            node.setAttribute("href", `${entry.url}${currentFilePath}`);
+            // on click, AJAX calls will check if the linked page exists before
+            // trying to redirect, and if not, will redirect to the homepage
+            // for that version of the docs.
+            node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
+            $("#version_switcher_menu").append(node);
+            // replace dropdown button text with the preferred display name of
+            // this version, rather than using sphinx's  variable.
+            // also highlight the dropdown entry for the currently-viewed
+            // version's entry
+            if (entry.version == "2.8.1") {
+                node.classList.add("active");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
+            }
+        });
+    });
+})();
+</script>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="bd-container container-xl">
+      <div class="bd-container__inner row">
+          
+
+<!-- Only show if we have sidebars configured, else just a small margin  -->
+<div class="bd-sidebar-primary col-12 col-md-3 bd-sidebar">
+  <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    <ul class="current nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../installation.html">
+   Installation
+  </a>
+ </li>
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
+   Basic Usage with GPR
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="kernels.html">
+   Kernels
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="mean_functions.html">
+   Mean Functions
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="parameters_and_their_optimisation.html">
+   Parameters and Their Optimisation
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="large_data.html">
+   Large Data with SGPR
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="classification_and_other_data_distributions.html">
+   Classification, other data distributions, VGP and SVGP
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="monitoring.html">
+   Monitoring
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="saving_and_loading.html">
+   Saving and Loading Models
+  </a>
+ </li>
+</ul>
+
+  </div>
+</nav>
+  </div>
+  <div class="sidebar-end-items">
+  </div>
+</div>
+
+
+          
+
+
+<div class="bd-sidebar-secondary d-none d-xl-block col-xl-2 bd-toc">
+  
+    
+    <div class="toc-item">
+      
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Imports">
+   Imports
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Meet-f-and-Y">
+   Meet
+   <span class="math notranslate nohighlight">
+    \(f\)
+   </span>
+   and
+   <span class="math notranslate nohighlight">
+    \(Y\)
+   </span>
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Minimal-model">
+   Minimal model
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Plotting-the-model">
+   Plotting the model
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Marginal-variance-vs-full-covariance">
+   Marginal variance vs full covariance
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#What's-next?">
+   What’s next?
+  </a>
+ </li>
+</ul>
+
+</nav>
+    </div>
+    
+    <div class="toc-item">
+      
+    </div>
+    
+  
+</div>
+
+
+          
+          
+          <div class="bd-content col-12 col-md-9 col-xl-7">
+              
+              <article class="bd-article" role="main">
+                
+  <section id="Basic-Usage-with-GPR">
+<h1>Basic Usage with GPR<a class="headerlink" href="#Basic-Usage-with-GPR" title="Permalink to this heading">#</a></h1>
+<p>In this chapter we will go over the most basic concepts you will need to understand to use GPflow. We will train a simple model on some simple data; and demonstrate how to use the model to make predictions, and how to plot the results.</p>
+<p>If your use-case is sufficiently simple, this chapter may be all you need to use</p>
+<section id="Imports">
+<h2>Imports<a class="headerlink" href="#Imports" title="Permalink to this heading">#</a></h2>
+<p>These are the imports we’ll be assuming below:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">gpflow</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Meet-f-and-Y">
+<h2>Meet <span class="math notranslate nohighlight">\(f\)</span> and <span class="math notranslate nohighlight">\(Y\)</span><a class="headerlink" href="#Meet-f-and-Y" title="Permalink to this heading">#</a></h2>
+<p>In GPflow we usually assume our data is generated by a process:</p>
+<p><span class="math">\begin{equation}
+Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^2).
+\end{equation}</span></p>
+<p>So we have some <span class="math notranslate nohighlight">\(X\)</span> values, that are pushed through some deterministic function <span class="math notranslate nohighlight">\(f\)</span>, but we do not observe <span class="math notranslate nohighlight">\(f(X)\)</span> directly. Instead we get noisy observations — <span class="math notranslate nohighlight">\(\varepsilon\)</span> is some noise that is added before we observe <span class="math notranslate nohighlight">\(Y\)</span>.</p>
+<p>Usually we’ll either be interested in trying to recover <span class="math notranslate nohighlight">\(f\)</span> from our noisy observations, or trying to predict new values of <span class="math notranslate nohighlight">\(Y\)</span>.</p>
+<p>Notice that we have two sources of uncertainty here:</p>
+<ul class="simple">
+<li><p>We have uncertainty about <span class="math notranslate nohighlight">\(f\)</span> which we get because we cannot learn <span class="math notranslate nohighlight">\(f\)</span> perfectly from a limited amount of noisy data. The more data we observe the smaller this uncertainty will be. (This is known as epistemic uncertainty.)</p></li>
+<li><p>We have uncertainty about <span class="math notranslate nohighlight">\(Y\)</span> because of our noisy observations. No matter how much data we collect this will never become smaller, because this is an effect of the process we’re observing. (This is known as aleatoric uncertainty.)</p></li>
+</ul>
+<p>It is important to understand the difference between <span class="math notranslate nohighlight">\(f\)</span> and <span class="math notranslate nohighlight">\(Y\)</span> to understand GPflow.</p>
+</section>
+<section id="Minimal-model">
+<h2>Minimal model<a class="headerlink" href="#Minimal-model" title="Permalink to this heading">#</a></h2>
+<p>Let’s model some data. Below we have some variables <code class="docutils literal notranslate"><span class="pre">X</span></code> and <code class="docutils literal notranslate"><span class="pre">Y</span></code>, both of which are NumPy arrays, with shapes <span class="math notranslate nohighlight">\(N \times D\)</span> and <span class="math notranslate nohighlight">\(N \times P\)</span> respectively. <span class="math notranslate nohighlight">\(N\)</span> is the number of rows of data. <span class="math notranslate nohighlight">\(D\)</span> is the number of input dimensions, and <span class="math notranslate nohighlight">\(P\)</span> is the number of output dimensions. We set both <span class="math notranslate nohighlight">\(D=1\)</span> and <span class="math notranslate nohighlight">\(P=1\)</span> to keep things simple.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+    <span class="p">[</span>
+        <span class="p">[</span><span class="mf">0.865</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.666</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.804</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.771</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.147</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.866</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.007</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.026</span><span class="p">],</span>
+        <span class="p">[</span><span class="mf">0.171</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.889</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.243</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.028</span><span class="p">],</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+<span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+    <span class="p">[</span>
+        <span class="p">[</span><span class="mf">1.57</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.48</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.12</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.91</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.07</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.35</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.80</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.82</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.49</span><span class="p">],</span>
+        <span class="p">[</span><span class="mf">1.30</span><span class="p">],</span> <span class="p">[</span><span class="mf">4.00</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.82</span><span class="p">],</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">&quot;kx&quot;</span><span class="p">,</span> <span class="n">mew</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_basic_usage_5_0.png" src="../../_images/notebooks_getting_started_basic_usage_5_0.png" />
+</div>
+</div>
+<p>To model this in GPflow, we first have to create a model:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">(</span>
+    <span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">),</span>
+    <span class="n">kernel</span><span class="o">=</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Here we use a <code class="docutils literal notranslate"><span class="pre">GPR</span></code> model with an <code class="docutils literal notranslate"><span class="pre">SquaredExponential</span></code> kernel. We’ll go into more details about what that means in other chapters, but these are sensible defaults for small, simple problems.</p>
+<p>Next we need to train the model:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Now we can use the model to predict values of <span class="math notranslate nohighlight">\(f\)</span> and <span class="math notranslate nohighlight">\(Y\)</span> at new values of <span class="math notranslate nohighlight">\(X\)</span>.</p>
+<p>The main methods for making predictions are <code class="docutils literal notranslate"><span class="pre">model.predict_f</span></code> and <code class="docutils literal notranslate"><span class="pre">model.predict_y</span></code>. <code class="docutils literal notranslate"><span class="pre">model.predict_f</span></code> returns the mean and variance (uncertainty) the function <span class="math notranslate nohighlight">\(f\)</span>, while <code class="docutils literal notranslate"><span class="pre">model.predict_y</span></code> returns the mean and variance (uncertainty) of <span class="math notranslate nohighlight">\(Y\)</span> — that is <span class="math notranslate nohighlight">\(f\)</span> plus the noise.</p>
+<p>So, if we want to know what the model thinks <span class="math notranslate nohighlight">\(f\)</span> might be at <code class="docutils literal notranslate"><span class="pre">0.5</span></code> we do:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Xnew</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.5</span><span class="p">]])</span>
+<span class="n">model</span><span class="o">.</span><span class="n">predict_f</span><span class="p">(</span><span class="n">Xnew</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(&lt;tf.Tensor: shape=(1, 1), dtype=float64, numpy=array([[4.28009566]])&gt;,
+ &lt;tf.Tensor: shape=(1, 1), dtype=float64, numpy=array([[0.30584767]])&gt;)
+</pre></div></div>
+</div>
+<p>And if we want to predict <span class="math notranslate nohighlight">\(Y\)</span>:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">predict_y</span><span class="p">(</span><span class="n">Xnew</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(&lt;tf.Tensor: shape=(1, 1), dtype=float64, numpy=array([[4.28009566]])&gt;,
+ &lt;tf.Tensor: shape=(1, 1), dtype=float64, numpy=array([[0.54585965]])&gt;)
+</pre></div></div>
+</div>
+<p>Notice how the predicted <span class="math notranslate nohighlight">\(f\)</span> and <span class="math notranslate nohighlight">\(Y\)</span> have the same mean, but <span class="math notranslate nohighlight">\(Y\)</span> has a larger variance. This is because the variance of <span class="math notranslate nohighlight">\(f\)</span> is only the uncertainty of <span class="math notranslate nohighlight">\(f\)</span>, while the variance of <span class="math notranslate nohighlight">\(Y\)</span> is both the uncertainty of <span class="math notranslate nohighlight">\(f\)</span> and the extra noise.</p>
+</section>
+<section id="Plotting-the-model">
+<h2>Plotting the model<a class="headerlink" href="#Plotting-the-model" title="Permalink to this heading">#</a></h2>
+<p>Now, lets predict <span class="math notranslate nohighlight">\(f\)</span> and <span class="math notranslate nohighlight">\(Y\)</span> for a range of <span class="math notranslate nohighlight">\(X\)</span>s and make a pretty plot of it.</p>
+<p>First we generate some test points for the prediction:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Xplot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">,</span> <span class="mi">100</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<p>Then we predict the <span class="math notranslate nohighlight">\(f\)</span> and <span class="math notranslate nohighlight">\(Y\)</span> values:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f_mean</span><span class="p">,</span> <span class="n">f_var</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_f</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">y_mean</span><span class="p">,</span> <span class="n">y_var</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_y</span><span class="p">(</span><span class="n">Xplot</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>We compute the 95% confidence interval of <span class="math notranslate nohighlight">\(f\)</span> and <span class="math notranslate nohighlight">\(Y\)</span>. This math is based on the distribution of <span class="math notranslate nohighlight">\(f\)</span> and <span class="math notranslate nohighlight">\(Y\)</span> being gaussian:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f_lower</span> <span class="o">=</span> <span class="n">f_mean</span> <span class="o">-</span> <span class="mf">1.96</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">f_var</span><span class="p">)</span>
+<span class="n">f_upper</span> <span class="o">=</span> <span class="n">f_mean</span> <span class="o">+</span> <span class="mf">1.96</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">f_var</span><span class="p">)</span>
+<span class="n">y_lower</span> <span class="o">=</span> <span class="n">y_mean</span> <span class="o">-</span> <span class="mf">1.96</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">y_var</span><span class="p">)</span>
+<span class="n">y_upper</span> <span class="o">=</span> <span class="n">y_mean</span> <span class="o">+</span> <span class="mf">1.96</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">y_var</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Finally we actually plot our values:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">&quot;kx&quot;</span><span class="p">,</span> <span class="n">mew</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;input data&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">f_mean</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C0&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">,</span> <span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C0&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;f 95</span><span class="si">% c</span><span class="s2">onfidence&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">f_upper</span><span class="p">,</span> <span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C0&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span>
+    <span class="n">Xplot</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">f_lower</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">f_upper</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C0&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">y_lower</span><span class="p">,</span> <span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C0&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Y 95</span><span class="si">% c</span><span class="s2">onfidence&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">y_upper</span><span class="p">,</span> <span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C0&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span>
+    <span class="n">Xplot</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">y_lower</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">y_upper</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C0&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_basic_usage_24_0.png" src="../../_images/notebooks_getting_started_basic_usage_24_0.png" />
+</div>
+</div>
+<p>Notice how the confidence of <span class="math notranslate nohighlight">\(f\)</span> is greater when you’re further away from our data, and smaller near the data. Notice also how we’re more certain about <span class="math notranslate nohighlight">\(f\)</span> than about <span class="math notranslate nohighlight">\(Y\)</span>; sometimes we’re even certain that <span class="math notranslate nohighlight">\(f\)</span> lies away from a data point.</p>
+</section>
+<section id="Marginal-variance-vs-full-covariance">
+<h2>Marginal variance vs full covariance<a class="headerlink" href="#Marginal-variance-vs-full-covariance" title="Permalink to this heading">#</a></h2>
+<p>As mentioned above <span class="math notranslate nohighlight">\(f\)</span> is a function, and we expect it to be, more or less, smooth. So if <span class="math notranslate nohighlight">\(x_1\)</span> and <span class="math notranslate nohighlight">\(x_2\)</span> are near each other, we expect <span class="math notranslate nohighlight">\(f(x_1)\)</span> and <span class="math notranslate nohighlight">\(f(x_2)\)</span> to be near each other as well. In Gaussian Processes we encode the information about how nearby values of <span class="math notranslate nohighlight">\(x\)</span> are similar with a <a class="reference external" href="https://en.wikipedia.org/wiki/Covariance">covariance matrix</a>.</p>
+<p>If we call <code class="docutils literal notranslate"><span class="pre">predict_f(...,</span> <span class="pre">full_cov=False)</span></code> like we did above, when we plotted the model, <code class="docutils literal notranslate"><span class="pre">predict_f</span></code> will return a <span class="math notranslate nohighlight">\(N \times P\)</span> mean vector and a <span class="math notranslate nohighlight">\(N \times P\)</span> marginal variance vector. The marginal variance vector only tells us about our uncertainty at each point individually, and does not tell us anything about how the points relate to each other. Often the marginal variance vector is all you need, and it is faster to compute than the full covariance. <code class="docutils literal notranslate"><span class="pre">False</span></code> is the default
+value for <code class="docutils literal notranslate"><span class="pre">full_cov</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Xnew</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.3</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.7</span><span class="p">]])</span>
+<span class="n">model</span><span class="o">.</span><span class="n">predict_f</span><span class="p">(</span><span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(&lt;tf.Tensor: shape=(3, 1), dtype=float64, numpy=
+ array([[3.75907766],
+        [4.28009566],
+        [3.71506022]])&gt;,
+ &lt;tf.Tensor: shape=(3, 1), dtype=float64, numpy=
+ array([[0.17286964],
+        [0.30584767],
+        [0.11372553]])&gt;)
+</pre></div></div>
+</div>
+<p>If we call <code class="docutils literal notranslate"><span class="pre">predict_f(...,</span> <span class="pre">full_cov=True)</span></code> we will still get a <span class="math notranslate nohighlight">\(N \times P\)</span> mean vector, but instead of the marginal variance we will get a full <span class="math notranslate nohighlight">\(P \times N \times N\)</span> covariance matrix, which tells us the relationship between different values of <span class="math notranslate nohighlight">\(x\)</span>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">predict_f</span><span class="p">(</span><span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(&lt;tf.Tensor: shape=(3, 1), dtype=float64, numpy=
+ array([[3.75907766],
+        [4.28009566],
+        [3.71506022]])&gt;,
+ &lt;tf.Tensor: shape=(1, 3, 3), dtype=float64, numpy=
+ array([[[0.17286964, 0.18033224, 0.04013752],
+         [0.18033224, 0.30584767, 0.12780391],
+         [0.04013752, 0.12780391, 0.11372553]]])&gt;)
+</pre></div></div>
+</div>
+<p>Technically the marginal variance vector we get with <code class="docutils literal notranslate"><span class="pre">predict_f(...,</span> <span class="pre">full_cov=False)</span></code> is just the diagonal of the full covariance matrix we get with <code class="docutils literal notranslate"><span class="pre">predict_f(...,</span> <span class="pre">full_cov=True)</span></code>, but the former is faster to compute, so prefer that when possible.</p>
+</section>
+<section id="What's-next?">
+<h2>What’s next?<a class="headerlink" href="#What's-next?" title="Permalink to this heading">#</a></h2>
+<p>On this page we gave you a very quick overview of how a GPflow model is created, and how we can use it to make predictions. On the following pages we will go into details of different kind of GPflow models, how they are configured and, how they are trained.</p>
+</section>
+</section>
+
+
+              </article>
+              
+
+              
+          </div>
+          
+      </div>
+    </div>
+
+  
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695"></script>
+
+<footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    <p class="copyright">
+    &copy; Copyright 2023, The GPflow Contributors.<br>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.0.1.<br>
+</p>
+  </div>
+  
+</div>
+</footer>
+  </body>
+</html>
