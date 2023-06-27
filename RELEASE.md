@@ -55,7 +55,24 @@ This release contains contributions from:
 
 ## Bug Fixes and Other Changes
 
-* Test with Tensorflow 2.12
+* <SIMILAR TO ABOVE SECTION, BUT FOR OTHER IMPORTANT CHANGES / BUG FIXES>
+* <IF A CHANGE CLOSES A GITHUB ISSUE, IT SHOULD BE DOCUMENTED HERE>
+* <NOTES SHOULD BE GROUPED PER AREA>
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+<INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
+
+
+# Release 2.8.1
+
+A small fix to ensure support for (and testing with) TensorFlow 2.12.
+
+## Bug Fixes and Other Changes
+
+* Support and test with TensorFlow 2.12
 
 ## Thanks to our Contributors
 
