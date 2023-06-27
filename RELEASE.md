@@ -66,6 +66,21 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
+# Release 2.8.1
+
+A small fix to ensure support for (and testing with) TensorFlow 2.12.
+
+## Bug Fixes and Other Changes
+
+* Support and test with TensorFlow 2.12
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+uri-granta
+
+
 # Release 2.8.0
 
 The main focus of this release is to provide users control over arguments for `tf.function`
