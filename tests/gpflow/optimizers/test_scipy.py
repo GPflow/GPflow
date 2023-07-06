@@ -14,7 +14,7 @@
 
 import unittest
 import warnings
-from typing import Any, Dict
+from typing import Any, Callable, Dict, List, Sequence, Tuple
 from unittest.mock import MagicMock
 
 import numpy as np
@@ -26,6 +26,7 @@ import gpflow
 from gpflow.base import AnyNDArray
 from gpflow.config import default_float
 from gpflow.models import GPR, GPModel
+from gpflow.optimizers.scipy import LossClosure
 
 rng = np.random.RandomState(0)
 
@@ -109,11 +110,17 @@ def test_scipy__tf_fun_args(
             ValueError, match="`tf_fun_args` should only be set when `compile` is True"
         ):
             opt.minimize(
-                m.training_loss, m.trainable_variables, compile=compile, tf_fun_args=tf_fun_args
+                m.training_loss,
+                m.trainable_variables,
+                compile=compile,
+                tf_fun_args=tf_fun_args,
             )
     else:
         opt.minimize(
-            m.training_loss, m.trainable_variables, compile=compile, tf_fun_args=tf_fun_args
+            m.training_loss,
+            m.trainable_variables,
+            compile=compile,
+            tf_fun_args=tf_fun_args,
         )
 
     if compile:
@@ -221,3 +228,244 @@ def test_scipy__disconnected_variable(
                 allow_unused_variables=allow_unused_variables,
                 tf_fun_args=tf_fun_args,
             )
+
+
+def _loss_closure_builder(counter: List[int], inputs: Sequence[tf.Variable]) -> LossClosure:
+    def closure() -> tf.Tensor:
+        counter[0] += 1
+        return tf.reduce_sum(tf.concat([tf.reshape(i, (-1,)) for i in inputs], axis=0) ** 2)
+
+    return closure
+
+
+def _create_variables() -> Sequence[tf.Variable]:
+    return [
+        tf.Variable(tf.range(5, dtype=default_float())),
+        tf.Variable(tf.range(10, dtype=default_float())),
+    ]
+
+
+def _get_eval_func_closure(eval_func: Callable[[AnyNDArray], Tuple[AnyNDArray, AnyNDArray]]) -> Any:
+    assert eval_func.__closure__ is not None
+    return eval_func.__closure__[0].cell_contents
+
+
+# This test checks the basic cache behaviour of the Scipy optimizer. It checks that the cache is
+# used when the same arguments are passed to the minimize method multiple times. It also checks
+# that without compile=True the cache is not affected.
+def test_scipy__cache_behaviour() -> None:
+    opt = gpflow.optimizers.Scipy()
+    size = opt.compile_cache_limit
+    variables1 = _create_variables()
+    variables2 = _create_variables()
+    counter1 = [0]  # Each closure has its own counter
+    counter2 = [0]
+    closure1 = _loss_closure_builder(counter1, variables1)
+    closure2 = _loss_closure_builder(counter2, variables2)
+
+    # Ensure the cache is empty
+    assert len(opt.compile_cache) == 0
+
+    # Call eval_func multiple times with the same arguments
+    for _ in range(size):
+        # Call minimize twice with the same arguments
+        opt.minimize(closure1, variables1, compile=True, tf_fun_args={})
+        # Check that the cache was used
+        assert len(opt.compile_cache) == 1
+
+    # Get the key of the cached tf.function
+    key = list(opt.compile_cache.keys())[0]
+
+    # Assert that the key is as expected
+    assert key == (
+        closure1,
+        tuple(id(var) for var in variables1),
+        frozenset({}.items()),
+        False,
+    )
+
+    # Call eval_func multiple times with the same arguments, but without compile. This should
+    # not affect the cache.
+    for _ in range(size):
+        # Call minimize twice with the same arguments
+        opt.minimize(closure1, variables1, compile=False, tf_fun_args={})
+        # Check that the cache size did not change
+        assert len(opt.compile_cache) == 1
+
+    # Fill the cache with closure2 to ensure caching is working correctly
+    for _ in range(size):
+        opt.minimize(closure2, variables2, compile=True, tf_fun_args={})
+        # Check that the cache size did change
+        assert len(opt.compile_cache) == size
+
+    # The closure should be run
+    #   1 (during the first compilation) + size (calls without compilation) times
+    assert counter1[0] == 1 + size
+    # The closure should only be run once (during the first compilation)
+    assert counter2[0] == 1
+
+
+# This test fill the cache, and then adds one more entry to force the cache to replace the oldest
+# entry.
+def test_scipy__cache_replacement() -> None:
+    opt = gpflow.optimizers.Scipy()
+    size = opt.compile_cache_limit
+
+    # Create more closures and variables than the cache can hold
+    variables = [tf.Variable(float(i)) for i in range(size + 1)]
+    closures = [_loss_closure_builder([0], var) for var in variables]
+
+    # Fill the cache
+    for i in range(size):
+        opt.eval_func(closures[i], [variables[i]], tf_fun_args={})
+        assert len(opt.compile_cache) == i + 1
+
+    # Add one more closure to force the cache to replace the oldest entry
+    opt.eval_func(closures[-1], [variables[-1]], tf_fun_args={})
+    assert len(opt.compile_cache) == size
+    assert set(opt.compile_cache.keys()) == set(
+        [(closures[i], (id(variables[i]),), frozenset(), False) for i in range(1, size + 1)]
+    )
+
+
+# This test ensures that the cache behaves correctly considering all arguments.
+# It verifies that the cache has a miss when any argument changes, and a hit when all arguments
+# remain the same. Note that when `compile` is `False`, the cache is not used and we expect a miss.
+#   - Hit : the same closure and variables
+#   - Miss: the same closure but different variables
+#   - Miss: Different closure but the same variables
+#   - Miss: the same closure and variables but different tf_fun_args
+#   - Miss: the same closure and variables but different allow_unused_variables
+#   - Miss: the same closure and variables but different compile
+@pytest.mark.parametrize(
+    "same_closure2, same_variables2, same_tf_fun_args2, allow_unused_variables2, "
+    "compile, expect_cache_hit",
+    [
+        (True, True, True, False, True, True),
+        (True, False, True, False, True, False),
+        (False, True, True, False, True, False),
+        (True, True, False, False, True, False),
+        (True, True, True, True, True, False),
+        (True, True, True, False, False, False),
+    ],
+)
+def test_scipy__cache_hit_miss(
+    same_closure2: bool,
+    same_variables2: bool,
+    same_tf_fun_args2: bool,
+    allow_unused_variables2: bool,
+    compile: bool,
+    expect_cache_hit: bool,
+) -> None:
+    opt = gpflow.optimizers.Scipy()
+
+    variables1 = _create_variables()
+    counter1 = [0]
+    closure1 = _loss_closure_builder(counter1, variables1)
+    dummy_x = tf.concat([tf.zeros_like(var) for var in variables1], 0)
+
+    if same_closure2:
+        closure2 = closure1
+    else:
+        closure2 = _loss_closure_builder([0], variables1)
+
+    if same_variables2:
+        variables2 = variables1
+    else:
+        variables2 = [variables1[0]]
+
+    if same_tf_fun_args2:
+        tf_fun_args2 = dict(experimental_relax_shapes=True)
+    else:
+        tf_fun_args2 = dict(experimental_relax_shapes=False)
+
+    # Populate cache with first closure and variables
+    tf_fun_args1 = dict(experimental_relax_shapes=True)
+    eval_func1 = opt.eval_func(closure1, variables1, tf_fun_args1, True, False)
+    eval_func1(dummy_x)
+
+    # Call with passed in arguments
+    eval_func2 = opt.eval_func(closure2, variables2, tf_fun_args2, compile, allow_unused_variables2)
+    eval_func2(dummy_x)
+    if expect_cache_hit:
+        # Check that the cache was used
+        assert len(opt.compile_cache) == 1
+        assert _get_eval_func_closure(eval_func2) is _get_eval_func_closure(
+            eval_func1
+        ), "Cache hit expected"
+    else:
+        # Check that the cache was bypassed
+        # and a new compiled function was created if compile=True
+        if compile:
+            assert len(opt.compile_cache) == 2
+        else:
+            assert len(opt.compile_cache) == 1
+        assert _get_eval_func_closure(eval_func2) is not _get_eval_func_closure(
+            eval_func1
+        ), "Cache miss expected"
+
+    # The original closure, variables and args should still be in the cache
+    eval_func3 = opt.eval_func(closure1, variables1, tf_fun_args1, True, False)
+    eval_func3(dummy_x)
+    assert _get_eval_func_closure(eval_func3) is _get_eval_func_closure(
+        eval_func1
+    ), "Cache hit expected"
+
+    # The closures should be run
+    #   1 (during the first compilation) + 1 (if miss and closure was reused) times
+    exp_count = 1 + (1 if not expect_cache_hit and same_closure2 else 0)
+    assert counter1[0] == exp_count
+
+
+# In the first test, we are minimizing the same model twice and checking that this reuses
+# the existing compiled function in the cache. In the second test, we are minimizing two slightly
+# different models (one has one fewer trainable variable), and checking that this bypasses the
+# cache and creates a new compiled function.
+def test_scipy__cache_with_same_model() -> None:
+    model = _create_full_gp_model()
+    opt = gpflow.optimizers.Scipy()
+
+    loss_closure = model.training_loss
+
+    # Call minimize twice with the same model
+    opt.minimize(
+        loss_closure,
+        model.trainable_variables,
+        compile=True,
+        tf_fun_args={jit_compile_arg: True},
+    )
+    opt.minimize(
+        loss_closure,
+        model.trainable_variables,
+        compile=True,
+        tf_fun_args={jit_compile_arg: True},
+    )
+
+    # Check that the cache was used
+    assert len(opt.compile_cache) == 1
+
+
+def test_scipy__cache_with_different_models() -> None:
+    model = _create_full_gp_model()
+    opt = gpflow.optimizers.Scipy()
+
+    loss_closure = model.training_loss
+
+    # Call minimize twice with slightly different models
+    opt.minimize(
+        loss_closure,
+        model.trainable_variables,
+        compile=True,
+        tf_fun_args={jit_compile_arg: True},
+    )
+    # Set the lengthscales to be non-trainable
+    gpflow.utilities.set_trainable(model.kernel.lengthscales, False)
+    opt.minimize(
+        loss_closure,
+        model.trainable_variables,
+        compile=True,
+        tf_fun_args={jit_compile_arg: True},
+    )
+
+    # Check that the cache was bypassed and a new compiled function was created
+    assert len(opt.compile_cache) == 2

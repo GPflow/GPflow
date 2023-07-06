@@ -45,7 +45,8 @@ LossClosure = Callable[[], tf.Tensor]
 class Scipy:
     def __init__(self) -> None:
         self.compile_cache: OrderedDict[
-            Tuple[Callable[[], Any], Tuple[int, ...], FrozenSet[Tuple[str, Any]], bool], tf.function
+            Tuple[Callable[[], Any], Tuple[int, ...], FrozenSet[Tuple[str, Any]], bool],
+            tf.function,
         ] = OrderedDict()
         self.compile_cache_limit = 2  # Limit the cache size to avoid memory leaks.
 
@@ -176,7 +177,7 @@ class Scipy:
             )
             if key not in self.compile_cache:
                 if len(self.compile_cache) >= self.compile_cache_limit:
-                    self.compile_cache.popitem(last=False)  # Remove least recently used entry.
+                    self.compile_cache.popitem(last=False)  # Remove the oldest entry.
                 self.compile_cache[key] = tf.function(_tf_eval, **tf_fun_args)
             _tf_eval = self.compile_cache[key]
 
