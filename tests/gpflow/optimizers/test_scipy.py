@@ -246,8 +246,8 @@ def _create_variables() -> Sequence[tf.Variable]:
 
 
 def _get_eval_func_closure(eval_func: Callable[[AnyNDArray], Tuple[AnyNDArray, AnyNDArray]]) -> Any:
-    assert eval_func.__closure__ is not None
-    return eval_func.__closure__[0].cell_contents
+    assert eval_func.__closure__ is not None  # type: ignore[attr-defined]
+    return eval_func.__closure__[0].cell_contents  # type: ignore[attr-defined]
 
 
 # This test checks the basic cache behaviour of the Scipy optimizer. It checks that the cache is
