@@ -88,5 +88,6 @@ Because GitHub's [graph of contributors](http://github.com/GPflow/GPflow/graphs/
 [@sethaxen](https://github.com/sethaxen)
 [@khurram-ghani](https://github.com/khurram-ghani)
 [@partev](https://github.com/partev)
+[@uri-granta](https://github.com/uri-granta)
 
 Add yourself when you first contribute to GPflow's code, tests, or documentation!
