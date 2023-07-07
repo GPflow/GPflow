@@ -80,6 +80,10 @@ class Scipy:
         :param compile: If True, wraps the evaluation function (the passed `closure` as well as its
             gradient computation) inside a `tf.function()`, which will improve optimization speed in
             most cases.
+
+            Note that the compiled evaluation functions are cached, so that subsequent calls with
+            the same `closure`, `variables`, `allow_unused_variables`, and `tf_fun_args` will reuse
+            a previously compiled function. Currently, up to two most recent functions are cached.
         :param allow_unused_variables: Whether to allow variables that are not actually used in the
             closure.
         :param tf_fun_args: Arguments passed through to `tf.function()` when `compile` is True.
