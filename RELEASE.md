@@ -58,12 +58,15 @@ This release contains contributions from:
 * <SIMILAR TO ABOVE SECTION, BUT FOR OTHER IMPORTANT CHANGES / BUG FIXES>
 * <IF A CHANGE CLOSES A GITHUB ISSUE, IT SHOULD BE DOCUMENTED HERE>
 * <NOTES SHOULD BE GROUPED PER AREA>
+* Scipy minimize wrapper caches compiled graphs and re-uses them if called with the same arguments.
+  (#2074)
 
 ## Thanks to our Contributors
 
 This release contains contributions from:
 
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
+khurram-ghani
 
 
 # Release 2.8.1
