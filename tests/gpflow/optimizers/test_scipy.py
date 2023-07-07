@@ -250,9 +250,9 @@ def _get_eval_func_closure(eval_func: Callable[[AnyNDArray], Tuple[AnyNDArray, A
     return eval_func.__closure__[0].cell_contents  # type: ignore[attr-defined]
 
 
-# This test checks the basic cache behaviour of the Scipy optimizer. It checks that the cache is
-# used when the same arguments are passed to the minimize method multiple times. It also checks
-# that without compile=True the cache is not affected.
+# This test checks the basic cache behaviour of the Scipy optimizer:
+#   the cache is used when the same arguments are passed to the minimize method multiple times
+#   without compile=True, the cache is not affected
 def test_scipy__cache_behaviour() -> None:
     opt = gpflow.optimizers.Scipy()
     size = opt.compile_cache_limit
@@ -268,8 +268,9 @@ def test_scipy__cache_behaviour() -> None:
 
     # Call eval_func multiple times with the same arguments
     for _ in range(size):
-        # Call minimize twice with the same arguments
-        opt.minimize(closure1, variables1, compile=True, tf_fun_args={})
+        opt.minimize(
+            closure1, variables1, compile=True, tf_fun_args={}, allow_unused_variables=False
+        )
         # Check that the cache was used
         assert len(opt.compile_cache) == 1
 
@@ -287,14 +288,17 @@ def test_scipy__cache_behaviour() -> None:
     # Call eval_func multiple times with the same arguments, but without compile. This should
     # not affect the cache.
     for _ in range(size):
-        # Call minimize twice with the same arguments
-        opt.minimize(closure1, variables1, compile=False, tf_fun_args={})
+        opt.minimize(
+            closure1, variables1, compile=False, tf_fun_args={}, allow_unused_variables=False
+        )
         # Check that the cache size did not change
         assert len(opt.compile_cache) == 1
 
-    # Fill the cache with closure2 to ensure caching is working correctly
+    # Fill the cache with closure2
     for _ in range(size):
-        opt.minimize(closure2, variables2, compile=True, tf_fun_args={})
+        opt.minimize(
+            closure2, variables2, compile=True, tf_fun_args={}, allow_unused_variables=False
+        )
         # Check that the cache size did change
         assert len(opt.compile_cache) == size
 
@@ -305,7 +309,7 @@ def test_scipy__cache_behaviour() -> None:
     assert counter2[0] == 1
 
 
-# This test fill the cache, and then adds one more entry to force the cache to replace the oldest
+# This test fills the cache, and then adds one more entry to force the cache to replace the oldest
 # entry.
 def test_scipy__cache_replacement() -> None:
     opt = gpflow.optimizers.Scipy()
@@ -331,37 +335,38 @@ def test_scipy__cache_replacement() -> None:
 # This test ensures that the cache behaves correctly considering all arguments.
 # It verifies that the cache has a miss when any argument changes, and a hit when all arguments
 # remain the same. Note that when `compile` is `False`, the cache is not used and we expect a miss.
-#   - Hit : the same closure and variables
-#   - Miss: the same closure but different variables
-#   - Miss: Different closure but the same variables
-#   - Miss: the same closure and variables but different tf_fun_args
-#   - Miss: the same closure and variables but different allow_unused_variables
-#   - Miss: the same closure and variables but different compile
+#   - hit : the same closure and variables, same reaming arguments
+#   - miss: the same closure but different variables, same reaming arguments
+#   - miss: Different closure but the same variables, same reaming arguments
+#   - miss: the same closure and variables but different tf_fun_args
+#   - miss: the same closure and variables but different allow_unused_variables
+#   - miss: the same closure, variables and args, but no-compile
 @pytest.mark.parametrize(
-    "same_closure2, same_variables2, same_tf_fun_args2, allow_unused_variables2, "
-    "compile, expect_cache_hit",
+    "expect_cache_hit, same_closure2, same_variables2, same_tf_fun_args2, "
+    "allow_unused_variables2, compile",
     [
-        (True, True, True, False, True, True),
-        (True, False, True, False, True, False),
-        (False, True, True, False, True, False),
-        (True, True, False, False, True, False),
-        (True, True, True, True, True, False),
-        (True, True, True, False, False, False),
+        (True, True, True, True, False, True),
+        (False, True, False, True, False, True),
+        (False, False, True, True, False, True),
+        (False, True, True, False, False, True),
+        (False, True, True, True, True, True),
+        (False, True, True, True, False, False),
     ],
 )
 def test_scipy__cache_hit_miss(
+    expect_cache_hit: bool,
     same_closure2: bool,
     same_variables2: bool,
     same_tf_fun_args2: bool,
     allow_unused_variables2: bool,
     compile: bool,
-    expect_cache_hit: bool,
 ) -> None:
     opt = gpflow.optimizers.Scipy()
 
     variables1 = _create_variables()
     counter1 = [0]
     closure1 = _loss_closure_builder(counter1, variables1)
+    tf_fun_args1 = dict(experimental_relax_shapes=True)
     dummy_x = tf.concat([tf.zeros_like(var) for var in variables1], 0)
 
     if same_closure2:
@@ -372,7 +377,7 @@ def test_scipy__cache_hit_miss(
     if same_variables2:
         variables2 = variables1
     else:
-        variables2 = [variables1[0]]
+        variables2 = [variables1[0]]  # Pick a subset of variables
 
     if same_tf_fun_args2:
         tf_fun_args2 = dict(experimental_relax_shapes=True)
@@ -380,13 +385,13 @@ def test_scipy__cache_hit_miss(
         tf_fun_args2 = dict(experimental_relax_shapes=False)
 
     # Populate cache with first closure and variables
-    tf_fun_args1 = dict(experimental_relax_shapes=True)
     eval_func1 = opt.eval_func(closure1, variables1, tf_fun_args1, True, False)
     eval_func1(dummy_x)
 
     # Call with passed in arguments
     eval_func2 = opt.eval_func(closure2, variables2, tf_fun_args2, compile, allow_unused_variables2)
     eval_func2(dummy_x)
+
     if expect_cache_hit:
         # Check that the cache was used
         assert len(opt.compile_cache) == 1
@@ -394,8 +399,7 @@ def test_scipy__cache_hit_miss(
             eval_func1
         ), "Cache hit expected"
     else:
-        # Check that the cache was bypassed
-        # and a new compiled function was created if compile=True
+        # Check that the cache was bypassed and a new compiled function was created, if compile=True
         if compile:
             assert len(opt.compile_cache) == 2
         else:
@@ -417,10 +421,8 @@ def test_scipy__cache_hit_miss(
     assert counter1[0] == exp_count
 
 
-# In the first test, we are minimizing the same model twice and checking that this reuses
-# the existing compiled function in the cache. In the second test, we are minimizing two slightly
-# different models (one has one fewer trainable variable), and checking that this bypasses the
-# cache and creates a new compiled function.
+# In the first test, we minimize the same model twice and check that this reuses the existing
+# compiled function in the cache.
 def test_scipy__cache_with_same_model() -> None:
     model = _create_full_gp_model()
     opt = gpflow.optimizers.Scipy()
@@ -445,6 +447,8 @@ def test_scipy__cache_with_same_model() -> None:
     assert len(opt.compile_cache) == 1
 
 
+# In the second test, we minimize two slightly different models (one has one fewer trainable
+# variable), and check that this bypasses the cache and creates a new compiled function.
 def test_scipy__cache_with_different_models() -> None:
     model = _create_full_gp_model()
     opt = gpflow.optimizers.Scipy()
