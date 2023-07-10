@@ -43,12 +43,30 @@ LossClosure = Callable[[], tf.Tensor]
 
 
 class Scipy:
-    def __init__(self) -> None:
+    def __init__(self, compile_cache_size: int = 2) -> None:
+        """
+        Wrapper around the scipy optimizer.
+
+        :param compile_cache_size: The number of compiled evalutation functions to cache for calls
+            to `minimize`. Only applies when `compile` argument to `minimize` is True.
+
+            The compiled evaluation functions are cached so that subsequent calls to `minimize` with
+            the same `closure`, `variables`, `allow_unused_variables`, and `tf_fun_args` will reuse
+            a previously compiled function. Up to `compile_cache_size` most recent functions are
+            cached. This can be disabled by setting `compile_cache_size` to 0.
+        """
         self.compile_cache: OrderedDict[
             Tuple[Callable[[], Any], Tuple[int, ...], FrozenSet[Tuple[str, Any]], bool],
             tf.function,
         ] = OrderedDict()
-        self.compile_cache_limit = 2  # Limit the cache size to avoid memory leaks.
+
+        if compile_cache_size < 0:
+            raise ValueError(
+                "The 'compile_cache_size' argument must be non-negative, got {}.".format(
+                    compile_cache_size
+                )
+            )
+        self.compile_cache_size = compile_cache_size
 
     def minimize(
         self,
@@ -80,10 +98,6 @@ class Scipy:
         :param compile: If True, wraps the evaluation function (the passed `closure` as well as its
             gradient computation) inside a `tf.function()`, which will improve optimization speed in
             most cases.
-
-            Note that the compiled evaluation functions are cached, so that subsequent calls with
-            the same `closure`, `variables`, `allow_unused_variables`, and `tf_fun_args` will reuse
-            a previously compiled function. Currently, up to two most recent functions are cached.
         :param allow_unused_variables: Whether to allow variables that are not actually used in the
             closure.
         :param tf_fun_args: Arguments passed through to `tf.function()` when `compile` is True.
@@ -179,11 +193,14 @@ class Scipy:
                 frozenset(tf_fun_args.items()),
                 allow_unused_variables,
             )
-            if key not in self.compile_cache:
-                if len(self.compile_cache) >= self.compile_cache_limit:
-                    self.compile_cache.popitem(last=False)  # Remove the oldest entry.
-                self.compile_cache[key] = tf.function(_tf_eval, **tf_fun_args)
-            _tf_eval = self.compile_cache[key]
+            if self.compile_cache_size > 0:
+                if key not in self.compile_cache:
+                    if len(self.compile_cache) >= self.compile_cache_size:
+                        self.compile_cache.popitem(last=False)  # Remove the oldest entry.
+                    self.compile_cache[key] = tf.function(_tf_eval, **tf_fun_args)
+                _tf_eval = self.compile_cache[key]
+            else:
+                _tf_eval = tf.function(_tf_eval, **tf_fun_args)
 
         def _eval(x: AnyNDArray) -> Tuple[AnyNDArray, AnyNDArray]:
             loss, grad = _tf_eval(tf.convert_to_tensor(x))

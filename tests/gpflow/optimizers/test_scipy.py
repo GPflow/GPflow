@@ -255,7 +255,7 @@ def _get_eval_func_closure(eval_func: Callable[[AnyNDArray], Tuple[AnyNDArray, A
 #   without compile=True, the cache is not affected
 def test_scipy__cache_behaviour() -> None:
     opt = gpflow.optimizers.Scipy()
-    size = opt.compile_cache_limit
+    size = opt.compile_cache_size
     variables1 = _create_variables()
     variables2 = _create_variables()
     counter1 = [0]  # Each closure has its own counter
@@ -311,25 +311,54 @@ def test_scipy__cache_behaviour() -> None:
 
 # This test fills the cache, and then adds one more entry to force the cache to replace the oldest
 # entry.
-def test_scipy__cache_replacement() -> None:
-    opt = gpflow.optimizers.Scipy()
-    size = opt.compile_cache_limit
+@pytest.mark.parametrize("compile_cache_size", [1, 2, 3])
+def test_scipy__cache_replacement(compile_cache_size: int) -> None:
+    opt = gpflow.optimizers.Scipy(compile_cache_size=compile_cache_size)
 
     # Create more closures and variables than the cache can hold
-    variables = [tf.Variable(float(i)) for i in range(size + 1)]
+    variables = [tf.Variable(float(i)) for i in range(compile_cache_size + 1)]
     closures = [_loss_closure_builder([0], var) for var in variables]
 
     # Fill the cache
-    for i in range(size):
+    for i in range(compile_cache_size):
         opt.eval_func(closures[i], [variables[i]], tf_fun_args={})
         assert len(opt.compile_cache) == i + 1
 
     # Add one more closure to force the cache to replace the oldest entry
     opt.eval_func(closures[-1], [variables[-1]], tf_fun_args={})
-    assert len(opt.compile_cache) == size
+    assert len(opt.compile_cache) == compile_cache_size
     assert set(opt.compile_cache.keys()) == set(
-        [(closures[i], (id(variables[i]),), frozenset(), False) for i in range(1, size + 1)]
+        [
+            (closures[i], (id(variables[i]),), frozenset(), False)
+            for i in range(1, compile_cache_size + 1)
+        ]
     )
+
+
+# This test checks that the cache is disabled when compile_cache_size is set to 0.
+def test_scipy__cache_disabled() -> None:
+    opt = gpflow.optimizers.Scipy(compile_cache_size=0)
+    variables = _create_variables()
+    counter = [0]
+    closure = _loss_closure_builder(counter, variables)
+
+    # Ensure the cache is empty
+    assert len(opt.compile_cache) == 0
+
+    # Call eval_func multiple times with the same arguments
+    for _ in range(4):
+        opt.minimize(closure, variables, compile=True, tf_fun_args={}, allow_unused_variables=False)
+        # Check that the cache was not used
+        assert len(opt.compile_cache) == 0
+
+    # The closure should be run every time
+    assert counter[0] == 4
+
+
+# This test ensures an error is raised when compile_cache_size is set to a negative value.
+def test_scipy__cache_raises_negative_size() -> None:
+    with pytest.raises(ValueError, match=r"The 'compile_cache_size' argument must be non-negative"):
+        gpflow.optimizers.Scipy(compile_cache_size=-1)
 
 
 # This test ensures that the cache behaves correctly considering all arguments.
