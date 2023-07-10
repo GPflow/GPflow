@@ -255,7 +255,6 @@ def _get_eval_func_closure(eval_func: Callable[[AnyNDArray], Tuple[AnyNDArray, A
 #   without compile=True, the cache is not affected
 def test_scipy__cache_behaviour() -> None:
     opt = gpflow.optimizers.Scipy()
-    size = opt.compile_cache_size
     variables1 = _create_variables()
     variables2 = _create_variables()
     counter1 = [0]  # Each closure has its own counter
@@ -267,7 +266,7 @@ def test_scipy__cache_behaviour() -> None:
     assert len(opt.compile_cache) == 0
 
     # Call eval_func multiple times with the same arguments
-    for _ in range(size):
+    for _ in range(4):
         opt.minimize(
             closure1, variables1, compile=True, tf_fun_args={}, allow_unused_variables=False
         )
@@ -287,7 +286,7 @@ def test_scipy__cache_behaviour() -> None:
 
     # Call eval_func multiple times with the same arguments, but without compile. This should
     # not affect the cache.
-    for _ in range(size):
+    for _ in range(4):
         opt.minimize(
             closure1, variables1, compile=False, tf_fun_args={}, allow_unused_variables=False
         )
@@ -295,16 +294,16 @@ def test_scipy__cache_behaviour() -> None:
         assert len(opt.compile_cache) == 1
 
     # Fill the cache with closure2
-    for _ in range(size):
+    for _ in range(4):
         opt.minimize(
             closure2, variables2, compile=True, tf_fun_args={}, allow_unused_variables=False
         )
         # Check that the cache size did change
-        assert len(opt.compile_cache) == size
+        assert len(opt.compile_cache) == 2
 
     # The closure should be run
-    #   1 (during the first compilation) + size (calls without compilation) times
-    assert counter1[0] == 1 + size
+    #   1 (during the first compilation) + 4 (calls without compilation) times
+    assert counter1[0] == 1 + 4
     # The closure should only be run once (during the first compilation)
     assert counter2[0] == 1
 
