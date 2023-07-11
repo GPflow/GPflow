@@ -363,22 +363,64 @@ def test_scipy__cache_raises_negative_size() -> None:
 # This test ensures that the cache behaves correctly considering all arguments.
 # It verifies that the cache has a miss when any argument changes, and a hit when all arguments
 # remain the same. Note that when `compile` is `False`, the cache is not used and we expect a miss.
-#   - hit : the same closure and variables, same reaming arguments
-#   - miss: the same closure but different variables, same reaming arguments
-#   - miss: Different closure but the same variables, same reaming arguments
-#   - miss: the same closure and variables but different tf_fun_args
-#   - miss: the same closure and variables but different allow_unused_variables
-#   - miss: the same closure, variables and args, but no-compile
 @pytest.mark.parametrize(
     "expect_cache_hit, same_closure2, same_variables2, same_tf_fun_args2, "
-    "allow_unused_variables2, compile",
+    "allow_unused_variables2, compile2",
     [
-        (True, True, True, True, False, True),
-        (False, True, False, True, False, True),
-        (False, False, True, True, False, True),
-        (False, True, True, False, False, True),
-        (False, True, True, True, True, True),
-        (False, True, True, True, False, False),
+        pytest.param(
+            True,
+            True,
+            True,
+            True,
+            False,
+            True,
+            id="hit: same closure & variables, same remaining args",
+        ),
+        pytest.param(
+            False,
+            True,
+            False,
+            True,
+            False,
+            True,
+            id="miss: same closure, different variables, same remaining args",
+        ),
+        pytest.param(
+            False,
+            False,
+            True,
+            True,
+            False,
+            True,
+            id="miss: different closure, same variables, same remaining args",
+        ),
+        pytest.param(
+            False,
+            True,
+            True,
+            False,
+            False,
+            True,
+            id="miss: same closure & variables, different tf_fun_args",
+        ),
+        pytest.param(
+            False,
+            True,
+            True,
+            True,
+            True,
+            True,
+            id="miss: same closure & variables, different allow_unused_variables",
+        ),
+        pytest.param(
+            False,
+            True,
+            True,
+            True,
+            False,
+            False,
+            id="miss: same closure, variables & args, but no-compile",
+        ),
     ],
 )
 def test_scipy__cache_hit_miss(
@@ -387,7 +429,7 @@ def test_scipy__cache_hit_miss(
     same_variables2: bool,
     same_tf_fun_args2: bool,
     allow_unused_variables2: bool,
-    compile: bool,
+    compile2: bool,
 ) -> None:
     opt = gpflow.optimizers.Scipy()
 
@@ -417,7 +459,9 @@ def test_scipy__cache_hit_miss(
     eval_func1(dummy_x)
 
     # Call with passed in arguments
-    eval_func2 = opt.eval_func(closure2, variables2, tf_fun_args2, compile, allow_unused_variables2)
+    eval_func2 = opt.eval_func(
+        closure2, variables2, tf_fun_args2, compile2, allow_unused_variables2
+    )
     eval_func2(dummy_x)
 
     if expect_cache_hit:
@@ -428,7 +472,7 @@ def test_scipy__cache_hit_miss(
         ), "Cache hit expected"
     else:
         # Check that the cache was bypassed and a new compiled function was created, if compile=True
-        if compile:
+        if compile2:
             assert len(opt.compile_cache) == 2
         else:
             assert len(opt.compile_cache) == 1

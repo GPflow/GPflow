@@ -59,7 +59,7 @@ This release contains contributions from:
 * <IF A CHANGE CLOSES A GITHUB ISSUE, IT SHOULD BE DOCUMENTED HERE>
 * <NOTES SHOULD BE GROUPED PER AREA>
 * Scipy minimize wrapper caches compiled graphs and re-uses them if called with the same arguments.
-  (#2074)
+  This functionality can be disabled by setting the new `compile_cache_size` argument to 0. (#2074)
 
 ## Thanks to our Contributors
 
