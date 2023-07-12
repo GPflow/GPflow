@@ -253,7 +253,19 @@ function checkPageExistsAndRedirect(event) {
 <span class="c1"># limitations under the License.</span>
 
 <span class="kn">import</span> <span class="nn">warnings</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Any</span><span class="p">,</span>
+    <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">FrozenSet</span><span class="p">,</span>
+    <span class="n">Iterable</span><span class="p">,</span>
+    <span class="n">List</span><span class="p">,</span>
+    <span class="n">Mapping</span><span class="p">,</span>
+    <span class="n">Optional</span><span class="p">,</span>
+    <span class="n">Sequence</span><span class="p">,</span>
+    <span class="n">Tuple</span><span class="p">,</span>
+    <span class="n">Union</span><span class="p">,</span>
+<span class="p">)</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">scipy.optimize</span>
@@ -271,6 +283,31 @@ function checkPageExistsAndRedirect(event) {
 
 
 <div class="viewcode-block" id="Scipy"><a class="viewcode-back" href="../../../api/gpflow/optimizers/index.html#gpflow.optimizers.Scipy">[docs]</a><span class="k">class</span> <span class="nc">Scipy</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compile_cache_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Wrapper around the scipy optimizer.</span>
+
+<span class="sd">        :param compile_cache_size: The number of compiled evalutation functions to cache for calls</span>
+<span class="sd">            to `minimize`. Only applies when `compile` argument to `minimize` is True.</span>
+
+<span class="sd">            The compiled evaluation functions are cached so that subsequent calls to `minimize` with</span>
+<span class="sd">            the same `closure`, `variables`, `allow_unused_variables`, and `tf_fun_args` will reuse</span>
+<span class="sd">            a previously compiled function. Up to `compile_cache_size` most recent functions are</span>
+<span class="sd">            cached. This can be disabled by setting `compile_cache_size` to 0.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compile_cache</span><span class="p">:</span> <span class="n">OrderedDict</span><span class="p">[</span>
+            <span class="n">Tuple</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[],</span> <span class="n">Any</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">FrozenSet</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="nb">bool</span><span class="p">],</span>
+            <span class="n">tf</span><span class="o">.</span><span class="n">function</span><span class="p">,</span>
+        <span class="p">]</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">compile_cache_size</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;The &#39;compile_cache_size&#39; argument must be non-negative, got </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">compile_cache_size</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compile_cache_size</span> <span class="o">=</span> <span class="n">compile_cache_size</span>
+
 <div class="viewcode-block" id="Scipy.minimize"><a class="viewcode-back" href="../../../api/gpflow/optimizers/index.html#gpflow.optimizers.Scipy.minimize">[docs]</a>    <span class="k">def</span> <span class="nf">minimize</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">closure</span><span class="p">:</span> <span class="n">LossClosure</span><span class="p">,</span>
@@ -356,9 +393,8 @@ function checkPageExistsAndRedirect(event) {
     <span class="k">def</span> <span class="nf">initial_parameters</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">variables</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">pack_tensors</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
 
-    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">eval_func</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">,</span>
+        <span class="bp">self</span><span class="p">,</span>
         <span class="n">closure</span><span class="p">:</span> <span class="n">LossClosure</span><span class="p">,</span>
         <span class="n">variables</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">],</span>
         <span class="n">tf_fun_args</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
@@ -370,25 +406,41 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">def</span> <span class="nf">_tf_eval</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
             <span class="k">nonlocal</span> <span class="n">first_call</span>
 
-            <span class="n">values</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">unpack_tensors</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
-            <span class="bp">cls</span><span class="o">.</span><span class="n">assign_tensors</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unpack_tensors</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assign_tensors</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">first_call</span><span class="p">:</span>
                 <span class="c1"># Only check for unconnected gradients on the first function evaluation.</span>
                 <span class="n">loss</span><span class="p">,</span> <span class="n">grads</span> <span class="o">=</span> <span class="n">_compute_loss_and_gradients</span><span class="p">(</span>
                     <span class="n">closure</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">UnconnectedGradients</span><span class="o">.</span><span class="n">NONE</span>
                 <span class="p">)</span>
-                <span class="n">grads</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_filter_unused_variables</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">grads</span><span class="p">,</span> <span class="n">allow_unused_variables</span><span class="p">)</span>
+                <span class="n">grads</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter_unused_variables</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">grads</span><span class="p">,</span> <span class="n">allow_unused_variables</span><span class="p">)</span>
                 <span class="n">first_call</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">loss</span><span class="p">,</span> <span class="n">grads</span> <span class="o">=</span> <span class="n">_compute_loss_and_gradients</span><span class="p">(</span>
                     <span class="n">closure</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">UnconnectedGradients</span><span class="o">.</span><span class="n">ZERO</span>
                 <span class="p">)</span>
 
-            <span class="k">return</span> <span class="n">loss</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">pack_tensors</span><span class="p">(</span><span class="n">grads</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">loss</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pack_tensors</span><span class="p">(</span><span class="n">grads</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">compile</span><span class="p">:</span>
-            <span class="n">_tf_eval</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="n">_tf_eval</span><span class="p">,</span> <span class="o">**</span><span class="n">tf_fun_args</span><span class="p">)</span>
+            <span class="c1"># Re-use the same tf.function graph for calls to minimize, as long as the arguments</span>
+            <span class="c1"># affecting the graph are the same. This can boost performance of use cases where</span>
+            <span class="c1"># minimize is called repeatedly with the same model loss.</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">closure</span><span class="p">,</span>
+                <span class="nb">tuple</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">),</span>
+                <span class="nb">frozenset</span><span class="p">(</span><span class="n">tf_fun_args</span><span class="o">.</span><span class="n">items</span><span class="p">()),</span>
+                <span class="n">allow_unused_variables</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">compile_cache_size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">compile_cache</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">compile_cache</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compile_cache_size</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">compile_cache</span><span class="o">.</span><span class="n">popitem</span><span class="p">(</span><span class="n">last</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># Remove the oldest entry.</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">compile_cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="n">_tf_eval</span><span class="p">,</span> <span class="o">**</span><span class="n">tf_fun_args</span><span class="p">)</span>
+                <span class="n">_tf_eval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compile_cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_tf_eval</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="n">_tf_eval</span><span class="p">,</span> <span class="o">**</span><span class="n">tf_fun_args</span><span class="p">)</span>
 
         <span class="k">def</span> <span class="nf">_eval</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">AnyNDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">AnyNDArray</span><span class="p">]:</span>
             <span class="n">loss</span><span class="p">,</span> <span class="n">grad</span> <span class="o">=</span> <span class="n">_tf_eval</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
