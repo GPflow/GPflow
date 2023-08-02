@@ -40,6 +40,7 @@ class Scipy:
         compile: bool = True,
         allow_unused_variables: bool = False,
         tf_fun_args: Optional[Mapping[str, Any]] = None,
+        track_loss_history: bool = False,
         **scipy_kwargs: Any,
     ) -> OptimizeResult:
         """
@@ -68,6 +69,8 @@ class Scipy:
 
                 opt = gpflow.optimizers.Scipy()
                 opt.minimize(..., compile=True, tf_fun_args=dict(jit_compile=True))
+        :param track_loss_history: Whether to track the training loss history and return it in
+            the optimization result.
         :param scipy_kwargs: Arguments passed through to `scipy.optimize.minimize`.
             Note that Scipy's minimize() takes a `callback` argument, but you probably want to use
             our wrapper and pass in `step_callback`.
@@ -105,9 +108,18 @@ class Scipy:
             callback = self.callback_func(variables, step_callback)
             scipy_kwargs.update(dict(callback=callback))
 
+        history: list[AnyNDArray] = []
+        if track_loss_history:
+            callback = self.loss_history_callback_func(func, history, scipy_kwargs.get("callback"))
+            scipy_kwargs.update(dict(callback=callback))
+
         opt_result = scipy.optimize.minimize(
             func, initial_params, jac=True, method=method, **scipy_kwargs
         )
+
+        if track_loss_history:
+            opt_result["training_loss_history"] = history
+
         values = self.unpack_tensors(variables, opt_result.x)
         self.assign_tensors(variables, values)
         return opt_result
@@ -200,6 +212,18 @@ class Scipy:
             step += 1
 
         return _callback
+
+    @classmethod
+    def loss_history_callback_func(
+            cls, minimize_func: Callable[[AnyNDArray], Tuple[AnyNDArray, AnyNDArray]],
+            history: list[AnyNDArray],
+            callback: Optional[Callable[[AnyNDArray], None]] = None,
+    ) -> Callable[[AnyNDArray], None]:
+
+        def _callback(x: AnyNDArray) -> None:
+            if callback is not None:
+                callback(x)
+            history.append(minimize_func(x)[0])
 
     @staticmethod
     def pack_tensors(tensors: Sequence[Union[tf.Tensor, tf.Variable]]) -> tf.Tensor:
