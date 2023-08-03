@@ -101,24 +101,23 @@ class Scipy:
             allow_unused_variables=allow_unused_variables,
             tf_fun_args=tf_fun_args,
         )
+
         if step_callback is not None:
             if "callback" in scipy_kwargs:
                 raise ValueError("Callback passed both via `step_callback` and `callback`")
-
             callback = self.callback_func(variables, step_callback)
-            scipy_kwargs.update(dict(callback=callback))
-
-        history: list[AnyNDArray] = []
+            scipy_kwargs["callback"] = callback
+        history: List[AnyNDArray] = []
         if track_loss_history:
             callback = self.loss_history_callback_func(func, history, scipy_kwargs.get("callback"))
-            scipy_kwargs.update(dict(callback=callback))
+            scipy_kwargs["callback"] = callback
 
         opt_result = scipy.optimize.minimize(
             func, initial_params, jac=True, method=method, **scipy_kwargs
         )
 
         if track_loss_history:
-            opt_result["training_loss_history"] = history
+            opt_result["loss_history"] = history
 
         values = self.unpack_tensors(variables, opt_result.x)
         self.assign_tensors(variables, values)
@@ -198,7 +197,8 @@ class Scipy:
     def callback_func(
         cls, variables: Sequence[tf.Variable], step_callback: StepCallback
     ) -> Callable[[AnyNDArray], None]:
-        step = 0  # type: int
+        """Convert a step_callback function to a Scipy callback function."""
+        step: int = 0
 
         def _callback(x: AnyNDArray) -> None:
             nonlocal step
@@ -215,15 +215,26 @@ class Scipy:
 
     @classmethod
     def loss_history_callback_func(
-            cls, minimize_func: Callable[[AnyNDArray], Tuple[AnyNDArray, AnyNDArray]],
-            history: list[AnyNDArray],
-            callback: Optional[Callable[[AnyNDArray], None]] = None,
+        cls,
+        minimize_func: Callable[[AnyNDArray], Tuple[AnyNDArray, AnyNDArray]],
+        history: List[AnyNDArray],
+        callback: Optional[Callable[[AnyNDArray], None]] = None,
     ) -> Callable[[AnyNDArray], None]:
+        """Return a Scipy callback function that tracks loss history, optionally combined
+        with another callback.
+
+        :param minimize_func: Function to be minimized returning loss, grad.
+        :param history: List to append loss history to.
+        :param callback: Optional additional Scipy callback to execute.
+        :return: Loss history callback function.
+        """
 
         def _callback(x: AnyNDArray) -> None:
             if callback is not None:
                 callback(x)
             history.append(minimize_func(x)[0])
+
+        return _callback
 
     @staticmethod
     def pack_tensors(tensors: Sequence[Union[tf.Tensor, tf.Variable]]) -> tf.Tensor:
