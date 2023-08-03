@@ -50,8 +50,7 @@ This release contains contributions from:
 
 ## Major Features and Improvements
 
-* <INSERT MAJOR FEATURE HERE, USING MARKDOWN SYNTAX>
-* <IF RELEASE CONTAINS MULTIPLE FEATURES FROM SAME AREA, GROUP THEM TOGETHER>
+* Support returning loss history with Scipy optimizer. 
 
 ## Bug Fixes and Other Changes
 
