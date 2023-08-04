@@ -33,7 +33,7 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
-# Release 2.9.0 (next release)
+# Release 2.8.2 (next release)
 
 <INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
 
@@ -55,18 +55,13 @@ This release contains contributions from:
 
 ## Bug Fixes and Other Changes
 
-* <SIMILAR TO ABOVE SECTION, BUT FOR OTHER IMPORTANT CHANGES / BUG FIXES>
-* <IF A CHANGE CLOSES A GITHUB ISSUE, IT SHOULD BE DOCUMENTED HERE>
-* <NOTES SHOULD BE GROUPED PER AREA>
-* Scipy minimize wrapper caches compiled graphs and re-uses them if called with the same arguments.
-  This functionality can be disabled by setting the new `compile_cache_size` argument to 0. (#2074)
+* Support and test with Python 3.11
 
 ## Thanks to our Contributors
 
 This release contains contributions from:
 
-<INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
-khurram-ghani
+khurram-ghani, jesnie
 
 
 # Release 2.8.1
