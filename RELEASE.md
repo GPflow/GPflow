@@ -64,8 +64,7 @@ This release contains contributions from:
 
 This release contains contributions from:
 
-<INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
-khurram-ghani
+khurram-ghani, uri-granta
 
 
 # Release 2.8.1
