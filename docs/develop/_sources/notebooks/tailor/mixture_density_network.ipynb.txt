@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "92f76919",
+   "id": "c48274f2",
    "metadata": {},
    "source": [
     "# Mixture Density Networks in GPflow\n",
@@ -14,7 +14,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ec26454e",
+   "id": "a9a0c307",
    "metadata": {},
    "source": [
     "## Conditional Density Estimation models\n",
@@ -24,13 +24,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "8d043314",
+   "id": "4f9ba99b",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-07-12T11:24:26.268069Z",
-     "iopub.status.busy": "2023-07-12T11:24:26.267701Z",
-     "iopub.status.idle": "2023-07-12T11:24:26.787952Z",
-     "shell.execute_reply": "2023-07-12T11:24:26.787146Z"
+     "iopub.execute_input": "2023-08-07T12:13:14.734521Z",
+     "iopub.status.busy": "2023-08-07T12:13:14.734295Z",
+     "iopub.status.idle": "2023-08-07T12:13:15.327251Z",
+     "shell.execute_reply": "2023-08-07T12:13:15.326634Z"
     }
    },
    "outputs": [],
@@ -48,13 +48,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "fb8e4fc4",
+   "id": "1850b926",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-07-12T11:24:26.790983Z",
-     "iopub.status.busy": "2023-07-12T11:24:26.790653Z",
-     "iopub.status.idle": "2023-07-12T11:24:26.983767Z",
-     "shell.execute_reply": "2023-07-12T11:24:26.983238Z"
+     "iopub.execute_input": "2023-08-07T12:13:15.331772Z",
+     "iopub.status.busy": "2023-08-07T12:13:15.331338Z",
+     "iopub.status.idle": "2023-08-07T12:13:15.520879Z",
+     "shell.execute_reply": "2023-08-07T12:13:15.520106Z"
     }
    },
    "outputs": [
@@ -91,7 +91,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a8755369",
+   "id": "34a1d582",
    "metadata": {},
    "source": [
     "At first sight, this dataset doesn't seem overly complex. Both input and output have a single dimension, and the data has a clear sinusoidal pattern. However, notice that a single input $x$ can correspond to multiple output values $y$, so for example $x=0$ can yield any of the values $\\{-1.5, -3/4, 0, 0.8, 1.5\\}$. Typical regression algorithms such as Linear Regression, Gaussian Process regression and Multilayer Perceptrons (MLPs) struggle as they can only predict one output value for every input.\n",
@@ -101,7 +101,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "66dc908b",
+   "id": "51ccce4c",
    "metadata": {},
    "source": [
     "## Mixture Density Network models\n",
@@ -123,7 +123,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "4b6ddcbc",
+   "id": "c091ae9a",
    "metadata": {},
    "source": [
     "## A GPflow MDN implementation\n",
@@ -136,13 +136,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "d3470568",
+   "id": "82cc624f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-07-12T11:24:26.986359Z",
-     "iopub.status.busy": "2023-07-12T11:24:26.986139Z",
-     "iopub.status.idle": "2023-07-12T11:24:30.722052Z",
-     "shell.execute_reply": "2023-07-12T11:24:30.721425Z"
+     "iopub.execute_input": "2023-08-07T12:13:15.523699Z",
+     "iopub.status.busy": "2023-08-07T12:13:15.523425Z",
+     "iopub.status.idle": "2023-08-07T12:13:19.721212Z",
+     "shell.execute_reply": "2023-08-07T12:13:19.720142Z"
     },
     "lines_to_next_cell": 1
    },
@@ -151,7 +151,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2023-07-12 11:24:27.995447: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT\n"
+      "2023-08-07 12:13:16.733952: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT\n"
      ]
     }
    ],
@@ -166,7 +166,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "9da127a2",
+   "id": "f8cb64f4",
    "metadata": {},
    "source": [
     "Next, we create a `MDN` class that inherits from GPflow's `Model` class. We need to do the following:\n",
@@ -178,13 +178,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "f0948bb2",
+   "id": "f1f65e53",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-07-12T11:24:30.725213Z",
-     "iopub.status.busy": "2023-07-12T11:24:30.724757Z",
-     "iopub.status.idle": "2023-07-12T11:24:30.733573Z",
-     "shell.execute_reply": "2023-07-12T11:24:30.733036Z"
+     "iopub.execute_input": "2023-08-07T12:13:19.724836Z",
+     "iopub.status.busy": "2023-08-07T12:13:19.724130Z",
+     "iopub.status.idle": "2023-08-07T12:13:19.740814Z",
+     "shell.execute_reply": "2023-08-07T12:13:19.739913Z"
     }
    },
    "outputs": [],
@@ -247,7 +247,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "fd29e338",
+   "id": "3c0e9a08",
    "metadata": {},
    "source": [
     "### Notes\n",
@@ -264,7 +264,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "89b5b4d8",
+   "id": "c65b0e83",
    "metadata": {},
    "source": [
     "## Experiment 1: The sinusoidal dataset\n",
@@ -275,13 +275,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "49bc316a",
+   "id": "7601ecad",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-07-12T11:24:30.736079Z",
-     "iopub.status.busy": "2023-07-12T11:24:30.735722Z",
-     "iopub.status.idle": "2023-07-12T11:24:30.788243Z",
-     "shell.execute_reply": "2023-07-12T11:24:30.787661Z"
+     "iopub.execute_input": "2023-08-07T12:13:19.743300Z",
+     "iopub.status.busy": "2023-08-07T12:13:19.743013Z",
+     "iopub.status.idle": "2023-08-07T12:13:19.800967Z",
+     "shell.execute_reply": "2023-08-07T12:13:19.800249Z"
     }
    },
    "outputs": [
@@ -317,7 +317,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ce65b013",
+   "id": "a32752bc",
    "metadata": {},
    "source": [
     "The objective function for MDN instances is the `maximum_log_likelihood_objective`, which we use for optimization of the parameters. GPflow ensures that only the variables stored in `Parameter` objects are optimized. For the MDN, the only parameters are the weights and the biases of the neural net.\n",
@@ -328,13 +328,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "fb37bbe7",
+   "id": "e24112c0",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-07-12T11:24:30.790771Z",
-     "iopub.status.busy": "2023-07-12T11:24:30.790503Z",
-     "iopub.status.idle": "2023-07-12T11:25:38.305602Z",
-     "shell.execute_reply": "2023-07-12T11:25:38.304966Z"
+     "iopub.execute_input": "2023-08-07T12:13:19.803327Z",
+     "iopub.status.busy": "2023-08-07T12:13:19.803083Z",
+     "iopub.status.idle": "2023-08-07T12:15:49.642108Z",
+     "shell.execute_reply": "2023-08-07T12:15:49.641551Z"
     }
    },
    "outputs": [
@@ -361,7 +361,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a94564e5",
+   "id": "4f94f338",
    "metadata": {},
    "source": [
     "To evaluate the validity of our model, we draw the posterior density. We also plot $\\mu(x)$ of the optimized neural net. Remember that for every $x$ the neural net outputs $M$ means $\\mu_m(x)$. These determine the location of the Gaussians. We plot all $M$ means and use their corresponding mixture weight $\\pi_m(X)$ to determine their size. Larger dots will have more impact in the Gaussian ensemble."
@@ -370,13 +370,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "e2462ecf",
+   "id": "01348356",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-07-12T11:25:38.308209Z",
-     "iopub.status.busy": "2023-07-12T11:25:38.307910Z",
-     "iopub.status.idle": "2023-07-12T11:25:39.403104Z",
-     "shell.execute_reply": "2023-07-12T11:25:39.402438Z"
+     "iopub.execute_input": "2023-08-07T12:15:49.644327Z",
+     "iopub.status.busy": "2023-08-07T12:15:49.644081Z",
+     "iopub.status.idle": "2023-08-07T12:15:50.454029Z",
+     "shell.execute_reply": "2023-08-07T12:15:50.453526Z"
     }
    },
    "outputs": [
@@ -407,7 +407,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "79acec15",
+   "id": "003dd4bf",
    "metadata": {},
    "source": [
     "## Experiment 2: The half moon dataset\n",
@@ -418,13 +418,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "5e1d17ea",
+   "id": "21497099",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-07-12T11:25:39.406132Z",
-     "iopub.status.busy": "2023-07-12T11:25:39.405837Z",
-     "iopub.status.idle": "2023-07-12T11:25:39.509294Z",
-     "shell.execute_reply": "2023-07-12T11:25:39.508640Z"
+     "iopub.execute_input": "2023-08-07T12:15:50.456483Z",
+     "iopub.status.busy": "2023-08-07T12:15:50.456235Z",
+     "iopub.status.idle": "2023-08-07T12:15:50.551060Z",
+     "shell.execute_reply": "2023-08-07T12:15:50.550550Z"
     }
    },
    "outputs": [],
@@ -441,13 +441,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "0c20cbc7",
+   "id": "e910af2d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-07-12T11:25:39.512621Z",
-     "iopub.status.busy": "2023-07-12T11:25:39.512055Z",
-     "iopub.status.idle": "2023-07-12T11:25:39.664291Z",
-     "shell.execute_reply": "2023-07-12T11:25:39.663728Z"
+     "iopub.execute_input": "2023-08-07T12:15:50.553918Z",
+     "iopub.status.busy": "2023-08-07T12:15:50.553321Z",
+     "iopub.status.idle": "2023-08-07T12:15:50.691697Z",
+     "shell.execute_reply": "2023-08-07T12:15:50.691197Z"
     }
    },
    "outputs": [
@@ -471,7 +471,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "29574d12",
+   "id": "36c94d88",
    "metadata": {},
    "source": [
     "The only difference in the MDN's setup is that we lower the number of mixture components."
@@ -480,13 +480,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "11935c9f",
+   "id": "ba79a4d7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-07-12T11:25:39.666934Z",
-     "iopub.status.busy": "2023-07-12T11:25:39.666633Z",
-     "iopub.status.idle": "2023-07-12T11:25:39.679317Z",
-     "shell.execute_reply": "2023-07-12T11:25:39.678753Z"
+     "iopub.execute_input": "2023-08-07T12:15:50.693875Z",
+     "iopub.status.busy": "2023-08-07T12:15:50.693640Z",
+     "iopub.status.idle": "2023-08-07T12:15:50.705762Z",
+     "shell.execute_reply": "2023-08-07T12:15:50.705267Z"
     }
    },
    "outputs": [],
@@ -497,13 +497,13 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "ca17d1b6",
+   "id": "f4799307",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-07-12T11:25:39.682115Z",
-     "iopub.status.busy": "2023-07-12T11:25:39.681828Z",
-     "iopub.status.idle": "2023-07-12T11:28:52.584045Z",
-     "shell.execute_reply": "2023-07-12T11:28:52.583442Z"
+     "iopub.execute_input": "2023-08-07T12:15:50.708173Z",
+     "iopub.status.busy": "2023-08-07T12:15:50.707938Z",
+     "iopub.status.idle": "2023-08-07T12:19:40.316996Z",
+     "shell.execute_reply": "2023-08-07T12:19:40.316421Z"
     }
    },
    "outputs": [
@@ -528,13 +528,13 @@
   {
    "cell_type": "code",
    "execution_count": 12,
-   "id": "e40e2eb1",
+   "id": "a2f09276",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-07-12T11:28:52.586582Z",
-     "iopub.status.busy": "2023-07-12T11:28:52.586307Z",
-     "iopub.status.idle": "2023-07-12T11:28:53.373352Z",
-     "shell.execute_reply": "2023-07-12T11:28:53.372728Z"
+     "iopub.execute_input": "2023-08-07T12:19:40.318992Z",
+     "iopub.status.busy": "2023-08-07T12:19:40.318758Z",
+     "iopub.status.idle": "2023-08-07T12:19:41.042070Z",
+     "shell.execute_reply": "2023-08-07T12:19:41.041536Z"
     }
    },
    "outputs": [
@@ -559,7 +559,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d61bce62",
+   "id": "6f4a4e08",
    "metadata": {},
    "source": [
     "## References\n",
@@ -589,7 +589,7 @@
    "name": "python",
    "nbconvert_exporter": "python",
    "pygments_lexer": "ipython3",
-   "version": "3.10.12"
+   "version": "3.11.4"
   }
  },
  "nbformat": 4,

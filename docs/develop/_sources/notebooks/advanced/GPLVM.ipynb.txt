@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "9d3ed0af",
+   "id": "a1929a82",
    "metadata": {},
    "source": [
     "# Bayesian Gaussian process latent variable model (Bayesian GPLVM)\n",
@@ -12,13 +12,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "6c5ffdf7",
+   "id": "aa0f54d1",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-07-12T11:23:19.619443Z",
-     "iopub.status.busy": "2023-07-12T11:23:19.618985Z",
-     "iopub.status.idle": "2023-07-12T11:23:24.896860Z",
-     "shell.execute_reply": "2023-07-12T11:23:24.895911Z"
+     "iopub.execute_input": "2023-08-07T12:11:53.981257Z",
+     "iopub.status.busy": "2023-08-07T12:11:53.981019Z",
+     "iopub.status.idle": "2023-08-07T12:11:58.513994Z",
+     "shell.execute_reply": "2023-08-07T12:11:58.513410Z"
     }
    },
    "outputs": [
@@ -26,7 +26,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2023-07-12 11:23:21.660927: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT\n"
+      "2023-08-07 12:11:55.788703: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT\n"
      ]
     }
    ],
@@ -52,7 +52,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "c9ffbecf",
+   "id": "e4ba723e",
    "metadata": {},
    "source": [
     "## Data\n",
@@ -62,13 +62,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "cdbf1670",
+   "id": "d21e7493",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-07-12T11:23:24.901462Z",
-     "iopub.status.busy": "2023-07-12T11:23:24.900772Z",
-     "iopub.status.idle": "2023-07-12T11:23:24.906175Z",
-     "shell.execute_reply": "2023-07-12T11:23:24.905394Z"
+     "iopub.execute_input": "2023-08-07T12:11:58.516898Z",
+     "iopub.status.busy": "2023-08-07T12:11:58.516319Z",
+     "iopub.status.idle": "2023-08-07T12:11:58.520797Z",
+     "shell.execute_reply": "2023-08-07T12:11:58.520358Z"
     }
    },
    "outputs": [],
@@ -78,7 +78,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "01b69447",
+   "id": "2416227d",
    "metadata": {},
    "source": [
     "Following the GPflow notation we assume this dataset has a shape of `[num_data, output_dim]`"
@@ -87,13 +87,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "40afbb1a",
+   "id": "4fe1e9bc",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-07-12T11:23:24.909995Z",
-     "iopub.status.busy": "2023-07-12T11:23:24.909602Z",
-     "iopub.status.idle": "2023-07-12T11:23:24.957839Z",
-     "shell.execute_reply": "2023-07-12T11:23:24.956992Z"
+     "iopub.execute_input": "2023-08-07T12:11:58.523222Z",
+     "iopub.status.busy": "2023-08-07T12:11:58.522739Z",
+     "iopub.status.idle": "2023-08-07T12:11:58.563860Z",
+     "shell.execute_reply": "2023-08-07T12:11:58.563302Z"
     }
    },
    "outputs": [],
@@ -103,7 +103,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "f864f9de",
+   "id": "b9ea3e18",
    "metadata": {},
    "source": [
     "Integer in $[0, 2]$ indicating to which class the data point belongs (shape `[num_data,]`). Not used for model fitting, only for plotting afterwards."
@@ -112,13 +112,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "50180f70",
+   "id": "c87e0dae",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-07-12T11:23:24.961636Z",
-     "iopub.status.busy": "2023-07-12T11:23:24.961018Z",
-     "iopub.status.idle": "2023-07-12T11:23:24.967842Z",
-     "shell.execute_reply": "2023-07-12T11:23:24.967081Z"
+     "iopub.execute_input": "2023-08-07T12:11:58.566428Z",
+     "iopub.status.busy": "2023-08-07T12:11:58.566167Z",
+     "iopub.status.idle": "2023-08-07T12:11:58.570870Z",
+     "shell.execute_reply": "2023-08-07T12:11:58.570393Z"
     }
    },
    "outputs": [],
@@ -129,13 +129,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "7cf7a60c",
+   "id": "320457c0",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-07-12T11:23:24.971204Z",
-     "iopub.status.busy": "2023-07-12T11:23:24.970506Z",
-     "iopub.status.idle": "2023-07-12T11:23:24.975594Z",
-     "shell.execute_reply": "2023-07-12T11:23:24.974777Z"
+     "iopub.execute_input": "2023-08-07T12:11:58.572886Z",
+     "iopub.status.busy": "2023-08-07T12:11:58.572642Z",
+     "iopub.status.idle": "2023-08-07T12:11:58.575689Z",
+     "shell.execute_reply": "2023-08-07T12:11:58.575251Z"
     }
    },
    "outputs": [
@@ -157,7 +157,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "53848a58",
+   "id": "1faa046f",
    "metadata": {},
    "source": [
     "## Model construction\n",
@@ -168,13 +168,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "a9c2aa35",
+   "id": "8473bfcb",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-07-12T11:23:24.979605Z",
-     "iopub.status.busy": "2023-07-12T11:23:24.978965Z",
-     "iopub.status.idle": "2023-07-12T11:23:24.983468Z",
-     "shell.execute_reply": "2023-07-12T11:23:24.982555Z"
+     "iopub.execute_input": "2023-08-07T12:11:58.577733Z",
+     "iopub.status.busy": "2023-08-07T12:11:58.577479Z",
+     "iopub.status.idle": "2023-08-07T12:11:58.580135Z",
+     "shell.execute_reply": "2023-08-07T12:11:58.579704Z"
     }
    },
    "outputs": [],
@@ -186,7 +186,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "94259fcd",
+   "id": "b2d4b9cb",
    "metadata": {},
    "source": [
     "Initialize via PCA:"
@@ -195,13 +195,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "19878e50",
+   "id": "a75bb0f1",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-07-12T11:23:24.987501Z",
-     "iopub.status.busy": "2023-07-12T11:23:24.987086Z",
-     "iopub.status.idle": "2023-07-12T11:23:25.040663Z",
-     "shell.execute_reply": "2023-07-12T11:23:25.039751Z"
+     "iopub.execute_input": "2023-08-07T12:11:58.582023Z",
+     "iopub.status.busy": "2023-08-07T12:11:58.581806Z",
+     "iopub.status.idle": "2023-08-07T12:11:58.631674Z",
+     "shell.execute_reply": "2023-08-07T12:11:58.631151Z"
     }
    },
    "outputs": [],
@@ -212,7 +212,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "370f2e0b",
+   "id": "5124474a",
    "metadata": {},
    "source": [
     "Pick inducing inputs randomly from dataset initialization:"
@@ -221,13 +221,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "82a77126",
+   "id": "da122c36",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-07-12T11:23:25.043679Z",
-     "iopub.status.busy": "2023-07-12T11:23:25.043369Z",
-     "iopub.status.idle": "2023-07-12T11:23:25.047636Z",
-     "shell.execute_reply": "2023-07-12T11:23:25.046909Z"
+     "iopub.execute_input": "2023-08-07T12:11:58.634186Z",
+     "iopub.status.busy": "2023-08-07T12:11:58.634000Z",
+     "iopub.status.idle": "2023-08-07T12:11:58.637314Z",
+     "shell.execute_reply": "2023-08-07T12:11:58.636847Z"
     }
    },
    "outputs": [],
@@ -241,7 +241,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "0461659f",
+   "id": "3ce4fbba",
    "metadata": {},
    "source": [
     "We construct a Squared Exponential (SE) kernel operating on the two-dimensional latent space.\n",
@@ -252,13 +252,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "352f8845",
+   "id": "2baea900",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-07-12T11:23:25.050233Z",
-     "iopub.status.busy": "2023-07-12T11:23:25.049945Z",
-     "iopub.status.idle": "2023-07-12T11:23:25.093044Z",
-     "shell.execute_reply": "2023-07-12T11:23:25.092186Z"
+     "iopub.execute_input": "2023-08-07T12:11:58.639379Z",
+     "iopub.status.busy": "2023-08-07T12:11:58.639208Z",
+     "iopub.status.idle": "2023-08-07T12:11:58.674353Z",
+     "shell.execute_reply": "2023-08-07T12:11:58.673671Z"
     }
    },
    "outputs": [],
@@ -269,7 +269,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "c1740aba",
+   "id": "a4f7caaf",
    "metadata": {},
    "source": [
     "We have all the necessary ingredients to construct the model. GPflow contains an implementation of the Bayesian GPLVM:"
@@ -278,13 +278,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "705bef89",
+   "id": "b3a0e8a9",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-07-12T11:23:25.097100Z",
-     "iopub.status.busy": "2023-07-12T11:23:25.096404Z",
-     "iopub.status.idle": "2023-07-12T11:23:25.140943Z",
-     "shell.execute_reply": "2023-07-12T11:23:25.140311Z"
+     "iopub.execute_input": "2023-08-07T12:11:58.676767Z",
+     "iopub.status.busy": "2023-08-07T12:11:58.676536Z",
+     "iopub.status.idle": "2023-08-07T12:11:58.712054Z",
+     "shell.execute_reply": "2023-08-07T12:11:58.711368Z"
     }
    },
    "outputs": [],
@@ -301,7 +301,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "8a296a98",
+   "id": "f7c3bfd1",
    "metadata": {},
    "source": [
     "We change the default likelihood variance, which is 1, to 0.01."
@@ -310,13 +310,13 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "6bacef46",
+   "id": "93ba97b3",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-07-12T11:23:25.144705Z",
-     "iopub.status.busy": "2023-07-12T11:23:25.144390Z",
-     "iopub.status.idle": "2023-07-12T11:23:25.154996Z",
-     "shell.execute_reply": "2023-07-12T11:23:25.154280Z"
+     "iopub.execute_input": "2023-08-07T12:11:58.714453Z",
+     "iopub.status.busy": "2023-08-07T12:11:58.714225Z",
+     "iopub.status.idle": "2023-08-07T12:11:58.723415Z",
+     "shell.execute_reply": "2023-08-07T12:11:58.722834Z"
     }
    },
    "outputs": [
@@ -337,7 +337,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d7ed9c6f",
+   "id": "2cf87995",
    "metadata": {},
    "source": [
     "Next we optimize the created model. Given that this model has a deterministic evidence lower bound (ELBO), we can use SciPy's BFGS optimizer."
@@ -346,13 +346,13 @@
   {
    "cell_type": "code",
    "execution_count": 12,
-   "id": "80a24cb8",
+   "id": "9919f2c6",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-07-12T11:23:25.157675Z",
-     "iopub.status.busy": "2023-07-12T11:23:25.157389Z",
-     "iopub.status.idle": "2023-07-12T11:28:33.993300Z",
-     "shell.execute_reply": "2023-07-12T11:28:33.992638Z"
+     "iopub.execute_input": "2023-08-07T12:11:58.725427Z",
+     "iopub.status.busy": "2023-08-07T12:11:58.725211Z",
+     "iopub.status.idle": "2023-08-07T12:14:30.087987Z",
+     "shell.execute_reply": "2023-08-07T12:14:30.087410Z"
     }
    },
    "outputs": [],
@@ -369,7 +369,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "4410b776",
+   "id": "a15c9a30",
    "metadata": {},
    "source": [
     "## Model analysis\n",
@@ -379,13 +379,13 @@
   {
    "cell_type": "code",
    "execution_count": 13,
-   "id": "04a07976",
+   "id": "8291207b",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-07-12T11:28:33.996365Z",
-     "iopub.status.busy": "2023-07-12T11:28:33.996055Z",
-     "iopub.status.idle": "2023-07-12T11:28:34.012517Z",
-     "shell.execute_reply": "2023-07-12T11:28:34.011968Z"
+     "iopub.execute_input": "2023-08-07T12:14:30.090718Z",
+     "iopub.status.busy": "2023-08-07T12:14:30.090449Z",
+     "iopub.status.idle": "2023-08-07T12:14:30.106119Z",
+     "shell.execute_reply": "2023-08-07T12:14:30.105609Z"
     }
    },
    "outputs": [
@@ -420,7 +420,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "5c65c6e8",
+   "id": "e1fe0c5f",
    "metadata": {},
    "source": [
     "## Plotting vs. Principle Component Analysis (PCA)\n",
@@ -431,13 +431,13 @@
   {
    "cell_type": "code",
    "execution_count": 14,
-   "id": "38bdbce0",
+   "id": "825684a8",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-07-12T11:28:34.015054Z",
-     "iopub.status.busy": "2023-07-12T11:28:34.014801Z",
-     "iopub.status.idle": "2023-07-12T11:28:34.430503Z",
-     "shell.execute_reply": "2023-07-12T11:28:34.429943Z"
+     "iopub.execute_input": "2023-08-07T12:14:30.108252Z",
+     "iopub.status.busy": "2023-08-07T12:14:30.108027Z",
+     "iopub.status.idle": "2023-08-07T12:14:30.470575Z",
+     "shell.execute_reply": "2023-08-07T12:14:30.470070Z"
     }
    },
    "outputs": [
@@ -469,7 +469,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ce8bf569",
+   "id": "b51108ca",
    "metadata": {},
    "source": [
     "## References\n",
@@ -500,7 +500,7 @@
    "name": "python",
    "nbconvert_exporter": "python",
    "pygments_lexer": "ipython3",
-   "version": "3.10.12"
+   "version": "3.11.4"
   }
  },
  "nbformat": 4,
