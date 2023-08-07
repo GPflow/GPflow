@@ -50,10 +50,9 @@ manager :func:`as_context`:
 """
 
 import contextlib
-import enum
 import os
 from dataclasses import dataclass, field, replace
-from typing import Any, Dict, Generator, List, Mapping, Optional, Tuple, Union
+from typing import Any, Dict, Generator, List, Mapping, Optional, Union
 
 import numpy as np
 import tabulate
