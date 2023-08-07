@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Callable, Iterable, Mapping, Sequence
+from typing import Any, Callable, Iterable, Mapping, Optional, Sequence
 
 import numpy as np
 import pytest
@@ -128,9 +128,9 @@ def inducing_variable() -> iv.InducingVariables:
     return iv.InducingPoints(Z)
 
 
-def _check(params: Iterable[Any]) -> None:
+def _check(params: Iterable[Any], nghp: Optional[int] = None) -> None:
     analytic = expectation(*params)
-    quad = quadrature_expectation(*params)
+    quad = quadrature_expectation(*params, nghp=nghp)  # type: ignore[misc]
     assert_allclose(analytic, quad, rtol=RTOL)
 
 
@@ -302,7 +302,7 @@ def test_exKxz_markov(
     mean: mf.MeanFunction,
     inducing_variable: iv.InducingVariables,
 ) -> None:
-    _check((distribution, (kernel, inducing_variable), mean))
+    _check((distribution, (kernel, inducing_variable), mean), nghp=20)
 
 
 @pytest.mark.parametrize("distribution", distrs("dirac_markov_gauss"))
