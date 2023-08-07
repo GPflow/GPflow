@@ -249,7 +249,7 @@ class Scipy:
     def callback_func(
         cls, variables: Sequence[tf.Variable], step_callback: StepCallback
     ) -> Callable[[AnyNDArray], None]:
-        """Convert a step_callback function to a Scipy callback function."""
+        # Convert a step_callback function to a Scipy callback function
         step: int = 0
 
         def _callback(x: AnyNDArray) -> None:
@@ -272,14 +272,8 @@ class Scipy:
         history: List[AnyNDArray],
         callback: Optional[Callable[[AnyNDArray], None]] = None,
     ) -> Callable[[AnyNDArray], None]:
-        """Return a Scipy callback function that tracks loss history, optionally combined
-        with another callback.
-
-        :param minimize_func: Function to be minimized returning loss, grad.
-        :param history: List to append loss history to.
-        :param callback: Optional additional Scipy callback to execute.
-        :return: Loss history callback function.
-        """
+        # Return a Scipy callback function that tracks loss history, optionally combined
+        # with another callback.
 
         def _callback(x: AnyNDArray) -> None:
             if callback is not None:

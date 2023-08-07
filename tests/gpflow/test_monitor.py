@@ -351,6 +351,7 @@ def test_scipy_loss_history(model: GPModel) -> None:
     res = opt.minimize(model.training_loss, model.trainable_variables, track_loss_history=True)
     assert res.nit == len(res.loss_history) > 1
     assert res.loss_history[0] > res.loss_history[-1]
+    assert res.loss_history[-1] == res.fun == model.training_loss()
 
 
 def test_scipy_step_callback_called_with_history(model: GPModel) -> None:
