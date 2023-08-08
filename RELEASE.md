@@ -68,7 +68,7 @@ This release contains contributions from:
 
 # Release 2.9.0
 
-This release adds cacheing of compiled graphs inside the Scipy optimizer, and adds support
+This release adds caching of compiled graphs inside the Scipy optimizer, and adds support
 for returning loss history. It also adds supports for Python 3.11.
 
 ## Major Features and Improvements
