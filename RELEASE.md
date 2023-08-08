@@ -50,13 +50,12 @@ This release contains contributions from:
 
 ## Major Features and Improvements
 
-* <INSERT MAJOR FEATURE HERE, USING MARKDOWN SYNTAX>
-* <IF RELEASE CONTAINS MULTIPLE FEATURES FROM SAME AREA, GROUP THEM TOGETHER>
+* Support returning loss history with Scipy optimizer. 
+* Scipy minimize wrapper caches compiled graphs and re-uses them if called with the same arguments.
+  This functionality can be disabled by setting the new `compile_cache_size` argument to 0.
 
 ## Bug Fixes and Other Changes
 
-* Scipy minimize wrapper caches compiled graphs and re-uses them if called with the same arguments.
-  This functionality can be disabled by setting the new `compile_cache_size` argument to 0. (#2074)
 * Support and test with Python 3.11
 * Test against a 'production' environment (in addition to 'min' and 'max' environments).
 
@@ -64,7 +63,7 @@ This release contains contributions from:
 
 This release contains contributions from:
 
-khurram-ghani, jesnie
+khurram-ghani, jesnie, uri-granta
 
 
 # Release 2.8.1
