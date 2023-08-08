@@ -57,6 +57,7 @@ This release contains contributions from:
 ## Bug Fixes and Other Changes
 
 * Support and test with Python 3.11
+* Test against a 'production' environment (in addition to 'min' and 'max' environments).
 
 ## Thanks to our Contributors
 

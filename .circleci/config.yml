@@ -4,24 +4,36 @@ parameters:
   min_py_ver:
     type: string
     default: "3.7"
+  prod_py_ver:
+    type: string
+    default: "3.10"
   max_py_ver:
     type: string
     default: "3.11"
   min_tf_ver:
     type: string
     default: "2.4.0"
+  prod_tf_ver:
+    type: string
+    default: "2.8.4"
   max_tf_ver:
     type: string
     default: "2.12.0"
   min_tfp_ver:
     type: string
     default: "0.12.0"
+  prod_tfp_ver:
+    type: string
+    default: "0.16.0"
   max_tfp_ver:
     type: string
     default: "0.20.0"
   min_venv_dir:
     type: string
     default: min_venv
+  prod_venv_dir:
+    type: string
+    default: prod_venv
   max_venv_dir:
     type: string
     default: max_venv
@@ -442,6 +454,15 @@ workflows:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - install_gpflow:
+          name: install_gpflow_prod
+          py_ver: <<pipeline.parameters.prod_py_ver>>
+          tf_ver: <<pipeline.parameters.prod_tf_ver>>
+          tfp_ver: <<pipeline.parameters.prod_tfp_ver>>
+          venv_dir: <<pipeline.parameters.prod_venv_dir>>
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
+      - install_gpflow:
           name: install_gpflow_max
           py_ver: <<pipeline.parameters.max_py_ver>>
           tf_ver: <<pipeline.parameters.max_tf_ver>>
@@ -456,6 +477,15 @@ workflows:
           venv_dir: <<pipeline.parameters.min_venv_dir>>
           requires:
             - install_gpflow_min
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
+      - verify-install:
+          name: verify-install-prod
+          py_ver: <<pipeline.parameters.prod_py_ver>>
+          venv_dir: <<pipeline.parameters.prod_venv_dir>>
+          requires:
+            - install_gpflow_prod
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
@@ -478,6 +508,15 @@ workflows:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - type-check:
+          name: type-check-prod
+          py_ver: <<pipeline.parameters.prod_py_ver>>
+          venv_dir: <<pipeline.parameters.prod_venv_dir>>
+          requires:
+            - install_gpflow_prod
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
+      - type-check:
           name: type-check-max
           py_ver: <<pipeline.parameters.max_py_ver>>
           venv_dir: <<pipeline.parameters.max_venv_dir>>
@@ -492,6 +531,15 @@ workflows:
           venv_dir: <<pipeline.parameters.min_venv_dir>>
           requires:
             - install_gpflow_min
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
+      - format-check:
+          name: format-check-prod
+          py_ver: <<pipeline.parameters.prod_py_ver>>
+          venv_dir: <<pipeline.parameters.prod_venv_dir>>
+          requires:
+            - install_gpflow_prod
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
@@ -514,10 +562,13 @@ workflows:
           name: fast-tests
           requires:
             - verify-install-min
+            - verify-install-prod
             - verify-install-max
             - type-check-min
+            - type-check-prod
             - type-check-max
             - format-check-min
+            - format-check-prod
             - format-check-max
             - docs-test
           filters:
@@ -529,6 +580,16 @@ workflows:
           venv_dir: <<pipeline.parameters.min_venv_dir>>
           requires:
             - install_gpflow_min
+            - fast-tests
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
+      - unit-test:
+          name: unit-test-prod
+          py_ver: <<pipeline.parameters.prod_py_ver>>
+          venv_dir: <<pipeline.parameters.prod_venv_dir>>
+          requires:
+            - install_gpflow_prod
             - fast-tests
           filters:
             tags:
@@ -554,6 +615,16 @@ workflows:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - notebook-test:
+          name: notebook-test-prod
+          py_ver: <<pipeline.parameters.prod_py_ver>>
+          venv_dir: <<pipeline.parameters.prod_venv_dir>>
+          requires:
+            - install_gpflow_prod
+            - fast-tests
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
+      - notebook-test:
           name: notebook-test-max
           py_ver: <<pipeline.parameters.max_py_ver>>
           venv_dir: <<pipeline.parameters.max_venv_dir>>
@@ -568,8 +639,10 @@ workflows:
           requires:
             - fast-tests
             - unit-test-min
+            - unit-test-prod
             - unit-test-max
             - notebook-test-min
+            - notebook-test-prod
             - notebook-test-max
           filters:
             tags:
