@@ -77,6 +77,7 @@ class Scipy:
         compile: bool = True,
         allow_unused_variables: bool = False,
         tf_fun_args: Optional[Mapping[str, Any]] = None,
+        track_loss_history: bool = False,
         **scipy_kwargs: Any,
     ) -> OptimizeResult:
         """
@@ -105,6 +106,8 @@ class Scipy:
 
                 opt = gpflow.optimizers.Scipy()
                 opt.minimize(..., compile=True, tf_fun_args=dict(jit_compile=True))
+        :param track_loss_history: Whether to track the training loss history and return it in
+            the optimization result.
         :param scipy_kwargs: Arguments passed through to `scipy.optimize.minimize`.
             Note that Scipy's minimize() takes a `callback` argument, but you probably want to use
             our wrapper and pass in `step_callback`.
@@ -135,16 +138,24 @@ class Scipy:
             allow_unused_variables=allow_unused_variables,
             tf_fun_args=tf_fun_args,
         )
+
         if step_callback is not None:
             if "callback" in scipy_kwargs:
                 raise ValueError("Callback passed both via `step_callback` and `callback`")
-
             callback = self.callback_func(variables, step_callback)
-            scipy_kwargs.update(dict(callback=callback))
+            scipy_kwargs["callback"] = callback
+        history: List[AnyNDArray] = []
+        if track_loss_history:
+            callback = self.loss_history_callback_func(func, history, scipy_kwargs.get("callback"))
+            scipy_kwargs["callback"] = callback
 
         opt_result = scipy.optimize.minimize(
             func, initial_params, jac=True, method=method, **scipy_kwargs
         )
+
+        if track_loss_history:
+            opt_result["loss_history"] = history
+
         values = self.unpack_tensors(variables, opt_result.x)
         self.assign_tensors(variables, values)
         return opt_result
@@ -238,7 +249,8 @@ class Scipy:
     def callback_func(
         cls, variables: Sequence[tf.Variable], step_callback: StepCallback
     ) -> Callable[[AnyNDArray], None]:
-        step = 0  # type: int
+        # Convert a step_callback function to a Scipy callback function
+        step: int = 0
 
         def _callback(x: AnyNDArray) -> None:
             nonlocal step
@@ -250,6 +262,23 @@ class Scipy:
                 step_callback(step, variables, values)
 
             step += 1
+
+        return _callback
+
+    @classmethod
+    def loss_history_callback_func(
+        cls,
+        minimize_func: Callable[[AnyNDArray], Tuple[AnyNDArray, AnyNDArray]],
+        history: List[AnyNDArray],
+        callback: Optional[Callable[[AnyNDArray], None]] = None,
+    ) -> Callable[[AnyNDArray], None]:
+        # Return a Scipy callback function that tracks loss history, optionally combined
+        # with another callback.
+
+        def _callback(x: AnyNDArray) -> None:
+            if callback is not None:
+                callback(x)
+            history.append(minimize_func(x)[0])
 
         return _callback
 
