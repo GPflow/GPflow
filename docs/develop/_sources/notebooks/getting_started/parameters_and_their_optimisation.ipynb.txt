@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "65905d6f",
+   "id": "84fc1e91",
    "metadata": {},
    "source": [
     "# Parameters and Their Optimisation\n",
@@ -15,13 +15,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "7782140f",
+   "id": "757bb788",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:15:36.573942Z",
-     "iopub.status.busy": "2023-08-07T12:15:36.573522Z",
-     "iopub.status.idle": "2023-08-07T12:15:40.724146Z",
-     "shell.execute_reply": "2023-08-07T12:15:40.723653Z"
+     "iopub.execute_input": "2023-08-08T08:07:12.749037Z",
+     "iopub.status.busy": "2023-08-08T08:07:12.748804Z",
+     "iopub.status.idle": "2023-08-08T08:07:16.799930Z",
+     "shell.execute_reply": "2023-08-08T08:07:16.799401Z"
     }
    },
    "outputs": [],
@@ -41,7 +41,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "621caa97",
+   "id": "22f3f3cf",
    "metadata": {},
    "source": [
     "## The Module and Parameter classes"
@@ -49,7 +49,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "1faa7480",
+   "id": "cb7e7524",
    "metadata": {},
    "source": [
     "The two fundamental classes of GPflow are:\n",
@@ -62,13 +62,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "98c8a806",
+   "id": "495aa78d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:15:40.726937Z",
-     "iopub.status.busy": "2023-08-07T12:15:40.726562Z",
-     "iopub.status.idle": "2023-08-07T12:15:40.731449Z",
-     "shell.execute_reply": "2023-08-07T12:15:40.731026Z"
+     "iopub.execute_input": "2023-08-08T08:07:16.802717Z",
+     "iopub.status.busy": "2023-08-08T08:07:16.802353Z",
+     "iopub.status.idle": "2023-08-08T08:07:16.807495Z",
+     "shell.execute_reply": "2023-08-08T08:07:16.807051Z"
     }
    },
    "outputs": [],
@@ -95,7 +95,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "41751cf2",
+   "id": "95a92b43",
    "metadata": {},
    "source": [
     "Notice that in ``__init__`` we directly pass data to the parameters. The `Parameter` class takes many arguments (which we will discuss below), but it is reasonably intelligent as in: We can pass it \"raw\" numerical values with a Python list, a NumPy array, or a TensorFlow tensor; or we can pass it another `Parameter` and it will take values from that. Being able to pass a `Parameter` to ``__init__`` gives us a convenient way to configure the parameter in detail."
@@ -103,7 +103,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "07fbeec1",
+   "id": "37193a8d",
    "metadata": {},
    "source": [
     "### Inspecting parameters\n",
@@ -114,13 +114,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "cb9f7a1a",
+   "id": "29bff190",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:15:40.733592Z",
-     "iopub.status.busy": "2023-08-07T12:15:40.733173Z",
-     "iopub.status.idle": "2023-08-07T12:15:40.764021Z",
-     "shell.execute_reply": "2023-08-07T12:15:40.763144Z"
+     "iopub.execute_input": "2023-08-08T08:07:16.809489Z",
+     "iopub.status.busy": "2023-08-08T08:07:16.809322Z",
+     "iopub.status.idle": "2023-08-08T08:07:16.840507Z",
+     "shell.execute_reply": "2023-08-08T08:07:16.839980Z"
     }
    },
    "outputs": [],
@@ -130,7 +130,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7de7204b",
+   "id": "5de824f7",
    "metadata": {},
    "source": [
     "We can use the GPflow utility functions `print_summary` to see a summary of anything extending the GPflow `Module`:"
@@ -139,13 +139,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "09ab4756",
+   "id": "1b5569f9",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:15:40.767837Z",
-     "iopub.status.busy": "2023-08-07T12:15:40.767451Z",
-     "iopub.status.idle": "2023-08-07T12:15:40.778585Z",
-     "shell.execute_reply": "2023-08-07T12:15:40.778078Z"
+     "iopub.execute_input": "2023-08-08T08:07:16.842834Z",
+     "iopub.status.busy": "2023-08-08T08:07:16.842589Z",
+     "iopub.status.idle": "2023-08-08T08:07:16.850527Z",
+     "shell.execute_reply": "2023-08-08T08:07:16.850006Z"
     }
    },
    "outputs": [
@@ -170,7 +170,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "86f69965",
+   "id": "2d05180a",
    "metadata": {},
    "source": [
     "Looking at the output of `print_summary`. The `name` and `class` columns should be obvious if you're familiar with Python. We're also assuming that you're comfortable with NumPy and TensorFlow so the last three columns `shape`, `dtype`, and `value` should also be obvious. The three middle columns `transform`, `prior` and `trainable` will be explained below."
@@ -178,7 +178,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "48918107",
+   "id": "18f3b7e9",
    "metadata": {},
    "source": [
     "We generally recommend printing your parameter values after model traning, to sanity check them, and to develop a feel for what parameters are a good fit for your data."
@@ -186,7 +186,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e275a841",
+   "id": "29b7fa5b",
    "metadata": {},
    "source": [
     "`print_summary` has nice integration with Jupyter Notebooks:"
@@ -195,13 +195,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "ff93e215",
+   "id": "4bc1c67f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:15:40.780915Z",
-     "iopub.status.busy": "2023-08-07T12:15:40.780564Z",
-     "iopub.status.idle": "2023-08-07T12:15:40.786618Z",
-     "shell.execute_reply": "2023-08-07T12:15:40.786206Z"
+     "iopub.execute_input": "2023-08-08T08:07:16.853144Z",
+     "iopub.status.busy": "2023-08-08T08:07:16.852936Z",
+     "iopub.status.idle": "2023-08-08T08:07:16.859082Z",
+     "shell.execute_reply": "2023-08-08T08:07:16.858634Z"
     }
    },
    "outputs": [
@@ -233,7 +233,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "26f0aec0",
+   "id": "b7c60fbb",
    "metadata": {},
    "source": [
     "And we can configure GPflow to use the `notebook` format by default:"
@@ -242,13 +242,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "f04e0f43",
+   "id": "908377d4",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:15:40.788522Z",
-     "iopub.status.busy": "2023-08-07T12:15:40.788319Z",
-     "iopub.status.idle": "2023-08-07T12:15:40.793174Z",
-     "shell.execute_reply": "2023-08-07T12:15:40.792786Z"
+     "iopub.execute_input": "2023-08-08T08:07:16.861194Z",
+     "iopub.status.busy": "2023-08-08T08:07:16.860957Z",
+     "iopub.status.idle": "2023-08-08T08:07:16.866266Z",
+     "shell.execute_reply": "2023-08-08T08:07:16.865845Z"
     }
    },
    "outputs": [
@@ -281,7 +281,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "1296092b",
+   "id": "3cc6f3e4",
    "metadata": {},
    "source": [
     "Alternatively `Module`s know how to print themselves nicely in a notebook:"
@@ -290,20 +290,20 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "faddc1ca",
+   "id": "5a762a8f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:15:40.795074Z",
-     "iopub.status.busy": "2023-08-07T12:15:40.794870Z",
-     "iopub.status.idle": "2023-08-07T12:15:40.801256Z",
-     "shell.execute_reply": "2023-08-07T12:15:40.800863Z"
+     "iopub.execute_input": "2023-08-08T08:07:16.868129Z",
+     "iopub.status.busy": "2023-08-08T08:07:16.867965Z",
+     "iopub.status.idle": "2023-08-08T08:07:16.874672Z",
+     "shell.execute_reply": "2023-08-08T08:07:16.874190Z"
     }
    },
    "outputs": [
     {
      "data": {
       "text/html": [
-       "&lt;__main__.LinearModel object at 0x7f4cc2218350&gt;\n",
+       "&lt;__main__.LinearModel object at 0x7fc2b74a43d0&gt;\n",
        "<table>\n",
        "<thead>\n",
        "<tr><th>name             </th><th>class    </th><th>transform  </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th>value  </th></tr>\n",
@@ -316,7 +316,7 @@
        "</table>"
       ],
       "text/plain": [
-       "<__main__.LinearModel object at 0x7f4cc2218350>\n",
+       "<__main__.LinearModel object at 0x7fc2b74a43d0>\n",
        "name               class      transform    prior    trainable    shape    dtype    value\n",
        "-----------------  ---------  -----------  -------  -----------  -------  -------  -------\n",
        "LinearModel.slope  Parameter  Identity              True         (2, 1)   float64  [[1.]\n",
@@ -335,7 +335,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7914b00d",
+   "id": "c6585671",
    "metadata": {},
    "source": [
     "Finally, a `Module` has two properties that allows easy access to its leaf parameters:"
@@ -344,13 +344,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "d6d56dd4",
+   "id": "9734b711",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:15:40.803072Z",
-     "iopub.status.busy": "2023-08-07T12:15:40.802872Z",
-     "iopub.status.idle": "2023-08-07T12:15:40.808434Z",
-     "shell.execute_reply": "2023-08-07T12:15:40.808034Z"
+     "iopub.execute_input": "2023-08-08T08:07:16.876707Z",
+     "iopub.status.busy": "2023-08-08T08:07:16.876542Z",
+     "iopub.status.idle": "2023-08-08T08:07:16.883374Z",
+     "shell.execute_reply": "2023-08-08T08:07:16.882912Z"
     }
    },
    "outputs": [
@@ -375,13 +375,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "9ea2c954",
+   "id": "a3d34c9b",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:15:40.810318Z",
-     "iopub.status.busy": "2023-08-07T12:15:40.810119Z",
-     "iopub.status.idle": "2023-08-07T12:15:40.814537Z",
-     "shell.execute_reply": "2023-08-07T12:15:40.814141Z"
+     "iopub.execute_input": "2023-08-08T08:07:16.885464Z",
+     "iopub.status.busy": "2023-08-08T08:07:16.885251Z",
+     "iopub.status.idle": "2023-08-08T08:07:16.890562Z",
+     "shell.execute_reply": "2023-08-08T08:07:16.890124Z"
     }
    },
    "outputs": [
@@ -405,7 +405,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "c2417487",
+   "id": "0d6576b5",
    "metadata": {},
    "source": [
     "The difference between trainable and non-trainable parameters will be explained further below. For now you may notice that both our parameters are marked \"trainable\" in the `print_summary` output, and both of them are returned by `.trainable_parameters`."
@@ -413,7 +413,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "0c696a29",
+   "id": "88d8b723",
    "metadata": {},
    "source": [
     "Generally you should use `print_summary` to manually inspect your models, and `.parameters` and `.trainable_parameters` if you need programmatic access."
@@ -421,7 +421,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7a953163",
+   "id": "f61b4319",
    "metadata": {},
    "source": [
     "### Setting parameters"
@@ -429,7 +429,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "237be35c",
+   "id": "da59fde2",
    "metadata": {},
    "source": [
     "Parameters have a `.assign` method you can use to set them:"
@@ -438,13 +438,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "a52c7ee2",
+   "id": "cef49420",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:15:40.816454Z",
-     "iopub.status.busy": "2023-08-07T12:15:40.816256Z",
-     "iopub.status.idle": "2023-08-07T12:15:40.822467Z",
-     "shell.execute_reply": "2023-08-07T12:15:40.822062Z"
+     "iopub.execute_input": "2023-08-08T08:07:16.892814Z",
+     "iopub.status.busy": "2023-08-08T08:07:16.892600Z",
+     "iopub.status.idle": "2023-08-08T08:07:16.899673Z",
+     "shell.execute_reply": "2023-08-08T08:07:16.899181Z"
     }
    },
    "outputs": [
@@ -477,7 +477,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "1e4309bb",
+   "id": "04bf0113",
    "metadata": {},
    "source": [
     "### Optimisation"
@@ -485,7 +485,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "1fc025d5",
+   "id": "28c29ad3",
    "metadata": {},
    "source": [
     "The objective of optimisation is to change the parameters so that your model fits the data. Generally an optimiser takes a \"loss\" function and a list of parameters, it then changes the parameters to minimise the loss function.\n",
@@ -498,13 +498,13 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "c372dea1",
+   "id": "9974dce4",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:15:40.824405Z",
-     "iopub.status.busy": "2023-08-07T12:15:40.824206Z",
-     "iopub.status.idle": "2023-08-07T12:15:40.826930Z",
-     "shell.execute_reply": "2023-08-07T12:15:40.826524Z"
+     "iopub.execute_input": "2023-08-08T08:07:16.902062Z",
+     "iopub.status.busy": "2023-08-08T08:07:16.901608Z",
+     "iopub.status.idle": "2023-08-08T08:07:16.904737Z",
+     "shell.execute_reply": "2023-08-08T08:07:16.904281Z"
     }
    },
    "outputs": [],
@@ -515,7 +515,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e85a8789",
+   "id": "79d2a44a",
    "metadata": {},
    "source": [
     "Next we need our loss function. A common choice is the mean squared error:"
@@ -524,13 +524,13 @@
   {
    "cell_type": "code",
    "execution_count": 12,
-   "id": "98cf023a",
+   "id": "be9525e0",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:15:40.828828Z",
-     "iopub.status.busy": "2023-08-07T12:15:40.828492Z",
-     "iopub.status.idle": "2023-08-07T12:15:40.831065Z",
-     "shell.execute_reply": "2023-08-07T12:15:40.830671Z"
+     "iopub.execute_input": "2023-08-08T08:07:16.906872Z",
+     "iopub.status.busy": "2023-08-08T08:07:16.906659Z",
+     "iopub.status.idle": "2023-08-08T08:07:16.909500Z",
+     "shell.execute_reply": "2023-08-08T08:07:16.909038Z"
     }
    },
    "outputs": [],
@@ -543,7 +543,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "6098ea9a",
+   "id": "a985ce8f",
    "metadata": {},
    "source": [
     "Be aware that GPflow models come with a loss-function built in &mdash; use `model.training_loss`."
@@ -551,7 +551,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a77ea2c3",
+   "id": "ed97f42d",
    "metadata": {},
    "source": [
     "Now we can plug this into the default GPflow optimiser:"
@@ -560,13 +560,13 @@
   {
    "cell_type": "code",
    "execution_count": 13,
-   "id": "871fa997",
+   "id": "5083553a",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:15:40.832914Z",
-     "iopub.status.busy": "2023-08-07T12:15:40.832681Z",
-     "iopub.status.idle": "2023-08-07T12:15:41.790049Z",
-     "shell.execute_reply": "2023-08-07T12:15:41.789578Z"
+     "iopub.execute_input": "2023-08-08T08:07:16.911601Z",
+     "iopub.status.busy": "2023-08-08T08:07:16.911391Z",
+     "iopub.status.idle": "2023-08-08T08:07:17.839790Z",
+     "shell.execute_reply": "2023-08-08T08:07:17.839315Z"
     }
    },
    "outputs": [
@@ -600,7 +600,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ad3971aa",
+   "id": "04109e3c",
    "metadata": {},
    "source": [
     "Notice how the optimiser recovered the slope of $(2, 3)$ and bias of $1$ from the equation we used to generate the data: $y_i = 2x_{i0} + 3x_{i1} + 1$."
@@ -608,7 +608,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "b6fb95db",
+   "id": "554be247",
    "metadata": {},
    "source": [
     "The default GPflow optimiser uses a gradient descent method called [BFGS](https://en.wikipedia.org/wiki/Broyden%E2%80%93Fletcher%E2%80%93Goldfarb%E2%80%93Shanno_algorithm). For this algoritm to work well you need:\n",
@@ -619,7 +619,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "140753e1",
+   "id": "ee8880f8",
    "metadata": {},
    "source": [
     "## What to do if you model fails to fit\n",
@@ -629,7 +629,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "f5ae51c5",
+   "id": "c8d7f382",
    "metadata": {},
    "source": [
     "### Dataset: $CO_2$ levels\n",
@@ -640,13 +640,13 @@
   {
    "cell_type": "code",
    "execution_count": 14,
-   "id": "a69cf402",
+   "id": "ca2bd981",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:15:41.792059Z",
-     "iopub.status.busy": "2023-08-07T12:15:41.791837Z",
-     "iopub.status.idle": "2023-08-07T12:15:42.244318Z",
-     "shell.execute_reply": "2023-08-07T12:15:42.243700Z"
+     "iopub.execute_input": "2023-08-08T08:07:17.842258Z",
+     "iopub.status.busy": "2023-08-08T08:07:17.841890Z",
+     "iopub.status.idle": "2023-08-08T08:07:18.084741Z",
+     "shell.execute_reply": "2023-08-08T08:07:18.084202Z"
     }
    },
    "outputs": [],
@@ -660,7 +660,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a7cad19c",
+   "id": "29140af8",
    "metadata": {},
    "source": [
     "And we will define some helper functions to train and plot a model with the data:"
@@ -669,13 +669,13 @@
   {
    "cell_type": "code",
    "execution_count": 15,
-   "id": "377a5034",
+   "id": "212d0973",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:15:42.246877Z",
-     "iopub.status.busy": "2023-08-07T12:15:42.246648Z",
-     "iopub.status.idle": "2023-08-07T12:15:42.253460Z",
-     "shell.execute_reply": "2023-08-07T12:15:42.253031Z"
+     "iopub.execute_input": "2023-08-08T08:07:18.087950Z",
+     "iopub.status.busy": "2023-08-08T08:07:18.087719Z",
+     "iopub.status.idle": "2023-08-08T08:07:18.094517Z",
+     "shell.execute_reply": "2023-08-08T08:07:18.094090Z"
     }
    },
    "outputs": [],
@@ -726,7 +726,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "1d576b3c",
+   "id": "587a7265",
    "metadata": {},
    "source": [
     "Let us start by trying to fit our favourite kernel: the squared exponential:"
@@ -735,13 +735,13 @@
   {
    "cell_type": "code",
    "execution_count": 16,
-   "id": "f475a463",
+   "id": "1c4a3a90",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:15:42.255261Z",
-     "iopub.status.busy": "2023-08-07T12:15:42.255059Z",
-     "iopub.status.idle": "2023-08-07T12:15:55.725895Z",
-     "shell.execute_reply": "2023-08-07T12:15:55.725406Z"
+     "iopub.execute_input": "2023-08-08T08:07:18.097057Z",
+     "iopub.status.busy": "2023-08-08T08:07:18.096827Z",
+     "iopub.status.idle": "2023-08-08T08:07:31.858108Z",
+     "shell.execute_reply": "2023-08-08T08:07:31.857443Z"
     }
    },
    "outputs": [
@@ -783,7 +783,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ccc43ced",
+   "id": "6f58affe",
    "metadata": {},
    "source": [
     "We are off to a good start. From the left plot it is clear that the kernel has captured the long-term trend of the data. However, on the zoomed-in plot on the right it is also clear that the data has some kind of yearly cycle that our model has failed to capture.\n",
@@ -794,13 +794,13 @@
   {
    "cell_type": "code",
    "execution_count": 17,
-   "id": "3a73d5d9",
+   "id": "0d2610c7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:15:55.728454Z",
-     "iopub.status.busy": "2023-08-07T12:15:55.728228Z",
-     "iopub.status.idle": "2023-08-07T12:16:11.772539Z",
-     "shell.execute_reply": "2023-08-07T12:16:11.771651Z"
+     "iopub.execute_input": "2023-08-08T08:07:31.861392Z",
+     "iopub.status.busy": "2023-08-08T08:07:31.861072Z",
+     "iopub.status.idle": "2023-08-08T08:07:48.201975Z",
+     "shell.execute_reply": "2023-08-08T08:07:48.201481Z"
     }
    },
    "outputs": [
@@ -849,7 +849,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "6d93746b",
+   "id": "d4bac8ac",
    "metadata": {},
    "source": [
     "Huh. What happened? The optimiser has failed to find a good fit. With the extended model the loss function has become too complicated for the optimiser.\n",
@@ -859,7 +859,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ddb244bf",
+   "id": "e538cb21",
    "metadata": {},
    "source": [
     "### Setting the initial value\n",
@@ -875,13 +875,13 @@
   {
    "cell_type": "code",
    "execution_count": 18,
-   "id": "b1bd3020",
+   "id": "3aa1a48c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:16:11.775567Z",
-     "iopub.status.busy": "2023-08-07T12:16:11.775314Z",
-     "iopub.status.idle": "2023-08-07T12:16:57.884452Z",
-     "shell.execute_reply": "2023-08-07T12:16:57.883775Z"
+     "iopub.execute_input": "2023-08-08T08:07:48.204587Z",
+     "iopub.status.busy": "2023-08-08T08:07:48.204345Z",
+     "iopub.status.idle": "2023-08-08T08:08:34.992534Z",
+     "shell.execute_reply": "2023-08-08T08:08:34.991861Z"
     }
    },
    "outputs": [
@@ -930,7 +930,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "3b24aa78",
+   "id": "7141b819",
    "metadata": {},
    "source": [
     "### Priors\n",
@@ -940,7 +940,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d350e8c1",
+   "id": "6bbe1b67",
    "metadata": {},
    "source": [
     "There are two ways to apply a prior to your parameters. First, you can create the parameter with the prior:"
@@ -949,13 +949,13 @@
   {
    "cell_type": "code",
    "execution_count": 19,
-   "id": "8cf8d1c5",
+   "id": "3d286dc8",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:16:57.887884Z",
-     "iopub.status.busy": "2023-08-07T12:16:57.887659Z",
-     "iopub.status.idle": "2023-08-07T12:16:57.893949Z",
-     "shell.execute_reply": "2023-08-07T12:16:57.893492Z"
+     "iopub.execute_input": "2023-08-08T08:08:34.995552Z",
+     "iopub.status.busy": "2023-08-08T08:08:34.995295Z",
+     "iopub.status.idle": "2023-08-08T08:08:35.002155Z",
+     "shell.execute_reply": "2023-08-08T08:08:35.001353Z"
     }
    },
    "outputs": [],
@@ -965,7 +965,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "98bfe064",
+   "id": "b5ceb8da",
    "metadata": {},
    "source": [
     "Or you can create the parameter first, and then set the prior:"
@@ -974,13 +974,13 @@
   {
    "cell_type": "code",
    "execution_count": 20,
-   "id": "6b797d4b",
+   "id": "b518aae3",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:16:57.895855Z",
-     "iopub.status.busy": "2023-08-07T12:16:57.895515Z",
-     "iopub.status.idle": "2023-08-07T12:16:57.899752Z",
-     "shell.execute_reply": "2023-08-07T12:16:57.899356Z"
+     "iopub.execute_input": "2023-08-08T08:08:35.004581Z",
+     "iopub.status.busy": "2023-08-08T08:08:35.004312Z",
+     "iopub.status.idle": "2023-08-08T08:08:35.009530Z",
+     "shell.execute_reply": "2023-08-08T08:08:35.009031Z"
     }
    },
    "outputs": [],
@@ -991,7 +991,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "1b915b79",
+   "id": "6a80ed6a",
    "metadata": {},
    "source": [
     "Let us try using priors on our $CO_2$ model:"
@@ -1000,13 +1000,13 @@
   {
    "cell_type": "code",
    "execution_count": 21,
-   "id": "49330c94",
+   "id": "bbb08952",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:16:57.901852Z",
-     "iopub.status.busy": "2023-08-07T12:16:57.901521Z",
-     "iopub.status.idle": "2023-08-07T12:17:17.530588Z",
-     "shell.execute_reply": "2023-08-07T12:17:17.530045Z"
+     "iopub.execute_input": "2023-08-08T08:08:35.011728Z",
+     "iopub.status.busy": "2023-08-08T08:08:35.011489Z",
+     "iopub.status.idle": "2023-08-08T08:08:54.520434Z",
+     "shell.execute_reply": "2023-08-08T08:08:54.519933Z"
     }
    },
    "outputs": [
@@ -1063,7 +1063,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d612bcc4",
+   "id": "5926a3d3",
    "metadata": {},
    "source": [
     "Notice that many parameters have constraints on what values are valid. In this case all of `variance`, `lengthscales` and `period` should be non-negative. That is why we chose the `LogNormal` distribution for our prior - it only allows positive values."
@@ -1071,7 +1071,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "6c12301f",
+   "id": "dd5130e1",
    "metadata": {},
    "source": [
     "Also notice in our table of parameters, that the `prior` column now shows `LogNormal` for the parameters we set the prior on."
@@ -1079,7 +1079,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "c5ff0d2d",
+   "id": "62c97f8c",
    "metadata": {},
    "source": [
     "### Transforms\n",
@@ -1089,7 +1089,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "00f33888",
+   "id": "2fadf62b",
    "metadata": {},
    "source": [
     "You can only set the transform of a parameter when you create it. For example:"
@@ -1098,13 +1098,13 @@
   {
    "cell_type": "code",
    "execution_count": 22,
-   "id": "df51369e",
+   "id": "28a8972a",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:17:17.533268Z",
-     "iopub.status.busy": "2023-08-07T12:17:17.533037Z",
-     "iopub.status.idle": "2023-08-07T12:17:17.538044Z",
-     "shell.execute_reply": "2023-08-07T12:17:17.537574Z"
+     "iopub.execute_input": "2023-08-08T08:08:54.523259Z",
+     "iopub.status.busy": "2023-08-08T08:08:54.523064Z",
+     "iopub.status.idle": "2023-08-08T08:08:54.528606Z",
+     "shell.execute_reply": "2023-08-08T08:08:54.528071Z"
     }
    },
    "outputs": [],
@@ -1114,7 +1114,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "edeb0a71",
+   "id": "c8726641",
    "metadata": {},
    "source": [
     "In this example we used the exponential function as a transform. Since the exponential functions maps the entire real line to positive values this transform will ensure that the parameter always take positive values."
@@ -1122,7 +1122,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "dfb224b0",
+   "id": "db2cde61",
    "metadata": {},
    "source": [
     "We can access the untransformed value of the parameter:"
@@ -1131,13 +1131,13 @@
   {
    "cell_type": "code",
    "execution_count": 23,
-   "id": "ddd8c35b",
+   "id": "78b4e9dc",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:17:17.539938Z",
-     "iopub.status.busy": "2023-08-07T12:17:17.539725Z",
-     "iopub.status.idle": "2023-08-07T12:17:17.543530Z",
-     "shell.execute_reply": "2023-08-07T12:17:17.543116Z"
+     "iopub.execute_input": "2023-08-08T08:08:54.531440Z",
+     "iopub.status.busy": "2023-08-08T08:08:54.531251Z",
+     "iopub.status.idle": "2023-08-08T08:08:54.535875Z",
+     "shell.execute_reply": "2023-08-08T08:08:54.535305Z"
     }
    },
    "outputs": [
@@ -1159,13 +1159,13 @@
   {
    "cell_type": "code",
    "execution_count": 24,
-   "id": "3d61de86",
+   "id": "3d7ebd75",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:17:17.545455Z",
-     "iopub.status.busy": "2023-08-07T12:17:17.545228Z",
-     "iopub.status.idle": "2023-08-07T12:17:17.549150Z",
-     "shell.execute_reply": "2023-08-07T12:17:17.548729Z"
+     "iopub.execute_input": "2023-08-08T08:08:54.538171Z",
+     "iopub.status.busy": "2023-08-08T08:08:54.537936Z",
+     "iopub.status.idle": "2023-08-08T08:08:54.542279Z",
+     "shell.execute_reply": "2023-08-08T08:08:54.541827Z"
     }
    },
    "outputs": [
@@ -1186,7 +1186,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "b9091d8d",
+   "id": "bc278f8b",
    "metadata": {},
    "source": [
     "When we read the parameter we will read the transformed value, which is positive, even though we just set the untransformed value to a negative number:"
@@ -1195,13 +1195,13 @@
   {
    "cell_type": "code",
    "execution_count": 25,
-   "id": "f910f87b",
+   "id": "7f34ae93",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:17:17.551244Z",
-     "iopub.status.busy": "2023-08-07T12:17:17.550901Z",
-     "iopub.status.idle": "2023-08-07T12:17:17.554732Z",
-     "shell.execute_reply": "2023-08-07T12:17:17.554336Z"
+     "iopub.execute_input": "2023-08-08T08:08:54.544470Z",
+     "iopub.status.busy": "2023-08-08T08:08:54.544137Z",
+     "iopub.status.idle": "2023-08-08T08:08:54.548479Z",
+     "shell.execute_reply": "2023-08-08T08:08:54.548063Z"
     }
    },
    "outputs": [
@@ -1222,7 +1222,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "4ed88878",
+   "id": "c579fe2b",
    "metadata": {},
    "source": [
     "Let us try and use transforms on our $CO_2$ problem:"
@@ -1231,13 +1231,13 @@
   {
    "cell_type": "code",
    "execution_count": 26,
-   "id": "2e2a63d5",
+   "id": "466514a0",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:17:17.556594Z",
-     "iopub.status.busy": "2023-08-07T12:17:17.556394Z",
-     "iopub.status.idle": "2023-08-07T12:17:30.318649Z",
-     "shell.execute_reply": "2023-08-07T12:17:30.318170Z"
+     "iopub.execute_input": "2023-08-08T08:08:54.550621Z",
+     "iopub.status.busy": "2023-08-08T08:08:54.550264Z",
+     "iopub.status.idle": "2023-08-08T08:09:07.215693Z",
+     "shell.execute_reply": "2023-08-08T08:09:07.215032Z"
     }
    },
    "outputs": [
@@ -1307,7 +1307,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "b02cc61f",
+   "id": "3aaef993",
    "metadata": {},
    "source": [
     "Again, be aware that many parameters have constraints on what kind of values they logically can take, and if you replace the transform of a parameter you must make sure that the transform only allows values that are logically valid in the context in which they are used.\n",
@@ -1317,7 +1317,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e7e49ec2",
+   "id": "33e5d60b",
    "metadata": {},
    "source": [
     "### Trainable parameters\n",
@@ -1330,13 +1330,13 @@
   {
    "cell_type": "code",
    "execution_count": 27,
-   "id": "d54521ca",
+   "id": "021e772f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:17:30.320968Z",
-     "iopub.status.busy": "2023-08-07T12:17:30.320749Z",
-     "iopub.status.idle": "2023-08-07T12:17:30.325025Z",
-     "shell.execute_reply": "2023-08-07T12:17:30.324593Z"
+     "iopub.execute_input": "2023-08-08T08:09:07.218296Z",
+     "iopub.status.busy": "2023-08-08T08:09:07.218039Z",
+     "iopub.status.idle": "2023-08-08T08:09:07.223072Z",
+     "shell.execute_reply": "2023-08-08T08:09:07.222597Z"
     }
    },
    "outputs": [],
@@ -1347,13 +1347,13 @@
   {
    "cell_type": "code",
    "execution_count": 28,
-   "id": "c5af9570",
+   "id": "9da4406d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:17:30.327226Z",
-     "iopub.status.busy": "2023-08-07T12:17:30.326869Z",
-     "iopub.status.idle": "2023-08-07T12:17:30.333578Z",
-     "shell.execute_reply": "2023-08-07T12:17:30.333111Z"
+     "iopub.execute_input": "2023-08-08T08:09:07.225414Z",
+     "iopub.status.busy": "2023-08-08T08:09:07.225173Z",
+     "iopub.status.idle": "2023-08-08T08:09:07.233078Z",
+     "shell.execute_reply": "2023-08-08T08:09:07.232330Z"
     }
    },
    "outputs": [],
@@ -1364,7 +1364,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "82de70ac",
+   "id": "fe5046c9",
    "metadata": {},
    "source": [
     "The `gpflow.set_trainable` function can both be applied directly to parameters, or to modules, in which case all parameters held in the module are affected.\n",
@@ -1375,13 +1375,13 @@
   {
    "cell_type": "code",
    "execution_count": 29,
-   "id": "90788be6",
+   "id": "06e3a1d9",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:17:30.335536Z",
-     "iopub.status.busy": "2023-08-07T12:17:30.335376Z",
-     "iopub.status.idle": "2023-08-07T12:17:36.806071Z",
-     "shell.execute_reply": "2023-08-07T12:17:36.805588Z"
+     "iopub.execute_input": "2023-08-08T08:09:07.235588Z",
+     "iopub.status.busy": "2023-08-08T08:09:07.235349Z",
+     "iopub.status.idle": "2023-08-08T08:09:14.044650Z",
+     "shell.execute_reply": "2023-08-08T08:09:14.044142Z"
     }
    },
    "outputs": [
@@ -1436,7 +1436,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "3be30948",
+   "id": "9487bc48",
    "metadata": {},
    "source": [
     "Notice how the `trainable` column of the parameter table reflects the whether the parameters are trainable. Also notice how the final value of the un-trainable parameters have exactly the value we initialised them to. Setting a parameter untrainable is a heavy-handed tool, and we generally recommend using one of the softer methods demonstrated above."
@@ -1444,7 +1444,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "4eed4ad1",
+   "id": "15c4c783",
    "metadata": {},
    "source": [
     "## Advanced training"
@@ -1452,7 +1452,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "72ca72d7",
+   "id": "5b4eda64",
    "metadata": {},
    "source": [
     "### Multi-stage training\n",
@@ -1465,13 +1465,13 @@
   {
    "cell_type": "code",
    "execution_count": 30,
-   "id": "ae3dde52",
+   "id": "09ae582c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:17:36.808550Z",
-     "iopub.status.busy": "2023-08-07T12:17:36.808326Z",
-     "iopub.status.idle": "2023-08-07T12:17:51.025907Z",
-     "shell.execute_reply": "2023-08-07T12:17:51.025302Z"
+     "iopub.execute_input": "2023-08-08T08:09:14.047287Z",
+     "iopub.status.busy": "2023-08-08T08:09:14.047053Z",
+     "iopub.status.idle": "2023-08-08T08:09:28.333673Z",
+     "shell.execute_reply": "2023-08-08T08:09:28.333152Z"
     }
    },
    "outputs": [
@@ -1535,7 +1535,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "3a1b324d",
+   "id": "b4b48c13",
    "metadata": {},
    "source": [
     "### The Keras optimisers\n",
@@ -1546,13 +1546,13 @@
   {
    "cell_type": "code",
    "execution_count": 31,
-   "id": "cf062043",
+   "id": "8c8af6fc",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:17:51.028557Z",
-     "iopub.status.busy": "2023-08-07T12:17:51.028321Z",
-     "iopub.status.idle": "2023-08-07T12:25:12.255063Z",
-     "shell.execute_reply": "2023-08-07T12:25:12.254590Z"
+     "iopub.execute_input": "2023-08-08T08:09:28.336831Z",
+     "iopub.status.busy": "2023-08-08T08:09:28.336576Z",
+     "iopub.status.idle": "2023-08-08T08:17:02.907335Z",
+     "shell.execute_reply": "2023-08-08T08:17:02.906847Z"
     }
    },
    "outputs": [

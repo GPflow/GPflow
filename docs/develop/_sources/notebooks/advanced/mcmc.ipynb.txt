@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "847f8e8e",
+   "id": "5db8b25b",
    "metadata": {},
    "source": [
     "# MCMC (Markov Chain Monte Carlo)"
@@ -10,7 +10,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "bdc0b751",
+   "id": "9e65fe60",
    "metadata": {},
    "source": [
     "GPflow allows you to approximate the posterior over the latent functions of its models (and over the hyperparameters after setting a prior for those) using Hamiltonian Monte Carlo (HMC)"
@@ -19,13 +19,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "968f8c69",
+   "id": "23cc9029",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:11:54.221414Z",
-     "iopub.status.busy": "2023-08-07T12:11:54.220980Z",
-     "iopub.status.idle": "2023-08-07T12:11:58.753120Z",
-     "shell.execute_reply": "2023-08-07T12:11:58.752566Z"
+     "iopub.execute_input": "2023-08-08T08:04:42.524173Z",
+     "iopub.status.busy": "2023-08-08T08:04:42.523712Z",
+     "iopub.status.idle": "2023-08-08T08:04:47.423995Z",
+     "shell.execute_reply": "2023-08-08T08:04:47.423438Z"
     }
    },
    "outputs": [
@@ -33,7 +33,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2023-08-07 12:11:56.047784: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT\n"
+      "2023-08-08 08:04:44.492862: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT\n"
      ]
     }
    ],
@@ -63,7 +63,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "43221de9",
+   "id": "d9e2a08a",
    "metadata": {},
    "source": [
     "\n",
@@ -76,7 +76,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "be8b7927",
+   "id": "d28ac435",
    "metadata": {},
    "source": [
     "## Example 1: GP regression"
@@ -84,7 +84,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "2614fff6",
+   "id": "ca395ef5",
    "metadata": {},
    "source": [
     "We first consider the GP regression (with Gaussian noise) for which the marginal likelihood $p(\\mathbf y\\,|\\,\\theta)$ can be computed exactly.\n",
@@ -101,7 +101,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "4580f2e9",
+   "id": "58906ede",
    "metadata": {},
    "source": [
     "### Data for a one-dimensional regression problem"
@@ -110,13 +110,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "ecca46c2",
+   "id": "07a64e81",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:11:58.756149Z",
-     "iopub.status.busy": "2023-08-07T12:11:58.755545Z",
-     "iopub.status.idle": "2023-08-07T12:11:58.974647Z",
-     "shell.execute_reply": "2023-08-07T12:11:58.974103Z"
+     "iopub.execute_input": "2023-08-08T08:04:47.427010Z",
+     "iopub.status.busy": "2023-08-08T08:04:47.426523Z",
+     "iopub.status.idle": "2023-08-08T08:04:47.650866Z",
+     "shell.execute_reply": "2023-08-08T08:04:47.650123Z"
     }
    },
    "outputs": [
@@ -155,7 +155,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "76008fae",
+   "id": "3de8a743",
    "metadata": {},
    "source": [
     "### MCMC for hyperparameters $\\theta$\n",
@@ -171,13 +171,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "64ea6e07",
+   "id": "078f93b8",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:11:58.978101Z",
-     "iopub.status.busy": "2023-08-07T12:11:58.977789Z",
-     "iopub.status.idle": "2023-08-07T12:11:59.079504Z",
-     "shell.execute_reply": "2023-08-07T12:11:59.078952Z"
+     "iopub.execute_input": "2023-08-08T08:04:47.654545Z",
+     "iopub.status.busy": "2023-08-08T08:04:47.654143Z",
+     "iopub.status.idle": "2023-08-08T08:04:47.775539Z",
+     "shell.execute_reply": "2023-08-08T08:04:47.774871Z"
     }
    },
    "outputs": [],
@@ -189,7 +189,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "637e53ca",
+   "id": "6861ecf5",
    "metadata": {},
    "source": [
     "Secondly, we initialize the model to the maximum likelihood solution."
@@ -198,13 +198,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "c86812b1",
+   "id": "9a81a37d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:11:59.082108Z",
-     "iopub.status.busy": "2023-08-07T12:11:59.081835Z",
-     "iopub.status.idle": "2023-08-07T12:12:01.105992Z",
-     "shell.execute_reply": "2023-08-07T12:12:01.105296Z"
+     "iopub.execute_input": "2023-08-08T08:04:47.778215Z",
+     "iopub.status.busy": "2023-08-08T08:04:47.777932Z",
+     "iopub.status.idle": "2023-08-08T08:04:50.047326Z",
+     "shell.execute_reply": "2023-08-08T08:04:50.046571Z"
     }
    },
    "outputs": [
@@ -225,7 +225,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "48f8fb99",
+   "id": "4b391303",
    "metadata": {},
    "source": [
     "Thirdly, we add priors to the hyperparameters."
@@ -234,13 +234,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "fe1ec4b8",
+   "id": "69ddff1e",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:12:01.108133Z",
-     "iopub.status.busy": "2023-08-07T12:12:01.107899Z",
-     "iopub.status.idle": "2023-08-07T12:12:01.123041Z",
-     "shell.execute_reply": "2023-08-07T12:12:01.122448Z"
+     "iopub.execute_input": "2023-08-08T08:04:50.049885Z",
+     "iopub.status.busy": "2023-08-08T08:04:50.049622Z",
+     "iopub.status.idle": "2023-08-08T08:04:50.066004Z",
+     "shell.execute_reply": "2023-08-08T08:04:50.065372Z"
     }
    },
    "outputs": [
@@ -281,7 +281,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "9ede04d7",
+   "id": "9c317155",
    "metadata": {},
    "source": [
     "We now sample from the posterior using HMC."
@@ -290,13 +290,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "5e4f5fbe",
+   "id": "d0e33195",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:12:01.125202Z",
-     "iopub.status.busy": "2023-08-07T12:12:01.124973Z",
-     "iopub.status.idle": "2023-08-07T12:12:09.959282Z",
-     "shell.execute_reply": "2023-08-07T12:12:09.958564Z"
+     "iopub.execute_input": "2023-08-08T08:04:50.068475Z",
+     "iopub.status.busy": "2023-08-08T08:04:50.068223Z",
+     "iopub.status.idle": "2023-08-08T08:05:00.790651Z",
+     "shell.execute_reply": "2023-08-08T08:05:00.790052Z"
     }
    },
    "outputs": [],
@@ -344,7 +344,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "98dc148d",
+   "id": "c8dc277b",
    "metadata": {},
    "source": [
     "**NOTE:** All the Hamiltonian MCMC sampling takes place in an unconstrained space (where constrained parameters have been mapped via a bijector to an unconstrained space). This makes the optimization, as required in the gradient step, much easier.\n",
@@ -355,13 +355,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "7eb6195d",
+   "id": "8ff36535",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:12:09.961770Z",
-     "iopub.status.busy": "2023-08-07T12:12:09.961524Z",
-     "iopub.status.idle": "2023-08-07T12:12:10.500625Z",
-     "shell.execute_reply": "2023-08-07T12:12:10.499916Z"
+     "iopub.execute_input": "2023-08-08T08:05:00.794107Z",
+     "iopub.status.busy": "2023-08-08T08:05:00.793535Z",
+     "iopub.status.idle": "2023-08-08T08:05:01.382588Z",
+     "shell.execute_reply": "2023-08-08T08:05:01.382083Z"
     }
    },
    "outputs": [
@@ -406,7 +406,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "f5928e63",
+   "id": "c42a21ec",
    "metadata": {},
    "source": [
     "You can also inspect the marginal distribution of samples."
@@ -415,13 +415,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "10b70a9a",
+   "id": "d40186f2",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:12:10.502882Z",
-     "iopub.status.busy": "2023-08-07T12:12:10.502644Z",
-     "iopub.status.idle": "2023-08-07T12:12:16.462346Z",
-     "shell.execute_reply": "2023-08-07T12:12:16.461774Z"
+     "iopub.execute_input": "2023-08-08T08:05:01.385704Z",
+     "iopub.status.busy": "2023-08-08T08:05:01.385253Z",
+     "iopub.status.idle": "2023-08-08T08:05:07.487314Z",
+     "shell.execute_reply": "2023-08-08T08:05:07.486821Z"
     }
    },
    "outputs": [
@@ -470,7 +470,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ad2c6a4b",
+   "id": "240b202a",
    "metadata": {},
    "source": [
     "\n",
@@ -483,13 +483,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "a630cb4d",
+   "id": "57c3e010",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:12:16.465268Z",
-     "iopub.status.busy": "2023-08-07T12:12:16.465014Z",
-     "iopub.status.idle": "2023-08-07T12:12:17.351022Z",
-     "shell.execute_reply": "2023-08-07T12:12:17.350542Z"
+     "iopub.execute_input": "2023-08-08T08:05:07.489635Z",
+     "iopub.status.busy": "2023-08-08T08:05:07.489384Z",
+     "iopub.status.idle": "2023-08-08T08:05:08.481832Z",
+     "shell.execute_reply": "2023-08-08T08:05:08.481260Z"
     },
     "lines_to_next_cell": 2
    },
@@ -562,7 +562,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "0ad9e642",
+   "id": "e6a8b0fa",
    "metadata": {},
    "source": [
     "To plot the posterior of predictions, we'll iterate through the samples and set the model state with each sample. Then, for that state (set of hyperparameters) we'll draw some samples from the prediction function."
@@ -571,13 +571,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "284acbac",
+   "id": "94633390",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:12:17.353708Z",
-     "iopub.status.busy": "2023-08-07T12:12:17.353291Z",
-     "iopub.status.idle": "2023-08-07T12:12:19.435432Z",
-     "shell.execute_reply": "2023-08-07T12:12:19.434945Z"
+     "iopub.execute_input": "2023-08-08T08:05:08.484445Z",
+     "iopub.status.busy": "2023-08-08T08:05:08.484251Z",
+     "iopub.status.idle": "2023-08-08T08:05:10.580060Z",
+     "shell.execute_reply": "2023-08-08T08:05:10.579558Z"
     }
    },
    "outputs": [
@@ -615,7 +615,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "0d8af725",
+   "id": "4b9028ac",
    "metadata": {},
    "source": [
     "This example demonstrates the multi-modality of the true posterior over hyperparameters: the data could be explained both by long lengthscale, small signal variance, and high noise variance, as well as by shorter lengthscale, higher signal variance, and low noise variance."
@@ -623,7 +623,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "81ca7d2a",
+   "id": "e4abba6d",
    "metadata": {},
    "source": [
     "## Example 2: Sparse MC for multiclass classification"
@@ -631,7 +631,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a8b4ece9",
+   "id": "2118ec39",
    "metadata": {},
    "source": [
     "We now consider the multiclass classification problem (see the [Multiclass classification](../advanced/multiclass_classification.ipynb) notebook). Here the marginal likelihood is not available in closed form. Instead we use a sparse variational approximation where we approximate the posterior for each GP as $q(f_c) \\propto p(f_c|\\mathbf{u}_c)q(\\mathbf{u}_c)$\n",
@@ -643,7 +643,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "316e44e6",
+   "id": "2cc89d2a",
    "metadata": {},
    "source": [
     "We first build a multiclass classification dataset."
@@ -652,13 +652,13 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "861674e5",
+   "id": "4711233a",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:12:19.443584Z",
-     "iopub.status.busy": "2023-08-07T12:12:19.443328Z",
-     "iopub.status.idle": "2023-08-07T12:12:20.394240Z",
-     "shell.execute_reply": "2023-08-07T12:12:20.393203Z"
+     "iopub.execute_input": "2023-08-08T08:05:10.586248Z",
+     "iopub.status.busy": "2023-08-08T08:05:10.585980Z",
+     "iopub.status.idle": "2023-08-08T08:05:11.139825Z",
+     "shell.execute_reply": "2023-08-08T08:05:11.138814Z"
     }
    },
    "outputs": [],
@@ -683,13 +683,13 @@
   {
    "cell_type": "code",
    "execution_count": 12,
-   "id": "54053dff",
+   "id": "0a16ef59",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:12:20.403566Z",
-     "iopub.status.busy": "2023-08-07T12:12:20.403212Z",
-     "iopub.status.idle": "2023-08-07T12:12:20.635399Z",
-     "shell.execute_reply": "2023-08-07T12:12:20.634924Z"
+     "iopub.execute_input": "2023-08-08T08:05:11.236502Z",
+     "iopub.status.busy": "2023-08-08T08:05:11.236196Z",
+     "iopub.status.idle": "2023-08-08T08:05:11.435863Z",
+     "shell.execute_reply": "2023-08-08T08:05:11.435361Z"
     }
    },
    "outputs": [
@@ -722,7 +722,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "f5291a30",
+   "id": "e772c566",
    "metadata": {},
    "source": [
     "We then build the SGPMC model."
@@ -731,13 +731,13 @@
   {
    "cell_type": "code",
    "execution_count": 13,
-   "id": "b672242d",
+   "id": "19b213d7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:12:20.637644Z",
-     "iopub.status.busy": "2023-08-07T12:12:20.637394Z",
-     "iopub.status.idle": "2023-08-07T12:12:20.684109Z",
-     "shell.execute_reply": "2023-08-07T12:12:20.683646Z"
+     "iopub.execute_input": "2023-08-08T08:05:11.438223Z",
+     "iopub.status.busy": "2023-08-08T08:05:11.437992Z",
+     "iopub.status.idle": "2023-08-08T08:05:11.485755Z",
+     "shell.execute_reply": "2023-08-08T08:05:11.485278Z"
     }
    },
    "outputs": [
@@ -788,13 +788,13 @@
   {
    "cell_type": "code",
    "execution_count": 14,
-   "id": "7f674444",
+   "id": "a5461d8c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:12:20.686293Z",
-     "iopub.status.busy": "2023-08-07T12:12:20.686054Z",
-     "iopub.status.idle": "2023-08-07T12:12:20.689720Z",
-     "shell.execute_reply": "2023-08-07T12:12:20.688462Z"
+     "iopub.execute_input": "2023-08-08T08:05:11.487946Z",
+     "iopub.status.busy": "2023-08-08T08:05:11.487711Z",
+     "iopub.status.idle": "2023-08-08T08:05:11.490576Z",
+     "shell.execute_reply": "2023-08-08T08:05:11.490132Z"
     }
    },
    "outputs": [],
@@ -805,7 +805,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "0da40510",
+   "id": "1a1f60a4",
    "metadata": {},
    "source": [
     "The chain of samples for $\\mathbf{u}_c, \\theta$ is initialized at the value maximizing  $p(Y|\\mathbf{u}_c, \\theta)$."
@@ -814,13 +814,13 @@
   {
    "cell_type": "code",
    "execution_count": 15,
-   "id": "c46eeecb",
+   "id": "af2089eb",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:12:20.693458Z",
-     "iopub.status.busy": "2023-08-07T12:12:20.693030Z",
-     "iopub.status.idle": "2023-08-07T12:12:23.938318Z",
-     "shell.execute_reply": "2023-08-07T12:12:23.937781Z"
+     "iopub.execute_input": "2023-08-08T08:05:11.492758Z",
+     "iopub.status.busy": "2023-08-08T08:05:11.492366Z",
+     "iopub.status.idle": "2023-08-08T08:05:14.071414Z",
+     "shell.execute_reply": "2023-08-08T08:05:14.070844Z"
     }
    },
    "outputs": [
@@ -842,7 +842,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "32b82ba6",
+   "id": "d310ff55",
    "metadata": {},
    "source": [
     "Sampling starts with a 'burn in' period."
@@ -851,13 +851,13 @@
   {
    "cell_type": "code",
    "execution_count": 16,
-   "id": "acfec9e1",
+   "id": "f2d9f141",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:12:23.941208Z",
-     "iopub.status.busy": "2023-08-07T12:12:23.940922Z",
-     "iopub.status.idle": "2023-08-07T12:12:36.640420Z",
-     "shell.execute_reply": "2023-08-07T12:12:36.639906Z"
+     "iopub.execute_input": "2023-08-08T08:05:14.074633Z",
+     "iopub.status.busy": "2023-08-08T08:05:14.074372Z",
+     "iopub.status.idle": "2023-08-08T08:05:26.647864Z",
+     "shell.execute_reply": "2023-08-08T08:05:26.647263Z"
     }
    },
    "outputs": [],
@@ -901,7 +901,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "343d6f5f",
+   "id": "af1fab16",
    "metadata": {},
    "source": [
     "Statistics of the posterior samples can now be reported."
@@ -910,13 +910,13 @@
   {
    "cell_type": "code",
    "execution_count": 17,
-   "id": "d3591aa7",
+   "id": "f50cad70",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:12:36.643000Z",
-     "iopub.status.busy": "2023-08-07T12:12:36.642766Z",
-     "iopub.status.idle": "2023-08-07T12:12:42.962485Z",
-     "shell.execute_reply": "2023-08-07T12:12:42.961857Z"
+     "iopub.execute_input": "2023-08-08T08:05:26.650398Z",
+     "iopub.status.busy": "2023-08-08T08:05:26.650160Z",
+     "iopub.status.idle": "2023-08-08T08:05:32.407949Z",
+     "shell.execute_reply": "2023-08-08T08:05:32.407388Z"
     }
    },
    "outputs": [
@@ -939,7 +939,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e034c62b",
+   "id": "a806d0e8",
    "metadata": {},
    "source": [
     "You can also display the sequence of sampled hyperparameters."
@@ -948,13 +948,13 @@
   {
    "cell_type": "code",
    "execution_count": 18,
-   "id": "29d778c3",
+   "id": "4a959f25",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:12:42.970304Z",
-     "iopub.status.busy": "2023-08-07T12:12:42.970035Z",
-     "iopub.status.idle": "2023-08-07T12:12:43.187081Z",
-     "shell.execute_reply": "2023-08-07T12:12:43.186433Z"
+     "iopub.execute_input": "2023-08-08T08:05:32.415913Z",
+     "iopub.status.busy": "2023-08-08T08:05:32.415635Z",
+     "iopub.status.idle": "2023-08-08T08:05:32.618840Z",
+     "shell.execute_reply": "2023-08-08T08:05:32.618295Z"
     },
     "lines_to_next_cell": 2
    },
@@ -994,7 +994,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "0ef05ecf",
+   "id": "c9a50094",
    "metadata": {},
    "source": [
     "## Example 3: Fully Bayesian inference for generalized GP models with HMC"
@@ -1002,7 +1002,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "0e33211d",
+   "id": "cf40ae19",
    "metadata": {},
    "source": [
     "You can construct very flexible models with Gaussian processes by combining them with different likelihoods (sometimes called 'families' in the GLM literature). This makes inference of the GP intractable because the likelihoods are not generally conjugate to the Gaussian process. The general form of the model is\n",
@@ -1028,7 +1028,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "18b72dea",
+   "id": "6400f470",
    "metadata": {},
    "source": [
     "### Exponential Regression\n",
@@ -1046,13 +1046,13 @@
   {
    "cell_type": "code",
    "execution_count": 19,
-   "id": "ffb89092",
+   "id": "17d223ec",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:12:43.190832Z",
-     "iopub.status.busy": "2023-08-07T12:12:43.189486Z",
-     "iopub.status.idle": "2023-08-07T12:12:43.359235Z",
-     "shell.execute_reply": "2023-08-07T12:12:43.358553Z"
+     "iopub.execute_input": "2023-08-08T08:05:32.621171Z",
+     "iopub.status.busy": "2023-08-08T08:05:32.620931Z",
+     "iopub.status.idle": "2023-08-08T08:05:32.786271Z",
+     "shell.execute_reply": "2023-08-08T08:05:32.785759Z"
     }
    },
    "outputs": [
@@ -1085,7 +1085,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "fe478249",
+   "id": "eb6ce383",
    "metadata": {},
    "source": [
     "GPflow's model for fully-Bayesian MCMC is called GPMC. It's constructed like any other model, but contains a parameter `V` which represents the centered values of the function."
@@ -1094,13 +1094,13 @@
   {
    "cell_type": "code",
    "execution_count": 20,
-   "id": "1fe33b5c",
+   "id": "8eb6ceed",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:12:43.361862Z",
-     "iopub.status.busy": "2023-08-07T12:12:43.361544Z",
-     "iopub.status.idle": "2023-08-07T12:12:43.397101Z",
-     "shell.execute_reply": "2023-08-07T12:12:43.395870Z"
+     "iopub.execute_input": "2023-08-08T08:05:32.788562Z",
+     "iopub.status.busy": "2023-08-08T08:05:32.788311Z",
+     "iopub.status.idle": "2023-08-08T08:05:32.810542Z",
+     "shell.execute_reply": "2023-08-08T08:05:32.809982Z"
     }
    },
    "outputs": [],
@@ -1112,7 +1112,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "09b42522",
+   "id": "31000dbf",
    "metadata": {},
    "source": [
     "The `V` parameter already has a prior applied. We'll add priors to the parameters also (these are rather arbitrary, for illustration)."
@@ -1121,13 +1121,13 @@
   {
    "cell_type": "code",
    "execution_count": 21,
-   "id": "c7584fab",
+   "id": "98bb29df",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:12:43.405006Z",
-     "iopub.status.busy": "2023-08-07T12:12:43.404636Z",
-     "iopub.status.idle": "2023-08-07T12:12:43.423310Z",
-     "shell.execute_reply": "2023-08-07T12:12:43.422742Z"
+     "iopub.execute_input": "2023-08-08T08:05:32.813161Z",
+     "iopub.status.busy": "2023-08-08T08:05:32.812912Z",
+     "iopub.status.idle": "2023-08-08T08:05:32.824602Z",
+     "shell.execute_reply": "2023-08-08T08:05:32.824119Z"
     },
     "lines_to_next_cell": 2
    },
@@ -1165,7 +1165,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7fd57e90",
+   "id": "ffdbb4e1",
    "metadata": {},
    "source": [
     "Running HMC is pretty similar to optimizing a model. GPflow builds on top of [tensorflow_probability's mcmc module](https://www.tensorflow.org/probability/api_docs/python/tfp/mcmc) and provides a SamplingHelper class to make interfacing easier."
@@ -1173,7 +1173,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7a0ecf17",
+   "id": "cb500ad3",
    "metadata": {},
    "source": [
     "We initialize HMC at the maximum a posteriori parameter values of the model."
@@ -1182,13 +1182,13 @@
   {
    "cell_type": "code",
    "execution_count": 22,
-   "id": "f709ecd4",
+   "id": "92152cd4",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:12:43.425880Z",
-     "iopub.status.busy": "2023-08-07T12:12:43.425681Z",
-     "iopub.status.idle": "2023-08-07T12:12:44.235444Z",
-     "shell.execute_reply": "2023-08-07T12:12:44.234924Z"
+     "iopub.execute_input": "2023-08-08T08:05:32.826697Z",
+     "iopub.status.busy": "2023-08-08T08:05:32.826468Z",
+     "iopub.status.idle": "2023-08-08T08:05:33.593600Z",
+     "shell.execute_reply": "2023-08-08T08:05:33.593035Z"
     }
    },
    "outputs": [],
@@ -1205,7 +1205,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "aacabc8e",
+   "id": "12058ce3",
    "metadata": {},
    "source": [
     "We then run the sampler,"
@@ -1214,13 +1214,13 @@
   {
    "cell_type": "code",
    "execution_count": 23,
-   "id": "4072dfa1",
+   "id": "f901a7eb",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:12:44.238129Z",
-     "iopub.status.busy": "2023-08-07T12:12:44.237871Z",
-     "iopub.status.idle": "2023-08-07T12:12:55.915317Z",
-     "shell.execute_reply": "2023-08-07T12:12:55.914657Z"
+     "iopub.execute_input": "2023-08-08T08:05:33.596298Z",
+     "iopub.status.busy": "2023-08-08T08:05:33.596041Z",
+     "iopub.status.idle": "2023-08-08T08:05:43.164169Z",
+     "shell.execute_reply": "2023-08-08T08:05:43.163388Z"
     }
    },
    "outputs": [],
@@ -1263,7 +1263,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7499e607",
+   "id": "cc788a62",
    "metadata": {},
    "source": [
     "And compute the posterior prediction on a grid for plotting purposes."
@@ -1272,13 +1272,13 @@
   {
    "cell_type": "code",
    "execution_count": 24,
-   "id": "816604ce",
+   "id": "e9b3c79d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:12:55.918083Z",
-     "iopub.status.busy": "2023-08-07T12:12:55.917760Z",
-     "iopub.status.idle": "2023-08-07T12:13:37.422478Z",
-     "shell.execute_reply": "2023-08-07T12:13:37.421405Z"
+     "iopub.execute_input": "2023-08-08T08:05:43.167003Z",
+     "iopub.status.busy": "2023-08-08T08:05:43.166730Z",
+     "iopub.status.idle": "2023-08-08T08:06:23.667312Z",
+     "shell.execute_reply": "2023-08-08T08:06:23.666619Z"
     }
    },
    "outputs": [],
@@ -1298,13 +1298,13 @@
   {
    "cell_type": "code",
    "execution_count": 25,
-   "id": "4442c7fd",
+   "id": "bd0c490e",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:13:37.425655Z",
-     "iopub.status.busy": "2023-08-07T12:13:37.425354Z",
-     "iopub.status.idle": "2023-08-07T12:13:37.654757Z",
-     "shell.execute_reply": "2023-08-07T12:13:37.654271Z"
+     "iopub.execute_input": "2023-08-08T08:06:23.670403Z",
+     "iopub.status.busy": "2023-08-08T08:06:23.670174Z",
+     "iopub.status.idle": "2023-08-08T08:06:23.879374Z",
+     "shell.execute_reply": "2023-08-08T08:06:23.878618Z"
     }
    },
    "outputs": [
@@ -1337,7 +1337,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "2f07be4c",
+   "id": "6fbe97f2",
    "metadata": {},
    "source": [
     "You can also display the sequence of sampled hyperparameters."
@@ -1346,13 +1346,13 @@
   {
    "cell_type": "code",
    "execution_count": 26,
-   "id": "9aabdd51",
+   "id": "46cae5b7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:13:37.658045Z",
-     "iopub.status.busy": "2023-08-07T12:13:37.657827Z",
-     "iopub.status.idle": "2023-08-07T12:13:37.923603Z",
-     "shell.execute_reply": "2023-08-07T12:13:37.923141Z"
+     "iopub.execute_input": "2023-08-08T08:06:23.882167Z",
+     "iopub.status.busy": "2023-08-08T08:06:23.881889Z",
+     "iopub.status.idle": "2023-08-08T08:06:24.133587Z",
+     "shell.execute_reply": "2023-08-08T08:06:24.132654Z"
     },
     "lines_to_next_cell": 2
    },
@@ -1395,7 +1395,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "4df0ece9",
+   "id": "0f508b1b",
    "metadata": {},
    "source": [
     "You can also inspect the marginal of the posterior samples."
@@ -1404,13 +1404,13 @@
   {
    "cell_type": "code",
    "execution_count": 27,
-   "id": "65b0a387",
+   "id": "76fd1dc0",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:13:37.926140Z",
-     "iopub.status.busy": "2023-08-07T12:13:37.925877Z",
-     "iopub.status.idle": "2023-08-07T12:13:39.444756Z",
-     "shell.execute_reply": "2023-08-07T12:13:39.444291Z"
+     "iopub.execute_input": "2023-08-08T08:06:24.136360Z",
+     "iopub.status.busy": "2023-08-08T08:06:24.136072Z",
+     "iopub.status.idle": "2023-08-08T08:06:25.372240Z",
+     "shell.execute_reply": "2023-08-08T08:06:25.371363Z"
     }
    },
    "outputs": [
@@ -1435,7 +1435,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a6cfd709",
+   "id": "d7d31c07",
    "metadata": {},
    "source": [
     "## Prior on constrained and unconstrained parameters"
@@ -1443,7 +1443,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "052f7a1c",
+   "id": "2e6382da",
    "metadata": {},
    "source": [
     "GPflow's `Parameter` class provides options for setting a prior. `Parameter` wraps a constrained tensor and\n",
@@ -1453,7 +1453,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "bd71aa37",
+   "id": "e0e367ce",
    "metadata": {},
    "source": [
     "By default, the prior for the `Parameter` is set on the _constrained_ space.\n",
@@ -1463,13 +1463,13 @@
   {
    "cell_type": "code",
    "execution_count": 28,
-   "id": "15181f9c",
+   "id": "cd440700",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:13:39.447026Z",
-     "iopub.status.busy": "2023-08-07T12:13:39.446801Z",
-     "iopub.status.idle": "2023-08-07T12:13:39.453748Z",
-     "shell.execute_reply": "2023-08-07T12:13:39.453254Z"
+     "iopub.execute_input": "2023-08-08T08:06:25.374965Z",
+     "iopub.status.busy": "2023-08-08T08:06:25.374516Z",
+     "iopub.status.idle": "2023-08-08T08:06:25.382061Z",
+     "shell.execute_reply": "2023-08-08T08:06:25.381482Z"
     }
    },
    "outputs": [],
@@ -1481,7 +1481,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "128bc873",
+   "id": "ec001758",
    "metadata": {},
    "source": [
     "`gpflow.optimizers.SamplingHelper` makes sure that the prior density correctly reflects the space in which the prior is defined."
@@ -1489,7 +1489,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "980cbbcf",
+   "id": "0d16378d",
    "metadata": {},
    "source": [
     "Below we repeat the same experiment as before, but with some priors defined in the `unconstrained` space.\n",
@@ -1500,13 +1500,13 @@
   {
    "cell_type": "code",
    "execution_count": 29,
-   "id": "ee7c211a",
+   "id": "de5c7e52",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:13:39.455848Z",
-     "iopub.status.busy": "2023-08-07T12:13:39.455644Z",
-     "iopub.status.idle": "2023-08-07T12:13:39.487393Z",
-     "shell.execute_reply": "2023-08-07T12:13:39.486940Z"
+     "iopub.execute_input": "2023-08-08T08:06:25.384653Z",
+     "iopub.status.busy": "2023-08-08T08:06:25.384394Z",
+     "iopub.status.idle": "2023-08-08T08:06:25.421329Z",
+     "shell.execute_reply": "2023-08-08T08:06:25.420524Z"
     }
    },
    "outputs": [
@@ -1554,7 +1554,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e0c0ba11",
+   "id": "b8dd5535",
    "metadata": {},
    "source": [
     "Let's run HMC and plot chain traces:"
@@ -1563,13 +1563,13 @@
   {
    "cell_type": "code",
    "execution_count": 30,
-   "id": "c8aa4fab",
+   "id": "22cb8220",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-08-07T12:13:39.495284Z",
-     "iopub.status.busy": "2023-08-07T12:13:39.494857Z",
-     "iopub.status.idle": "2023-08-07T12:13:50.657157Z",
-     "shell.execute_reply": "2023-08-07T12:13:50.656517Z"
+     "iopub.execute_input": "2023-08-08T08:06:25.424379Z",
+     "iopub.status.busy": "2023-08-08T08:06:25.423804Z",
+     "iopub.status.idle": "2023-08-08T08:06:37.582776Z",
+     "shell.execute_reply": "2023-08-08T08:06:37.581942Z"
     }
    },
    "outputs": [

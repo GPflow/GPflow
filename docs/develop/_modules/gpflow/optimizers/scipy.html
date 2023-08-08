@@ -317,6 +317,7 @@ function checkPageExistsAndRedirect(event) {
         <span class="nb">compile</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">allow_unused_variables</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">tf_fun_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">track_loss_history</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="o">**</span><span class="n">scipy_kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OptimizeResult</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -345,6 +346,8 @@ function checkPageExistsAndRedirect(event) {
 
 <span class="sd">                opt = gpflow.optimizers.Scipy()</span>
 <span class="sd">                opt.minimize(..., compile=True, tf_fun_args=dict(jit_compile=True))</span>
+<span class="sd">        :param track_loss_history: Whether to track the training loss history and return it in</span>
+<span class="sd">            the optimization result.</span>
 <span class="sd">        :param scipy_kwargs: Arguments passed through to `scipy.optimize.minimize`.</span>
 <span class="sd">            Note that Scipy&#39;s minimize() takes a `callback` argument, but you probably want to use</span>
 <span class="sd">            our wrapper and pass in `step_callback`.</span>
@@ -375,16 +378,24 @@ function checkPageExistsAndRedirect(event) {
             <span class="n">allow_unused_variables</span><span class="o">=</span><span class="n">allow_unused_variables</span><span class="p">,</span>
             <span class="n">tf_fun_args</span><span class="o">=</span><span class="n">tf_fun_args</span><span class="p">,</span>
         <span class="p">)</span>
+
         <span class="k">if</span> <span class="n">step_callback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="s2">&quot;callback&quot;</span> <span class="ow">in</span> <span class="n">scipy_kwargs</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Callback passed both via `step_callback` and `callback`&quot;</span><span class="p">)</span>
-
             <span class="n">callback</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">callback_func</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">step_callback</span><span class="p">)</span>
-            <span class="n">scipy_kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">callback</span><span class="o">=</span><span class="n">callback</span><span class="p">))</span>
+            <span class="n">scipy_kwargs</span><span class="p">[</span><span class="s2">&quot;callback&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">callback</span>
+        <span class="n">history</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">AnyNDArray</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">track_loss_history</span><span class="p">:</span>
+            <span class="n">callback</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss_history_callback_func</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">history</span><span class="p">,</span> <span class="n">scipy_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;callback&quot;</span><span class="p">))</span>
+            <span class="n">scipy_kwargs</span><span class="p">[</span><span class="s2">&quot;callback&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">callback</span>
 
         <span class="n">opt_result</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
             <span class="n">func</span><span class="p">,</span> <span class="n">initial_params</span><span class="p">,</span> <span class="n">jac</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span> <span class="o">**</span><span class="n">scipy_kwargs</span>
         <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">track_loss_history</span><span class="p">:</span>
+            <span class="n">opt_result</span><span class="p">[</span><span class="s2">&quot;loss_history&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">history</span>
+
         <span class="n">values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unpack_tensors</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">opt_result</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">assign_tensors</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">opt_result</span></div>
@@ -478,7 +489,8 @@ function checkPageExistsAndRedirect(event) {
     <span class="k">def</span> <span class="nf">callback_func</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span> <span class="n">variables</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">],</span> <span class="n">step_callback</span><span class="p">:</span> <span class="n">StepCallback</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">AnyNDArray</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
-        <span class="n">step</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># type: int</span>
+        <span class="c1"># Convert a step_callback function to a Scipy callback function</span>
+        <span class="n">step</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
 
         <span class="k">def</span> <span class="nf">_callback</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">AnyNDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">nonlocal</span> <span class="n">step</span>
@@ -490,6 +502,23 @@ function checkPageExistsAndRedirect(event) {
                 <span class="n">step_callback</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
 
             <span class="n">step</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">_callback</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">loss_history_callback_func</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">minimize_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">AnyNDArray</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">AnyNDArray</span><span class="p">]],</span>
+        <span class="n">history</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">AnyNDArray</span><span class="p">],</span>
+        <span class="n">callback</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">AnyNDArray</span><span class="p">],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">AnyNDArray</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="c1"># Return a Scipy callback function that tracks loss history, optionally combined</span>
+        <span class="c1"># with another callback.</span>
+
+        <span class="k">def</span> <span class="nf">_callback</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">AnyNDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">callback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">callback</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">minimize_func</span><span class="p">(</span><span class="n">x</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
 
         <span class="k">return</span> <span class="n">_callback</span>
 
