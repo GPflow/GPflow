@@ -1,0 +1,495 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "c60a9149",
+   "metadata": {
+    "id": "eYrSpUncKGSk"
+   },
+   "source": [
+    "# Faster predictions by caching"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "7e09e622",
+   "metadata": {
+    "id": "PLuPjfS7KLQ-"
+   },
+   "source": [
+    "The default behaviour of `predict_f` in GPflow models is to compute the predictions from scratch on each call. This is convenient when predicting and training are interleaved, and simplifies the use of these models. There are some use cases, such as Bayesian optimisation, where prediction (at different test points) happens much more frequently than training. In these cases it is convenient to cache parts of the calculation which do not depend upon the test points, and reuse those parts between predictions.\n",
+    "\n",
+    "There are three models to which we want to add this caching capability: GPR, (S)VGP and SGPR. The VGP and SVGP can be considered together; the difference between the models is whether to condition on the full training data set (VGP) or on the inducing variables (SVGP)."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "896fe2d6",
+   "metadata": {
+    "id": "EACkO-iRKM5T"
+   },
+   "source": [
+    "## Posterior predictive distribution\n",
+    "\n",
+    "The posterior predictive distribution evaluated at a set of test points $\\mathbf{x}_*$ for a Gaussian process model is given by:\n",
+    "\\begin{equation*}\n",
+    "p(\\mathbf{f}_*|X, Y) = \\mathcal{N}(\\mu, \\Sigma)\n",
+    "\\end{equation*}\n",
+    "\n",
+    "In the case of the GPR model, the parameters $\\mu$ and $\\Sigma$ are given by:\n",
+    "\\begin{equation*}\n",
+    "\\mu = K_{nm}[K_{mm} + \\sigma^2I]^{-1}\\mathbf{y}\n",
+    "\\end{equation*}\n",
+    "and\n",
+    "\\begin{equation*}\n",
+    "\\Sigma = K_{nn} - K_{nm}[K_{mm} + \\sigma^2I]^{-1}K_{mn}\n",
+    "\\end{equation*}\n",
+    "\n",
+    "The posterior predictive distribution for the VGP and SVGP model is parameterised as follows:\n",
+    "\\begin{equation*}\n",
+    "\\mu = K_{nu}K_{uu}^{-1}\\mathbf{u}\n",
+    "\\end{equation*}\n",
+    "and\n",
+    "\\begin{equation*}\n",
+    "\\Sigma = K_{nn} - K_{nu}K_{uu}^{-1}K_{un}\n",
+    "\\end{equation*}\n",
+    "\n",
+    "Finally, the parameters for the SGPR model are:\n",
+    "\\begin{equation*}\n",
+    "\\mu = K_{nu}L^{-T}L_B^{-T}\\mathbf{c}\n",
+    "\\end{equation*}\n",
+    "and\n",
+    "\\begin{equation*}\n",
+    "\\Sigma = K_{nn} - K_{nu}L^{-T}(I - B^{-1})L^{-1}K_{un}\n",
+    "\\end{equation*}\n",
+    "\n",
+    "Where the mean function is not the zero function, the predictive mean should have the mean function evaluated at the test points added to it."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "feb0717b",
+   "metadata": {
+    "id": "GX1U-fYPKPrt"
+   },
+   "source": [
+    "## What can be cached?\n",
+    "\n",
+    "We cache two separate values: $\\alpha$ and $Q^{-1}$. These correspond to the parts of the mean and covariance functions respectively which do not depend upon the test points. In the case of the GPR these are the same value:\n",
+    "\\begin{equation*}\n",
+    "\\alpha = Q^{-1} = [K_{mm} + \\sigma^2I]^{-1}\n",
+    "\\end{equation*}\n",
+    "in the case of the VGP and SVGP model these are:\n",
+    "\\begin{equation*}\n",
+    "\\alpha = K_{uu}^{-1}\\mathbf{u}\\\\ Q^{-1} = K_{uu}^{-1}\n",
+    "\\end{equation*}\n",
+    "and in the case of the SGPR model these are:\n",
+    "\\begin{equation*}\n",
+    "\\alpha = L^{-T}L_B^{-T}\\mathbf{c}\\\\ Q^{-1} = L^{-T}(I - B^{-1})L^{-1}\n",
+    "\\end{equation*}\n",
+    "\n",
+    "\n",
+    "Note that in the (S)VGP case, $\\alpha$ is the parameter as proposed by Opper and Archambeau for the mean of the predictive distribution."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "64aa0eff",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-08-09T12:25:35.728356Z",
+     "iopub.status.busy": "2023-08-09T12:25:35.727904Z",
+     "iopub.status.idle": "2023-08-09T12:25:39.691804Z",
+     "shell.execute_reply": "2023-08-09T12:25:39.691253Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2023-08-09 12:25:36.906033: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT\n"
+     ]
+    }
+   ],
+   "source": [
+    "import numpy as np\n",
+    "\n",
+    "import gpflow\n",
+    "from gpflow.ci_utils import reduce_in_tests\n",
+    "\n",
+    "# Create some data\n",
+    "n_data = reduce_in_tests(1000)\n",
+    "X = np.linspace(-1.1, 1.1, n_data)[:, None]\n",
+    "Y = np.sin(X)\n",
+    "Xnew = np.linspace(-1.1, 1.1, n_data)[:, None]\n",
+    "inducing_points = Xnew"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "ff8a98c8",
+   "metadata": {
+    "id": "FzCgor4nKUcW"
+   },
+   "source": [
+    "\n",
+    "## GPR Example\n",
+    "\n",
+    "We will construct a GPR model to demonstrate the faster predictions from using the cached data in the GPFlow posterior classes (subclasses of `gpflow.posteriors.AbstractPosterior`)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "5c3d83cc",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-08-09T12:25:39.694488Z",
+     "iopub.status.busy": "2023-08-09T12:25:39.694097Z",
+     "iopub.status.idle": "2023-08-09T12:25:39.765730Z",
+     "shell.execute_reply": "2023-08-09T12:25:39.765049Z"
+    },
+    "id": "BMnIdXNiKU6t"
+   },
+   "outputs": [],
+   "source": [
+    "model = gpflow.models.GPR(\n",
+    "    (X, Y),\n",
+    "    gpflow.kernels.SquaredExponential(),\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "c0d27af8",
+   "metadata": {},
+   "source": [
+    "The `predict_f` method on the `GPModel` class performs no caching."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "6c189184",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-08-09T12:25:39.768414Z",
+     "iopub.status.busy": "2023-08-09T12:25:39.768160Z",
+     "iopub.status.idle": "2023-08-09T12:25:41.100459Z",
+     "shell.execute_reply": "2023-08-09T12:25:41.099936Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "160 ms \u00b1 4.11 ms per loop (mean \u00b1 std. dev. of 7 runs, 1 loop each)\n"
+     ]
+    }
+   ],
+   "source": [
+    "%%timeit\n",
+    "model.predict_f(Xnew)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "75f9ef9f",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-08-09T12:25:41.103324Z",
+     "iopub.status.busy": "2023-08-09T12:25:41.103141Z",
+     "iopub.status.idle": "2023-08-09T12:25:41.148547Z",
+     "shell.execute_reply": "2023-08-09T12:25:41.147998Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "# To make use of the caching, first retrieve the posterior class from the model. The posterior class has methods to predict the parameters of marginal distributions at test points, in the same way as the `predict_f` method of the `GPModel`.\n",
+    "posterior = model.posterior()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "7f752385",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-08-09T12:25:41.151566Z",
+     "iopub.status.busy": "2023-08-09T12:25:41.151341Z",
+     "iopub.status.idle": "2023-08-09T12:25:50.769072Z",
+     "shell.execute_reply": "2023-08-09T12:25:50.768508Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "119 ms \u00b1 6 ms per loop (mean \u00b1 std. dev. of 7 runs, 10 loops each)\n"
+     ]
+    }
+   ],
+   "source": [
+    "%%timeit\n",
+    "posterior.predict_f(Xnew)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "b6ca773a",
+   "metadata": {},
+   "source": [
+    "## SVGP Example\n",
+    "\n",
+    "Likewise, we will construct an SVGP model to demonstrate the faster predictions from using the cached data in the GPFlow posterior classes."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "2187bd02",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-08-09T12:25:50.771383Z",
+     "iopub.status.busy": "2023-08-09T12:25:50.771100Z",
+     "iopub.status.idle": "2023-08-09T12:25:50.828036Z",
+     "shell.execute_reply": "2023-08-09T12:25:50.827492Z"
+    },
+    "id": "BMnIdXNiKU6t"
+   },
+   "outputs": [],
+   "source": [
+    "model = gpflow.models.SVGP(\n",
+    "    gpflow.kernels.SquaredExponential(),\n",
+    "    gpflow.likelihoods.Gaussian(),\n",
+    "    inducing_points,\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "8f0f5a17",
+   "metadata": {},
+   "source": [
+    "The `predict_f` method on the `GPModel` class performs no caching."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "10fd8d39",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-08-09T12:25:50.830439Z",
+     "iopub.status.busy": "2023-08-09T12:25:50.830183Z",
+     "iopub.status.idle": "2023-08-09T12:25:52.564652Z",
+     "shell.execute_reply": "2023-08-09T12:25:52.564134Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "214 ms \u00b1 33 ms per loop (mean \u00b1 std. dev. of 7 runs, 1 loop each)\n"
+     ]
+    }
+   ],
+   "source": [
+    "%%timeit\n",
+    "model.predict_f(Xnew)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "1df46b57",
+   "metadata": {},
+   "source": [
+    "And again using the posterior object and caching"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "9201fe3d",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-08-09T12:25:52.566732Z",
+     "iopub.status.busy": "2023-08-09T12:25:52.566496Z",
+     "iopub.status.idle": "2023-08-09T12:25:52.841908Z",
+     "shell.execute_reply": "2023-08-09T12:25:52.841351Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "posterior = model.posterior()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "70ac8e8a",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-08-09T12:25:52.844293Z",
+     "iopub.status.busy": "2023-08-09T12:25:52.844064Z",
+     "iopub.status.idle": "2023-08-09T12:26:01.465180Z",
+     "shell.execute_reply": "2023-08-09T12:26:01.464593Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "107 ms \u00b1 4.28 ms per loop (mean \u00b1 std. dev. of 7 runs, 10 loops each)\n"
+     ]
+    }
+   ],
+   "source": [
+    "%%timeit\n",
+    "posterior.predict_f(Xnew)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "d8872def",
+   "metadata": {},
+   "source": [
+    "## SGPR Example\n",
+    "\n",
+    "And finally, we follow the same approach this time for the SGPR case."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "612cdd13",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-08-09T12:26:01.467408Z",
+     "iopub.status.busy": "2023-08-09T12:26:01.467159Z",
+     "iopub.status.idle": "2023-08-09T12:26:01.491515Z",
+     "shell.execute_reply": "2023-08-09T12:26:01.490722Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "model = gpflow.models.SGPR(\n",
+    "    (X, Y), gpflow.kernels.SquaredExponential(), inducing_points\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "021eaa59",
+   "metadata": {},
+   "source": [
+    "The predict_f method on the instance performs no caching."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "d4696b5e",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-08-09T12:26:01.494262Z",
+     "iopub.status.busy": "2023-08-09T12:26:01.493968Z",
+     "iopub.status.idle": "2023-08-09T12:26:04.223300Z",
+     "shell.execute_reply": "2023-08-09T12:26:04.222722Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "338 ms \u00b1 22.8 ms per loop (mean \u00b1 std. dev. of 7 runs, 1 loop each)\n"
+     ]
+    }
+   ],
+   "source": [
+    "%%timeit\n",
+    "model.predict_f(Xnew)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "693ce7a8",
+   "metadata": {},
+   "source": [
+    "Using the posterior object instead:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "id": "1186605f",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-08-09T12:26:04.225450Z",
+     "iopub.status.busy": "2023-08-09T12:26:04.225223Z",
+     "iopub.status.idle": "2023-08-09T12:26:04.402509Z",
+     "shell.execute_reply": "2023-08-09T12:26:04.401978Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "posterior = model.posterior()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "id": "ce007c5a",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2023-08-09T12:26:04.404960Z",
+     "iopub.status.busy": "2023-08-09T12:26:04.404735Z",
+     "iopub.status.idle": "2023-08-09T12:26:14.408125Z",
+     "shell.execute_reply": "2023-08-09T12:26:14.407484Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "123 ms \u00b1 4.05 ms per loop (mean \u00b1 std. dev. of 7 runs, 10 loops each)\n"
+     ]
+    }
+   ],
+   "source": [
+    "%%timeit\n",
+    "posterior.predict_f(Xnew)"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.11.4"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

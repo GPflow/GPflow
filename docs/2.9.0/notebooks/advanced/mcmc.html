@@ -1,0 +1,1494 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>MCMC (Markov Chain Monte Carlo) &#8212; GPflow 2.9.0 documentation</title>
+<script>
+  document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+  document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
+</script>
+
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+
+
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css?v=c27e38e3" />
+
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=f5666a58"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Ordinal regression" href="ordinal_regression.html" />
+    <link rel="prev" title="Mixture Density Networks in GPflow" href="../tailor/mixture_density_network.html" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="docsearch:language" content="en">
+  </head>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+    <div class="bd-header-announcement container-fluid" id="banner">
+      
+
+    </div>
+
+    
+    <nav class="bd-header navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="bd-header__inner container-xl">
+
+  <div id="navbar-start">
+    
+    
+  
+
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">GPflow 2.9.0 documentation</p>
+  
+</a>
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="fas fa-bars"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../getting_started.html">
+  Getting Started
+ </a>
+</li>
+
+<li class="toctree-l1 current active nav-item">
+ <a class="reference internal nav-link" href="../../user_guide.html">
+  User Guide
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../api/gpflow/index.html">
+  API reference
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../benchmarks.html">
+  Benchmarks
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../bibliography.html">
+  Bibliography
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <div class="dropdown" id="version_switcher">
+    <button type="button" class="btn btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+        2.9.0  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div id="version_switcher_menu" class="dropdown-menu list-group-flush py-0" aria-labelledby="version_switcher_button">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+
+<!-- NOTE: this JS must live here (not in our global JS file) because it relies
+     on being processed by Jinja before it is run (specifically for replacing
+     variables notebooks/advanced/mcmc and {'json_url': 'https://gpflow.github.io/GPflow/versions.json', 'version_match': '2.9.0'}.
+-->
+
+<script type="text/javascript">
+// Check if corresponding page path exists in other version of docs
+// and, if so, go there instead of the homepage of the other docs version
+function checkPageExistsAndRedirect(event) {
+    const currentFilePath = "notebooks/advanced/mcmc.html",
+          tryUrl = event.target.getAttribute("href");
+    let otherDocsHomepage = tryUrl.replace(currentFilePath, "");
+    $.ajax({
+        type: 'HEAD',
+        url: tryUrl,
+        // if the page exists, go there
+        success: function() {
+            location.href = tryUrl;
+        }
+    }).fail(function() {
+        location.href = otherDocsHomepage;
+    });
+    // this prevents the browser from following the href of the clicked node
+    // (which is fine because this function takes care of redirecting)
+    return false;
+}
+
+// Populate the version switcher from the JSON config file
+(function () {
+    $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
+        const currentFilePath = "notebooks/advanced/mcmc.html";
+        let btn = document.getElementById("version_switcher_button");
+        // Set empty strings by default so that these attributes exist and can be used in CSS selectors
+        btn.dataset["activeVersionName"] = "";
+        btn.dataset["activeVersion"] = "";
+        // create links to the corresponding page in the other docs versions
+        $.each(data, function(index, entry) {
+            // if no custom name specified (e.g., "latest"), use version string
+            if (!("name" in entry)) {
+                entry.name = entry.version;
+            }
+            // create the node
+            const node = document.createElement("a");
+            node.setAttribute("class", "list-group-item list-group-item-action py-1");
+            node.textContent = `${entry.name}`;
+            node.setAttribute("href", `${entry.url}${currentFilePath}`);
+            // on click, AJAX calls will check if the linked page exists before
+            // trying to redirect, and if not, will redirect to the homepage
+            // for that version of the docs.
+            node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
+            $("#version_switcher_menu").append(node);
+            // replace dropdown button text with the preferred display name of
+            // this version, rather than using sphinx's  variable.
+            // also highlight the dropdown entry for the currently-viewed
+            // version's entry
+            if (entry.version == "2.9.0") {
+                node.classList.add("active");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
+            }
+        });
+    });
+})();
+</script>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="bd-container container-xl">
+      <div class="bd-container__inner row">
+          
+
+<!-- Only show if we have sidebars configured, else just a small margin  -->
+<div class="bd-sidebar-primary col-12 col-md-3 bd-sidebar">
+  <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    <ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/vgp_notes.html">
+   Derivation of VGP equations
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/SGPR_notes.html">
+   Derivation of SGPR equations
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/cglb.html">
+   Conjugate Gradient Lower Bound
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/upper_bound.html">
+   Discussion of the GP marginal likelihood upper bound
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/FITCvsVFE.html">
+   Comparing FITC approximation to VFE approximation
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/Sanity_check.html">
+   Sanity checking when model behaviours should overlap
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/kernel_design.html">
+   Kernel Design
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/gp_nn.html">
+   Mixing TensorFlow models with GPflow
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/external-mean-function.html">
+   Custom mean functions: metalearning with GPs
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/mixture_density_network.html">
+   Mixture Density Networks in GPflow
+  </a>
+ </li>
+</ul>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
+   MCMC (Markov Chain Monte Carlo)
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="ordinal_regression.html">
+   Ordinal regression
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="gps_for_big_data.html">
+   Stochastic Variational Inference for scalability with SVGP
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="multiclass_classification.html">
+   Multiclass classification
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="varying_noise.html">
+   Gaussian process regression with varying output noise
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="heteroskedastic.html">
+   Heteroskedastic Likelihood and Multi-Latent GP
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="changepoints.html">
+   Change points
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="convolutional.html">
+   Convolutional Gaussian Processes
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="multioutput.html">
+   Multi-output Gaussian processes in GPflow
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="coregionalisation.html">
+   A simple demonstration of coregionalization
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="fast_predictions.html">
+   Faster predictions by caching
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="GPLVM.html">
+   Bayesian Gaussian process latent variable model (Bayesian GPLVM)
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="variational_fourier_features.html">
+   Variational Fourier Features in the GPflow framework
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="natural_gradients.html">
+   Natural gradients
+  </a>
+ </li>
+</ul>
+
+  </div>
+</nav>
+  </div>
+  <div class="sidebar-end-items">
+  </div>
+</div>
+
+
+          
+
+
+<div class="bd-sidebar-secondary d-none d-xl-block col-xl-2 bd-toc">
+  
+    
+    <div class="toc-item">
+      
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Example-1:-GP-regression">
+   Example 1: GP regression
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#Data-for-a-one-dimensional-regression-problem">
+     Data for a one-dimensional regression problem
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#MCMC-for-hyperparameters-\theta">
+     MCMC for hyperparameters
+     <span class="math notranslate nohighlight">
+      \(\theta\)
+     </span>
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Example-2:-Sparse-MC-for-multiclass-classification">
+   Example 2: Sparse MC for multiclass classification
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Example-3:-Fully-Bayesian-inference-for-generalized-GP-models-with-HMC">
+   Example 3: Fully Bayesian inference for generalized GP models with HMC
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#Exponential-Regression">
+     Exponential Regression
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Prior-on-constrained-and-unconstrained-parameters">
+   Prior on constrained and unconstrained parameters
+  </a>
+ </li>
+</ul>
+
+</nav>
+    </div>
+    
+    <div class="toc-item">
+      
+    </div>
+    
+  
+</div>
+
+
+          
+          
+          <div class="bd-content col-12 col-md-9 col-xl-7">
+              
+              <article class="bd-article" role="main">
+                
+  <section id="MCMC-(Markov-Chain-Monte-Carlo)">
+<h1>MCMC (Markov Chain Monte Carlo)<a class="headerlink" href="#MCMC-(Markov-Chain-Monte-Carlo)" title="Permalink to this heading">#</a></h1>
+<p>GPflow allows you to approximate the posterior over the latent functions of its models (and over the hyperparameters after setting a prior for those) using Hamiltonian Monte Carlo (HMC)</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span class="kn">import</span> <span class="nn">tensorflow_probability</span> <span class="k">as</span> <span class="nn">tfp</span>
+<span class="kn">from</span> <span class="nn">multiclass_classification</span> <span class="kn">import</span> <span class="n">colors</span><span class="p">,</span> <span class="n">plot_from_samples</span>
+<span class="kn">from</span> <span class="nn">tensorflow_probability</span> <span class="kn">import</span> <span class="n">distributions</span> <span class="k">as</span> <span class="n">tfd</span>
+
+<span class="kn">import</span> <span class="nn">gpflow</span>
+<span class="kn">from</span> <span class="nn">gpflow</span> <span class="kn">import</span> <span class="n">set_trainable</span>
+<span class="kn">from</span> <span class="nn">gpflow.ci_utils</span> <span class="kn">import</span> <span class="n">reduce_in_tests</span>
+
+<span class="n">gpflow</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set_default_float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set_default_jitter</span><span class="p">(</span><span class="mf">1e-4</span><span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set_default_summary_fmt</span><span class="p">(</span><span class="s2">&quot;notebook&quot;</span><span class="p">)</span>
+<span class="c1"># convert to float64 for tfp to play nicely with gpflow in 64</span>
+<span class="n">f64</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">to_default_float</span>
+
+<span class="n">tf</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
+
+
+<span class="o">%</span><span class="k">matplotlib</span> inline
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2023-08-09 12:25:32.048403: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
+</pre></div></div>
+</div>
+<p>In this notebook, we provide three examples:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#Example-1:-GP-regression"><span class="std std-ref">Example 1</span></a>: Sampling hyperparameters in Gaussian process regression</p></li>
+<li><p><a class="reference internal" href="#Example-2:-Sparse-MC-for-multiclass-classification"><span class="std std-ref">Example 2</span></a>: Sparse Variational MC applied to the multiclass classification problem</p></li>
+<li><p><a class="reference internal" href="#Example-3:-Fully-Bayesian-inference-for-generalized-GP-models-with-HMC"><span class="std std-ref">Example 3</span></a>: Full Bayesian inference for Gaussian process models</p></li>
+</ul>
+<section id="Example-1:-GP-regression">
+<h2>Example 1: GP regression<a class="headerlink" href="#Example-1:-GP-regression" title="Permalink to this heading">#</a></h2>
+<p>We first consider the GP regression (with Gaussian noise) for which the marginal likelihood <span class="math notranslate nohighlight">\(p(\mathbf y\,|\,\theta)\)</span> can be computed exactly.</p>
+<p>The GPR model parameterized by <span class="math notranslate nohighlight">\(\theta = [\tau]\)</span> is given by <span class="math">\begin{equation}
+Y_i = f(X_i) + \varepsilon_i
+\end{equation}</span> where <span class="math notranslate nohighlight">\(f \sim \mathcal{GP}(\mu(.), k(., .))\)</span>, and <span class="math notranslate nohighlight">\(\varepsilon \sim \mathcal{N}(0, \tau^2 I)\)</span>.</p>
+<p>See the <a class="reference external" href="../basics/regression.ipynb">Basic (Gaussian likelihood) GP regression model</a> for more details on GPR and for a treatment of the direct likelihood maximization.</p>
+<section id="Data-for-a-one-dimensional-regression-problem">
+<h3>Data for a one-dimensional regression problem<a class="headerlink" href="#Data-for-a-one-dimensional-regression-problem" title="Permalink to this heading">#</a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+
+<span class="n">N</span> <span class="o">=</span> <span class="mi">15</span>
+
+
+<span class="k">def</span> <span class="nf">synthetic_data</span><span class="p">(</span><span class="n">num</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">):</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">12</span> <span class="o">*</span> <span class="n">X</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.66</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">25</span> <span class="o">*</span> <span class="n">X</span><span class="p">)</span> <span class="o">+</span> <span class="n">rng</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.1</span> <span class="o">+</span> <span class="mi">3</span>
+    <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span>
+
+
+<span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span> <span class="o">=</span> <span class="n">synthetic_data</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">&quot;kx&quot;</span><span class="p">,</span> <span class="n">mew</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;$X$&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;$Y$&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;toy data&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_advanced_mcmc_7_0.png" src="../../_images/notebooks_advanced_mcmc_7_0.png" />
+</div>
+</div>
+</section>
+<section id="MCMC-for-hyperparameters-\theta">
+<h3>MCMC for hyperparameters <span class="math notranslate nohighlight">\(\theta\)</span><a class="headerlink" href="#MCMC-for-hyperparameters-\theta" title="Permalink to this heading">#</a></h3>
+<p>We now want to sample from the posterior over <span class="math notranslate nohighlight">\(\theta\)</span>: <span class="math">\begin{equation}
+p(\theta|\mathbf{y}) \propto p(\mathbf{y}|\theta)p(\theta)
+\end{equation}</span></p>
+<p>Firstly, we build the GPR model.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Matern52</span><span class="p">(</span><span class="n">lengthscales</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<span class="n">mean_function</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">mean_functions</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">mean_function</span><span class="p">,</span> <span class="n">noise_variance</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Secondly, we initialize the model to the maximum likelihood solution.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
+<span class="n">optimizer</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;log posterior density at optimum: </span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="n">log_posterior_density</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+log posterior density at optimum: -11.460240793869067
+</pre></div></div>
+</div>
+<p>Thirdly, we add priors to the hyperparameters.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># tfp.distributions dtype is inferred from parameters - so convert to 64-bit</span>
+<span class="n">model</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">lengthscales</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">tfd</span><span class="o">.</span><span class="n">Gamma</span><span class="p">(</span><span class="n">f64</span><span class="p">(</span><span class="mf">1.0</span><span class="p">),</span> <span class="n">f64</span><span class="p">(</span><span class="mf">1.0</span><span class="p">))</span>
+<span class="n">model</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">variance</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">tfd</span><span class="o">.</span><span class="n">Gamma</span><span class="p">(</span><span class="n">f64</span><span class="p">(</span><span class="mf">1.0</span><span class="p">),</span> <span class="n">f64</span><span class="p">(</span><span class="mf">1.0</span><span class="p">))</span>
+<span class="n">model</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">variance</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">tfd</span><span class="o">.</span><span class="n">Gamma</span><span class="p">(</span><span class="n">f64</span><span class="p">(</span><span class="mf">1.0</span><span class="p">),</span> <span class="n">f64</span><span class="p">(</span><span class="mf">1.0</span><span class="p">))</span>
+<span class="n">model</span><span class="o">.</span><span class="n">mean_function</span><span class="o">.</span><span class="n">A</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">tfd</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">f64</span><span class="p">(</span><span class="mf">0.0</span><span class="p">),</span> <span class="n">f64</span><span class="p">(</span><span class="mf">10.0</span><span class="p">))</span>
+<span class="n">model</span><span class="o">.</span><span class="n">mean_function</span><span class="o">.</span><span class="n">b</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">tfd</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">f64</span><span class="p">(</span><span class="mf">0.0</span><span class="p">),</span> <span class="n">f64</span><span class="p">(</span><span class="mf">10.0</span><span class="p">))</span>
+
+<span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area rendered_html docutils container">
+<table>
+<thead>
+<tr><th>name                   </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th>value       </th></tr>
+</thead>
+<tbody>
+<tr><td>GPR.mean_function.A    </td><td>Parameter</td><td>Identity        </td><td>Normal </td><td>True       </td><td>(1, 1) </td><td>float64</td><td>[[-0.79274]]</td></tr>
+<tr><td>GPR.mean_function.b    </td><td>Parameter</td><td>Identity        </td><td>Normal </td><td>True       </td><td>()     </td><td>float64</td><td>3.37839     </td></tr>
+<tr><td>GPR.kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>Gamma  </td><td>True       </td><td>()     </td><td>float64</td><td>0.85356     </td></tr>
+<tr><td>GPR.kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>Gamma  </td><td>True       </td><td>()     </td><td>float64</td><td>0.07945     </td></tr>
+<tr><td>GPR.likelihood.variance</td><td>Parameter</td><td>Softplus + Shift</td><td>Gamma  </td><td>True       </td><td>()     </td><td>float64</td><td>0.01652     </td></tr>
+</tbody>
+</table></div>
+</div>
+<p>We now sample from the posterior using HMC.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">num_burnin_steps</span> <span class="o">=</span> <span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">300</span><span class="p">)</span>
+<span class="n">num_samples</span> <span class="o">=</span> <span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
+
+<span class="c1"># Note that here we need model.trainable_parameters, not trainable_variables - only parameters can have priors!</span>
+<span class="n">hmc_helper</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">SamplingHelper</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">log_posterior_density</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span>
+<span class="p">)</span>
+
+<span class="n">hmc</span> <span class="o">=</span> <span class="n">tfp</span><span class="o">.</span><span class="n">mcmc</span><span class="o">.</span><span class="n">HamiltonianMonteCarlo</span><span class="p">(</span>
+    <span class="n">target_log_prob_fn</span><span class="o">=</span><span class="n">hmc_helper</span><span class="o">.</span><span class="n">target_log_prob_fn</span><span class="p">,</span>
+    <span class="n">num_leapfrog_steps</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">step_size</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">adaptive_hmc</span> <span class="o">=</span> <span class="n">tfp</span><span class="o">.</span><span class="n">mcmc</span><span class="o">.</span><span class="n">SimpleStepSizeAdaptation</span><span class="p">(</span>
+    <span class="n">hmc</span><span class="p">,</span>
+    <span class="n">num_adaptation_steps</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">target_accept_prob</span><span class="o">=</span><span class="n">f64</span><span class="p">(</span><span class="mf">0.75</span><span class="p">),</span>
+    <span class="n">adaptation_rate</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="nd">@tf</span><span class="o">.</span><span class="n">function</span>
+<span class="k">def</span> <span class="nf">run_chain_fn</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">tfp</span><span class="o">.</span><span class="n">mcmc</span><span class="o">.</span><span class="n">sample_chain</span><span class="p">(</span>
+        <span class="n">num_results</span><span class="o">=</span><span class="n">num_samples</span><span class="p">,</span>
+        <span class="n">num_burnin_steps</span><span class="o">=</span><span class="n">num_burnin_steps</span><span class="p">,</span>
+        <span class="n">current_state</span><span class="o">=</span><span class="n">hmc_helper</span><span class="o">.</span><span class="n">current_state</span><span class="p">,</span>
+        <span class="n">kernel</span><span class="o">=</span><span class="n">adaptive_hmc</span><span class="p">,</span>
+        <span class="n">trace_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">_</span><span class="p">,</span> <span class="n">pkr</span><span class="p">:</span> <span class="n">pkr</span><span class="o">.</span><span class="n">inner_results</span><span class="o">.</span><span class="n">is_accepted</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="n">samples</span><span class="p">,</span> <span class="n">traces</span> <span class="o">=</span> <span class="n">run_chain_fn</span><span class="p">()</span>
+<span class="n">parameter_samples</span> <span class="o">=</span> <span class="n">hmc_helper</span><span class="o">.</span><span class="n">convert_to_constrained_values</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+
+<span class="n">param_to_name</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">param</span><span class="p">:</span> <span class="n">name</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">parameter_dict</span><span class="p">(</span><span class="n">model</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<p><strong>NOTE:</strong> All the Hamiltonian MCMC sampling takes place in an unconstrained space (where constrained parameters have been mapped via a bijector to an unconstrained space). This makes the optimization, as required in the gradient step, much easier.</p>
+<p>However, we often wish to sample the constrained parameter values, not the unconstrained one. The <code class="docutils literal notranslate"><span class="pre">SamplingHelper</span></code> helps us convert our unconstrained values to constrained parameter ones.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_samples</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">y_axis_label</span><span class="p">):</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">val</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">parameters</span><span class="p">):</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">val</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="n">param_to_name</span><span class="p">[</span><span class="n">param</span><span class="p">])</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;HMC iteration&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="n">y_axis_label</span><span class="p">)</span>
+
+
+<span class="n">plot_samples</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span><span class="p">,</span> <span class="s2">&quot;unconstrained values&quot;</span><span class="p">)</span>
+<span class="n">plot_samples</span><span class="p">(</span>
+    <span class="n">parameter_samples</span><span class="p">,</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span><span class="p">,</span>
+    <span class="s2">&quot;constrained parameter values&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_advanced_mcmc_17_0.png" src="../../_images/notebooks_advanced_mcmc_17_0.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_advanced_mcmc_17_1.png" src="../../_images/notebooks_advanced_mcmc_17_1.png" />
+</div>
+</div>
+<p>You can also inspect the marginal distribution of samples.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">marginal_samples</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">y_axis_label</span><span class="p">):</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span>
+        <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">param_to_name</span><span class="p">),</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+    <span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">parameters</span><span class="p">):</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">val</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">bins</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">param_to_name</span><span class="p">[</span><span class="n">param</span><span class="p">])</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="n">y_axis_label</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+
+<span class="n">marginal_samples</span><span class="p">(</span>
+    <span class="n">samples</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span><span class="p">,</span> <span class="s2">&quot;unconstrained variable samples&quot;</span>
+<span class="p">)</span>
+<span class="n">marginal_samples</span><span class="p">(</span>
+    <span class="n">parameter_samples</span><span class="p">,</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span><span class="p">,</span>
+    <span class="s2">&quot;constrained parameter samples&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_advanced_mcmc_19_0.png" src="../../_images/notebooks_advanced_mcmc_19_0.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_advanced_mcmc_19_1.png" src="../../_images/notebooks_advanced_mcmc_19_1.png" />
+</div>
+</div>
+<p><strong>NOTE:</strong> The sampler runs in unconstrained space (so that positive parameters remain positive, and parameters that are not trainable are ignored).</p>
+<p>For serious analysis you most certainly want to run the sampler longer, with multiple chains and convergence checks. This will do for illustration though!</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_joint_marginals</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">y_axis_label</span><span class="p">):</span>
+    <span class="n">name_to_index</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">param_to_name</span><span class="p">[</span><span class="n">param</span><span class="p">]:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+    <span class="p">}</span>
+    <span class="n">f</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+        <span class="n">samples</span><span class="p">[</span><span class="n">name_to_index</span><span class="p">[</span><span class="s2">&quot;.likelihood.variance&quot;</span><span class="p">]],</span>
+        <span class="n">samples</span><span class="p">[</span><span class="n">name_to_index</span><span class="p">[</span><span class="s2">&quot;.kernel.variance&quot;</span><span class="p">]],</span>
+        <span class="s2">&quot;k.&quot;</span><span class="p">,</span>
+        <span class="n">alpha</span><span class="o">=</span><span class="mf">0.15</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;noise_variance&quot;</span><span class="p">)</span>
+    <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;signal_variance&quot;</span><span class="p">)</span>
+
+    <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+        <span class="n">samples</span><span class="p">[</span><span class="n">name_to_index</span><span class="p">[</span><span class="s2">&quot;.likelihood.variance&quot;</span><span class="p">]],</span>
+        <span class="n">samples</span><span class="p">[</span><span class="n">name_to_index</span><span class="p">[</span><span class="s2">&quot;.kernel.lengthscales&quot;</span><span class="p">]],</span>
+        <span class="s2">&quot;k.&quot;</span><span class="p">,</span>
+        <span class="n">alpha</span><span class="o">=</span><span class="mf">0.15</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;noise_variance&quot;</span><span class="p">)</span>
+    <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;lengthscale&quot;</span><span class="p">)</span>
+
+    <span class="n">axs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+        <span class="n">samples</span><span class="p">[</span><span class="n">name_to_index</span><span class="p">[</span><span class="s2">&quot;.kernel.lengthscales&quot;</span><span class="p">]],</span>
+        <span class="n">samples</span><span class="p">[</span><span class="n">name_to_index</span><span class="p">[</span><span class="s2">&quot;.kernel.variance&quot;</span><span class="p">]],</span>
+        <span class="s2">&quot;k.&quot;</span><span class="p">,</span>
+        <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">axs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;lengthscale&quot;</span><span class="p">)</span>
+    <span class="n">axs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;signal_variance&quot;</span><span class="p">)</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="n">y_axis_label</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+
+<span class="n">plot_joint_marginals</span><span class="p">(</span>
+    <span class="n">samples</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span><span class="p">,</span> <span class="s2">&quot;unconstrained variable samples&quot;</span>
+<span class="p">)</span>
+<span class="n">plot_joint_marginals</span><span class="p">(</span>
+    <span class="n">parameter_samples</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span><span class="p">,</span> <span class="s2">&quot;parameter samples&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_advanced_mcmc_21_0.png" src="../../_images/notebooks_advanced_mcmc_21_0.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_advanced_mcmc_21_1.png" src="../../_images/notebooks_advanced_mcmc_21_1.png" />
+</div>
+</div>
+<p>To plot the posterior of predictions, we’ll iterate through the samples and set the model state with each sample. Then, for that state (set of hyperparameters) we’ll draw some samples from the prediction function.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># plot the function posterior</span>
+<span class="n">xx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">,</span> <span class="mi">100</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">,</span> <span class="mi">20</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">var_samples</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">hmc_helper</span><span class="o">.</span><span class="n">current_state</span><span class="p">,</span> <span class="n">samples</span><span class="p">):</span>
+        <span class="n">var</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">var_samples</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_f_samples</span><span class="p">(</span><span class="n">xx</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xx</span><span class="p">,</span> <span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:],</span> <span class="s2">&quot;C0&quot;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">&quot;kx&quot;</span><span class="p">,</span> <span class="n">mew</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="n">xx</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">xx</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;$x$&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;$f|X,Y$&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Posterior GP samples&quot;</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_advanced_mcmc_23_0.png" src="../../_images/notebooks_advanced_mcmc_23_0.png" />
+</div>
+</div>
+<p>This example demonstrates the multi-modality of the true posterior over hyperparameters: the data could be explained both by long lengthscale, small signal variance, and high noise variance, as well as by shorter lengthscale, higher signal variance, and low noise variance.</p>
+</section>
+</section>
+<section id="Example-2:-Sparse-MC-for-multiclass-classification">
+<h2>Example 2: Sparse MC for multiclass classification<a class="headerlink" href="#Example-2:-Sparse-MC-for-multiclass-classification" title="Permalink to this heading">#</a></h2>
+<p>We now consider the multiclass classification problem (see the <a class="reference internal" href="multiclass_classification.html"><span class="doc">Multiclass classification</span></a> notebook). Here the marginal likelihood is not available in closed form. Instead we use a sparse variational approximation where we approximate the posterior for each GP as <span class="math notranslate nohighlight">\(q(f_c) \propto p(f_c|\mathbf{u}_c)q(\mathbf{u}_c)\)</span></p>
+<p>In the standard Sparse Variational GP (SVGP) formulation, <span class="math notranslate nohighlight">\(q(\mathbf{u_c})\)</span> is parameterized as a multivariate Gaussian.</p>
+<p>An alternative is to directly sample from the optimal <span class="math notranslate nohighlight">\(q(\mathbf{u}_c)\)</span>; this is what Sparse Variational GP using MCMC (SGPMC) does.</p>
+<p>We first build a multiclass classification dataset.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Generate data by sampling from SquaredExponential kernel, and classifying with the argmax</span>
+<span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+
+<span class="n">C</span><span class="p">,</span> <span class="n">N</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">100</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(</span><span class="n">lengthscales</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+<span class="n">K</span> <span class="o">=</span> <span class="n">kernel</span><span class="o">.</span><span class="n">K</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">N</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e-6</span>
+
+<span class="n">f</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">),</span> <span class="n">cov</span><span class="o">=</span><span class="n">K</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">C</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+<span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+<span class="c1"># One-hot encoding</span>
+<span class="n">Y_hot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">N</span><span class="p">,</span> <span class="n">C</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+<span class="n">Y_hot</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">N</span><span class="p">),</span> <span class="n">Y</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">1</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="n">order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
+
+<span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">C</span><span class="p">):</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">order</span><span class="p">],</span> <span class="n">f</span><span class="p">[</span><span class="n">order</span><span class="p">,</span> <span class="n">c</span><span class="p">],</span> <span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">c</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">c</span><span class="p">))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">order</span><span class="p">],</span> <span class="n">Y_hot</span><span class="p">[</span><span class="n">order</span><span class="p">,</span> <span class="n">c</span><span class="p">],</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">c</span><span class="p">])</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;$X$&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Latent (dots) and one-hot labels (lines)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Sample from the joint $p(Y, \mathbf</span><span class="si">{f}</span><span class="s2">)$&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_advanced_mcmc_29_0.png" src="../../_images/notebooks_advanced_mcmc_29_0.png" />
+</div>
+</div>
+<p>We then build the SGPMC model.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Matern32</span><span class="p">(</span><span class="n">lengthscales</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span> <span class="o">+</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">White</span><span class="p">(</span>
+    <span class="n">variance</span><span class="o">=</span><span class="mf">0.01</span>
+<span class="p">)</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">SGPMC</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">,</span>
+    <span class="n">kernel</span><span class="o">=</span><span class="n">kernel</span><span class="p">,</span>
+    <span class="n">likelihood</span><span class="o">=</span><span class="n">gpflow</span><span class="o">.</span><span class="n">likelihoods</span><span class="o">.</span><span class="n">MultiClass</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span>
+    <span class="n">inducing_variable</span><span class="o">=</span><span class="n">X</span><span class="p">[::</span><span class="mi">5</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+    <span class="n">num_latent_gps</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">kernels</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">variance</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">tfd</span><span class="o">.</span><span class="n">Gamma</span><span class="p">(</span><span class="n">f64</span><span class="p">(</span><span class="mf">1.0</span><span class="p">),</span> <span class="n">f64</span><span class="p">(</span><span class="mf">1.0</span><span class="p">))</span>
+<span class="n">model</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">kernels</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lengthscales</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">tfd</span><span class="o">.</span><span class="n">Gamma</span><span class="p">(</span><span class="n">f64</span><span class="p">(</span><span class="mf">2.0</span><span class="p">),</span> <span class="n">f64</span><span class="p">(</span><span class="mf">2.0</span><span class="p">))</span>
+<span class="n">set_trainable</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">kernels</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">variance</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+<span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area rendered_html docutils container">
+<table>
+<thead>
+<tr><th>name                                </th><th>class    </th><th>transform  </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th>value          </th></tr>
+</thead>
+<tbody>
+<tr><td>SGPMC.kernel.kernels[0].variance    </td><td>Parameter</td><td>Softplus   </td><td>Gamma  </td><td>True       </td><td>()     </td><td>float64</td><td>1.0            </td></tr>
+<tr><td>SGPMC.kernel.kernels[0].lengthscales</td><td>Parameter</td><td>Softplus   </td><td>Gamma  </td><td>True       </td><td>()     </td><td>float64</td><td>0.1            </td></tr>
+<tr><td>SGPMC.kernel.kernels[1].variance    </td><td>Parameter</td><td>Softplus   </td><td>       </td><td>False      </td><td>()     </td><td>float64</td><td>0.01           </td></tr>
+<tr><td>SGPMC.likelihood.invlink.epsilon    </td><td>Parameter</td><td>Sigmoid    </td><td>Beta   </td><td>False      </td><td>()     </td><td>float64</td><td>0.001          </td></tr>
+<tr><td>SGPMC.inducing_variable.Z           </td><td>Parameter</td><td>Identity   </td><td>       </td><td>True       </td><td>(20, 1)</td><td>float64</td><td>[[0.37454...   </td></tr>
+<tr><td>SGPMC.V                             </td><td>Parameter</td><td>Identity   </td><td>Normal </td><td>True       </td><td>(20, 3)</td><td>float64</td><td>[[0., 0., 0....</td></tr>
+</tbody>
+</table></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># The inducing point locations Z should not be included in the MCMC (see [Hensman et al. (2015)](https://papers.nips.cc/paper/5875-mcmc-for-variationally-sparse-gaussian-processes), hence we set them to non-trainable.</span>
+<span class="n">set_trainable</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">inducing_variable</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The chain of samples for <span class="math notranslate nohighlight">\(\mathbf{u}_c, \theta\)</span> is initialized at the value maximizing <span class="math notranslate nohighlight">\(p(Y|\mathbf{u}_c, \theta)\)</span>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
+<span class="n">optimizer</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;maxiter&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">}</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;log posterior density at optimum: </span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="n">log_posterior_density</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+log posterior density at optimum: -79.7654902747724
+</pre></div></div>
+</div>
+<p>Sampling starts with a ‘burn in’ period.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">num_burnin_steps</span> <span class="o">=</span> <span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">num_samples</span> <span class="o">=</span> <span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">500</span><span class="p">)</span>
+
+<span class="c1"># Note that here we need model.trainable_parameters, not trainable_variables - only parameters can have priors!</span>
+<span class="n">hmc_helper</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">SamplingHelper</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">log_posterior_density</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span>
+<span class="p">)</span>
+
+<span class="n">hmc</span> <span class="o">=</span> <span class="n">tfp</span><span class="o">.</span><span class="n">mcmc</span><span class="o">.</span><span class="n">HamiltonianMonteCarlo</span><span class="p">(</span>
+    <span class="n">target_log_prob_fn</span><span class="o">=</span><span class="n">hmc_helper</span><span class="o">.</span><span class="n">target_log_prob_fn</span><span class="p">,</span>
+    <span class="n">num_leapfrog_steps</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">step_size</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">adaptive_hmc</span> <span class="o">=</span> <span class="n">tfp</span><span class="o">.</span><span class="n">mcmc</span><span class="o">.</span><span class="n">SimpleStepSizeAdaptation</span><span class="p">(</span>
+    <span class="n">hmc</span><span class="p">,</span>
+    <span class="n">num_adaptation_steps</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">target_accept_prob</span><span class="o">=</span><span class="n">f64</span><span class="p">(</span><span class="mf">0.75</span><span class="p">),</span>
+    <span class="n">adaptation_rate</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="nd">@tf</span><span class="o">.</span><span class="n">function</span>
+<span class="k">def</span> <span class="nf">run_chain_fn</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">tfp</span><span class="o">.</span><span class="n">mcmc</span><span class="o">.</span><span class="n">sample_chain</span><span class="p">(</span>
+        <span class="n">num_results</span><span class="o">=</span><span class="n">num_samples</span><span class="p">,</span>
+        <span class="n">num_burnin_steps</span><span class="o">=</span><span class="n">num_burnin_steps</span><span class="p">,</span>
+        <span class="n">current_state</span><span class="o">=</span><span class="n">hmc_helper</span><span class="o">.</span><span class="n">current_state</span><span class="p">,</span>
+        <span class="n">kernel</span><span class="o">=</span><span class="n">adaptive_hmc</span><span class="p">,</span>
+        <span class="n">trace_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">_</span><span class="p">,</span> <span class="n">pkr</span><span class="p">:</span> <span class="n">pkr</span><span class="o">.</span><span class="n">inner_results</span><span class="o">.</span><span class="n">is_accepted</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="n">samples</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">run_chain_fn</span><span class="p">()</span>
+<span class="n">constrained_samples</span> <span class="o">=</span> <span class="n">hmc_helper</span><span class="o">.</span><span class="n">convert_to_constrained_values</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Statistics of the posterior samples can now be reported.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_from_samples</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span><span class="p">,</span> <span class="n">constrained_samples</span><span class="p">,</span> <span class="n">thin</span><span class="o">=</span><span class="mi">10</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_advanced_mcmc_38_0.png" src="../../_images/notebooks_advanced_mcmc_38_0.png" />
+</div>
+</div>
+<p>You can also display the sequence of sampled hyperparameters.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">param_to_name</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">param</span><span class="p">:</span> <span class="n">name</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">parameter_dict</span><span class="p">(</span><span class="n">model</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+<span class="p">}</span>
+<span class="n">name_to_index</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">param_to_name</span><span class="p">[</span><span class="n">param</span><span class="p">]:</span> <span class="n">i</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span><span class="p">)</span>
+<span class="p">}</span>
+<span class="n">hyperparameters</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;.kernel.kernels[0].lengthscales&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;.kernel.kernels[0].variance&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">param_name</span> <span class="ow">in</span> <span class="n">hyperparameters</span><span class="p">:</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">constrained_samples</span><span class="p">[</span><span class="n">name_to_index</span><span class="p">[</span><span class="n">param_name</span><span class="p">]],</span> <span class="n">label</span><span class="o">=</span><span class="n">param_name</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;HMC iteration&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;hyperparameter value&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_advanced_mcmc_40_0.png" src="../../_images/notebooks_advanced_mcmc_40_0.png" />
+</div>
+</div>
+</section>
+<section id="Example-3:-Fully-Bayesian-inference-for-generalized-GP-models-with-HMC">
+<h2>Example 3: Fully Bayesian inference for generalized GP models with HMC<a class="headerlink" href="#Example-3:-Fully-Bayesian-inference-for-generalized-GP-models-with-HMC" title="Permalink to this heading">#</a></h2>
+<p>You can construct very flexible models with Gaussian processes by combining them with different likelihoods (sometimes called ‘families’ in the GLM literature). This makes inference of the GP intractable because the likelihoods are not generally conjugate to the Gaussian process. The general form of the model is <span class="math">\begin{align}
+\theta &\sim p(\theta) \\
+f &\sim \mathcal {GP}(m(x; \theta),\, k(x, x'; \theta)) \\
+y_i &\sim p(y | g(f(x_i))\,.
+\end{align}</span></p>
+<p>To perform inference in this model, we’ll run MCMC using Hamiltonian Monte Carlo (HMC) over the function values and the parameters <span class="math notranslate nohighlight">\(\theta\)</span> jointly. The key to an effective scheme is rotation of the field using the Cholesky decomposition. We write:</p>
+<p><span class="math">\begin{align}
+\theta &\sim p(\theta) \\
+v &\sim \mathcal {N}(0,\, I) \\
+LL^\top &= K \\
+f &= m + Lv \\
+y_i &\sim p(y | g(f(x_i))\,.
+\end{align}</span></p>
+<p>Joint HMC over <span class="math notranslate nohighlight">\(v\)</span> and the function values is not widely adopted in the literature because of the difficulty in differentiating <span class="math notranslate nohighlight">\(LL^\top=K\)</span>. We’ve made this derivative available in TensorFlow, and so application of HMC is relatively straightforward.</p>
+<section id="Exponential-Regression">
+<h3>Exponential Regression<a class="headerlink" href="#Exponential-Regression" title="Permalink to this heading">#</a></h3>
+<p>We consider an exponential regression model: <span class="math">\begin{align}
+\theta &\sim p(\theta) \\
+f &\sim \mathcal {GP}(0, k(x, x'; \theta)) \\
+f_i &= f(x_i) \\
+y_i &\sim \mathcal {Exp} (e^{f_i})
+\end{align}</span></p>
+<p>We’ll use MCMC to deal with both the kernel parameters <span class="math notranslate nohighlight">\(\theta\)</span> and the latent function values <span class="math notranslate nohighlight">\(f\)</span>. Firstly, generate a data set.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="mi">14</span><span class="p">)</span>
+
+<span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
+<span class="n">Y</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;input $X$&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;output $Y$&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;toy dataset&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">X</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">Y</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_advanced_mcmc_44_0.png" src="../../_images/notebooks_advanced_mcmc_44_0.png" />
+</div>
+</div>
+<p>GPflow’s model for fully-Bayesian MCMC is called GPMC. It’s constructed like any other model, but contains a parameter <code class="docutils literal notranslate"><span class="pre">V</span></code> which represents the centered values of the function.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Matern32</span><span class="p">()</span> <span class="o">+</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Constant</span><span class="p">()</span>
+<span class="n">likelihood</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">likelihoods</span><span class="o">.</span><span class="n">Exponential</span><span class="p">()</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPMC</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">likelihood</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">V</span></code> parameter already has a prior applied. We’ll add priors to the parameters also (these are rather arbitrary, for illustration).</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">kernels</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lengthscales</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">tfd</span><span class="o">.</span><span class="n">Gamma</span><span class="p">(</span><span class="n">f64</span><span class="p">(</span><span class="mf">1.0</span><span class="p">),</span> <span class="n">f64</span><span class="p">(</span><span class="mf">1.0</span><span class="p">))</span>
+<span class="n">model</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">kernels</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">variance</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">tfd</span><span class="o">.</span><span class="n">Gamma</span><span class="p">(</span><span class="n">f64</span><span class="p">(</span><span class="mf">1.0</span><span class="p">),</span> <span class="n">f64</span><span class="p">(</span><span class="mf">1.0</span><span class="p">))</span>
+<span class="n">model</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">kernels</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">variance</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">tfd</span><span class="o">.</span><span class="n">Gamma</span><span class="p">(</span><span class="n">f64</span><span class="p">(</span><span class="mf">1.0</span><span class="p">),</span> <span class="n">f64</span><span class="p">(</span><span class="mf">1.0</span><span class="p">))</span>
+
+<span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area rendered_html docutils container">
+<table>
+<thead>
+<tr><th>name                               </th><th>class    </th><th>transform  </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th>value  </th></tr>
+</thead>
+<tbody>
+<tr><td>GPMC.kernel.kernels[0].variance    </td><td>Parameter</td><td>Softplus   </td><td>Gamma  </td><td>True       </td><td>()     </td><td>float64</td><td>1.0    </td></tr>
+<tr><td>GPMC.kernel.kernels[0].lengthscales</td><td>Parameter</td><td>Softplus   </td><td>Gamma  </td><td>True       </td><td>()     </td><td>float64</td><td>1.0    </td></tr>
+<tr><td>GPMC.kernel.kernels[1].variance    </td><td>Parameter</td><td>Softplus   </td><td>Gamma  </td><td>True       </td><td>()     </td><td>float64</td><td>1.0    </td></tr>
+<tr><td>GPMC.V                             </td><td>Parameter</td><td>Identity   </td><td>Normal </td><td>True       </td><td>(20, 1)</td><td>float64</td><td>[[0....</td></tr>
+</tbody>
+</table></div>
+</div>
+<p>Running HMC is pretty similar to optimizing a model. GPflow builds on top of <a class="reference external" href="https://www.tensorflow.org/probability/api_docs/python/tfp/mcmc">tensorflow_probability’s mcmc module</a> and provides a SamplingHelper class to make interfacing easier.</p>
+<p>We initialize HMC at the maximum a posteriori parameter values of the model.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
+<span class="n">maxiter</span> <span class="o">=</span> <span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">3000</span><span class="p">)</span>
+<span class="n">optimizer</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span>
+    <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="n">maxiter</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="c1"># We can now start HMC near maximum a posteriori (MAP)</span>
+</pre></div>
+</div>
+</div>
+<p>We then run the sampler,</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">num_burnin_steps</span> <span class="o">=</span> <span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">600</span><span class="p">)</span>
+<span class="n">num_samples</span> <span class="o">=</span> <span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
+
+<span class="c1"># Note that here we need model.trainable_parameters, not trainable_variables - only parameters can have priors!</span>
+<span class="n">hmc_helper</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">SamplingHelper</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">log_posterior_density</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span>
+<span class="p">)</span>
+
+<span class="n">hmc</span> <span class="o">=</span> <span class="n">tfp</span><span class="o">.</span><span class="n">mcmc</span><span class="o">.</span><span class="n">HamiltonianMonteCarlo</span><span class="p">(</span>
+    <span class="n">target_log_prob_fn</span><span class="o">=</span><span class="n">hmc_helper</span><span class="o">.</span><span class="n">target_log_prob_fn</span><span class="p">,</span>
+    <span class="n">num_leapfrog_steps</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">step_size</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">adaptive_hmc</span> <span class="o">=</span> <span class="n">tfp</span><span class="o">.</span><span class="n">mcmc</span><span class="o">.</span><span class="n">SimpleStepSizeAdaptation</span><span class="p">(</span>
+    <span class="n">hmc</span><span class="p">,</span>
+    <span class="n">num_adaptation_steps</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">target_accept_prob</span><span class="o">=</span><span class="n">f64</span><span class="p">(</span><span class="mf">0.75</span><span class="p">),</span>
+    <span class="n">adaptation_rate</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="nd">@tf</span><span class="o">.</span><span class="n">function</span>
+<span class="k">def</span> <span class="nf">run_chain_fn</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">tfp</span><span class="o">.</span><span class="n">mcmc</span><span class="o">.</span><span class="n">sample_chain</span><span class="p">(</span>
+        <span class="n">num_results</span><span class="o">=</span><span class="n">num_samples</span><span class="p">,</span>
+        <span class="n">num_burnin_steps</span><span class="o">=</span><span class="n">num_burnin_steps</span><span class="p">,</span>
+        <span class="n">current_state</span><span class="o">=</span><span class="n">hmc_helper</span><span class="o">.</span><span class="n">current_state</span><span class="p">,</span>
+        <span class="n">kernel</span><span class="o">=</span><span class="n">adaptive_hmc</span><span class="p">,</span>
+        <span class="n">trace_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">_</span><span class="p">,</span> <span class="n">pkr</span><span class="p">:</span> <span class="n">pkr</span><span class="o">.</span><span class="n">inner_results</span><span class="o">.</span><span class="n">is_accepted</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="n">samples</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">run_chain_fn</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>And compute the posterior prediction on a grid for plotting purposes.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Xtest</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">100</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>
+<span class="n">f_samples</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_samples</span><span class="p">):</span>
+    <span class="c1"># Note that hmc_helper.current_state contains the unconstrained variables</span>
+    <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">var_samples</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">hmc_helper</span><span class="o">.</span><span class="n">current_state</span><span class="p">,</span> <span class="n">samples</span><span class="p">):</span>
+        <span class="n">var</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">var_samples</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_f_samples</span><span class="p">(</span><span class="n">Xtest</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+    <span class="n">f_samples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="n">f_samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">f_samples</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">rate_samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">f_samples</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">])</span>
+
+<span class="p">(</span><span class="n">line</span><span class="p">,)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xtest</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">rate_samples</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span>
+    <span class="n">Xtest</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">rate_samples</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">rate_samples</span><span class="p">,</span> <span class="mi">95</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+    <span class="n">color</span><span class="o">=</span><span class="n">line</span><span class="o">.</span><span class="n">get_color</span><span class="p">(),</span>
+    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">&quot;kx&quot;</span><span class="p">,</span> <span class="n">mew</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">rate_samples</span><span class="p">,</span> <span class="mi">95</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_advanced_mcmc_56_0.png" src="../../_images/notebooks_advanced_mcmc_56_0.png" />
+</div>
+</div>
+<p>You can also display the sequence of sampled hyperparameters.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">parameter_samples</span> <span class="o">=</span> <span class="n">hmc_helper</span><span class="o">.</span><span class="n">convert_to_constrained_values</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+<span class="n">param_to_name</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">param</span><span class="p">:</span> <span class="n">name</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">parameter_dict</span><span class="p">(</span><span class="n">model</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+<span class="p">}</span>
+<span class="n">name_to_index</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">param_to_name</span><span class="p">[</span><span class="n">param</span><span class="p">]:</span> <span class="n">i</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span><span class="p">)</span>
+<span class="p">}</span>
+<span class="n">hyperparameters</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;.kernel.kernels[0].lengthscales&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;.kernel.kernels[0].variance&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;.kernel.kernels[1].variance&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">param_name</span> <span class="ow">in</span> <span class="n">hyperparameters</span><span class="p">:</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">parameter_samples</span><span class="p">[</span><span class="n">name_to_index</span><span class="p">[</span><span class="n">param_name</span><span class="p">]],</span> <span class="n">label</span><span class="o">=</span><span class="n">param_name</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;HMC iteration&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;hyperparameter value&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_advanced_mcmc_58_0.png" src="../../_images/notebooks_advanced_mcmc_58_0.png" />
+</div>
+</div>
+<p>You can also inspect the marginal of the posterior samples.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">hyperparameters</span><span class="p">),</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">param_name</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">hyperparameters</span><span class="p">):</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">parameter_samples</span><span class="p">[</span><span class="n">name_to_index</span><span class="p">[</span><span class="n">param_name</span><span class="p">]],</span> <span class="n">bins</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">param_name</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_advanced_mcmc_60_0.png" src="../../_images/notebooks_advanced_mcmc_60_0.png" />
+</div>
+</div>
+</section>
+</section>
+<section id="Prior-on-constrained-and-unconstrained-parameters">
+<h2>Prior on constrained and unconstrained parameters<a class="headerlink" href="#Prior-on-constrained-and-unconstrained-parameters" title="Permalink to this heading">#</a></h2>
+<p>GPflow’s <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> class provides options for setting a prior. <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> wraps a constrained tensor and provides computation of the gradient with respect to unconstrained transformation of that tensor. The user can set a prior either in <strong>constrained</strong> space or <strong>unconstrained</strong> space.</p>
+<p>By default, the prior for the <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> is set on the <em>constrained</em> space. To explicitly set the space on which the prior is defined, use the <code class="docutils literal notranslate"><span class="pre">prior_on</span></code> keyword argument:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prior_distribution</span> <span class="o">=</span> <span class="n">tfd</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">f64</span><span class="p">(</span><span class="mf">0.0</span><span class="p">),</span> <span class="n">f64</span><span class="p">(</span><span class="mf">1.0</span><span class="p">))</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">prior_on</span><span class="o">=</span><span class="s2">&quot;unconstrained&quot;</span><span class="p">,</span> <span class="n">prior</span><span class="o">=</span><span class="n">prior_distribution</span><span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">prior_on</span><span class="o">=</span><span class="s2">&quot;constrained&quot;</span><span class="p">,</span> <span class="n">prior</span><span class="o">=</span><span class="n">prior_distribution</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">gpflow.optimizers.SamplingHelper</span></code> makes sure that the prior density correctly reflects the space in which the prior is defined.</p>
+<p>Below we repeat the same experiment as before, but with some priors defined in the <code class="docutils literal notranslate"><span class="pre">unconstrained</span></code> space. We are using the exponential transform to ensure positivity of the kernel parameters (<code class="docutils literal notranslate"><span class="pre">set_default_positive_bijector(&quot;exp&quot;)</span></code>), so a log-normal prior on a constrained parameter corresponds to a normal prior on the unconstrained space:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set_default_positive_bijector</span><span class="p">(</span><span class="s2">&quot;exp&quot;</span><span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set_default_positive_minimum</span><span class="p">(</span><span class="mf">1e-6</span><span class="p">)</span>
+
+<span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">synthetic_data</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span>
+
+<span class="n">kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Matern52</span><span class="p">(</span><span class="n">lengthscales</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<span class="n">meanf</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">mean_functions</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">meanf</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">variance</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="mf">0.01</span><span class="p">)</span>
+
+<span class="n">mu</span> <span class="o">=</span> <span class="n">f64</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+<span class="n">std</span> <span class="o">=</span> <span class="n">f64</span><span class="p">(</span><span class="mf">4.0</span><span class="p">)</span>
+<span class="n">one</span> <span class="o">=</span> <span class="n">f64</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+
+<span class="n">model</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">lengthscales</span><span class="o">.</span><span class="n">prior_on</span> <span class="o">=</span> <span class="s2">&quot;unconstrained&quot;</span>
+<span class="n">model</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">lengthscales</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">tfd</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">std</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">variance</span><span class="o">.</span><span class="n">prior_on</span> <span class="o">=</span> <span class="s2">&quot;unconstrained&quot;</span>
+<span class="n">model</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">variance</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">tfd</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">std</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">variance</span><span class="o">.</span><span class="n">prior_on</span> <span class="o">=</span> <span class="s2">&quot;unconstrained&quot;</span>
+<span class="n">model</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">variance</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">tfd</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">std</span><span class="p">)</span>
+
+<span class="n">model</span><span class="o">.</span><span class="n">mean_function</span><span class="o">.</span><span class="n">A</span><span class="o">.</span><span class="n">prior_on</span> <span class="o">=</span> <span class="s2">&quot;constrained&quot;</span>
+<span class="n">model</span><span class="o">.</span><span class="n">mean_function</span><span class="o">.</span><span class="n">A</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">tfd</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">std</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">mean_function</span><span class="o">.</span><span class="n">b</span><span class="o">.</span><span class="n">prior_on</span> <span class="o">=</span> <span class="s2">&quot;constrained&quot;</span>
+<span class="n">model</span><span class="o">.</span><span class="n">mean_function</span><span class="o">.</span><span class="n">b</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">tfd</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">std</span><span class="p">)</span>
+
+<span class="n">model</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">lengthscales</span><span class="o">.</span><span class="n">prior_on</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;PriorOn.UNCONSTRAINED: &#39;unconstrained&#39;&gt;
+</pre></div></div>
+</div>
+<p>Let’s run HMC and plot chain traces:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">num_burnin_steps</span> <span class="o">=</span> <span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">300</span><span class="p">)</span>
+<span class="n">num_samples</span> <span class="o">=</span> <span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">500</span><span class="p">)</span>
+
+<span class="n">hmc_helper</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">SamplingHelper</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">log_posterior_density</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span>
+<span class="p">)</span>
+
+<span class="n">hmc</span> <span class="o">=</span> <span class="n">tfp</span><span class="o">.</span><span class="n">mcmc</span><span class="o">.</span><span class="n">HamiltonianMonteCarlo</span><span class="p">(</span>
+    <span class="n">target_log_prob_fn</span><span class="o">=</span><span class="n">hmc_helper</span><span class="o">.</span><span class="n">target_log_prob_fn</span><span class="p">,</span>
+    <span class="n">num_leapfrog_steps</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">step_size</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">adaptive_hmc</span> <span class="o">=</span> <span class="n">tfp</span><span class="o">.</span><span class="n">mcmc</span><span class="o">.</span><span class="n">SimpleStepSizeAdaptation</span><span class="p">(</span>
+    <span class="n">hmc</span><span class="p">,</span>
+    <span class="n">num_adaptation_steps</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">target_accept_prob</span><span class="o">=</span><span class="n">f64</span><span class="p">(</span><span class="mf">0.75</span><span class="p">),</span>
+    <span class="n">adaptation_rate</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="nd">@tf</span><span class="o">.</span><span class="n">function</span>
+<span class="k">def</span> <span class="nf">run_chain_fn_unconstrained</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">tfp</span><span class="o">.</span><span class="n">mcmc</span><span class="o">.</span><span class="n">sample_chain</span><span class="p">(</span>
+        <span class="n">num_results</span><span class="o">=</span><span class="n">num_samples</span><span class="p">,</span>
+        <span class="n">num_burnin_steps</span><span class="o">=</span><span class="n">num_burnin_steps</span><span class="p">,</span>
+        <span class="n">current_state</span><span class="o">=</span><span class="n">hmc_helper</span><span class="o">.</span><span class="n">current_state</span><span class="p">,</span>
+        <span class="n">kernel</span><span class="o">=</span><span class="n">adaptive_hmc</span><span class="p">,</span>
+        <span class="n">trace_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">_</span><span class="p">,</span> <span class="n">pkr</span><span class="p">:</span> <span class="n">pkr</span><span class="o">.</span><span class="n">inner_results</span><span class="o">.</span><span class="n">is_accepted</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="n">samples</span><span class="p">,</span> <span class="n">traces</span> <span class="o">=</span> <span class="n">run_chain_fn_unconstrained</span><span class="p">()</span>
+<span class="n">parameter_samples</span> <span class="o">=</span> <span class="n">hmc_helper</span><span class="o">.</span><span class="n">convert_to_constrained_values</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+
+<span class="n">param_to_name</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">param</span><span class="p">:</span> <span class="n">name</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">parameter_dict</span><span class="p">(</span><span class="n">model</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+<span class="p">}</span>
+<span class="n">marginal_samples</span><span class="p">(</span>
+    <span class="n">samples</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span><span class="p">,</span> <span class="s2">&quot;unconstrained variable samples&quot;</span>
+<span class="p">)</span>
+<span class="n">marginal_samples</span><span class="p">(</span>
+    <span class="n">parameter_samples</span><span class="p">,</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span><span class="p">,</span>
+    <span class="s2">&quot;constrained parameter samples&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_advanced_mcmc_69_0.png" src="../../_images/notebooks_advanced_mcmc_69_0.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_advanced_mcmc_69_1.png" src="../../_images/notebooks_advanced_mcmc_69_1.png" />
+</div>
+</div>
+</section>
+</section>
+
+
+              </article>
+              
+
+              
+          </div>
+          
+      </div>
+    </div>
+
+  
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695"></script>
+
+<footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    <p class="copyright">
+    &copy; Copyright 2023, The GPflow Contributors.<br>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.1.2.<br>
+</p>
+  </div>
+  
+</div>
+</footer>
+  </body>
+</html>

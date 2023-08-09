@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Variational Fourier Features in the GPflow framework &#8212; GPflow 2.9.0 documentation</title>
+<script>
+  document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+  document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
+</script>
+
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+
+
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css?v=c27e38e3" />
+
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=f5666a58"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Natural gradients" href="natural_gradients.html" />
+    <link rel="prev" title="Bayesian Gaussian process latent variable model (Bayesian GPLVM)" href="GPLVM.html" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="docsearch:language" content="en">
+  </head>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+    <div class="bd-header-announcement container-fluid" id="banner">
+      
+
+    </div>
+
+    
+    <nav class="bd-header navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="bd-header__inner container-xl">
+
+  <div id="navbar-start">
+    
+    
+  
+
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">GPflow 2.9.0 documentation</p>
+  
+</a>
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="fas fa-bars"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../getting_started.html">
+  Getting Started
+ </a>
+</li>
+
+<li class="toctree-l1 current active nav-item">
+ <a class="reference internal nav-link" href="../../user_guide.html">
+  User Guide
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../api/gpflow/index.html">
+  API reference
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../benchmarks.html">
+  Benchmarks
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../bibliography.html">
+  Bibliography
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <div class="dropdown" id="version_switcher">
+    <button type="button" class="btn btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+        2.9.0  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div id="version_switcher_menu" class="dropdown-menu list-group-flush py-0" aria-labelledby="version_switcher_button">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+
+<!-- NOTE: this JS must live here (not in our global JS file) because it relies
+     on being processed by Jinja before it is run (specifically for replacing
+     variables notebooks/advanced/variational_fourier_features and {'json_url': 'https://gpflow.github.io/GPflow/versions.json', 'version_match': '2.9.0'}.
+-->
+
+<script type="text/javascript">
+// Check if corresponding page path exists in other version of docs
+// and, if so, go there instead of the homepage of the other docs version
+function checkPageExistsAndRedirect(event) {
+    const currentFilePath = "notebooks/advanced/variational_fourier_features.html",
+          tryUrl = event.target.getAttribute("href");
+    let otherDocsHomepage = tryUrl.replace(currentFilePath, "");
+    $.ajax({
+        type: 'HEAD',
+        url: tryUrl,
+        // if the page exists, go there
+        success: function() {
+            location.href = tryUrl;
+        }
+    }).fail(function() {
+        location.href = otherDocsHomepage;
+    });
+    // this prevents the browser from following the href of the clicked node
+    // (which is fine because this function takes care of redirecting)
+    return false;
+}
+
+// Populate the version switcher from the JSON config file
+(function () {
+    $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
+        const currentFilePath = "notebooks/advanced/variational_fourier_features.html";
+        let btn = document.getElementById("version_switcher_button");
+        // Set empty strings by default so that these attributes exist and can be used in CSS selectors
+        btn.dataset["activeVersionName"] = "";
+        btn.dataset["activeVersion"] = "";
+        // create links to the corresponding page in the other docs versions
+        $.each(data, function(index, entry) {
+            // if no custom name specified (e.g., "latest"), use version string
+            if (!("name" in entry)) {
+                entry.name = entry.version;
+            }
+            // create the node
+            const node = document.createElement("a");
+            node.setAttribute("class", "list-group-item list-group-item-action py-1");
+            node.textContent = `${entry.name}`;
+            node.setAttribute("href", `${entry.url}${currentFilePath}`);
+            // on click, AJAX calls will check if the linked page exists before
+            // trying to redirect, and if not, will redirect to the homepage
+            // for that version of the docs.
+            node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
+            $("#version_switcher_menu").append(node);
+            // replace dropdown button text with the preferred display name of
+            // this version, rather than using sphinx's  variable.
+            // also highlight the dropdown entry for the currently-viewed
+            // version's entry
+            if (entry.version == "2.9.0") {
+                node.classList.add("active");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
+            }
+        });
+    });
+})();
+</script>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="bd-container container-xl">
+      <div class="bd-container__inner row">
+          
+
+<!-- Only show if we have sidebars configured, else just a small margin  -->
+<div class="bd-sidebar-primary col-12 col-md-3 bd-sidebar">
+  <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    <ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/vgp_notes.html">
+   Derivation of VGP equations
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/SGPR_notes.html">
+   Derivation of SGPR equations
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/cglb.html">
+   Conjugate Gradient Lower Bound
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/upper_bound.html">
+   Discussion of the GP marginal likelihood upper bound
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/FITCvsVFE.html">
+   Comparing FITC approximation to VFE approximation
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/Sanity_check.html">
+   Sanity checking when model behaviours should overlap
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/kernel_design.html">
+   Kernel Design
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/gp_nn.html">
+   Mixing TensorFlow models with GPflow
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/external-mean-function.html">
+   Custom mean functions: metalearning with GPs
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/mixture_density_network.html">
+   Mixture Density Networks in GPflow
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="mcmc.html">
+   MCMC (Markov Chain Monte Carlo)
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="ordinal_regression.html">
+   Ordinal regression
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="gps_for_big_data.html">
+   Stochastic Variational Inference for scalability with SVGP
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="multiclass_classification.html">
+   Multiclass classification
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="varying_noise.html">
+   Gaussian process regression with varying output noise
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="heteroskedastic.html">
+   Heteroskedastic Likelihood and Multi-Latent GP
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="changepoints.html">
+   Change points
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="convolutional.html">
+   Convolutional Gaussian Processes
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="multioutput.html">
+   Multi-output Gaussian processes in GPflow
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="coregionalisation.html">
+   A simple demonstration of coregionalization
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="fast_predictions.html">
+   Faster predictions by caching
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="GPLVM.html">
+   Bayesian Gaussian process latent variable model (Bayesian GPLVM)
+  </a>
+ </li>
+</ul>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
+   Variational Fourier Features in the GPflow framework
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="natural_gradients.html">
+   Natural gradients
+  </a>
+ </li>
+</ul>
+
+  </div>
+</nav>
+  </div>
+  <div class="sidebar-end-items">
+  </div>
+</div>
+
+
+          
+
+
+<div class="bd-sidebar-secondary d-none d-xl-block col-xl-2 bd-toc">
+  
+    
+    <div class="toc-item">
+      
+
+<nav id="bd-toc-nav">
+    
+</nav>
+    </div>
+    
+    <div class="toc-item">
+      
+    </div>
+    
+  
+</div>
+
+
+          
+          
+          <div class="bd-content col-12 col-md-9 col-xl-7">
+              
+              <article class="bd-article" role="main">
+                
+  <section id="Variational-Fourier-Features-in-the-GPflow-framework">
+<h1>Variational Fourier Features in the GPflow framework<a class="headerlink" href="#Variational-Fourier-Features-in-the-GPflow-framework" title="Permalink to this heading">#</a></h1>
+<p>In this notebook we demonstrate how new types of inducing variables can easily be incorporated in the GPflow framework. As an example case, we use the variational Fourier features from <a class="reference external" href="http://jmlr.csail.mit.edu/papers/v18/16-579">Hensman, Durrande, and Solin (JMLR 2018)</a>. All equation and table references are to this paper.</p>
+<p><strong>Note:</strong> This implementation is meant as an example, not as a feature-complete implementation. For more features, such as multi-dimensional inputs, use the <a class="reference external" href="https://github.com/st--/VFF">GPflow 2 version of the original VFF code</a>.</p>
+<p>We cannot directly use Fourier features within the multi-output framework without losing the computational advantages, as <code class="docutils literal notranslate"><span class="pre">Kuu</span></code> and <code class="docutils literal notranslate"><span class="pre">Kuf</span></code> for SharedIndependent and SeparateIndependent inducing variables assume that the sub-inducing variable’s covariances are simply computed as dense Tensors. However, there is nothing preventing a dedicated implementation of multi-output Fourier features that is computationally more efficient - feel free to discuss this within <a class="reference external" href="https://github.com/GPflow/GPflow/#the-gpflow-community">the GPflow
+community</a>!</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span class="kn">from</span> <span class="nn">check_shapes</span> <span class="kn">import</span> <span class="n">Shape</span>
+
+<span class="kn">import</span> <span class="nn">gpflow</span>
+<span class="kn">from</span> <span class="nn">gpflow</span> <span class="kn">import</span> <span class="n">covariances</span> <span class="k">as</span> <span class="n">cov</span>
+<span class="kn">from</span> <span class="nn">gpflow</span> <span class="kn">import</span> <span class="n">kullback_leiblers</span> <span class="k">as</span> <span class="n">kl</span>
+<span class="kn">from</span> <span class="nn">gpflow.base</span> <span class="kn">import</span> <span class="n">TensorLike</span>
+<span class="kn">from</span> <span class="nn">gpflow.ci_utils</span> <span class="kn">import</span> <span class="n">reduce_in_tests</span>
+<span class="kn">from</span> <span class="nn">gpflow.inducing_variables</span> <span class="kn">import</span> <span class="n">InducingVariables</span>
+<span class="kn">from</span> <span class="nn">gpflow.utilities</span> <span class="kn">import</span> <span class="n">to_default_float</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2023-08-09 12:26:46.492678: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># VFF give structured covariance matrices that are computationally efficient.</span>
+<span class="c1"># We take advantage of this using TensorFlow&#39;s LinearOperators:</span>
+<span class="n">BlockDiag</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">LinearOperatorBlockDiag</span>
+<span class="n">Diag</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">LinearOperatorDiag</span>
+<span class="n">LowRank</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">LinearOperatorLowRankUpdate</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="o">%</span><span class="k">matplotlib</span> inline
+</pre></div>
+</div>
+</div>
+<p>The VFF inducing variables are defined as a projection <span class="math notranslate nohighlight">\(u_m = \mathcal{P}_{\phi_m}(f)\)</span> (eq. (59)) of the GP <span class="math notranslate nohighlight">\(f(\cdot)\)</span> onto a truncated Fourier basis, <span class="math notranslate nohighlight">\(\phi_m = [1, \cos(\omega_1(x-a)),\dots,\cos(\omega_M(x-a)),\sin(\omega_1(x-a)),\dots,\sin(\omega_M(x-a))]\)</span> (eq. (47)). To represent this we define a new inducing variables class that derives from the <code class="docutils literal notranslate"><span class="pre">InducingVariables</span></code> base class.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">FourierFeatures1D</span><span class="p">(</span><span class="n">InducingVariables</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">M</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        `a` and `b` define the interval [a, b] of the Fourier representation.</span>
+<span class="sd">        `M` specifies the number of frequencies to use.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># [a, b] defining the interval of the Fourier representation:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">gpflow</span><span class="o">.</span><span class="n">default_float</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">gpflow</span><span class="o">.</span><span class="n">default_float</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">M</span> <span class="o">=</span> <span class="n">M</span>
+        <span class="c1"># integer array defining the frequencies, ω_m = 2π (b - a)/m:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">num_inducing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; number of inducing variables (defines dimensionality of q(u)) &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">M</span> <span class="o">-</span> <span class="mi">1</span>  <span class="c1"># `M` cosine and `M-1` sine components</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">M</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">D</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># Input size.</span>
+        <span class="n">P</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># Output size.</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">D</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Next, we need to define how to compute <span class="math notranslate nohighlight">\(\mathrm{K}_\mathbf{uu} = \operatorname{cov}(u_m, u_{m'})\)</span> (eq. (61)) and <span class="math notranslate nohighlight">\(\mathrm{K}_\mathbf{uf} = \operatorname{cov}(u_m, f(x_n))\)</span> (eq. (60)).</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@cov</span><span class="o">.</span><span class="n">Kuu</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">FourierFeatures1D</span><span class="p">,</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Matern12</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">Kuu_matern12_fourierfeatures1d</span><span class="p">(</span><span class="n">inducing_variable</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">jitter</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">ms</span> <span class="o">=</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">u</span><span class="p">:</span> <span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">a</span><span class="p">,</span> <span class="n">u</span><span class="o">.</span><span class="n">b</span><span class="p">,</span> <span class="n">u</span><span class="o">.</span><span class="n">ms</span><span class="p">))(</span><span class="n">inducing_variable</span><span class="p">)</span>
+    <span class="n">omegas</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">ms</span> <span class="o">/</span> <span class="p">(</span><span class="n">b</span> <span class="o">-</span> <span class="n">a</span><span class="p">)</span>
+
+    <span class="c1"># Cosine block:</span>
+    <span class="n">lamb</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">kernel</span><span class="o">.</span><span class="n">lengthscales</span>
+    <span class="n">two_or_four</span> <span class="o">=</span> <span class="n">to_default_float</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">omegas</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">))</span>
+    <span class="n">d_cos</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">b</span> <span class="o">-</span> <span class="n">a</span><span class="p">)</span>
+        <span class="o">*</span> <span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">lamb</span><span class="p">)</span> <span class="o">+</span> <span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">omegas</span><span class="p">))</span>
+        <span class="o">/</span> <span class="n">lamb</span>
+        <span class="o">/</span> <span class="n">kernel</span><span class="o">.</span><span class="n">variance</span>
+        <span class="o">/</span> <span class="n">two_or_four</span>
+    <span class="p">)</span>  <span class="c1"># eq. (111)</span>
+    <span class="n">v_cos</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">d_cos</span><span class="p">)</span> <span class="o">/</span> <span class="n">tf</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">kernel</span><span class="o">.</span><span class="n">variance</span><span class="p">)</span>  <span class="c1"># eq. (110)</span>
+    <span class="n">cosine_block</span> <span class="o">=</span> <span class="n">LowRank</span><span class="p">(</span>
+        <span class="n">Diag</span><span class="p">(</span><span class="n">d_cos</span><span class="p">,</span> <span class="n">is_positive_definite</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="n">v_cos</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Sine block:</span>
+    <span class="n">omegas</span> <span class="o">=</span> <span class="n">omegas</span><span class="p">[</span>
+        <span class="n">tf</span><span class="o">.</span><span class="n">not_equal</span><span class="p">(</span><span class="n">omegas</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="p">]</span>  <span class="c1"># the sine block does not include omega=0</span>
+    <span class="n">d_sin</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">b</span> <span class="o">-</span> <span class="n">a</span><span class="p">)</span>
+        <span class="o">*</span> <span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">lamb</span><span class="p">)</span> <span class="o">+</span> <span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">omegas</span><span class="p">))</span>
+        <span class="o">/</span> <span class="n">lamb</span>
+        <span class="o">/</span> <span class="n">kernel</span><span class="o">.</span><span class="n">variance</span>
+        <span class="o">/</span> <span class="mf">4.0</span>
+    <span class="p">)</span>  <span class="c1"># eq. (113)</span>
+    <span class="n">sine_block</span> <span class="o">=</span> <span class="n">Diag</span><span class="p">(</span><span class="n">d_sin</span><span class="p">,</span> <span class="n">is_positive_definite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">BlockDiag</span><span class="p">([</span><span class="n">cosine_block</span><span class="p">,</span> <span class="n">sine_block</span><span class="p">])</span>
+
+
+<span class="nd">@cov</span><span class="o">.</span><span class="n">Kuf</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">FourierFeatures1D</span><span class="p">,</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Matern12</span><span class="p">,</span> <span class="n">TensorLike</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">Kuf_matern12_fourierfeatures1d</span><span class="p">(</span><span class="n">inducing_variable</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">ms</span> <span class="o">=</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">u</span><span class="p">:</span> <span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">a</span><span class="p">,</span> <span class="n">u</span><span class="o">.</span><span class="n">b</span><span class="p">,</span> <span class="n">u</span><span class="o">.</span><span class="n">ms</span><span class="p">))(</span><span class="n">inducing_variable</span><span class="p">)</span>
+
+    <span class="n">omegas</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">ms</span> <span class="o">/</span> <span class="p">(</span><span class="n">b</span> <span class="o">-</span> <span class="n">a</span><span class="p">)</span>
+    <span class="n">Kuf_cos</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">omegas</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">-</span> <span class="n">a</span><span class="p">))</span>
+    <span class="n">omegas_sin</span> <span class="o">=</span> <span class="n">omegas</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">not_equal</span><span class="p">(</span><span class="n">omegas</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span>  <span class="c1"># don&#39;t compute zero frequency</span>
+    <span class="n">Kuf_sin</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">omegas_sin</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">-</span> <span class="n">a</span><span class="p">))</span>
+
+    <span class="c1"># correct Kuf outside [a, b] -- see Table 1</span>
+    <span class="n">Kuf_sin</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">X</span> <span class="o">&lt;</span> <span class="n">a</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">X</span> <span class="o">&gt;</span> <span class="n">b</span><span class="p">),</span> <span class="n">tf</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">Kuf_sin</span><span class="p">),</span> <span class="n">Kuf_sin</span>
+    <span class="p">)</span>  <span class="c1"># just zero</span>
+
+    <span class="n">left_tail</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tf</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">X</span> <span class="o">-</span> <span class="n">a</span><span class="p">)</span> <span class="o">/</span> <span class="n">kernel</span><span class="o">.</span><span class="n">lengthscales</span><span class="p">)[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="n">right_tail</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tf</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">X</span> <span class="o">-</span> <span class="n">b</span><span class="p">)</span> <span class="o">/</span> <span class="n">kernel</span><span class="o">.</span><span class="n">lengthscales</span><span class="p">)[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="n">Kuf_cos</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">X</span> <span class="o">&lt;</span> <span class="n">a</span><span class="p">,</span> <span class="n">left_tail</span><span class="p">,</span> <span class="n">Kuf_cos</span><span class="p">)</span>  <span class="c1"># replace with left tail</span>
+    <span class="n">Kuf_cos</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">X</span> <span class="o">&gt;</span> <span class="n">b</span><span class="p">,</span> <span class="n">right_tail</span><span class="p">,</span> <span class="n">Kuf_cos</span><span class="p">)</span>  <span class="c1"># replace with right tail</span>
+
+    <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">Kuf_cos</span><span class="p">,</span> <span class="n">Kuf_sin</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+
+<span class="nd">@cov</span><span class="o">.</span><span class="n">Kuu</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">FourierFeatures1D</span><span class="p">,</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Matern32</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">Kuu_matern32_fourierfeatures1d</span><span class="p">(</span><span class="n">inducing_variable</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">jitter</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">ms</span> <span class="o">=</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">u</span><span class="p">:</span> <span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">a</span><span class="p">,</span> <span class="n">u</span><span class="o">.</span><span class="n">b</span><span class="p">,</span> <span class="n">u</span><span class="o">.</span><span class="n">ms</span><span class="p">))(</span><span class="n">inducing_variable</span><span class="p">)</span>
+    <span class="n">omegas</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">ms</span> <span class="o">/</span> <span class="p">(</span><span class="n">b</span> <span class="o">-</span> <span class="n">a</span><span class="p">)</span>
+
+    <span class="c1"># Cosine block: eq. (114)</span>
+    <span class="n">lamb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">3.0</span><span class="p">)</span> <span class="o">/</span> <span class="n">kernel</span><span class="o">.</span><span class="n">lengthscales</span>
+    <span class="n">four_or_eight</span> <span class="o">=</span> <span class="n">to_default_float</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">omegas</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="mf">8.0</span><span class="p">))</span>
+    <span class="n">d_cos</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">b</span> <span class="o">-</span> <span class="n">a</span><span class="p">)</span>
+        <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">lamb</span><span class="p">)</span> <span class="o">+</span> <span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">omegas</span><span class="p">))</span>
+        <span class="o">/</span> <span class="n">tf</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="n">lamb</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="o">/</span> <span class="n">kernel</span><span class="o">.</span><span class="n">variance</span>
+        <span class="o">/</span> <span class="n">four_or_eight</span>
+    <span class="p">)</span>
+    <span class="n">v_cos</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">d_cos</span><span class="p">)</span> <span class="o">/</span> <span class="n">tf</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">kernel</span><span class="o">.</span><span class="n">variance</span><span class="p">)</span>
+    <span class="n">cosine_block</span> <span class="o">=</span> <span class="n">LowRank</span><span class="p">(</span>
+        <span class="n">Diag</span><span class="p">(</span><span class="n">d_cos</span><span class="p">,</span> <span class="n">is_positive_definite</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="n">v_cos</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Sine block: eq. (115)</span>
+    <span class="n">omegas</span> <span class="o">=</span> <span class="n">omegas</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">not_equal</span><span class="p">(</span><span class="n">omegas</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span>  <span class="c1"># don&#39;t compute omega=0</span>
+    <span class="n">d_sin</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">b</span> <span class="o">-</span> <span class="n">a</span><span class="p">)</span>
+        <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">lamb</span><span class="p">)</span> <span class="o">+</span> <span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">omegas</span><span class="p">))</span>
+        <span class="o">/</span> <span class="n">tf</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="n">lamb</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="o">/</span> <span class="n">kernel</span><span class="o">.</span><span class="n">variance</span>
+        <span class="o">/</span> <span class="mf">8.0</span>
+    <span class="p">)</span>
+    <span class="n">v_sin</span> <span class="o">=</span> <span class="n">omegas</span> <span class="o">/</span> <span class="n">lamb</span> <span class="o">/</span> <span class="n">tf</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">kernel</span><span class="o">.</span><span class="n">variance</span><span class="p">)</span>
+    <span class="n">sine_block</span> <span class="o">=</span> <span class="n">LowRank</span><span class="p">(</span><span class="n">Diag</span><span class="p">(</span><span class="n">d_sin</span><span class="p">,</span> <span class="n">is_positive_definite</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="n">v_sin</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">BlockDiag</span><span class="p">([</span><span class="n">cosine_block</span><span class="p">,</span> <span class="n">sine_block</span><span class="p">])</span>  <span class="c1"># eq. (116)</span>
+
+
+<span class="nd">@cov</span><span class="o">.</span><span class="n">Kuf</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">FourierFeatures1D</span><span class="p">,</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Matern32</span><span class="p">,</span> <span class="n">TensorLike</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">Kuf_matern32_fourierfeatures1d</span><span class="p">(</span><span class="n">inducing_variable</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">ms</span> <span class="o">=</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">u</span><span class="p">:</span> <span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">a</span><span class="p">,</span> <span class="n">u</span><span class="o">.</span><span class="n">b</span><span class="p">,</span> <span class="n">u</span><span class="o">.</span><span class="n">ms</span><span class="p">))(</span><span class="n">inducing_variable</span><span class="p">)</span>
+    <span class="n">omegas</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">ms</span> <span class="o">/</span> <span class="p">(</span><span class="n">b</span> <span class="o">-</span> <span class="n">a</span><span class="p">)</span>
+
+    <span class="n">Kuf_cos</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">omegas</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">-</span> <span class="n">a</span><span class="p">))</span>
+    <span class="n">omegas_sin</span> <span class="o">=</span> <span class="n">omegas</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">not_equal</span><span class="p">(</span><span class="n">omegas</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span>  <span class="c1"># don&#39;t compute zeros freq.</span>
+    <span class="n">Kuf_sin</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">omegas_sin</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">-</span> <span class="n">a</span><span class="p">))</span>
+
+    <span class="c1"># correct Kuf outside [a, b] -- see Table 1</span>
+
+    <span class="k">def</span> <span class="nf">tail_cos</span><span class="p">(</span><span class="n">delta_X</span><span class="p">):</span>
+        <span class="n">arg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">delta_X</span><span class="p">)</span> <span class="o">/</span> <span class="n">kernel</span><span class="o">.</span><span class="n">lengthscales</span>
+        <span class="k">return</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">arg</span><span class="p">)</span> <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">arg</span><span class="p">)[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+
+    <span class="n">Kuf_cos</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">X</span> <span class="o">&lt;</span> <span class="n">a</span><span class="p">,</span> <span class="n">tail_cos</span><span class="p">(</span><span class="n">X</span> <span class="o">-</span> <span class="n">a</span><span class="p">),</span> <span class="n">Kuf_cos</span><span class="p">)</span>
+    <span class="n">Kuf_cos</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">X</span> <span class="o">&gt;</span> <span class="n">b</span><span class="p">,</span> <span class="n">tail_cos</span><span class="p">(</span><span class="n">X</span> <span class="o">-</span> <span class="n">b</span><span class="p">),</span> <span class="n">Kuf_cos</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">tail_sin</span><span class="p">(</span><span class="n">delta_X</span><span class="p">):</span>
+        <span class="n">arg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">delta_X</span><span class="p">)</span> <span class="o">/</span> <span class="n">kernel</span><span class="o">.</span><span class="n">lengthscales</span>
+        <span class="k">return</span> <span class="n">delta_X</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">arg</span><span class="p">)</span> <span class="o">*</span> <span class="n">omegas_sin</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+
+    <span class="n">Kuf_sin</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">X</span> <span class="o">&lt;</span> <span class="n">a</span><span class="p">,</span> <span class="n">tail_sin</span><span class="p">(</span><span class="n">X</span> <span class="o">-</span> <span class="n">a</span><span class="p">),</span> <span class="n">Kuf_sin</span><span class="p">)</span>
+    <span class="n">Kuf_sin</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">X</span> <span class="o">&gt;</span> <span class="n">b</span><span class="p">,</span> <span class="n">tail_sin</span><span class="p">(</span><span class="n">X</span> <span class="o">-</span> <span class="n">b</span><span class="p">),</span> <span class="n">Kuf_sin</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">Kuf_cos</span><span class="p">,</span> <span class="n">Kuf_sin</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>In principle, this is all we need; however, to be able to take advantage of the structure of <code class="docutils literal notranslate"><span class="pre">Kuu</span></code>, we need to also implement new versions of the KL divergence from the prior to the approximate posterior (<code class="docutils literal notranslate"><span class="pre">prior_kl</span></code>) and the computation of the Gaussian process conditional (posterior) equations:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@kl</span><span class="o">.</span><span class="n">prior_kl</span><span class="o">.</span><span class="n">register</span><span class="p">(</span>
+    <span class="n">FourierFeatures1D</span><span class="p">,</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Kernel</span><span class="p">,</span> <span class="n">TensorLike</span><span class="p">,</span> <span class="n">TensorLike</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">prior_kl_vff</span><span class="p">(</span><span class="n">inducing_variable</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">q_mu</span><span class="p">,</span> <span class="n">q_sqrt</span><span class="p">,</span> <span class="n">whiten</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">whiten</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    <span class="n">K</span> <span class="o">=</span> <span class="n">cov</span><span class="o">.</span><span class="n">Kuu</span><span class="p">(</span><span class="n">inducing_variable</span><span class="p">,</span> <span class="n">kernel</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">gauss_kl_vff</span><span class="p">(</span><span class="n">q_mu</span><span class="p">,</span> <span class="n">q_sqrt</span><span class="p">,</span> <span class="n">K</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">gauss_kl_vff</span><span class="p">(</span><span class="n">q_mu</span><span class="p">,</span> <span class="n">q_sqrt</span><span class="p">,</span> <span class="n">K</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the KL divergence from</span>
+
+<span class="sd">          q(x) = N(q_mu, q_sqrt^2)</span>
+<span class="sd">    to</span>
+<span class="sd">          p(x) = N(0, K)</span>
+
+<span class="sd">    q_mu is a vector [N, 1] that contains the mean.</span>
+<span class="sd">    q_sqrt is a matrix that is the lower triangular square-root matrix of the covariance of q.</span>
+
+<span class="sd">    K is a positive definite matrix: the covariance of p.</span>
+<span class="sd">    NOTE: K is a LinearOperator that provides efficient methjods</span>
+<span class="sd">        for solve(), log_abs_determinant(), and trace()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># KL(N₀ || N₁) = ½ [tr(Σ₁⁻¹ Σ₀) + (μ₁ - μ₀)ᵀ Σ₁⁻¹ (μ₁ - μ₀) - k + ln(det(Σ₁)/det(Σ₀))]</span>
+    <span class="c1"># N₀ = q; μ₀ = q_mu, Σ₀ = q_sqrt q_sqrtᵀ</span>
+    <span class="c1"># N₁ = p; μ₁ = 0, Σ₁ = K</span>
+    <span class="c1"># KL(q || p) =</span>
+    <span class="c1">#     ½ [tr(K⁻¹ q_sqrt q_sqrtᵀA + q_muᵀ K⁻¹ q_mu - k + logdet(K) - logdet(q_sqrt q_sqrtᵀ)]</span>
+    <span class="c1"># k = number of dimensions, if q_sqrt is m x m this is m²</span>
+    <span class="n">Kinv_q_mu</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">q_mu</span><span class="p">)</span>
+
+    <span class="n">mahalanobis_term</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">q_mu</span><span class="p">,</span> <span class="n">Kinv_q_mu</span><span class="p">,</span> <span class="n">transpose_a</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+
+    <span class="c1"># GPflow: q_sqrt is num_latent_gps x N x N</span>
+    <span class="n">num_latent_gps</span> <span class="o">=</span> <span class="n">to_default_float</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">q_mu</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">logdet_prior</span> <span class="o">=</span> <span class="n">num_latent_gps</span> <span class="o">*</span> <span class="n">K</span><span class="o">.</span><span class="n">log_abs_determinant</span><span class="p">()</span>
+
+    <span class="n">product_of_dimensions__int</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_prod</span><span class="p">(</span>
+        <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">q_sqrt</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="p">)</span>  <span class="c1"># dimensions are integers</span>
+    <span class="n">constant_term</span> <span class="o">=</span> <span class="n">to_default_float</span><span class="p">(</span><span class="n">product_of_dimensions__int</span><span class="p">)</span>
+
+    <span class="n">Lq</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">band_part</span><span class="p">(</span><span class="n">q_sqrt</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>  <span class="c1"># force lower triangle</span>
+    <span class="n">logdet_q</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">diag_part</span><span class="p">(</span><span class="n">Lq</span><span class="p">))))</span>
+
+    <span class="c1"># S = tf.matmul(q_sqrt, q_sqrt, transpose_b=True)</span>
+    <span class="c1"># trace_term = tf.trace(K.solve(S))</span>
+    <span class="n">trace_term</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span>
+        <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">Lq</span> <span class="o">*</span> <span class="n">K</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">Lq</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">])</span>
+    <span class="p">)</span>  <span class="c1"># [O(N²) instead of O(N³)</span>
+
+    <span class="n">twoKL</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">trace_term</span> <span class="o">+</span> <span class="n">mahalanobis_term</span> <span class="o">-</span> <span class="n">constant_term</span> <span class="o">+</span> <span class="n">logdet_prior</span> <span class="o">-</span> <span class="n">logdet_q</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">twoKL</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">gpflow.posteriors</span>
+
+
+<span class="k">class</span> <span class="nc">VFFPosterior</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">posteriors</span><span class="o">.</span><span class="n">BasePosterior</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_conditional_fused</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Xnew is a tensor with the points of the data or minibatch, shape N x D</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">full_output_cov</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+        <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_q_dist</span><span class="o">.</span><span class="n">q_mu</span>
+        <span class="n">q_sqrt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_q_dist</span><span class="o">.</span><span class="n">q_sqrt</span>
+
+        <span class="c1"># num_data = tf.shape(Xnew)[0]  # M</span>
+        <span class="n">num_func</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">f</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># K</span>
+
+        <span class="n">Kuu</span> <span class="o">=</span> <span class="n">cov</span><span class="o">.</span><span class="n">Kuu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">)</span>  <span class="c1"># this is now a LinearOperator</span>
+        <span class="n">Kuf</span> <span class="o">=</span> <span class="n">cov</span><span class="o">.</span><span class="n">Kuf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">)</span>  <span class="c1"># still a Tensor</span>
+
+        <span class="n">KuuInv_Kuf</span> <span class="o">=</span> <span class="n">Kuu</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">Kuf</span><span class="p">)</span>
+
+        <span class="c1"># compute the covariance due to the conditioning</span>
+        <span class="k">if</span> <span class="n">full_cov</span><span class="p">:</span>
+            <span class="n">fvar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="n">Xnew</span><span class="p">)</span> <span class="o">-</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span>
+                <span class="n">Kuf</span><span class="p">,</span> <span class="n">KuuInv_Kuf</span><span class="p">,</span> <span class="n">transpose_a</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">num_func</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">KufT_KuuInv_Kuf_diag</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">Kuf</span> <span class="o">*</span> <span class="n">KuuInv_Kuf</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">fvar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-</span> <span class="n">KufT_KuuInv_Kuf_diag</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">num_func</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">fvar</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">fvar</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span>
+            <span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">gpflow</span><span class="o">.</span><span class="n">default_float</span><span class="p">()</span>
+        <span class="p">)</span>  <span class="c1"># K x N x N or K x N</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">whiten</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+        <span class="n">A</span> <span class="o">=</span> <span class="n">KuuInv_Kuf</span>
+
+        <span class="c1"># construct the conditional mean</span>
+        <span class="n">fmean</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">transpose_a</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">q_sqrt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">q_sqrt</span><span class="o">.</span><span class="n">shape</span><span class="o">.</span><span class="n">ndims</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="c1"># LTA = A * tf.expand_dims(q_sqrt, 2)  # K x M x N</span>
+                <span class="c1"># won&#39;t work  # make ticket for this?</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+            <span class="k">elif</span> <span class="n">q_sqrt</span><span class="o">.</span><span class="n">shape</span><span class="o">.</span><span class="n">ndims</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="c1"># L = tf.matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # K x M x M</span>
+
+                <span class="c1"># K x M x N</span>
+                <span class="c1"># A_tiled = tf.expand_dims(A.get(), 0) * tf.ones((num_func, 1, 1), dtype=float_type)</span>
+
+                <span class="c1"># LTA = tf.matmul(L, A_tiled, transpose_a=True)  # K x M x N</span>
+                <span class="c1"># TODO the following won&#39;t work for K &gt; 1</span>
+                <span class="k">assert</span> <span class="n">q_sqrt</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span>
+                <span class="c1"># LTA = (A.T @ DenseMatrix(q_sqrt[:,:,0])).T.get()[None, :, :]</span>
+                <span class="n">ATL</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">q_sqrt</span><span class="p">,</span> <span class="n">transpose_a</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Bad dimension for q_sqrt: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">q_sqrt</span><span class="o">.</span><span class="n">shape</span><span class="o">.</span><span class="n">ndims</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">full_cov</span><span class="p">:</span>
+                <span class="c1"># fvar = fvar + tf.matmul(LTA, LTA, transpose_a=True)  # K x N x N</span>
+                <span class="n">fvar</span> <span class="o">=</span> <span class="n">fvar</span> <span class="o">+</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">ATL</span><span class="p">,</span> <span class="n">ATL</span><span class="p">,</span> <span class="n">transpose_b</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># K x N x N</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># fvar = fvar + tf.reduce_sum(tf.square(LTA), 1)  # K x N</span>
+                <span class="n">fvar</span> <span class="o">=</span> <span class="n">fvar</span> <span class="o">+</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">ATL</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>  <span class="c1"># K x N</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">full_cov</span><span class="p">:</span>
+            <span class="n">fvar</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">fvar</span><span class="p">)</span>  <span class="c1"># N x K</span>
+
+        <span class="k">return</span> <span class="n">fmean</span><span class="p">,</span> <span class="n">fvar</span>
+
+    <span class="c1"># We can also provide a conditional that precomputes as much as possible,</span>
+    <span class="c1"># to speed up predictions:</span>
+
+    <span class="k">def</span> <span class="nf">_precompute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">Kuu</span> <span class="o">=</span> <span class="n">cov</span><span class="o">.</span><span class="n">Kuu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">)</span>  <span class="c1"># this is now a LinearOperator</span>
+
+        <span class="n">q_mu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_q_dist</span><span class="o">.</span><span class="n">q_mu</span>
+        <span class="n">q_sqrt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_q_dist</span><span class="o">.</span><span class="n">q_sqrt</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">whiten</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># alpha = Kuu⁻¹ q_mu</span>
+            <span class="n">alpha</span> <span class="o">=</span> <span class="n">Kuu</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">q_mu</span><span class="p">)</span>  <span class="c1"># type: tf.Tensor</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">whiten</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Qinv = Kuu⁻¹ - Kuu⁻¹ S Kuu⁻¹</span>
+            <span class="n">KuuInv_qsqrt</span> <span class="o">=</span> <span class="n">Kuu</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">q_sqrt</span><span class="p">)</span>
+            <span class="n">KuuInv_covu_KuuInv</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span>
+                <span class="n">KuuInv_qsqrt</span><span class="p">,</span> <span class="n">KuuInv_qsqrt</span><span class="p">,</span> <span class="n">transpose_b</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+
+        <span class="n">Qinv</span> <span class="o">=</span> <span class="n">Kuu</span><span class="o">.</span><span class="n">inverse</span><span class="p">()</span><span class="o">.</span><span class="n">to_dense</span><span class="p">()</span> <span class="o">-</span> <span class="n">KuuInv_covu_KuuInv</span>
+
+        <span class="k">return</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">posteriors</span><span class="o">.</span><span class="n">PrecomputedValue</span><span class="o">.</span><span class="n">wrap_alpha_Qinv</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">Qinv</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_conditional_with_precompute</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">,</span> <span class="n">full_output_cov</span>
+    <span class="p">):</span>
+        <span class="n">alpha</span><span class="p">,</span> <span class="n">Qinv</span> <span class="o">=</span> <span class="n">cache</span>
+
+        <span class="k">if</span> <span class="n">full_output_cov</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+        <span class="n">Kuf</span> <span class="o">=</span> <span class="n">cov</span><span class="o">.</span><span class="n">Kuf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">)</span>  <span class="c1"># still a Tensor</span>
+
+        <span class="c1"># construct the conditional mean</span>
+        <span class="n">fmean</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">Kuf</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">transpose_a</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">num_func</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">alpha</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># K</span>
+        <span class="n">Qinv_Kuf</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">Qinv</span><span class="p">,</span> <span class="n">Kuf</span><span class="p">)</span>
+
+        <span class="c1"># compute the covariance due to the conditioning</span>
+        <span class="k">if</span> <span class="n">full_cov</span><span class="p">:</span>
+            <span class="n">fvar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="n">Xnew</span><span class="p">)</span> <span class="o">-</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span>
+                <span class="n">Kuf</span><span class="p">,</span> <span class="n">Qinv_Kuf</span><span class="p">,</span> <span class="n">transpose_a</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">KufT_Qinv_Kuf_diag</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">Kuf</span> <span class="o">*</span> <span class="n">Qinv_Kuf</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">fvar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-</span> <span class="n">KufT_Qinv_Kuf_diag</span>
+            <span class="n">fvar</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">fvar</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">fmean</span><span class="p">,</span> <span class="n">fvar</span>
+</pre></div>
+</div>
+</div>
+<p>We now have to register our Posterior object:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@gpflow</span><span class="o">.</span><span class="n">posteriors</span><span class="o">.</span><span class="n">get_posterior_class</span><span class="o">.</span><span class="n">register</span><span class="p">(</span>
+    <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Kernel</span><span class="p">,</span> <span class="n">FourierFeatures1D</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">_get_posterior_vff</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">inducing_variable</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">VFFPosterior</span>
+</pre></div>
+</div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">gpflow.conditionals.conditional</span></code> is a short-hand for calling the fused prediction code path:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Mf</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">M</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">Mf</span> <span class="o">-</span> <span class="mi">1</span>
+<span class="n">kernel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Matern32</span><span class="p">()</span>
+<span class="n">inducing_variable</span> <span class="o">=</span> <span class="n">FourierFeatures1D</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="n">Mf</span><span class="p">)</span>
+
+<span class="n">Xnew</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">q_sqrt</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">M</span><span class="p">)))</span>
+
+<span class="n">conditional_f_mean</span><span class="p">,</span> <span class="n">conditional_f_var</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">conditionals</span><span class="o">.</span><span class="n">conditional</span><span class="p">(</span>
+    <span class="n">Xnew</span><span class="p">,</span>
+    <span class="n">inducing_variable</span><span class="p">,</span>
+    <span class="n">kernel</span><span class="p">,</span>
+    <span class="n">f</span><span class="p">,</span>
+    <span class="n">q_sqrt</span><span class="o">=</span><span class="n">q_sqrt</span><span class="p">,</span>
+    <span class="n">white</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">full_cov</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">posterior</span> <span class="o">=</span> <span class="n">VFFPosterior</span><span class="p">(</span>
+    <span class="n">kernel</span><span class="p">,</span> <span class="n">inducing_variable</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">q_sqrt</span><span class="p">,</span> <span class="n">whiten</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">precompute_cache</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">)</span>
+<span class="n">posterior_f_mean</span><span class="p">,</span> <span class="n">posterior_f_var</span> <span class="o">=</span> <span class="n">posterior</span><span class="o">.</span><span class="n">fused_predict_f</span><span class="p">(</span>
+    <span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+
+<span class="n">np</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_array_equal</span><span class="p">(</span><span class="n">conditional_f_mean</span><span class="p">,</span> <span class="n">posterior_f_mean</span><span class="p">)</span>
+<span class="n">np</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_array_equal</span><span class="p">(</span><span class="n">conditional_f_var</span><span class="p">,</span> <span class="n">posterior_f_var</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>We can also call the cached path:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">posterior</span><span class="o">.</span><span class="n">update_cache</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">posteriors</span><span class="o">.</span><span class="n">PrecomputeCacheType</span><span class="o">.</span><span class="n">TENSOR</span><span class="p">)</span>
+<span class="n">precomputed_posterior_f_mean</span><span class="p">,</span> <span class="n">precomputed_posterior_f_var</span> <span class="o">=</span> <span class="n">posterior</span><span class="o">.</span><span class="n">predict_f</span><span class="p">(</span>
+    <span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+
+<span class="n">np</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_allclose</span><span class="p">(</span><span class="n">precomputed_posterior_f_mean</span><span class="p">,</span> <span class="n">posterior_f_mean</span><span class="p">)</span>
+<span class="n">np</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_allclose</span><span class="p">(</span><span class="n">precomputed_posterior_f_var</span><span class="p">,</span> <span class="n">posterior_f_var</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>We now demonstrate how to use these new types of inducing variables with the <code class="docutils literal notranslate"><span class="pre">SVGP</span></code> model class. First, let’s create some toy data:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">510</span><span class="p">)</span>
+<span class="n">Xnew</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">501</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">x</span> <span class="o">/</span> <span class="mi">4</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+
+
+<span class="n">F</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="n">Fnew</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">Xnew</span><span class="p">)</span>
+<span class="n">noise_scale</span> <span class="o">=</span> <span class="mf">0.1</span>
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">Y</span> <span class="o">=</span> <span class="n">F</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="o">*</span><span class="n">F</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">*</span> <span class="n">noise_scale</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">Y</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;f(x)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;observations&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_advanced_variational_fourier_features_19_0.png" src="../../_images/notebooks_advanced_variational_fourier_features_19_0.png" />
+</div>
+</div>
+<p>Setting up an SVGP model with variational Fourier feature inducing variables is as simple as replacing the <code class="docutils literal notranslate"><span class="pre">inducing_variable</span></code> argument:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Mfreq</span> <span class="o">=</span> <span class="mi">9</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">SVGP</span><span class="p">(</span>
+    <span class="n">kernel</span><span class="o">=</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Matern32</span><span class="p">(),</span>
+    <span class="n">likelihood</span><span class="o">=</span><span class="n">gpflow</span><span class="o">.</span><span class="n">likelihoods</span><span class="o">.</span><span class="n">Gaussian</span><span class="p">(</span><span class="n">variance</span><span class="o">=</span><span class="n">noise_scale</span> <span class="o">**</span> <span class="mi">2</span><span class="p">),</span>
+    <span class="n">inducing_variable</span><span class="o">=</span><span class="n">FourierFeatures1D</span><span class="p">(</span><span class="o">-</span><span class="mf">4.5</span><span class="p">,</span> <span class="mf">4.5</span><span class="p">,</span> <span class="n">Mfreq</span><span class="p">),</span>
+    <span class="n">num_data</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">),</span>
+    <span class="n">whiten</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">set_trainable</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">set_trainable</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">likelihood</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">set_trainable</span><span class="p">(</span>
+    <span class="n">m</span><span class="o">.</span><span class="n">inducing_variable</span><span class="p">,</span> <span class="kc">True</span>
+<span class="p">)</span>  <span class="c1"># whether to optimize bounds [a, b]</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
+    <span class="n">m</span><span class="o">.</span><span class="n">training_loss_closure</span><span class="p">(</span><span class="n">data</span><span class="p">),</span>
+    <span class="n">m</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span>
+    <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">5000</span><span class="p">)),</span>
+<span class="p">)</span>
+
+<span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;notebook&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area rendered_html docutils container">
+<table>
+<thead>
+<tr><th>name                    </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape      </th><th>dtype  </th><th>value                                      </th></tr>
+</thead>
+<tbody>
+<tr><td>SVGP.kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>False      </td><td>()         </td><td>float64</td><td>1.0                                        </td></tr>
+<tr><td>SVGP.kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>False      </td><td>()         </td><td>float64</td><td>1.0                                        </td></tr>
+<tr><td>SVGP.likelihood.variance</td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>False      </td><td>()         </td><td>float64</td><td>0.01                                       </td></tr>
+<tr><td>SVGP.inducing_variable.a</td><td>Parameter</td><td>Identity        </td><td>       </td><td>True       </td><td>()         </td><td>float64</td><td>-4.18351                                   </td></tr>
+<tr><td>SVGP.inducing_variable.b</td><td>Parameter</td><td>Identity        </td><td>       </td><td>True       </td><td>()         </td><td>float64</td><td>4.18402                                    </td></tr>
+<tr><td>SVGP.q_mu               </td><td>Parameter</td><td>Identity        </td><td>       </td><td>True       </td><td>(17, 1)    </td><td>float64</td><td>[[0.89075...                               </td></tr>
+<tr><td>SVGP.q_sqrt             </td><td>Parameter</td><td>FillTriangular  </td><td>       </td><td>True       </td><td>(1, 17, 17)</td><td>float64</td><td>[[[1.35057e+00, 0.00000e+00, 0.00000e+00...</td></tr>
+</tbody>
+</table></div>
+</div>
+<p>For comparison we also construct an SVGP model using inducing points and an exact GPR model:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">m_ip</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">SVGP</span><span class="p">(</span>
+    <span class="n">kernel</span><span class="o">=</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Matern32</span><span class="p">(),</span>
+    <span class="n">likelihood</span><span class="o">=</span><span class="n">gpflow</span><span class="o">.</span><span class="n">likelihoods</span><span class="o">.</span><span class="n">Gaussian</span><span class="p">(</span><span class="n">variance</span><span class="o">=</span><span class="n">noise_scale</span> <span class="o">**</span> <span class="mi">2</span><span class="p">),</span>
+    <span class="n">inducing_variable</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">Mfreq</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">],</span>
+    <span class="n">num_data</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">),</span>
+    <span class="n">whiten</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">set_trainable</span><span class="p">(</span><span class="n">m_ip</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">set_trainable</span><span class="p">(</span><span class="n">m_ip</span><span class="o">.</span><span class="n">likelihood</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">set_trainable</span><span class="p">(</span>
+    <span class="n">m_ip</span><span class="o">.</span><span class="n">inducing_variable</span><span class="p">,</span> <span class="kc">True</span>
+<span class="p">)</span>  <span class="c1"># whether to optimize inducing point locations</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
+    <span class="n">m_ip</span><span class="o">.</span><span class="n">training_loss_closure</span><span class="p">(</span><span class="n">data</span><span class="p">),</span>
+    <span class="n">m_ip</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span>
+    <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">5000</span><span class="p">)),</span>
+<span class="p">)</span>
+
+<span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">m_ip</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;notebook&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area rendered_html docutils container">
+<table>
+<thead>
+<tr><th>name                    </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape      </th><th>dtype  </th><th>value                                </th></tr>
+</thead>
+<tbody>
+<tr><td>SVGP.kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>False      </td><td>()         </td><td>float64</td><td>1.0                                  </td></tr>
+<tr><td>SVGP.kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>False      </td><td>()         </td><td>float64</td><td>1.0                                  </td></tr>
+<tr><td>SVGP.likelihood.variance</td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>False      </td><td>()         </td><td>float64</td><td>0.01                                 </td></tr>
+<tr><td>SVGP.inducing_variable.Z</td><td>Parameter</td><td>Identity        </td><td>       </td><td>True       </td><td>(17, 1)    </td><td>float64</td><td>[[-1.93002...                        </td></tr>
+<tr><td>SVGP.q_mu               </td><td>Parameter</td><td>Identity        </td><td>       </td><td>True       </td><td>(17, 1)    </td><td>float64</td><td>[[0.96123...                         </td></tr>
+<tr><td>SVGP.q_sqrt             </td><td>Parameter</td><td>FillTriangular  </td><td>       </td><td>True       </td><td>(1, 17, 17)</td><td>float64</td><td>[[[2.165e-02, 0.000e+00, 0.000e+00...</td></tr>
+</tbody>
+</table></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">m_ref</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">(</span>
+    <span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">Y</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span> <span class="n">kernel</span><span class="o">=</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Matern32</span><span class="p">()</span>
+<span class="p">)</span>
+<span class="n">m_ref</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">variance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">noise_scale</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">set_trainable</span><span class="p">(</span><span class="n">m_ref</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">set_trainable</span><span class="p">(</span><span class="n">m_ref</span><span class="o">.</span><span class="n">likelihood</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+<span class="c1"># Because we fixed the kernel and likelihood hyperparameters, we don&#39;t need to optimize anything.</span>
+
+<span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">m_ref</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;notebook&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area rendered_html docutils container">
+<table>
+<thead>
+<tr><th>name                   </th><th>class    </th><th>transform  </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style="text-align: right;">  value</th></tr>
+</thead>
+<tbody>
+<tr><td>GPR.kernel.variance    </td><td>Parameter</td><td>Softplus   </td><td>       </td><td>False      </td><td>()     </td><td>float64</td><td style="text-align: right;">      1</td></tr>
+<tr><td>GPR.kernel.lengthscales</td><td>Parameter</td><td>Softplus   </td><td>       </td><td>False      </td><td>()     </td><td>float64</td><td style="text-align: right;">      1</td></tr>
+</tbody>
+</table></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">exact_gpr_lml</span> <span class="o">=</span> <span class="n">m_ref</span><span class="o">.</span><span class="n">log_marginal_likelihood</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;LML (exact GPR) =&quot;</span><span class="p">,</span> <span class="n">exact_gpr_lml</span><span class="p">)</span>
+<span class="n">ip_svgp_elbo</span> <span class="o">=</span> <span class="n">m_ip</span><span class="o">.</span><span class="n">elbo</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ELBO (SVGP, inducing points) =&quot;</span><span class="p">,</span> <span class="n">ip_svgp_elbo</span><span class="p">)</span>
+<span class="n">vff_svgp_elbo</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">elbo</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ELBO (SVGP, Fourier features) =&quot;</span><span class="p">,</span> <span class="n">vff_svgp_elbo</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+LML (exact GPR) = 402.2158074486284
+ELBO (SVGP, inducing points) = 365.31215466596103
+ELBO (SVGP, Fourier features) = 171.03923686986113
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_gp</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+    <span class="n">Fmean</span><span class="p">,</span> <span class="n">Fvar</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">predict_f</span><span class="p">(</span><span class="n">Xnew</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">])</span>
+    <span class="n">Fmean</span> <span class="o">=</span> <span class="n">Fmean</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+    <span class="n">Fvar</span> <span class="o">=</span> <span class="n">Fvar</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+    <span class="p">(</span><span class="n">p</span><span class="p">,)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xnew</span><span class="p">,</span> <span class="n">Fmean</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span>
+        <span class="n">Xnew</span><span class="p">,</span>
+        <span class="n">Fmean</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">Fvar</span><span class="p">),</span>
+        <span class="n">Fmean</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">Fvar</span><span class="p">),</span>
+        <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">get_color</span><span class="p">(),</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">plot_data</span><span class="p">():</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xnew</span><span class="p">,</span> <span class="n">Fnew</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;f(x)&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;observations&quot;</span><span class="p">)</span>
+
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+<span class="n">plot_data</span><span class="p">()</span>
+<span class="n">plot_gp</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">,</span> <span class="s2">&quot;VFF [ELBO=</span><span class="si">{:.3}</span><span class="s2">]&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">vff_svgp_elbo</span><span class="p">))</span>
+<span class="n">plot_gp</span><span class="p">(</span><span class="n">m_ip</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">,</span> <span class="s2">&quot;inducing points [ELBO=</span><span class="si">{:.3}</span><span class="s2">]&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ip_svgp_elbo</span><span class="p">))</span>
+<span class="n">plot_gp</span><span class="p">(</span><span class="n">m_ref</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">,</span> <span class="s2">&quot;exact [LML=</span><span class="si">{:.3}</span><span class="s2">]&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">exact_gpr_lml</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;best&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_advanced_variational_fourier_features_28_0.png" src="../../_images/notebooks_advanced_variational_fourier_features_28_0.png" />
+</div>
+</div>
+</section>
+
+
+              </article>
+              
+
+              
+          </div>
+          
+      </div>
+    </div>
+
+  
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695"></script>
+
+<footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    <p class="copyright">
+    &copy; Copyright 2023, The GPflow Contributors.<br>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.1.2.<br>
+</p>
+  </div>
+  
+</div>
+</footer>
+  </body>
+</html>
