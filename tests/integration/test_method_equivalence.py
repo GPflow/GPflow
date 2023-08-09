@@ -213,7 +213,7 @@ def test_equivalence(approximate_model: GPModel) -> None:
     approximate_kernel_ls = approximate_model.kernel.lengthscales.numpy()
     approximate_kernel_var = approximate_model.kernel.variance.numpy()
 
-    assert_allclose(gpr_kernel_ls, approximate_kernel_ls, 1e-4)
+    assert_allclose(gpr_kernel_ls, approximate_kernel_ls, 2e-4)
     assert_allclose(gpr_kernel_var, approximate_kernel_var, 1e-3)
 
     gpr_mu, gpr_var = gpr_model.predict_y(Datum.Xtest)

@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from dataclasses import dataclass
-
 import numpy as np
 import tensorflow as tf
 
@@ -21,7 +19,6 @@ from gpflow.base import AnyNDArray
 from gpflow.utilities import to_default_float
 
 
-@dataclass(frozen=True)
 class Datum:
     rng: np.random.RandomState = np.random.RandomState(0)
     X: AnyNDArray = rng.randn(100, 2)

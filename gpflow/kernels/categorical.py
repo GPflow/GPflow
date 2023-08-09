@@ -16,7 +16,6 @@ from typing import Any, Optional
 
 import numpy as np
 import tensorflow as tf
-import tensorflow_probability as tfp
 
 from .. import default_int, set_trainable
 from ..base import Parameter, TensorType

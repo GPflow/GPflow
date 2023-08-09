@@ -33,7 +33,7 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
-# Release 2.9.0 (next release)
+# Release 2.10.0 (next release)
 
 <INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
 
@@ -64,6 +64,29 @@ This release contains contributions from:
 This release contains contributions from:
 
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
+
+
+# Release 2.9.0
+
+This release adds caching of compiled graphs inside the Scipy optimizer, and adds support
+for returning loss history. It also adds supports for Python 3.11.
+
+## Major Features and Improvements
+
+* Support returning loss history with Scipy optimizer. 
+* Scipy minimize wrapper caches compiled graphs and re-uses them if called with the same arguments.
+  This functionality can be disabled by setting the new `compile_cache_size` argument to 0.
+
+## Bug Fixes and Other Changes
+
+* Support and test with Python 3.11
+* Test against a 'production' environment (in addition to 'min' and 'max' environments).
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+khurram-ghani, jesnie, uri-granta
 
 
 # Release 2.8.1

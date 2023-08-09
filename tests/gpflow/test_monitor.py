@@ -341,5 +341,26 @@ def test_scipy_monitor_called(model: GPModel) -> None:
 def test_scipy_step_callback_called(model: GPModel) -> None:
     dsc = DummyStepCallback()
     opt = gpflow.optimizers.Scipy()
-    opt.minimize(model.training_loss, model.trainable_variables, step_callback=dsc.callback)
-    assert dsc.current_step > 1
+    res = opt.minimize(model.training_loss, model.trainable_variables, step_callback=dsc.callback)
+    assert res.nit == dsc.current_step + 1 > 0
+    assert not hasattr(res, "loss_history")
+
+
+def test_scipy_loss_history(model: GPModel) -> None:
+    opt = gpflow.optimizers.Scipy()
+    res = opt.minimize(model.training_loss, model.trainable_variables, track_loss_history=True)
+    assert res.nit == len(res.loss_history) > 1
+    assert res.loss_history[0] > res.loss_history[-1]
+    assert res.loss_history[-1] == res.fun == model.training_loss()
+
+
+def test_scipy_step_callback_called_with_history(model: GPModel) -> None:
+    dsc = DummyStepCallback()
+    opt = gpflow.optimizers.Scipy()
+    res = opt.minimize(
+        model.training_loss,
+        model.trainable_variables,
+        step_callback=dsc.callback,
+        track_loss_history=True,
+    )
+    assert res.nit == len(res.loss_history) == dsc.current_step + 1 > 0
