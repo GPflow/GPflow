@@ -67,7 +67,7 @@ def test_predict_f_vs_predict_f_loaded_cache(
     model_2.kernel.lengthscales.assign(0.8)
     model_1.kernel.variance.assign(4.2)
     model_2.kernel.variance.assign(4.2)
-    stored_cache = model_2._posterior().cache
+    stored_cache = model_2.posterior().cache
 
     mu_f_old, var2_f_old = model_1.predict_f(X_new, full_cov=full_cov, full_output_cov=full_output_cov)
     mu_f_cache, var2_f_cache = model_2.predict_f_loaded_cache(X_new, Cache=stored_cache, full_cov=full_cov, full_output_cov=full_output_cov)
@@ -98,7 +98,7 @@ def test_predict_y_vs_predict_y_loaded_cache(
     model_2.kernel.lengthscales.assign(0.8)
     model_1.kernel.variance.assign(4.2)
     model_2.kernel.variance.assign(4.2)
-    stored_cache = model_2._posterior().cache
+    stored_cache = model_2.posterior().cache
     mu_y_old, var2_y_old = model_1.predict_y(X_new, full_cov=full_cov, full_output_cov=full_output_cov)
     mu_y_cache, var2_y_cache = model_2.predict_y_loaded_cache(X_new, Cache=stored_cache, full_cov=full_cov, full_output_cov=full_output_cov)
 
