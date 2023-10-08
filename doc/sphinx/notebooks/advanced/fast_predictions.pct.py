@@ -16,9 +16,9 @@
 # # Faster predictions by caching
 
 # + [markdown] id="PLuPjfS7KLQ-"
-# The default behaviour of `predict_f` in GPflow models is to compute the predictions from scratch on each call. This is convenient when predicting and training are interleaved, and simplifies the use of these models. There are some use cases, such as Bayesian optimisation, where prediction (at different test points) happens much more frequently than training. In these cases it is convenient to cache parts of the calculation which do not depend upon the test points, and reuse those parts between predictions.
+# The default behaviour of `predict_f` and `predict_y` in GPflow models is to compute the predictions from scratch on each call. This is convenient when predicting and training are interleaved, and simplifies the use of these models. There are some use cases, such as Bayesian optimisation, where prediction (at different test points) happens much more frequently than training; or, under ths MCMC settings, the sampled posterior samples are re-used many times to generate different predictions. In these cases it is convenient to cache parts of the calculation which do not depend upon the test points, and reuse those parts between predictions.
 #
-# There are three models to which we want to add this caching capability: GPR, (S)VGP and SGPR. The VGP and SVGP can be considered together; the difference between the models is whether to condition on the full training data set (VGP) or on the inducing variables (SVGP).
+# There are four models to which we want to add this caching capability: GPR, (S)VGP, SGPR and GPMC. The VGP and SVGP can be considered together; the difference between the models is whether to condition on the full training data set (VGP) or on the inducing variables (SVGP). For the case of the Bayesian framework, we will demo how to cache and rebuild models for faster predictions based on the sampled posterior samples.
 
 # + [markdown] id="EACkO-iRKM5T"
 # ## Posterior predictive distribution
@@ -81,6 +81,11 @@ import numpy as np
 
 import gpflow
 from gpflow.ci_utils import reduce_in_tests
+import tensorflow as tf
+import tensorflow_probability as tfp
+from tensorflow_probability import distributions as tfd
+f64 = gpflow.utilities.to_default_float
+
 
 # Create some data
 n_data = reduce_in_tests(1000)
@@ -113,6 +118,18 @@ posterior = model.posterior()
 # %%timeit
 posterior.predict_f(Xnew)
 
+# The `predict_y` method on the `GPModel` class performs no caching.
+# %%timeit
+model.predict_y(Xnew)
+
+# We make use of the retrieved posterior to compute the mean and variance of the held-out data at the input points, in a faster way.
+# %%timeit
+model.predict_y_faster(Xnew, posteriors=posterior)
+
+
+
+
+
 # ## SVGP Example
 #
 # Likewise, we will construct an SVGP model to demonstrate the faster predictions from using the cached data in the GPFlow posterior classes.
@@ -137,6 +154,17 @@ posterior = model.posterior()
 # %%timeit
 posterior.predict_f(Xnew)
 
+# The `predict_y` method on the `GPModel` class performs no caching.
+
+# %%timeit
+model.predict_y(Xnew)
+
+# We make use of the retrieved posterior to compute the mean and variance of the held-out data at the input points, in a faster way.
+
+# %%timeit
+model.predict_y_faster(Xnew, posteriors=posterior)
+
+
 # ## SGPR Example
 #
 # And finally, we follow the same approach this time for the SGPR case.
@@ -156,3 +184,203 @@ posterior = model.posterior()
 
 # %%timeit
 posterior.predict_f(Xnew)
+
+# The `predict_y` method on the `GPModel` class performs no caching.
+
+# %%timeit
+model.predict_y(Xnew)
+
+# Making predictions fo y faster in the same manner as the other cases.
+
+# %%timeit
+model.predict_y_faster(Xnew, posteriors=posterior)
+
+
+
+# ## MCMC for GPR Example
+#
+# Faster predictions for the sampled hyperparameters in Gaussian process regression
+# GPR with HMC
+
+# Model setup and Hyperparameters sampling. See the [MCMC (Markov Chain Monte Carlo)](../advanced/mcmc.ipynb) for more details.
+# %%
+data = (X, Y) 
+kernel = gpflow.kernels.Matern52(lengthscales=0.3)
+mean_function = gpflow.mean_functions.Linear(1.0, 0.0)
+model = gpflow.models.GPR(data, kernel, mean_function, noise_variance=0.01)
+optimizer = gpflow.optimizers.Scipy()
+optimizer.minimize(model.training_loss, model.trainable_variables)
+print(f"log posterior density at optimum: {model.log_posterior_density()}")
+model.kernel.lengthscales.prior = tfd.Gamma(f64(1.0), f64(1.0))
+model.kernel.variance.prior = tfd.Gamma(f64(1.0), f64(1.0))
+model.likelihood.variance.prior = tfd.Gamma(f64(1.0), f64(1.0))
+model.mean_function.A.prior = tfd.Normal(f64(0.0), f64(10.0))
+model.mean_function.b.prior = tfd.Normal(f64(0.0), f64(10.0))
+gpflow.utilities.print_summary(model)
+
+# Sampling hyperparameters
+num_burnin_steps = 5 
+num_samples = 100
+
+# Note that here we need model.trainable_parameters, not trainable_variables - only parameters can have priors!
+hmc_helper = gpflow.optimizers.SamplingHelper(
+    model.log_posterior_density, model.trainable_parameters
+)
+
+hmc = tfp.mcmc.HamiltonianMonteCarlo(
+    target_log_prob_fn=hmc_helper.target_log_prob_fn, num_leapfrog_steps=10, step_size=0.01
+)
+adaptive_hmc = tfp.mcmc.SimpleStepSizeAdaptation(
+    hmc, num_adaptation_steps=10, target_accept_prob=f64(0.75), adaptation_rate=0.1
+)
+@tf.function
+def run_chain_fn():
+    return tfp.mcmc.sample_chain(
+        num_results=num_samples,
+        num_burnin_steps=num_burnin_steps,
+        current_state=hmc_helper.current_state,
+        kernel=adaptive_hmc,
+        trace_fn=lambda _, pkr: pkr.inner_results.is_accepted,
+    )
+
+samples, traces = run_chain_fn()
+parameter_samples = hmc_helper.convert_to_constrained_values(samples)
+
+
+# standard model predictions
+# %%timeit
+for _ in range(0, 100):
+    i = np.random.randint(0, 100)
+    for var, var_samples in zip(hmc_helper.current_state, samples):
+        var.assign(var_samples[i])
+    model.predict_f(Xnew)
+
+# Storing esssential calculation results to make faster predictions later.
+# # %%
+Cache = {}
+for i in range(0, num_samples):
+    for var, var_samples in zip(hmc_helper.current_state, samples):
+        var.assign(var_samples[i])
+    Cache[i] = model.posterior().cache
+
+# Retrieving the caching to make faster precitions.
+# %%timeit
+for _ in range(0, 100):
+    i = np.random.randint(0, 100)
+    for var, var_samples in zip(hmc_helper.current_state, samples):
+        var.assign(var_samples[i])
+    model.predict_f_loaded_cache(Xnew, Cache[i])
+
+# Now, the faster predictions can be made as long as the variables Cache and samples are stored in the local. 
+# %%
+# For example, if we delete the old model
+del(model)
+# build a new model called model2 with identical initial setup as the old model
+kernel = gpflow.kernels.Matern52(lengthscales=0.3)
+mean_function = gpflow.mean_functions.Linear(1.0, 0.0)
+model2 = gpflow.models.GPR(data, kernel, mean_function, noise_variance=0.01)
+optimizer = gpflow.optimizers.Scipy()
+optimizer.minimize(model2.training_loss, model2.trainable_variables)
+print(f"log posterior density at optimum: {model2.log_posterior_density()}")
+model2.kernel.lengthscales.prior = tfd.Gamma(f64(1.0), f64(1.0))
+model2.kernel.variance.prior = tfd.Gamma(f64(1.0), f64(1.0))
+model2.likelihood.variance.prior = tfd.Gamma(f64(1.0), f64(1.0))
+model2.mean_function.A.prior = tfd.Normal(f64(0.0), f64(10.0))
+model2.mean_function.b.prior = tfd.Normal(f64(0.0), f64(10.0))
+
+# %%timeit
+# we can still make faster predictions through variables Cache and samples 
+for _ in range(0, 100):
+    i = np.random.randint(0, 100)
+    for var, var_samples in zip(hmc_helper.current_state, samples):
+        var.assign(var_samples[i])
+    model2.predict_f_loaded_cache(Xnew, Cache[i])
+
+# %%timeit
+# as well as for faster predictions for predict_y
+for _ in range(0, 100):
+    i = np.random.randint(0, 100)
+    for var, var_samples in zip(hmc_helper.current_state, samples):
+        var.assign(var_samples[i])
+    model2.predict_y_loaded_cache(Xnew, Cache[i])
+
+# ## MCMC for Gaussian process models (GPMC)
+# This is similar as the case of GPR. 
+
+# %%
+# Create some data
+rng = np.random.RandomState(14)
+X = np.linspace(-6, 6, 200)
+Y = rng.exponential(np.sin(X) ** 2)
+data = (X[:, None], Y[:, None])
+Xtest = np.linspace(-7, 7, 100)[:, None]
+
+# model setup
+kernel = gpflow.kernels.Matern32() + gpflow.kernels.Constant()
+likelihood = gpflow.likelihoods.Exponential()
+model = gpflow.models.GPMC(data, kernel, likelihood)
+
+model.kernel.kernels[0].lengthscales.prior = tfd.Gamma(f64(1.0), f64(1.0))
+model.kernel.kernels[0].variance.prior = tfd.Gamma(f64(1.0), f64(1.0))
+model.kernel.kernels[1].variance.prior = tfd.Gamma(f64(1.0), f64(1.0))
+
+gpflow.utilities.print_summary(model)
+
+# sampling hyperparameters
+optimizer = gpflow.optimizers.Scipy()
+maxiter =300 
+_ = optimizer.minimize(
+    model.training_loss, model.trainable_variables, options=dict(maxiter=maxiter)
+)
+num_burnin_steps = 10
+num_samples = 100
+
+# Note that here we need model.trainable_parameters, not trainable_variables - only parameters can have priors!
+hmc_helper = gpflow.optimizers.SamplingHelper(
+    model.log_posterior_density, model.trainable_parameters
+)
+
+hmc = tfp.mcmc.HamiltonianMonteCarlo(
+    target_log_prob_fn=hmc_helper.target_log_prob_fn, num_leapfrog_steps=10, step_size=0.01
+)
+
+adaptive_hmc = tfp.mcmc.SimpleStepSizeAdaptation(
+    hmc, num_adaptation_steps=10, target_accept_prob=f64(0.75), adaptation_rate=0.1
+)
+
+@tf.function
+def run_chain_fn():
+    return tfp.mcmc.sample_chain(
+        num_results=num_samples,
+        num_burnin_steps=num_burnin_steps,
+        current_state=hmc_helper.current_state,
+        kernel=adaptive_hmc,
+        trace_fn=lambda _, pkr: pkr.inner_results.is_accepted,
+    )
+
+samples, _ = run_chain_fn()
+
+# %%timeit
+for _ in range(0, 100):
+    i = np.random.randint(0, 100)
+    for var, var_samples in zip(hmc_helper.current_state, samples):
+        var.assign(var_samples[i])
+    model.predict_f(Xtest)
+
+# %%
+# Storing esssential calculation results to make faster predictions later.
+Cache = {}
+for i in range(0, num_samples):
+    for var, var_samples in zip(hmc_helper.current_state, samples):
+        var.assign(var_samples[i])
+    Cache[i] = model.posterior().cache
+
+# %%timeit
+for _ in range(0, 100):
+    i = np.random.randint(0, 100)
+    for var, var_samples in zip(hmc_helper.current_state, samples):
+        var.assign(var_samples[i])
+    model.predict_f_loaded_cache(Xtest, Cache[i])
+
+
+
