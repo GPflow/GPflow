@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional
+from typing import Optional, Tuple
 
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 from check_shapes import check_shapes, inherit_check_shapes
 
+from .. import posteriors
 from ..base import InputData, MeanAndVariance, Parameter, RegressionData
 from ..conditionals import conditional
 from ..config import default_float, default_jitter
@@ -29,7 +30,7 @@ from ..utilities import assert_params_false, to_default_float
 from .model import GPModel
 from .training_mixins import InternalDataTrainingLossMixin
 from .util import data_input_to_tensor
-from .. import posteriors
+
 
 class GPMC_deprecated(GPModel, InternalDataTrainingLossMixin):
     @check_shapes(
@@ -128,8 +129,6 @@ class GPMC_deprecated(GPModel, InternalDataTrainingLossMixin):
         return mu + self.mean_function(Xnew), var
 
 
-
-
 class GPMC_with_posterior(GPMC_deprecated):
     """
     This is an implementation of GPMC that provides a posterior() method that
@@ -164,10 +163,10 @@ class GPMC_with_posterior(GPMC_deprecated):
             kernel=self.kernel,
             X=X_data,
             q_mu=self.V,
-            q_sqrt=None, 
+            q_sqrt=None,
             white=True,
-            precompute_cache=precompute_cache
-        ) 
+            precompute_cache=precompute_cache,
+        )
 
     @check_shapes(
         "Xnew: [batch..., N, D]",
@@ -177,9 +176,13 @@ class GPMC_with_posterior(GPMC_deprecated):
         "return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)",
         "return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov",
         "return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)",
-    ) 
+    )
     def predict_f_loaded_cache(
-        self, Xnew: InputData, Cache: InputData,full_cov: bool = False, full_output_cov: bool = False
+        self,
+        Xnew: InputData,
+        Cache: Optional[Tuple[tf.Tensor, ...]],
+        full_cov: bool = False,
+        full_output_cov: bool = False,
     ) -> MeanAndVariance:
         """
         Xnew is a data matrix, point at which we want to predict
@@ -195,10 +198,16 @@ class GPMC_with_posterior(GPMC_deprecated):
 
         X_data, _Y_data = self.data
         mu, var = conditional(
-            Xnew, X_data, self.kernel, self.V, Cache = Cache, full_cov=full_cov, q_sqrt=None, white=True
+            Xnew,
+            X_data,
+            self.kernel,
+            self.V,
+            Cache=Cache,
+            full_cov=full_cov,
+            q_sqrt=None,
+            white=True,
         )
         return mu + self.mean_function(Xnew), var
-
 
     @check_shapes(
         "Xnew: [batch..., N, D]",
@@ -209,9 +218,12 @@ class GPMC_with_posterior(GPMC_deprecated):
         "return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov",
         "return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)",
     )
-
     def predict_y_loaded_cache(
-        self, Xnew: InputData, Cache: InputData, full_cov: bool = False, full_output_cov: bool = False
+        self,
+        Xnew: InputData,
+        Cache: Optional[Tuple[tf.Tensor, ...]],
+        full_cov: bool = False,
+        full_output_cov: bool = False,
     ) -> MeanAndVariance:
         """
         For backwards compatibility, GPR's predict_f uses the fused (no-cache)
@@ -221,11 +233,13 @@ class GPMC_with_posterior(GPMC_deprecated):
             model.posterior().predict_f(Xnew, ...)
         """
 
-        f_mean, f_var = self.predict_f_loaded_cache(Xnew, Cache, full_cov=full_cov, full_output_cov=full_output_cov)
+        f_mean, f_var = self.predict_f_loaded_cache(
+            Xnew, Cache, full_cov=full_cov, full_output_cov=full_output_cov
+        )
 
         return self.likelihood.predict_mean_and_var(Xnew, f_mean, f_var)
 
-    
+
 class GPMC(GPMC_with_posterior):
     # subclassed to ensure __class__ == "GPMC"
 

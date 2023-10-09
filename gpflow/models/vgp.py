@@ -21,7 +21,6 @@ from check_shapes import check_shapes, inherit_check_shapes
 import gpflow
 
 from .. import posteriors
-from ..posteriors import AbstractPosterior
 from ..base import InputData, MeanAndVariance, Parameter, RegressionData
 from ..conditionals import conditional
 from ..config import default_float, default_jitter
@@ -29,6 +28,7 @@ from ..kernels import Kernel
 from ..kullback_leiblers import gauss_kl
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
+from ..posteriors import AbstractPosterior
 from ..utilities import assert_params_false, is_variable, triangular, triangular_size
 from .model import GPModel
 from .training_mixins import InternalDataTrainingLossMixin
@@ -215,7 +215,6 @@ class VGP_with_posterior(VGP_deprecated):
             Xnew, full_cov=full_cov, full_output_cov=full_output_cov
         )
 
-
     @check_shapes(
         "Xnew: [batch..., N, D]",
         "return[0]: [batch..., N, P]",
@@ -225,7 +224,11 @@ class VGP_with_posterior(VGP_deprecated):
         "return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)",
     )
     def predict_y_faster(
-        self, Xnew: InputData, posteriors:InputData, full_cov: bool = False, full_output_cov: bool = False
+        self,
+        Xnew: InputData,
+        posteriors: InputData,
+        full_cov: bool = False,
+        full_output_cov: bool = False,
     ) -> MeanAndVariance:
         """
         For backwards compatibility, GPR's predict_y_faster uses the (cache)
@@ -234,13 +237,12 @@ class VGP_with_posterior(VGP_deprecated):
         """
 
         if not isinstance(posteriors, AbstractPosterior):
-            raise ValueError(
-                    f"{posteriors} is not a valid gpflow.posteriors"
-                )
-        f_mean, f_var = posteriors.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
+            raise ValueError(f"{posteriors} is not a valid gpflow.posteriors")
+        f_mean, f_var = posteriors.predict_f(
+            Xnew, full_cov=full_cov, full_output_cov=full_output_cov
+        )
 
         return self.likelihood.predict_mean_and_var(Xnew, f_mean, f_var)
-
 
 
 class VGP(VGP_with_posterior):

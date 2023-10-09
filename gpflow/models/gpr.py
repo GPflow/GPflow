@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional
+from typing import Optional, Tuple
 
 import tensorflow as tf
 from check_shapes import check_shapes, inherit_check_shapes
@@ -20,16 +20,17 @@ from check_shapes import check_shapes, inherit_check_shapes
 import gpflow
 
 from .. import posteriors
-from ..posteriors import AbstractPosterior
 from ..base import InputData, MeanAndVariance, RegressionData, TensorData
 from ..kernels import Kernel
 from ..likelihoods import Gaussian
 from ..logdensities import multivariate_normal
 from ..mean_functions import MeanFunction
+from ..posteriors import AbstractPosterior
 from ..utilities import add_likelihood_noise_cov, assert_params_false
 from .model import GPModel
 from .training_mixins import InternalDataTrainingLossMixin
 from .util import data_input_to_tensor
+
 
 class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
     r"""
@@ -188,7 +189,6 @@ class GPR_with_posterior(GPR_deprecated):
         return self.posterior(posteriors.PrecomputeCacheType.NOCACHE).fused_predict_f(
             Xnew, full_cov=full_cov, full_output_cov=full_output_cov
         )
-    
 
     @check_shapes(
         "Xnew: [batch..., N, D]",
@@ -199,21 +199,24 @@ class GPR_with_posterior(GPR_deprecated):
         "return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)",
     )
     def predict_y_faster(
-        self, Xnew: InputData, posteriors: InputData, full_cov: bool = False, full_output_cov: bool = False
+        self,
+        Xnew: InputData,
+        posteriors: InputData,
+        full_cov: bool = False,
+        full_output_cov: bool = False,
     ) -> MeanAndVariance:
         """
-        GPR's predict_y_faster uses the (cache) computation, 
+        GPR's predict_y_faster uses the (cache) computation,
         which is implenmented based on a given posteior.
         """
 
         if not isinstance(posteriors, AbstractPosterior):
-            raise ValueError(
-                    f"{posteriors} is not a valid gpflow.posteriors"
-                )
-        f_mean, f_var = posteriors.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
+            raise ValueError(f"{posteriors} is not a valid gpflow.posteriors")
+        f_mean, f_var = posteriors.predict_f(
+            Xnew, full_cov=full_cov, full_output_cov=full_output_cov
+        )
 
         return self.likelihood.predict_mean_and_var(Xnew, f_mean, f_var)
-
 
     @check_shapes(
         "Xnew: [batch..., N, D]",
@@ -227,7 +230,11 @@ class GPR_with_posterior(GPR_deprecated):
     )
     # @inherit_check_shapes
     def predict_f_loaded_cache(
-        self, Xnew: InputData, Cache: InputData, full_cov: bool = False, full_output_cov: bool = False
+        self,
+        Xnew: InputData,
+        Cache: Optional[Tuple[tf.Tensor, ...]],
+        full_cov: bool = False,
+        full_output_cov: bool = False,
     ) -> MeanAndVariance:
         """
         For backwards compatibility, GPR's predict_f uses the fused (no-cache)
@@ -239,10 +246,8 @@ class GPR_with_posterior(GPR_deprecated):
 
         posterior = self.posterior(posteriors.PrecomputeCacheType.NOCACHE)
         posterior.cache = Cache
-        return posterior.predict_f(
-            Xnew, full_cov=full_cov, full_output_cov=full_output_cov
-        )
-    
+        return posterior.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
+
     @check_shapes(
         "Xnew: [batch..., N, D]",
         "Cache[0]: [M, D]",
@@ -254,7 +259,11 @@ class GPR_with_posterior(GPR_deprecated):
         "return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)",
     )
     def predict_y_loaded_cache(
-        self, Xnew: InputData, Cache: InputData, full_cov: bool = False, full_output_cov: bool = False
+        self,
+        Xnew: InputData,
+        Cache: Optional[Tuple[tf.Tensor, ...]],
+        full_cov: bool = False,
+        full_output_cov: bool = False,
     ) -> MeanAndVariance:
         """
         For backwards compatibility, GPR's predict_f uses the fused (no-cache)

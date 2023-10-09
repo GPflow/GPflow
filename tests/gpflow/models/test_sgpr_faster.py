@@ -91,7 +91,10 @@ def test_predict_y_vs_predict_y_faster(
         X_new, full_cov=full_cov, full_output_cov=full_output_cov
     )
     mu_new_cache, var2_new_cache = sgpr_model.predict_y_faster(
-        X_new, posteriors=sgpr_model.posterior(cache_type), full_cov=full_cov, full_output_cov=full_output_cov
+        X_new,
+        posteriors=sgpr_model.posterior(cache_type),
+        full_cov=full_cov,
+        full_output_cov=full_output_cov,
     )
 
     # check new cache is same as old version

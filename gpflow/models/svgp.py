@@ -19,7 +19,6 @@ import tensorflow as tf
 from check_shapes import check_shapes, inherit_check_shapes
 
 from .. import kullback_leiblers, posteriors
-from ..posteriors import AbstractPosterior
 from ..base import AnyNDArray, InputData, MeanAndVariance, Parameter, RegressionData
 from ..conditionals import conditional
 from ..config import default_float
@@ -27,6 +26,7 @@ from ..inducing_variables import InducingVariables
 from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
+from ..posteriors import AbstractPosterior
 from ..utilities import positive, triangular
 from .model import GPModel
 from .training_mixins import ExternalDataTrainingLossMixin
@@ -264,7 +264,11 @@ class SVGP_with_posterior(SVGP_deprecated):
         "return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)",
     )
     def predict_y_faster(
-        self, Xnew: InputData, posteriors:InputData, full_cov: bool = False, full_output_cov: bool = False
+        self,
+        Xnew: InputData,
+        posteriors: InputData,
+        full_cov: bool = False,
+        full_output_cov: bool = False,
     ) -> MeanAndVariance:
         """
         For backwards compatibility, GPR's predict_y_faster uses the (cache)
@@ -273,10 +277,10 @@ class SVGP_with_posterior(SVGP_deprecated):
         """
 
         if not isinstance(posteriors, AbstractPosterior):
-            raise ValueError(
-                    f"{posteriors} is not a valid gpflow.posteriors"
-                )
-        f_mean, f_var = posteriors.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
+            raise ValueError(f"{posteriors} is not a valid gpflow.posteriors")
+        f_mean, f_var = posteriors.predict_f(
+            Xnew, full_cov=full_cov, full_output_cov=full_output_cov
+        )
 
         return self.likelihood.predict_mean_and_var(Xnew, f_mean, f_var)
 

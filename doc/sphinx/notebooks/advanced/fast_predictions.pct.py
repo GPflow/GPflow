@@ -78,12 +78,13 @@
 
 # +
 import numpy as np
-
-import gpflow
-from gpflow.ci_utils import reduce_in_tests
 import tensorflow as tf
 import tensorflow_probability as tfp
 from tensorflow_probability import distributions as tfd
+
+import gpflow
+from gpflow.ci_utils import reduce_in_tests
+
 f64 = gpflow.utilities.to_default_float
 
 
@@ -125,9 +126,6 @@ model.predict_y(Xnew)
 # We make use of the retrieved posterior to compute the mean and variance of the held-out data at the input points, in a faster way.
 # %%timeit
 model.predict_y_faster(Xnew, posteriors=posterior)
-
-
-
 
 
 # ## SVGP Example
@@ -196,7 +194,6 @@ model.predict_y(Xnew)
 model.predict_y_faster(Xnew, posteriors=posterior)
 
 
-
 # ## MCMC for GPR Example
 #
 # Faster predictions for the sampled hyperparameters in Gaussian process regression
@@ -204,7 +201,7 @@ model.predict_y_faster(Xnew, posteriors=posterior)
 
 # Model setup and Hyperparameters sampling. See the [MCMC (Markov Chain Monte Carlo)](../advanced/mcmc.ipynb) for more details.
 # %%
-data = (X, Y) 
+data = (X, Y)
 kernel = gpflow.kernels.Matern52(lengthscales=0.3)
 mean_function = gpflow.mean_functions.Linear(1.0, 0.0)
 model = gpflow.models.GPR(data, kernel, mean_function, noise_variance=0.01)
@@ -219,7 +216,7 @@ model.mean_function.b.prior = tfd.Normal(f64(0.0), f64(10.0))
 gpflow.utilities.print_summary(model)
 
 # Sampling hyperparameters
-num_burnin_steps = 5 
+num_burnin_steps = 5
 num_samples = 100
 
 # Note that here we need model.trainable_parameters, not trainable_variables - only parameters can have priors!
@@ -228,11 +225,18 @@ hmc_helper = gpflow.optimizers.SamplingHelper(
 )
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
-    target_log_prob_fn=hmc_helper.target_log_prob_fn, num_leapfrog_steps=10, step_size=0.01
+    target_log_prob_fn=hmc_helper.target_log_prob_fn,
+    num_leapfrog_steps=10,
+    step_size=0.01,
 )
 adaptive_hmc = tfp.mcmc.SimpleStepSizeAdaptation(
-    hmc, num_adaptation_steps=10, target_accept_prob=f64(0.75), adaptation_rate=0.1
+    hmc,
+    num_adaptation_steps=10,
+    target_accept_prob=f64(0.75),
+    adaptation_rate=0.1,
 )
+
+
 @tf.function
 def run_chain_fn():
     return tfp.mcmc.sample_chain(
@@ -242,6 +246,7 @@ def run_chain_fn():
         kernel=adaptive_hmc,
         trace_fn=lambda _, pkr: pkr.inner_results.is_accepted,
     )
+
 
 samples, traces = run_chain_fn()
 parameter_samples = hmc_helper.convert_to_constrained_values(samples)
@@ -271,10 +276,10 @@ for _ in range(0, 100):
         var.assign(var_samples[i])
     model.predict_f_loaded_cache(Xnew, Cache[i])
 
-# Now, the faster predictions can be made as long as the variables Cache and samples are stored in the local. 
+# Now, the faster predictions can be made as long as the variables Cache and samples are stored in the local.
 # %%
 # For example, if we delete the old model
-del(model)
+del model
 # build a new model called model2 with identical initial setup as the old model
 kernel = gpflow.kernels.Matern52(lengthscales=0.3)
 mean_function = gpflow.mean_functions.Linear(1.0, 0.0)
@@ -289,7 +294,7 @@ model2.mean_function.A.prior = tfd.Normal(f64(0.0), f64(10.0))
 model2.mean_function.b.prior = tfd.Normal(f64(0.0), f64(10.0))
 
 # %%timeit
-# we can still make faster predictions through variables Cache and samples 
+# we can still make faster predictions through variables Cache and samples
 for _ in range(0, 100):
     i = np.random.randint(0, 100)
     for var, var_samples in zip(hmc_helper.current_state, samples):
@@ -305,7 +310,7 @@ for _ in range(0, 100):
     model2.predict_y_loaded_cache(Xnew, Cache[i])
 
 # ## MCMC for Gaussian process models (GPMC)
-# This is similar as the case of GPR. 
+# This is similar as the case of GPR.
 
 # %%
 # Create some data
@@ -328,9 +333,11 @@ gpflow.utilities.print_summary(model)
 
 # sampling hyperparameters
 optimizer = gpflow.optimizers.Scipy()
-maxiter =300 
+maxiter = 300
 _ = optimizer.minimize(
-    model.training_loss, model.trainable_variables, options=dict(maxiter=maxiter)
+    model.training_loss,
+    model.trainable_variables,
+    options=dict(maxiter=maxiter),
 )
 num_burnin_steps = 10
 num_samples = 100
@@ -341,12 +348,18 @@ hmc_helper = gpflow.optimizers.SamplingHelper(
 )
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
-    target_log_prob_fn=hmc_helper.target_log_prob_fn, num_leapfrog_steps=10, step_size=0.01
+    target_log_prob_fn=hmc_helper.target_log_prob_fn,
+    num_leapfrog_steps=10,
+    step_size=0.01,
 )
 
 adaptive_hmc = tfp.mcmc.SimpleStepSizeAdaptation(
-    hmc, num_adaptation_steps=10, target_accept_prob=f64(0.75), adaptation_rate=0.1
+    hmc,
+    num_adaptation_steps=10,
+    target_accept_prob=f64(0.75),
+    adaptation_rate=0.1,
 )
+
 
 @tf.function
 def run_chain_fn():
@@ -357,6 +370,7 @@ def run_chain_fn():
         kernel=adaptive_hmc,
         trace_fn=lambda _, pkr: pkr.inner_results.is_accepted,
     )
+
 
 samples, _ = run_chain_fn()
 
@@ -381,6 +395,3 @@ for _ in range(0, 100):
     for var, var_samples in zip(hmc_helper.current_state, samples):
         var.assign(var_samples[i])
     model.predict_f_loaded_cache(Xtest, Cache[i])
-
-
-

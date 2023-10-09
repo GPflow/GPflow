@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional
+from typing import Optional, Tuple
 
 import tensorflow as tf
 from check_shapes import check_shapes
@@ -98,14 +98,13 @@ def _sparse_conditional(
     "return[1]: [batch..., N, R, R] if (not full_cov) and full_output_cov",
     "return[1]: [batch..., N, R, N, R] if full_cov and full_output_cov",
 )
-
 def _dense_conditional(
     Xnew: tf.Tensor,
     X: tf.Tensor,
     kernel: Kernel,
     f: tf.Tensor,
     *,
-    Cache: tf.Tensor = None,
+    Cache: Optional[Tuple[tf.Tensor, ...]] = None,
     full_cov: bool = False,
     full_output_cov: bool = False,
     q_sqrt: Optional[tf.Tensor] = None,
@@ -161,4 +160,4 @@ def _dense_conditional(
         posterior.cache = Cache
         return posterior.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
     else:
-        return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov) 
+        return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)

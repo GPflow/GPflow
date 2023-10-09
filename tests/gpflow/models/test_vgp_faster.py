@@ -40,7 +40,6 @@ def _get_data_for_tests() -> Tuple[AnyNDArray, AnyNDArray, AnyNDArray]:
     return X, X_new, Y
 
 
-
 @pytest.mark.parametrize("cache_type", [PrecomputeCacheType.TENSOR, PrecomputeCacheType.VARIABLE])
 @pytest.mark.parametrize(
     "likelihood", [gpflow.likelihoods.Gaussian(), gpflow.likelihoods.Exponential()]
@@ -58,7 +57,10 @@ def test_predict_y_vs_predict_y_faster(
 
     mu_old, var2_old = mold.predict_y(X_new, full_cov=full_cov, full_output_cov=full_output_cov)
     mu_new_cache, var2_new_cache = mnew.predict_y_faster(
-        X_new, posteriors=mnew.posterior(cache_type), full_cov=full_cov, full_output_cov=full_output_cov
+        X_new,
+        posteriors=mnew.posterior(cache_type),
+        full_cov=full_cov,
+        full_output_cov=full_output_cov,
     )
 
     # check new cache is same as old version
