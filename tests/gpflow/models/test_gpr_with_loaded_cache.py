@@ -71,7 +71,7 @@ def make_models(
 
 @pytest.mark.parametrize("full_cov", [True, False])
 @pytest.mark.parametrize("full_output_cov", [False])
-def test_predict_vs_predict_loaded_cache(
+def test_predict_f_vs_predict_f_loaded_cache(
         full_cov: bool, full_output_cov: bool
 ) -> None:
     """
@@ -94,7 +94,7 @@ def test_predict_vs_predict_loaded_cache(
 
 @pytest.mark.parametrize("full_cov", [False])
 @pytest.mark.parametrize("full_output_cov", [False])
-def test_predict_vs_predict_loaded_cache(
+def test_predict_y_vs_predict_y_loaded_cache(
         full_cov: bool, full_output_cov: bool
 ) -> None:
     """
