@@ -226,7 +226,7 @@ class VGP_with_posterior(VGP_deprecated):
     def predict_y_faster(
         self,
         Xnew: InputData,
-        posteriors: InputData,
+        posteriors: posteriors.VGPPosterior,
         full_cov: bool = False,
         full_output_cov: bool = False,
     ) -> MeanAndVariance:
@@ -236,8 +236,6 @@ class VGP_with_posterior(VGP_deprecated):
 
         """
 
-        if not isinstance(posteriors, AbstractPosterior):
-            raise ValueError(f"{posteriors} is not a valid gpflow.posteriors")
         f_mean, f_var = posteriors.predict_f(
             Xnew, full_cov=full_cov, full_output_cov=full_output_cov
         )

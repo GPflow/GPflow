@@ -201,7 +201,7 @@ class GPR_with_posterior(GPR_deprecated):
     def predict_y_faster(
         self,
         Xnew: InputData,
-        posteriors: InputData,
+        posteriors: posteriors.GPRPosterior,
         full_cov: bool = False,
         full_output_cov: bool = False,
     ) -> MeanAndVariance:
@@ -210,8 +210,6 @@ class GPR_with_posterior(GPR_deprecated):
         which is implenmented based on a given posteior.
         """
 
-        if not isinstance(posteriors, AbstractPosterior):
-            raise ValueError(f"{posteriors} is not a valid gpflow.posteriors")
         f_mean, f_var = posteriors.predict_f(
             Xnew, full_cov=full_cov, full_output_cov=full_output_cov
         )
