@@ -33,7 +33,7 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
-# Release 2.8.0 (next release)
+# Release 2.10.0 (next release)
 
 <INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
 
@@ -50,17 +50,84 @@ This release contains contributions from:
 
 ## Major Features and Improvements
 
-* Major rework of documentation landing page and "getting started" section.
+* <INSERT MAJOR FEATURE HERE, USING MARKDOWN SYNTAX>
+* <IF RELEASE CONTAINS MULTIPLE FEATURES FROM SAME AREA, GROUP THEM TOGETHER>
 
 ## Bug Fixes and Other Changes
 
-* Fixed bug related to `tf.saved_model` and methods wrapped in `@check_shapes`.
+* <SIMILAR TO ABOVE SECTION, BUT FOR OTHER IMPORTANT CHANGES / BUG FIXES>
+* <IF A CHANGE CLOSES A GITHUB ISSUE, IT SHOULD BE DOCUMENTED HERE>
+* <NOTES SHOULD BE GROUPED PER AREA>
 
 ## Thanks to our Contributors
 
 This release contains contributions from:
 
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
+
+
+# Release 2.9.0
+
+This release adds caching of compiled graphs inside the Scipy optimizer, and adds support
+for returning loss history. It also adds supports for Python 3.11.
+
+## Major Features and Improvements
+
+* Support returning loss history with Scipy optimizer. 
+* Scipy minimize wrapper caches compiled graphs and re-uses them if called with the same arguments.
+  This functionality can be disabled by setting the new `compile_cache_size` argument to 0.
+
+## Bug Fixes and Other Changes
+
+* Support and test with Python 3.11
+* Test against a 'production' environment (in addition to 'min' and 'max' environments).
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+khurram-ghani, jesnie, uri-granta
+
+
+# Release 2.8.1
+
+A small fix to ensure support for (and testing with) TensorFlow 2.12.
+
+## Bug Fixes and Other Changes
+
+* Support and test with TensorFlow 2.12
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+uri-granta
+
+
+# Release 2.8.0
+
+The main focus of this release is to provide users control over arguments for `tf.function`
+compilation inside the Scipy minimize wrapper. It also adds support for a new categorical kernel.
+
+## Major Features and Improvements
+
+* Added a new categorical kernel that implements categorical variables by mapping them to values in
+  a latent space. (#2055)
+* Added support for passing `tf.function` arguments for compilation in `gpflow.optimizers.Scipy`.
+  (#2064)
+* Default lower bound for parameters of scalar likelihoods can now be set via configuration.
+  (#1985, #2066)
+
+## Bug Fixes and Other Changes
+
+* Fixed some notebook typos and a link. (#2052, #2057)
+* Fixed missing docs for `SquaredExponential` and `Constant` kernels. (#2056, #2063)
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+sc336, partev, khurram-ghani, uri-granta, awav, jesnie
 
 
 # Release 2.7.1

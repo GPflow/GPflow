@@ -25,6 +25,10 @@ explicitly install specific versions of these.
 +---------------------+---------------------------------+
 | 2.10.*              | 0.18.*                          |
 +---------------------+---------------------------------+
+| 2.11.*              | 0.19.*                          |
++---------------------+---------------------------------+
+| 2.12.*              | 0.20.*                          |
++---------------------+---------------------------------+
 
 Second, a word of warning about new Mac computers. On new Mac machines you will need to install
 ``tensorflow-macos`` instead of the regular ``tensorflow``.

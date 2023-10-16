@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from dataclasses import dataclass
 from typing import List
 
 import numpy as np
@@ -27,7 +25,6 @@ from gpflow.base import AnyNDArray
 # ------------------------------------------
 
 
-@dataclass(frozen=True)
 class Datum:
     rng: np.random.RandomState = np.random.RandomState(0)
     X: AnyNDArray = rng.randn(100, 2)

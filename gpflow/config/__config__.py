@@ -37,6 +37,7 @@ Full set of environment variables and available options:
 * ``GPFLOW_FLOAT``: "float16", "float32", or "float64"
 * ``GPFLOW_POSITIVE_BIJECTOR``: "exp" or "softplus"
 * ``GPFLOW_POSITIVE_MINIMUM``: Any positive float number
+* ``GPFLOW_LIKELIHOOD_POSITIVE_MINIMUM``: Any positive float number
 * ``GPFLOW_SUMMARY_FMT``: "notebook" or any other format that :mod:`tabulate` can handle.
 * ``GPFLOW_JITTER``: Any positive float number
 
@@ -49,7 +50,6 @@ manager :func:`as_context`:
 """
 
 import contextlib
-import enum
 import os
 from dataclasses import dataclass, field, replace
 from typing import Any, Dict, Generator, List, Mapping, Optional, Union
@@ -66,6 +66,7 @@ __all__ = [
     "default_float",
     "default_int",
     "default_jitter",
+    "default_likelihood_positive_minimum",
     "default_positive_bijector",
     "default_positive_minimum",
     "default_summary_fmt",
@@ -74,6 +75,7 @@ __all__ = [
     "set_default_float",
     "set_default_int",
     "set_default_jitter",
+    "set_default_likelihood_positive_minimum",
     "set_default_positive_bijector",
     "set_default_positive_minimum",
     "set_default_summary_fmt",
@@ -82,30 +84,33 @@ __all__ = [
 __config: Optional["Config"] = None
 
 
-class _Values(enum.Enum):
-    """Setting's names collection with default values. The `name` method returns name
-    of the environment variable. E.g. for `SUMMARY_FMT` field the environment variable
-    will be `GPFLOW_SUMMARY_FMT`."""
+@dataclass(frozen=True)
+class _Value:
+    """Individual setting's environment variable name and default value."""
 
-    INT = np.int32
-    FLOAT = np.float64
-    POSITIVE_BIJECTOR = "softplus"
-    POSITIVE_MINIMUM = 0.0
-    SUMMARY_FMT = "fancy_grid"
-    JITTER = 1e-6
-
-    @property
-    def name(self) -> str:  # type: ignore[override]  # name is generated and has weird typing.
-        return f"GPFLOW_{super().name}"
+    name: str
+    value: Any
 
 
-def _default(value: _Values) -> Any:
+class _Values:
+    """Collection of default settings."""
+
+    INT = _Value("GPFLOW_INT", np.int32)
+    FLOAT = _Value("GPFLOW_FLOAT", np.float64)
+    POSITIVE_BIJECTOR = _Value("GPFLOW_POSITIVE_BIJECTOR", "softplus")
+    POSITIVE_MINIMUM = _Value("GPFLOW_POSITIVE_MINIMUM", 0.0)
+    LIKELIHOOD_POSITIVE_MINIMUM = _Value("GPFLOW_LIKELIHOOD_POSITIVE_MINIMUM", 1e-6)
+    SUMMARY_FMT = _Value("GPFLOW_SUMMARY_FMT", "fancy_grid")
+    JITTER = _Value("GPFLOW_JITTER", 1e-6)
+
+
+def _default(value: _Value) -> Any:
     """Checks if value is set in the environment."""
     return os.getenv(value.name, default=value.value)
 
 
 def _default_numeric_type_factory(
-    valid_types: Mapping[str, type], enum_key: _Values, type_name: str
+    valid_types: Mapping[str, type], enum_key: _Value, type_name: str
 ) -> type:
     value: Union[str, type] = _default(enum_key)
     if isinstance(value, type) and (value in valid_types.values()):
@@ -152,6 +157,16 @@ def _default_positive_minimum_factory() -> float:
         raise TypeError("Config cannot set the positive_minimum value with non float type.")
 
 
+def _default_likelihood_positive_minimum_factory() -> float:
+    value = _default(_Values.LIKELIHOOD_POSITIVE_MINIMUM)
+    try:
+        return float(value)
+    except ValueError:
+        raise TypeError(
+            "Config cannot set the likelihood_positive_minimum value with non float type."
+        )
+
+
 def _default_summary_fmt_factory() -> Optional[str]:
     result: Optional[str] = _default(_Values.SUMMARY_FMT)
     return result
@@ -191,6 +206,11 @@ class Config:
     positive_minimum: Float = field(default_factory=_default_positive_minimum_factory)
     """Lower bound for the positive transformation."""
 
+    likelihood_positive_minimum: Float = field(
+        default_factory=_default_likelihood_positive_minimum_factory
+    )
+    """Lower bound for the positive transformation for positive likelihood parameters."""
+
     summary_fmt: Optional[str] = field(default_factory=_default_summary_fmt_factory)
     """Summary format for module printing."""
 
@@ -228,6 +248,11 @@ def default_positive_bijector() -> str:
 def default_positive_minimum() -> float:
     """Shift constant that GPflow adds to all positive constraints."""
     return config().positive_minimum
+
+
+def default_likelihood_positive_minimum() -> float:
+    """Shift constant that GPflow adds to all positive likelihood parameter constraints."""
+    return config().likelihood_positive_minimum
 
 
 def default_summary_fmt() -> Optional[str]:
@@ -316,6 +341,19 @@ def set_default_positive_minimum(value: float) -> None:
         raise ValueError("Positive minimum must be non-negative")
 
     set_config(replace(config(), positive_minimum=value))
+
+
+def set_default_likelihood_positive_minimum(value: float) -> None:
+    """Sets shift constant for positive likelihood transformation."""
+    if not (
+        isinstance(value, (tf.Tensor, np.ndarray)) and len(value.shape) == 0
+    ) and not isinstance(value, float):
+        raise TypeError("Expected float32 or float64 scalar value")
+
+    if value < 0:
+        raise ValueError("Likelihood positive minimum must be non-negative")
+
+    set_config(replace(config(), likelihood_positive_minimum=value))
 
 
 def set_default_summary_fmt(value: Optional[str]) -> None:

@@ -74,12 +74,12 @@
 #
 # Here we have two options for $g$:
 # 1. The output dimensions of $g$ share the same kernel.
-# 1. Each output of $g$ has a separate kernel.
+# 2. Each output of $g$ has a separate kernel.
 #
 #
 # In addition, we have two further suboptions for the inducing inputs of $g$:
 # 1. The instances of $g$ share the same inducing inputs.
-# 1. Each output of $g$ has its own set of inducing inputs.
+# 2. Each output of $g$ has its own set of inducing inputs.
 #
 # The notation is as follows:
 # - $X \in \mathbb{R}^{N \times D}$ denotes the input

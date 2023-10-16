@@ -20,11 +20,11 @@ from typing import Sequence
 # -- Project information -----------------------------------------------------
 
 project = "GPflow"
-copyright = "2022, The GPflow Contributors"
+copyright = "2023, The GPflow Contributors"
 author = "The GPflow Contributors"
 
 # The full version, including alpha/beta/rc tags
-release = "2.7.1"
+release = "2.9.0"
 
 # -- General configuration ---------------------------------------------------
 
