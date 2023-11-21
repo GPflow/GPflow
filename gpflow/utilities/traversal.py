@@ -331,7 +331,7 @@ def _first_three_elements_regexp() -> Pattern[str]:
 
 
 def _str_tensor_value(value: AnyNDArray) -> str:
-    value_str = str(np.around(value, 5))
+    value_str = str(np.where(np.abs(value) < 1, value, np.around(value, 5)))
     if value.size <= 3:
         return value_str
 
