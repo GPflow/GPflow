@@ -27,7 +27,10 @@ from .type_flags import GENERIC_NP_ARRAYS, NP_TYPE_CHECKING
 if TYPE_CHECKING:  # pragma: no cover
     from IPython.lib import pretty
 
-DType = Union[np.dtype, tf.DType]
+if TYPE_CHECKING and GENERIC_NP_ARRAYS:  # pragma: no cover
+    DType = Union[np.dtype[Any], tf.DType]
+else:
+    DType = Union[np.dtype, tf.DType]
 
 
 if TYPE_CHECKING and (not NP_TYPE_CHECKING):  # pragma: no cover
