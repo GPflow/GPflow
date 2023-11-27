@@ -20,6 +20,7 @@ from typing import Collection, Tuple
 
 import pandas as pd
 from matplotlib.axes import Axes
+from matplotlib.dates import date2num
 
 from benchmark.grouping import GroupingKey, GroupingSpec, group
 from benchmark.metadata import BenchmarkMetadata, parse_timestamp
@@ -118,7 +119,7 @@ def time_line(
         timestamp_by = GroupingSpec([GroupingKey.TIMESTAMP], minimise=False)
         timestamp_groups = group(df, [], metadata, timestamp_by)
         for (timestamp,), timestamp_df, _ in timestamp_groups:
-            parsed_timestamp = parse_timestamp(timestamp)
+            parsed_timestamp = date2num(parse_timestamp(timestamp))
             line_xs.append(parsed_timestamp)
             y_mean = timestamp_df.value.mean()
             y_std = timestamp_df.value.std()
