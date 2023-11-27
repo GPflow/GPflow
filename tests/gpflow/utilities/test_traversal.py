@@ -38,7 +38,8 @@ class Data:
     H1 = 2
     M = 10
     D = 1
-    Z: AnyNDArray = 0.5 * np.ones((M, 1))
+    # use a small Z value to check we don't round it to zero in the print summary
+    Z: AnyNDArray = 0.000005 * np.ones((M, 1))
     ls = 2.0
     var = 1.0
 
@@ -219,11 +220,11 @@ SquaredExponential.lengthscales  Parameter  Softplus + Shift           False    
 
 model_gp_param_print_string = """\
 name                      class      transform    prior    trainable    shape    dtype    value\n\
-------------------------  ---------  -----------  -------  -----------  -------  -------  --------\n\
+------------------------  ---------  -----------  -------  -----------  -------  -------  -----------\n\
 SVGP.kernel.variance      Parameter  Softplus              True         ()       float64  1.0\n\
 SVGP.kernel.lengthscales  Parameter  Softplus              False        ()       float64  2.0\n\
 SVGP.likelihood.variance  Parameter  Softplus              True         ()       float64  1.0\n\
-SVGP.inducing_variable.Z  Parameter  Identity              True         (10, 1)  float64  [[0.5...\n\
+SVGP.inducing_variable.Z  Parameter  Identity              True         (10, 1)  float64  [[5.e-06...\n\
 SVGP.q_mu                 Parameter  Identity              False        (10, 1)  float64  [[0....\n\
 SVGP.q_sqrt               Parameter  Softplus              True         (10, 1)  float64  [[1...."""
 
