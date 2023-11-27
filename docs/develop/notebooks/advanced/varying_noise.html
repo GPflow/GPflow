@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -30,9 +30,9 @@
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
-    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=f5666a58"></script>
+    <script src="../../_static/documentation_options.js?v=8da69bee"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
     <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -506,7 +506,7 @@ function checkPageExistsAndRedirect(event) {
               <article class="bd-article" role="main">
                 
   <section id="Gaussian-process-regression-with-varying-output-noise">
-<h1>Gaussian process regression with varying output noise<a class="headerlink" href="#Gaussian-process-regression-with-varying-output-noise" title="Permalink to this heading">#</a></h1>
+<h1>Gaussian process regression with varying output noise<a class="headerlink" href="#Gaussian-process-regression-with-varying-output-noise" title="Link to this heading">#</a></h1>
 <p>This notebook shows how to construct a Gaussian process model where different noise is assumed for different data points. The model is:</p>
 <p><span class="math">\begin{align}
 f(\cdot) &\sim \mathcal{GP}\big(0, k(\cdot, \cdot)\big) \\
@@ -603,9 +603,9 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 </div>
 </div>
 <section id="Demo-1:-known-noise-variances">
-<h2>Demo 1: known noise variances<a class="headerlink" href="#Demo-1:-known-noise-variances" title="Permalink to this heading">#</a></h2>
+<h2>Demo 1: known noise variances<a class="headerlink" href="#Demo-1:-known-noise-variances" title="Link to this heading">#</a></h2>
 <section id="Generate-data">
-<h3>Generate data<a class="headerlink" href="#Generate-data" title="Permalink to this heading">#</a></h3>
+<h3>Generate data<a class="headerlink" href="#Generate-data" title="Link to this heading">#</a></h3>
 <p>We create a utility function to generate synthetic data, including noise that varies amongst the data:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
@@ -643,7 +643,7 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 </div>
 </section>
 <section id="Try-a-naive-fit">
-<h3>Try a naive fit<a class="headerlink" href="#Try-a-naive-fit" title="Permalink to this heading">#</a></h3>
+<h3>Try a naive fit<a class="headerlink" href="#Try-a-naive-fit" title="Link to this heading">#</a></h3>
 <p>If we try to fit a naive GPR model to this data, which assumes a single shared noise variance value for all data points - as specified by the likelihood variance parameter - we get:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
@@ -694,7 +694,7 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 <p>Notice how this naive model underestimates the noise near the center of the figure, but overestimates at for small and large values of x?</p>
 </section>
 <section id="Fit-a-polynomial-to-the-noise-scale">
-<h3>Fit a polynomial to the noise scale<a class="headerlink" href="#Fit-a-polynomial-to-the-noise-scale" title="Permalink to this heading">#</a></h3>
+<h3>Fit a polynomial to the noise scale<a class="headerlink" href="#Fit-a-polynomial-to-the-noise-scale" title="Link to this heading">#</a></h3>
 <p>To fit a model with varying noise, instead of using the default single shared noise variance, we can create a Gaussian <code class="docutils literal notranslate"><span class="pre">Likelihood</span></code> with an input dependent (polynomial) <code class="docutils literal notranslate"><span class="pre">Function</span></code> for the scale of the noise, then pass that likelihood to our model.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
@@ -746,11 +746,11 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 </section>
 </section>
 <section id="Demo-2:-grouped-noise-variances">
-<h2>Demo 2: grouped noise variances<a class="headerlink" href="#Demo-2:-grouped-noise-variances" title="Permalink to this heading">#</a></h2>
+<h2>Demo 2: grouped noise variances<a class="headerlink" href="#Demo-2:-grouped-noise-variances" title="Link to this heading">#</a></h2>
 <p>In this demo, we won’t assume that the noise variances is a function of <span class="math notranslate nohighlight">\(x\)</span>, but we will assume that they’re known to be in two groups. This example represents a case where we might know that data has been collected by two instruments with different fidelity, but we do not know what those fidelities are.</p>
 <p>Of course it would be straightforward to add more groups. We’ll stick with two for simplicity.</p>
 <section id="id1">
-<h3>Generate data<a class="headerlink" href="#id1" title="Permalink to this heading">#</a></h3>
+<h3>Generate data<a class="headerlink" href="#id1" title="Link to this heading">#</a></h3>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
@@ -791,7 +791,7 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 </div>
 </section>
 <section id="Fit-a-naive-model">
-<h3>Fit a naive model<a class="headerlink" href="#Fit-a-naive-model" title="Permalink to this heading">#</a></h3>
+<h3>Fit a naive model<a class="headerlink" href="#Fit-a-naive-model" title="Link to this heading">#</a></h3>
 <p>Again we’ll start by fitting a naive GPR, to demonstrate the problem.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
@@ -841,7 +841,7 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 </div>
 </section>
 <section id="Data-structure">
-<h3>Data structure<a class="headerlink" href="#Data-structure" title="Permalink to this heading">#</a></h3>
+<h3>Data structure<a class="headerlink" href="#Data-structure" title="Link to this heading">#</a></h3>
 <p>To model the different noise groups, we need to let the model know which group each data point belongs to. We’ll do that by appending a column with the group to the <span class="math notranslate nohighlight">\(x\)</span> data:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
@@ -854,7 +854,7 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 </div>
 </section>
 <section id="Use-multiple-functions-for-the-noise-variance">
-<h3>Use multiple functions for the noise variance<a class="headerlink" href="#Use-multiple-functions-for-the-noise-variance" title="Permalink to this heading">#</a></h3>
+<h3>Use multiple functions for the noise variance<a class="headerlink" href="#Use-multiple-functions-for-the-noise-variance" title="Link to this heading">#</a></h3>
 <p>To model this we will create two noise variance functions, each of which are just a constant, and then switch between them depending on the group labels.</p>
 <p>Notice that we initialize the constant functions to a positive value. They would have defaulted to <code class="docutils literal notranslate"><span class="pre">0.0</span></code>, but that wouldn’t work for a variance, which must be strictly positive.</p>
 <div class="nbinput docutils container">
@@ -915,10 +915,10 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 </section>
 </section>
 <section id="Demo-3:-Empirical-noise-variance">
-<h2>Demo 3: Empirical noise variance<a class="headerlink" href="#Demo-3:-Empirical-noise-variance" title="Permalink to this heading">#</a></h2>
+<h2>Demo 3: Empirical noise variance<a class="headerlink" href="#Demo-3:-Empirical-noise-variance" title="Link to this heading">#</a></h2>
 <p>In this demo we will assume that you have multiple measurements at each <span class="math notranslate nohighlight">\(x\)</span> location, and want to use the empirical variance at each location.</p>
 <section id="id2">
-<h3>Generate data<a class="headerlink" href="#id2" title="Permalink to this heading">#</a></h3>
+<h3>Generate data<a class="headerlink" href="#id2" title="Link to this heading">#</a></h3>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
@@ -965,7 +965,7 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 </div>
 </section>
 <section id="id3">
-<h3>Data structure<a class="headerlink" href="#id3" title="Permalink to this heading">#</a></h3>
+<h3>Data structure<a class="headerlink" href="#id3" title="Link to this heading">#</a></h3>
 <p>Our GPs don’t like it when multiple data points occupy the same <span class="math notranslate nohighlight">\(x\)</span> location. So we’ll reduce this dataset to the means and the variances at each <span class="math notranslate nohighlight">\(x\)</span>, and use a custom function to model inject the empirical variances into the model.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
@@ -977,7 +977,7 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 </div>
 </section>
 <section id="id4">
-<h3>Fit a naive model<a class="headerlink" href="#id4" title="Permalink to this heading">#</a></h3>
+<h3>Fit a naive model<a class="headerlink" href="#id4" title="Link to this heading">#</a></h3>
 <p>Again we’ll start by fitting a naive GPR, to demonstrate the problem.</p>
 <p>Notice that this case is somewhat different from what we did above. Here we are not modelling <span class="math notranslate nohighlight">\(Y\)</span>, but the mean of <span class="math notranslate nohighlight">\(Y\)</span>, so the noise variance is not our uncertainty of <span class="math notranslate nohighlight">\(Y\)</span>, but our uncertainty of the mean of <span class="math notranslate nohighlight">\(Y\)</span>. Furthermore, while the naive model assumes a constant noise variance, the custom noise variance function we will develop below will only model the noise variance at the points where we have data, thus we cannot plot a continuous uncertainty. Instead, the shaded
 gray area is the confidence interval of <span class="math notranslate nohighlight">\(f\)</span>, and we use vertical black lines to indicate the confidence interval of the <span class="math notranslate nohighlight">\(Y\)</span> mean.</p>
@@ -1040,7 +1040,7 @@ gray area is the confidence interval of <span class="math notranslate nohighligh
 </div>
 </section>
 <section id="Create-custom-function-for-the-noise-variance">
-<h3>Create custom function for the noise variance<a class="headerlink" href="#Create-custom-function-for-the-noise-variance" title="Permalink to this heading">#</a></h3>
+<h3>Create custom function for the noise variance<a class="headerlink" href="#Create-custom-function-for-the-noise-variance" title="Link to this heading">#</a></h3>
 <p>We’re modelling the <code class="docutils literal notranslate"><span class="pre">Y_mean</span></code> and its standard error is <code class="docutils literal notranslate"><span class="pre">Y_var</span> <span class="pre">/</span> <span class="pre">n_repeats</span></code>. We will create a simple function that ignores its input and returns these values as a constant. This will obviously only work for the <code class="docutils literal notranslate"><span class="pre">X</span></code> that corresponds to the <code class="docutils literal notranslate"><span class="pre">Y</span></code> we computed the variance of - that is good enough for model training, but notice that it will not allow us to use <code class="docutils literal notranslate"><span class="pre">predict_y</span></code>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
@@ -1119,7 +1119,7 @@ gray area is the confidence interval of <span class="math notranslate nohighligh
 </section>
 </section>
 <section id="Further-reading">
-<h2>Further reading<a class="headerlink" href="#Further-reading" title="Permalink to this heading">#</a></h2>
+<h2>Further reading<a class="headerlink" href="#Further-reading" title="Link to this heading">#</a></h2>
 <p>To model the variance using a second GP, see the <a class="reference internal" href="heteroskedastic.html"><span class="doc">Heteroskedastic regression notebook</span></a>.</p>
 </section>
 </section>
@@ -1149,7 +1149,7 @@ gray area is the confidence interval of <span class="math notranslate nohighligh
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.1.2.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
 </p>
   </div>
   

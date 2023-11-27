@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -30,9 +30,9 @@
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
-    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=f5666a58"></script>
+    <script src="../../_static/documentation_options.js?v=8da69bee"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
     <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -340,7 +340,7 @@ function checkPageExistsAndRedirect(event) {
               <article class="bd-article" role="main">
                 
   <section id="Mean-Functions">
-<h1>Mean Functions<a class="headerlink" href="#Mean-Functions" title="Permalink to this heading">#</a></h1>
+<h1>Mean Functions<a class="headerlink" href="#Mean-Functions" title="Link to this heading">#</a></h1>
 <p>In the previous chapter we talked about <a class="reference internal" href="kernels.html"><span class="doc">kernels</span></a>. If you go back and look at the plots, you may notice that even in the plots without any data, where we just look at <span class="math notranslate nohighlight">\(f\)</span> samples, the <span class="math notranslate nohighlight">\(f\)</span> samples are kind of close to 0. Why is that? The kernels define what kinds of shape <span class="math notranslate nohighlight">\(f\)</span> can take, but not where the function is; a mean function defines where. In the section on kernels we didn’t specify a mean function, and the default mean function is constant 0, which
 explains why, by default, <span class="math notranslate nohighlight">\(f\)</span> samples will be close to 0.</p>
 <p>As usual we will start with some necessary imports:</p>
@@ -394,7 +394,7 @@ explains why, by default, <span class="math notranslate nohighlight">\(f\)</span
 </div>
 </div>
 <section id="Mean-reversion">
-<h2>Mean reversion<a class="headerlink" href="#Mean-reversion" title="Permalink to this heading">#</a></h2>
+<h2>Mean reversion<a class="headerlink" href="#Mean-reversion" title="Link to this heading">#</a></h2>
 <p>Observe:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
@@ -417,7 +417,7 @@ explains why, by default, <span class="math notranslate nohighlight">\(f\)</span
 <p>As we move away from the data our predictions converge towards 0. Basically, as we move away from the data, the model does not know what to predict, and will revert towards the mean function. This is called <a class="reference external" href="https://en.wikipedia.org/wiki/Regression_toward_the_mean">“mean reversion”</a>, and this is the primary use case where having a reasonable mean function can help. In the areas where we have plenty of data, we don’t need a mean function.</p>
 </section>
 <section id="Setting-a-mean-function">
-<h2>Setting a mean function<a class="headerlink" href="#Setting-a-mean-function" title="Permalink to this heading">#</a></h2>
+<h2>Setting a mean function<a class="headerlink" href="#Setting-a-mean-function" title="Link to this heading">#</a></h2>
 <p>Our models generally take a <code class="docutils literal notranslate"><span class="pre">mean_function</span></code> object that you can set to any instance of <a class="reference internal" href="../../api/gpflow/functions/index.html#gpflow.functions.MeanFunction"><span class="std std-ref">gpflow.functions.MeanFunction</span></a>. See our <a class="reference internal" href="../../api/gpflow/functions/index.html"><span class="doc">API documentation</span></a> for a full list of built-in mean functions.</p>
 <p>In the above example I happen to know that our data is a quadratic function, so let us try setting our mean function to a 2nd degree polynomial:</p>
 <div class="nbinput docutils container">
@@ -443,7 +443,7 @@ explains why, by default, <span class="math notranslate nohighlight">\(f\)</span
 <p>Our model now fits our mean function to the data without any noise, and happily extrapolates the quadratic function.</p>
 </section>
 <section id="Interactions-with-the-kernel">
-<h2>Interactions with the kernel<a class="headerlink" href="#Interactions-with-the-kernel" title="Permalink to this heading">#</a></h2>
+<h2>Interactions with the kernel<a class="headerlink" href="#Interactions-with-the-kernel" title="Link to this heading">#</a></h2>
 <p>The shape of <span class="math notranslate nohighlight">\(f\)</span> relative to the mean function is determined by the kernel.</p>
 <p>So, if we have a linear mean function:</p>
 <div class="nbinput docutils container">
@@ -516,12 +516,12 @@ explains why, by default, <span class="math notranslate nohighlight">\(f\)</span
 </div>
 </section>
 <section id="Kernels-versus-mean-functions">
-<h2>Kernels versus mean functions<a class="headerlink" href="#Kernels-versus-mean-functions" title="Permalink to this heading">#</a></h2>
+<h2>Kernels versus mean functions<a class="headerlink" href="#Kernels-versus-mean-functions" title="Link to this heading">#</a></h2>
 <p>There is some overlap in what you can achieve with kernels and mean functions. If you have some external reason to expect your data to have a particular shape, we recommend you use that as a mean function. For example, you may be modelling a physical system where you have closed-form (physics) equations available that describes the system. However, if you do not have an external reason to pick a particular mean function we generally recommend you work on picking a good kernel, instead of setting
 a mean function. A good kernel will be better at “letting the data speak for itself”, whereas if you set a bad mean function, you can get misleading predictions.</p>
 </section>
 <section id="Custom-mean-functions">
-<h2>Custom mean functions<a class="headerlink" href="#Custom-mean-functions" title="Permalink to this heading">#</a></h2>
+<h2>Custom mean functions<a class="headerlink" href="#Custom-mean-functions" title="Link to this heading">#</a></h2>
 <p>It is easy enough to create a custom mean function. You must extend the <a class="reference internal" href="../../api/gpflow/functions/index.html#gpflow.functions.MeanFunction"><span class="std std-ref">gpflow.functions.MeanFunction</span></a> class, which only requires you to implement a <code class="docutils literal notranslate"><span class="pre">__call__</span></code> method. For example:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
@@ -554,7 +554,7 @@ a mean function. A good kernel will be better at “letting the data speak for i
 <p>The above mean function does not have any trainable parameters. It is common for a mean function to have parameters that will be set during model training. To learn more about parameters see our section on <a class="reference internal" href="parameters_and_their_optimisation.html"><span class="doc">Parameters and Their Optimisation</span></a>.</p>
 </section>
 <section id="Composition">
-<h2>Composition<a class="headerlink" href="#Composition" title="Permalink to this heading">#</a></h2>
+<h2>Composition<a class="headerlink" href="#Composition" title="Link to this heading">#</a></h2>
 <p>As with the kernels you can use the <code class="docutils literal notranslate"><span class="pre">+</span></code> and <code class="docutils literal notranslate"><span class="pre">*</span></code> operators to compose mean functions.</p>
 <p>For example we can add a linear to our sine wave above:</p>
 <div class="nbinput docutils container">
@@ -626,7 +626,7 @@ a mean function. A good kernel will be better at “letting the data speak for i
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.1.2.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
 </p>
   </div>
   

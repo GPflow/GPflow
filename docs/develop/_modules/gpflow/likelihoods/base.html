@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -28,9 +28,9 @@
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=f5666a58"></script>
+    <script src="../../../_static/documentation_options.js?v=8da69bee"></script>
     <script src="../../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -268,7 +268,9 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">&quot;&quot;&quot;</span>
 
 
-<div class="viewcode-block" id="Likelihood"><a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.Likelihood">[docs]</a><span class="k">class</span> <span class="nc">Likelihood</span><span class="p">(</span><span class="n">Module</span><span class="p">,</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+<div class="viewcode-block" id="Likelihood">
+<a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.Likelihood">[docs]</a>
+<span class="k">class</span> <span class="nc">Likelihood</span><span class="p">(</span><span class="n">Module</span><span class="p">,</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">input_dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">latent_dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">observation_dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -296,7 +298,9 @@ function checkPageExistsAndRedirect(event) {
         <span class="bp">self</span><span class="o">.</span><span class="n">latent_dim</span> <span class="o">=</span> <span class="n">latent_dim</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">observation_dim</span> <span class="o">=</span> <span class="n">observation_dim</span>
 
-<div class="viewcode-block" id="Likelihood.log_prob"><a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.Likelihood.log_prob">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+<div class="viewcode-block" id="Likelihood.log_prob">
+<a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.Likelihood.log_prob">[docs]</a>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
         <span class="s2">&quot;X: [broadcast batch..., input_dim]&quot;</span><span class="p">,</span>
         <span class="s2">&quot;F: [broadcast batch..., latent_dim]&quot;</span><span class="p">,</span>
         <span class="s2">&quot;Y: [broadcast batch..., observation_dim]&quot;</span><span class="p">,</span>
@@ -313,6 +317,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_log_prob</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span></div>
 
+
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="nd">@check_shapes</span><span class="p">(</span>
         <span class="s2">&quot;X: [broadcast batch..., input_dim]&quot;</span><span class="p">,</span>
@@ -323,7 +328,9 @@ function checkPageExistsAndRedirect(event) {
     <span class="k">def</span> <span class="nf">_log_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">F</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
-<div class="viewcode-block" id="Likelihood.conditional_mean"><a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.Likelihood.conditional_mean">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+<div class="viewcode-block" id="Likelihood.conditional_mean">
+<a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.Likelihood.conditional_mean">[docs]</a>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
         <span class="s2">&quot;X: [broadcast batch..., input_dim]&quot;</span><span class="p">,</span>
         <span class="s2">&quot;F: [broadcast batch..., latent_dim]&quot;</span><span class="p">,</span>
         <span class="s2">&quot;return: [batch..., observation_dim]&quot;</span><span class="p">,</span>
@@ -339,6 +346,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_conditional_mean</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">F</span><span class="p">)</span></div>
 
+
     <span class="nd">@check_shapes</span><span class="p">(</span>
         <span class="s2">&quot;X: [broadcast batch..., input_dim]&quot;</span><span class="p">,</span>
         <span class="s2">&quot;F: [broadcast batch..., latent_dim]&quot;</span><span class="p">,</span>
@@ -347,7 +355,9 @@ function checkPageExistsAndRedirect(event) {
     <span class="k">def</span> <span class="nf">_conditional_mean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">F</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
-<div class="viewcode-block" id="Likelihood.conditional_variance"><a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.Likelihood.conditional_variance">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+<div class="viewcode-block" id="Likelihood.conditional_variance">
+<a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.Likelihood.conditional_variance">[docs]</a>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
         <span class="s2">&quot;X: [broadcast batch..., input_dim]&quot;</span><span class="p">,</span>
         <span class="s2">&quot;F: [broadcast batch..., latent_dim]&quot;</span><span class="p">,</span>
         <span class="s2">&quot;return: [batch..., observation_dim]&quot;</span><span class="p">,</span>
@@ -363,6 +373,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_conditional_variance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">F</span><span class="p">)</span></div>
 
+
     <span class="nd">@check_shapes</span><span class="p">(</span>
         <span class="s2">&quot;X: [broadcast batch..., input_dim]&quot;</span><span class="p">,</span>
         <span class="s2">&quot;F: [broadcast batch..., latent_dim]&quot;</span><span class="p">,</span>
@@ -371,7 +382,9 @@ function checkPageExistsAndRedirect(event) {
     <span class="k">def</span> <span class="nf">_conditional_variance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">F</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
-<div class="viewcode-block" id="Likelihood.predict_mean_and_var"><a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.Likelihood.predict_mean_and_var">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+<div class="viewcode-block" id="Likelihood.predict_mean_and_var">
+<a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.Likelihood.predict_mean_and_var">[docs]</a>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
         <span class="s2">&quot;X: [broadcast batch..., input_dim]&quot;</span><span class="p">,</span>
         <span class="s2">&quot;Fmu: [broadcast batch..., latent_dim]&quot;</span><span class="p">,</span>
         <span class="s2">&quot;Fvar: [broadcast batch..., latent_dim]&quot;</span><span class="p">,</span>
@@ -407,6 +420,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_mean_and_var</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Fmu</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">)</span></div>
 
+
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="nd">@check_shapes</span><span class="p">(</span>
         <span class="s2">&quot;X: [broadcast batch..., input_dim]&quot;</span><span class="p">,</span>
@@ -420,7 +434,9 @@ function checkPageExistsAndRedirect(event) {
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
-<div class="viewcode-block" id="Likelihood.predict_log_density"><a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.Likelihood.predict_log_density">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+<div class="viewcode-block" id="Likelihood.predict_log_density">
+<a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.Likelihood.predict_log_density">[docs]</a>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
         <span class="s2">&quot;X: [broadcast batch..., input_dim]&quot;</span><span class="p">,</span>
         <span class="s2">&quot;Fmu: [broadcast batch..., latent_dim]&quot;</span><span class="p">,</span>
         <span class="s2">&quot;Fvar: [broadcast batch..., latent_dim]&quot;</span><span class="p">,</span>
@@ -453,6 +469,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_log_density</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Fmu</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span></div>
 
+
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="nd">@check_shapes</span><span class="p">(</span>
         <span class="s2">&quot;X: [broadcast batch..., input_dim]&quot;</span><span class="p">,</span>
@@ -466,7 +483,9 @@ function checkPageExistsAndRedirect(event) {
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
-<div class="viewcode-block" id="Likelihood.variational_expectations"><a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.Likelihood.variational_expectations">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+<div class="viewcode-block" id="Likelihood.variational_expectations">
+<a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.Likelihood.variational_expectations">[docs]</a>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
         <span class="s2">&quot;X: [broadcast batch..., input_dim]&quot;</span><span class="p">,</span>
         <span class="s2">&quot;Fmu: [broadcast batch..., latent_dim]&quot;</span><span class="p">,</span>
         <span class="s2">&quot;Fvar: [broadcast batch..., latent_dim]&quot;</span><span class="p">,</span>
@@ -502,6 +521,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variational_expectations</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Fmu</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span></div>
 
+
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="nd">@check_shapes</span><span class="p">(</span>
         <span class="s2">&quot;X: [broadcast batch..., input_dim]&quot;</span><span class="p">,</span>
@@ -516,7 +536,10 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 
-<div class="viewcode-block" id="QuadratureLikelihood"><a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.QuadratureLikelihood">[docs]</a><span class="k">class</span> <span class="nc">QuadratureLikelihood</span><span class="p">(</span><span class="n">Likelihood</span><span class="p">,</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+
+<div class="viewcode-block" id="QuadratureLikelihood">
+<a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.QuadratureLikelihood">[docs]</a>
+<span class="k">class</span> <span class="nc">QuadratureLikelihood</span><span class="p">(</span><span class="n">Likelihood</span><span class="p">,</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">input_dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
@@ -640,7 +663,10 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">return</span> <span class="n">E_y</span><span class="p">,</span> <span class="n">V_y</span></div>
 
 
-<div class="viewcode-block" id="ScalarLikelihood"><a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.ScalarLikelihood">[docs]</a><span class="k">class</span> <span class="nc">ScalarLikelihood</span><span class="p">(</span><span class="n">QuadratureLikelihood</span><span class="p">,</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+
+<div class="viewcode-block" id="ScalarLikelihood">
+<a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.ScalarLikelihood">[docs]</a>
+<span class="k">class</span> <span class="nc">ScalarLikelihood</span><span class="p">(</span><span class="n">QuadratureLikelihood</span><span class="p">,</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A likelihood class that helps with scalar likelihood functions: likelihoods where</span>
 <span class="sd">    each scalar latent function is associated with a single scalar observation variable.</span>
@@ -723,7 +749,10 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">quadrature_result</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="SwitchedLikelihood"><a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.SwitchedLikelihood">[docs]</a><span class="k">class</span> <span class="nc">SwitchedLikelihood</span><span class="p">(</span><span class="n">ScalarLikelihood</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SwitchedLikelihood">
+<a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.SwitchedLikelihood">[docs]</a>
+<span class="k">class</span> <span class="nc">SwitchedLikelihood</span><span class="p">(</span><span class="n">ScalarLikelihood</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">likelihood_list</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">ScalarLikelihood</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        In this likelihood, we assume at extra column of Y, which contains</span>
@@ -801,7 +830,10 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 
-<div class="viewcode-block" id="MonteCarloLikelihood"><a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.MonteCarloLikelihood">[docs]</a><span class="k">class</span> <span class="nc">MonteCarloLikelihood</span><span class="p">(</span><span class="n">Likelihood</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MonteCarloLikelihood">
+<a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.MonteCarloLikelihood">[docs]</a>
+<span class="k">class</span> <span class="nc">MonteCarloLikelihood</span><span class="p">(</span><span class="n">Likelihood</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_monte_carlo_points</span> <span class="o">=</span> <span class="mi">100</span>
@@ -934,6 +966,7 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_mc_quadrature</span><span class="p">(</span><span class="n">log_prob</span><span class="p">,</span> <span class="n">Fmu</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="n">epsilon</span><span class="p">,</span> <span class="n">X_</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">Y_</span><span class="o">=</span><span class="n">Y</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span>
         <span class="p">)</span></div>
+
 </pre></div>
 
               </article>
@@ -960,7 +993,7 @@ function checkPageExistsAndRedirect(event) {
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.1.2.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
 </p>
   </div>
   

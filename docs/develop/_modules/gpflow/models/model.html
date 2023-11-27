@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -28,9 +28,9 @@
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=f5666a58"></script>
+    <script src="../../../_static/documentation_options.js?v=8da69bee"></script>
     <script src="../../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -266,7 +266,9 @@ function checkPageExistsAndRedirect(event) {
 <span class="kn">from</span> <span class="nn">..utilities</span> <span class="kn">import</span> <span class="n">assert_params_false</span><span class="p">,</span> <span class="n">to_default_float</span>
 
 
-<div class="viewcode-block" id="BayesianModel"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.BayesianModel">[docs]</a><span class="k">class</span> <span class="nc">BayesianModel</span><span class="p">(</span><span class="n">Module</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">):</span>
+<div class="viewcode-block" id="BayesianModel">
+<a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.BayesianModel">[docs]</a>
+<span class="k">class</span> <span class="nc">BayesianModel</span><span class="p">(</span><span class="n">Module</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Bayesian model.</span>
 
 <span class="sd">    This is a base class for all GPflow models. See also :class:`GPModel`.</span>
@@ -281,7 +283,9 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    and :func:`gpflow.models.training_loss`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="BayesianModel.log_prior_density"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.BayesianModel.log_prior_density">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+<div class="viewcode-block" id="BayesianModel.log_prior_density">
+<a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.BayesianModel.log_prior_density">[docs]</a>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
         <span class="s2">&quot;return: []&quot;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">def</span> <span class="nf">log_prior_density</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
@@ -293,7 +297,10 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">to_default_float</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="BayesianModel.log_posterior_density"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.BayesianModel.log_posterior_density">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+
+<div class="viewcode-block" id="BayesianModel.log_posterior_density">
+<a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.BayesianModel.log_posterior_density">[docs]</a>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
         <span class="s2">&quot;return: []&quot;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">def</span> <span class="nf">log_posterior_density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
@@ -305,6 +312,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">maximum_log_likelihood_objective</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_prior_density</span><span class="p">()</span></div>
 
+
     <span class="nd">@check_shapes</span><span class="p">(</span>
         <span class="s2">&quot;return: []&quot;</span><span class="p">,</span>
     <span class="p">)</span>
@@ -315,7 +323,9 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="o">-</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">maximum_log_likelihood_objective</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_prior_density</span><span class="p">())</span>
 
-<div class="viewcode-block" id="BayesianModel.maximum_log_likelihood_objective"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.BayesianModel.maximum_log_likelihood_objective">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="BayesianModel.maximum_log_likelihood_objective">
+<a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.BayesianModel.maximum_log_likelihood_objective">[docs]</a>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="nd">@check_shapes</span><span class="p">(</span>
         <span class="s2">&quot;return: []&quot;</span><span class="p">,</span>
     <span class="p">)</span>
@@ -326,10 +336,14 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        bound to the log-marginal likelihood (ELBO) for sparse and variational</span>
 <span class="sd">        GPs.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+</div>
 
 
-<div class="viewcode-block" id="GPModel"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.GPModel">[docs]</a><span class="k">class</span> <span class="nc">GPModel</span><span class="p">(</span><span class="n">BayesianModel</span><span class="p">):</span>
+
+<div class="viewcode-block" id="GPModel">
+<a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.GPModel">[docs]</a>
+<span class="k">class</span> <span class="nc">GPModel</span><span class="p">(</span><span class="n">BayesianModel</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A stateless base class for Gaussian process models, that is, those of the</span>
 <span class="sd">    form</span>
@@ -382,7 +396,9 @@ function checkPageExistsAndRedirect(event) {
         <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span> <span class="o">=</span> <span class="n">kernel</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">likelihood</span> <span class="o">=</span> <span class="n">likelihood</span>
 
-<div class="viewcode-block" id="GPModel.calc_num_latent_gps_from_data"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.GPModel.calc_num_latent_gps_from_data">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="GPModel.calc_num_latent_gps_from_data">
+<a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.GPModel.calc_num_latent_gps_from_data">[docs]</a>
+    <span class="nd">@staticmethod</span>
     <span class="nd">@check_shapes</span><span class="p">(</span>
         <span class="s2">&quot;data[0]: [batch..., N, D]&quot;</span><span class="p">,</span>
         <span class="s2">&quot;data[1]: [batch..., N, P]&quot;</span><span class="p">,</span>
@@ -398,7 +414,10 @@ function checkPageExistsAndRedirect(event) {
         <span class="n">output_dim</span> <span class="o">=</span> <span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">GPModel</span><span class="o">.</span><span class="n">calc_num_latent_gps</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">likelihood</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="GPModel.calc_num_latent_gps"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.GPModel.calc_num_latent_gps">[docs]</a>    <span class="nd">@staticmethod</span>
+
+<div class="viewcode-block" id="GPModel.calc_num_latent_gps">
+<a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.GPModel.calc_num_latent_gps">[docs]</a>
+    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">calc_num_latent_gps</span><span class="p">(</span><span class="n">kernel</span><span class="p">:</span> <span class="n">Kernel</span><span class="p">,</span> <span class="n">likelihood</span><span class="p">:</span> <span class="n">Likelihood</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Calculates the number of latent GPs required given the number of</span>
@@ -424,7 +443,10 @@ function checkPageExistsAndRedirect(event) {
 
         <span class="k">return</span> <span class="n">num_latent_gps</span></div>
 
-<div class="viewcode-block" id="GPModel.predict_f"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.GPModel.predict_f">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+
+<div class="viewcode-block" id="GPModel.predict_f">
+<a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.GPModel.predict_f">[docs]</a>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="nd">@check_shapes</span><span class="p">(</span>
         <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
         <span class="s2">&quot;return[0]: [batch..., N, P]&quot;</span><span class="p">,</span>
@@ -464,7 +486,10 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
-<div class="viewcode-block" id="GPModel.predict_f_samples"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.GPModel.predict_f_samples">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+
+<div class="viewcode-block" id="GPModel.predict_f_samples">
+<a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.GPModel.predict_f_samples">[docs]</a>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
         <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
         <span class="s2">&quot;return: [batch..., N, P] if (num_samples is None)&quot;</span><span class="p">,</span>
         <span class="s2">&quot;return: [batch..., S, N, P] if (num_samples is not None)&quot;</span><span class="p">,</span>
@@ -519,7 +544,10 @@ function checkPageExistsAndRedirect(event) {
             <span class="p">)</span>  <span class="c1"># [..., (S), N, P]</span>
         <span class="k">return</span> <span class="n">samples</span>  <span class="c1"># [..., (S), N, P]</span></div>
 
-<div class="viewcode-block" id="GPModel.predict_y"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.GPModel.predict_y">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+
+<div class="viewcode-block" id="GPModel.predict_y">
+<a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.GPModel.predict_y">[docs]</a>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
         <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
         <span class="s2">&quot;return[0]: [batch..., N, P]&quot;</span><span class="p">,</span>
         <span class="s2">&quot;return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov&quot;</span><span class="p">,</span>
@@ -564,7 +592,10 @@ function checkPageExistsAndRedirect(event) {
         <span class="n">f_mean</span><span class="p">,</span> <span class="n">f_var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_f</span><span class="p">(</span><span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="o">=</span><span class="n">full_output_cov</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">predict_mean_and_var</span><span class="p">(</span><span class="n">Xnew</span><span class="p">,</span> <span class="n">f_mean</span><span class="p">,</span> <span class="n">f_var</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="GPModel.predict_log_density"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.GPModel.predict_log_density">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+
+<div class="viewcode-block" id="GPModel.predict_log_density">
+<a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.GPModel.predict_log_density">[docs]</a>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
         <span class="s2">&quot;data[0]: [batch..., N, D]&quot;</span><span class="p">,</span>
         <span class="s2">&quot;data[1]: [batch..., N, P]&quot;</span><span class="p">,</span>
         <span class="s2">&quot;return: [batch..., N]&quot;</span><span class="p">,</span>
@@ -580,7 +611,9 @@ function checkPageExistsAndRedirect(event) {
 
         <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">data</span>
         <span class="n">f_mean</span><span class="p">,</span> <span class="n">f_var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_f</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="o">=</span><span class="n">full_output_cov</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">predict_log_density</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">f_mean</span><span class="p">,</span> <span class="n">f_var</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">predict_log_density</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">f_mean</span><span class="p">,</span> <span class="n">f_var</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span></div>
+</div>
+
 </pre></div>
 
               </article>
@@ -607,7 +640,7 @@ function checkPageExistsAndRedirect(event) {
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.1.2.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
 </p>
   </div>
   

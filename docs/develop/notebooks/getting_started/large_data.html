@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -30,9 +30,9 @@
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
-    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=f5666a58"></script>
+    <script src="../../_static/documentation_options.js?v=8da69bee"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
     <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -337,7 +337,7 @@ function checkPageExistsAndRedirect(event) {
               <article class="bd-article" role="main">
                 
   <section id="Large-Data-with-SGPR">
-<h1>Large Data with SGPR<a class="headerlink" href="#Large-Data-with-SGPR" title="Permalink to this heading">#</a></h1>
+<h1>Large Data with SGPR<a class="headerlink" href="#Large-Data-with-SGPR" title="Link to this heading">#</a></h1>
 <p>Making predictions with Gaussian Processes is <span class="math notranslate nohighlight">\(O(N^3)\)</span>, which can be prohibitive for large <span class="math notranslate nohighlight">\(N\)</span>. In this chapter we introduce the Sparse Gaussian Process Regression (SGPR), which tries to solve this problem. The SGPR tries to approximate the <span class="math notranslate nohighlight">\(N\)</span> actual data points with <span class="math notranslate nohighlight">\(M\)</span> “inducing variables”. With inducing variables the SGPR can make predicitions in <span class="math notranslate nohighlight">\(O(NM^2)\)</span>, which can make a big difference if <span class="math notranslate nohighlight">\(M &lt;&lt; N\)</span>.</p>
 <p>Note: For large datasets the “SVGP” model may also be relevant. See our section on <a class="reference internal" href="classification_and_other_data_distributions.html"><span class="doc">Classification and other data distributions</span></a>.</p>
 <p>As usual we will start with our imports:</p>
@@ -534,7 +534,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 <p>The two inducing points above are not enough to capture the data well, so we get an overly simplistic <span class="math notranslate nohighlight">\(f\)</span>, and the model compensates with an overly high variance.</p>
 <section id="Picking-initial-inducing-points">
-<h2>Picking initial inducing points<a class="headerlink" href="#Picking-initial-inducing-points" title="Permalink to this heading">#</a></h2>
+<h2>Picking initial inducing points<a class="headerlink" href="#Picking-initial-inducing-points" title="Link to this heading">#</a></h2>
 <p>When you use a sparse model you will need to pick initial inducing points, and choosing these correctly can have a large impact on performance. Above we used a simple grid. This often works well when your data is 1D, but we do not recommend using a grid for higher-dimensional data. In this section we discuss some alternatives.</p>
 <p>First, let us declare some 2D data:</p>
 <div class="nbinput nblast docutils container">
@@ -617,7 +617,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 </div>
 <section id="Random-data-samples">
-<h3>Random data samples<a class="headerlink" href="#Random-data-samples" title="Permalink to this heading">#</a></h3>
+<h3>Random data samples<a class="headerlink" href="#Random-data-samples" title="Link to this heading">#</a></h3>
 <p>A simple approach to selecting inducing points, is to randomly select a subset of your data:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
@@ -645,7 +645,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 </section>
 <section id="k-means">
-<h3>k-means<a class="headerlink" href="#k-means" title="Permalink to this heading">#</a></h3>
+<h3>k-means<a class="headerlink" href="#k-means" title="Link to this heading">#</a></h3>
 <p>Another good approach is to use the <a class="reference external" href="https://en.wikipedia.org/wiki/K-means_clustering">k-means algoritm</a>, which tries to find <span class="math notranslate nohighlight">\(k\)</span> centers of your data:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
@@ -674,7 +674,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 </section>
 <section id="Uncorrelated-samples">
-<h3>Uncorrelated samples<a class="headerlink" href="#Uncorrelated-samples" title="Permalink to this heading">#</a></h3>
+<h3>Uncorrelated samples<a class="headerlink" href="#Uncorrelated-samples" title="Link to this heading">#</a></h3>
 <p>It is a good idea to pick inducing points that are close to your data, which the above two algoritms does well. However they can struggle with some corner cases, such as if you do not (yet) have access to your data, or if you need to pick more inducing points than you have data. An approach that does not select points close to your data, but that can be more robust in some circumstances, is to use a <a class="reference external" href="https://en.wikipedia.org/wiki/Low-discrepancy_sequence">low-discrepancy sequence</a>:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
@@ -704,7 +704,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 </section>
 <section id="Advanced-initialisation">
-<h3>Advanced initialisation<a class="headerlink" href="#Advanced-initialisation" title="Permalink to this heading">#</a></h3>
+<h3>Advanced initialisation<a class="headerlink" href="#Advanced-initialisation" title="Link to this heading">#</a></h3>
 <p>If none of the above approaches work well for you, we recommend that advanced users to look at the <a class="reference external" href="https://github.com/markvdw/RobustGP">RobustGP repository</a>.</p>
 </section>
 </section>
@@ -735,7 +735,7 @@ function checkPageExistsAndRedirect(event) {
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.1.2.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
 </p>
   </div>
   
