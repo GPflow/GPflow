@@ -11,6 +11,7 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 import gpflow
+from gpflow.base import AnyNDArray
 from gpflow.models import GPR, GPModel
 from gpflow.monitor import (
     ExecuteCallback,
@@ -105,7 +106,7 @@ def test_ImageToTensorBoard(tmp_path: Path) -> None:
     """Smoke test `ImageToTensorBoard` in Eager and Compiled mode."""
     tmp_path_str = str(tmp_path)
 
-    def plotting_cb(fig: Figure, axes: Axes) -> None:
+    def plotting_cb(fig: Figure, axes: AnyNDArray) -> None:
         axes[0, 0].plot(np.random.randn(2), np.random.randn(2))
         axes[1, 0].plot(np.random.randn(2), np.random.randn(2))
         axes[0, 1].plot(np.random.randn(2), np.random.randn(2))
