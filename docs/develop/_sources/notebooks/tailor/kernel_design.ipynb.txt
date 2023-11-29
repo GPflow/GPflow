@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "bba183f4",
+   "id": "e81dd225",
    "metadata": {},
    "source": [
     "# Kernel Design\n",
@@ -17,13 +17,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "a6505c57",
+   "id": "76fa9559",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:22:51.633058Z",
-     "iopub.status.busy": "2023-11-27T10:22:51.632748Z",
-     "iopub.status.idle": "2023-11-27T10:22:56.962504Z",
-     "shell.execute_reply": "2023-11-27T10:22:56.961867Z"
+     "iopub.execute_input": "2023-11-29T11:34:21.073430Z",
+     "iopub.status.busy": "2023-11-29T11:34:21.073214Z",
+     "iopub.status.idle": "2023-11-29T11:34:25.472235Z",
+     "shell.execute_reply": "2023-11-29T11:34:25.471746Z"
     }
    },
    "outputs": [
@@ -31,7 +31,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2023-11-27 10:22:53.450226: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT\n"
+      "2023-11-29 11:34:22.619944: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT\n"
      ]
     }
    ],
@@ -49,7 +49,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e8518cd4",
+   "id": "1343f69b",
    "metadata": {},
    "source": [
     "To make this new kernel class, we inherit from the base class `gpflow.kernels.Kernel` and implement the three functions below. **NOTE:** Depending on the kernel to be implemented, other classes can be more adequate. For example, if the kernel to be implemented is isotropic stationary, you can immediately subclass `gpflow.kernels.IsotropicStationary` (at which point you\n",
@@ -72,13 +72,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "e34fc3ae",
+   "id": "1c0294d3",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:22:56.965655Z",
-     "iopub.status.busy": "2023-11-27T10:22:56.965275Z",
-     "iopub.status.idle": "2023-11-27T10:22:57.022112Z",
-     "shell.execute_reply": "2023-11-27T10:22:57.021423Z"
+     "iopub.execute_input": "2023-11-29T11:34:25.475101Z",
+     "iopub.status.busy": "2023-11-29T11:34:25.474723Z",
+     "iopub.status.idle": "2023-11-29T11:34:25.522840Z",
+     "shell.execute_reply": "2023-11-29T11:34:25.522384Z"
     }
    },
    "outputs": [
@@ -125,7 +125,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "9fe1490f",
+   "id": "b3735813",
    "metadata": {},
    "source": [
     "We can now evaluate our new kernel function and draw samples from a Gaussian process with this covariance:"
@@ -134,13 +134,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "62f8116b",
+   "id": "1bd32f07",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:22:57.025150Z",
-     "iopub.status.busy": "2023-11-27T10:22:57.024794Z",
-     "iopub.status.idle": "2023-11-27T10:23:10.273108Z",
-     "shell.execute_reply": "2023-11-27T10:23:10.272563Z"
+     "iopub.execute_input": "2023-11-29T11:34:25.525164Z",
+     "iopub.status.busy": "2023-11-29T11:34:25.524946Z",
+     "iopub.status.idle": "2023-11-29T11:34:26.702917Z",
+     "shell.execute_reply": "2023-11-29T11:34:26.702457Z"
     }
    },
    "outputs": [
@@ -179,7 +179,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e6338fce",
+   "id": "2cf8b24d",
    "metadata": {},
    "source": [
     "## Using the kernel in a model\n",
@@ -196,13 +196,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "a18ec1b1",
+   "id": "03ce413b",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:23:10.275830Z",
-     "iopub.status.busy": "2023-11-27T10:23:10.275588Z",
-     "iopub.status.idle": "2023-11-27T10:23:12.468472Z",
-     "shell.execute_reply": "2023-11-27T10:23:12.467781Z"
+     "iopub.execute_input": "2023-11-29T11:34:26.705583Z",
+     "iopub.status.busy": "2023-11-29T11:34:26.705354Z",
+     "iopub.status.idle": "2023-11-29T11:34:28.646420Z",
+     "shell.execute_reply": "2023-11-29T11:34:28.645963Z"
     }
    },
    "outputs": [
@@ -211,12 +211,12 @@
       "text/html": [
        "<table>\n",
        "<thead>\n",
-       "<tr><th>name                          </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style=\"text-align: right;\">  value</th></tr>\n",
+       "<tr><th>name                          </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style=\"text-align: right;\">      value</th></tr>\n",
        "</thead>\n",
        "<tbody>\n",
-       "<tr><td>GPR.kernel.kernels[0].variance</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">2.33113</td></tr>\n",
-       "<tr><td>GPR.kernel.kernels[1].variance</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">0.28387</td></tr>\n",
-       "<tr><td>GPR.likelihood.variance       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">0      </td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[0].variance</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">2.33113    </td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[1].variance</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">0.283867   </td></tr>\n",
+       "<tr><td>GPR.likelihood.variance       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">1.06518e-06</td></tr>\n",
        "</tbody>\n",
        "</table>"
       ],
@@ -269,7 +269,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "2c359a6c",
+   "id": "d023ccae",
    "metadata": {},
    "source": [
     "## See also\n",

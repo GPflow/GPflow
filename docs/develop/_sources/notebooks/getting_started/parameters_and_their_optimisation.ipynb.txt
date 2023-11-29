@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "33d550c4",
+   "id": "1d455fd9",
    "metadata": {},
    "source": [
     "# Parameters and Their Optimisation\n",
@@ -15,13 +15,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "9aa322bc",
+   "id": "24834f72",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:24:18.239552Z",
-     "iopub.status.busy": "2023-11-27T10:24:18.239279Z",
-     "iopub.status.idle": "2023-11-27T10:24:22.957055Z",
-     "shell.execute_reply": "2023-11-27T10:24:22.956527Z"
+     "iopub.execute_input": "2023-11-29T11:39:49.699765Z",
+     "iopub.status.busy": "2023-11-29T11:39:49.699565Z",
+     "iopub.status.idle": "2023-11-29T11:39:55.161234Z",
+     "shell.execute_reply": "2023-11-29T11:39:55.160697Z"
     }
    },
    "outputs": [],
@@ -41,7 +41,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "5e09d4e7",
+   "id": "83a03aad",
    "metadata": {},
    "source": [
     "## The Module and Parameter classes"
@@ -49,7 +49,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "b54629d3",
+   "id": "2d63ead2",
    "metadata": {},
    "source": [
     "The two fundamental classes of GPflow are:\n",
@@ -62,13 +62,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "5ff3c251",
+   "id": "305d0e90",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:24:22.959835Z",
-     "iopub.status.busy": "2023-11-27T10:24:22.959420Z",
-     "iopub.status.idle": "2023-11-27T10:24:22.965497Z",
-     "shell.execute_reply": "2023-11-27T10:24:22.965048Z"
+     "iopub.execute_input": "2023-11-29T11:39:55.164105Z",
+     "iopub.status.busy": "2023-11-29T11:39:55.163695Z",
+     "iopub.status.idle": "2023-11-29T11:39:55.169959Z",
+     "shell.execute_reply": "2023-11-29T11:39:55.169398Z"
     }
    },
    "outputs": [],
@@ -95,7 +95,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "650c7f6e",
+   "id": "c5e48346",
    "metadata": {},
    "source": [
     "Notice that in ``__init__`` we directly pass data to the parameters. The `Parameter` class takes many arguments (which we will discuss below), but it is reasonably intelligent as in: We can pass it \"raw\" numerical values with a Python list, a NumPy array, or a TensorFlow tensor; or we can pass it another `Parameter` and it will take values from that. Being able to pass a `Parameter` to ``__init__`` gives us a convenient way to configure the parameter in detail."
@@ -103,7 +103,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "9ffc69cc",
+   "id": "26c239fc",
    "metadata": {},
    "source": [
     "### Inspecting parameters\n",
@@ -114,13 +114,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "e968ff0a",
+   "id": "24604c1c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:24:22.967644Z",
-     "iopub.status.busy": "2023-11-27T10:24:22.967364Z",
-     "iopub.status.idle": "2023-11-27T10:24:22.998812Z",
-     "shell.execute_reply": "2023-11-27T10:24:22.998299Z"
+     "iopub.execute_input": "2023-11-29T11:39:55.172735Z",
+     "iopub.status.busy": "2023-11-29T11:39:55.172499Z",
+     "iopub.status.idle": "2023-11-29T11:39:55.205692Z",
+     "shell.execute_reply": "2023-11-29T11:39:55.205159Z"
     }
    },
    "outputs": [],
@@ -130,7 +130,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "1a1984f3",
+   "id": "d054f217",
    "metadata": {},
    "source": [
     "We can use the GPflow utility functions `print_summary` to see a summary of anything extending the GPflow `Module`:"
@@ -139,13 +139,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "57de41f2",
+   "id": "d95e2242",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:24:23.001160Z",
-     "iopub.status.busy": "2023-11-27T10:24:23.000909Z",
-     "iopub.status.idle": "2023-11-27T10:24:23.009871Z",
-     "shell.execute_reply": "2023-11-27T10:24:23.009382Z"
+     "iopub.execute_input": "2023-11-29T11:39:55.208673Z",
+     "iopub.status.busy": "2023-11-29T11:39:55.208420Z",
+     "iopub.status.idle": "2023-11-29T11:39:55.216808Z",
+     "shell.execute_reply": "2023-11-29T11:39:55.216303Z"
     }
    },
    "outputs": [
@@ -170,7 +170,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e9f2e18d",
+   "id": "b352b554",
    "metadata": {},
    "source": [
     "Looking at the output of `print_summary`. The `name` and `class` columns should be obvious if you're familiar with Python. We're also assuming that you're comfortable with NumPy and TensorFlow so the last three columns `shape`, `dtype`, and `value` should also be obvious. The three middle columns `transform`, `prior` and `trainable` will be explained below."
@@ -178,7 +178,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a28929c9",
+   "id": "8af16206",
    "metadata": {},
    "source": [
     "We generally recommend printing your parameter values after model traning, to sanity check them, and to develop a feel for what parameters are a good fit for your data."
@@ -186,7 +186,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "b862f96b",
+   "id": "d14ac6d2",
    "metadata": {},
    "source": [
     "`print_summary` has nice integration with Jupyter Notebooks:"
@@ -195,13 +195,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "9a3d845a",
+   "id": "6f0920de",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:24:23.012321Z",
-     "iopub.status.busy": "2023-11-27T10:24:23.012092Z",
-     "iopub.status.idle": "2023-11-27T10:24:23.018781Z",
-     "shell.execute_reply": "2023-11-27T10:24:23.018266Z"
+     "iopub.execute_input": "2023-11-29T11:39:55.219819Z",
+     "iopub.status.busy": "2023-11-29T11:39:55.219401Z",
+     "iopub.status.idle": "2023-11-29T11:39:55.231668Z",
+     "shell.execute_reply": "2023-11-29T11:39:55.230620Z"
     }
    },
    "outputs": [
@@ -233,7 +233,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "3175ab4b",
+   "id": "26e9671a",
    "metadata": {},
    "source": [
     "And we can configure GPflow to use the `notebook` format by default:"
@@ -242,13 +242,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "c9001413",
+   "id": "f3e6afc8",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:24:23.020979Z",
-     "iopub.status.busy": "2023-11-27T10:24:23.020706Z",
-     "iopub.status.idle": "2023-11-27T10:24:23.026803Z",
-     "shell.execute_reply": "2023-11-27T10:24:23.026332Z"
+     "iopub.execute_input": "2023-11-29T11:39:55.236128Z",
+     "iopub.status.busy": "2023-11-29T11:39:55.235633Z",
+     "iopub.status.idle": "2023-11-29T11:39:55.244025Z",
+     "shell.execute_reply": "2023-11-29T11:39:55.243525Z"
     }
    },
    "outputs": [
@@ -281,7 +281,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "9582c3c0",
+   "id": "8b57623f",
    "metadata": {},
    "source": [
     "Alternatively `Module`s know how to print themselves nicely in a notebook:"
@@ -290,20 +290,20 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "c2962948",
+   "id": "0ed8d55c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:24:23.028980Z",
-     "iopub.status.busy": "2023-11-27T10:24:23.028728Z",
-     "iopub.status.idle": "2023-11-27T10:24:23.036435Z",
-     "shell.execute_reply": "2023-11-27T10:24:23.035919Z"
+     "iopub.execute_input": "2023-11-29T11:39:55.246333Z",
+     "iopub.status.busy": "2023-11-29T11:39:55.246077Z",
+     "iopub.status.idle": "2023-11-29T11:39:55.253771Z",
+     "shell.execute_reply": "2023-11-29T11:39:55.253299Z"
     }
    },
    "outputs": [
     {
      "data": {
       "text/html": [
-       "&lt;__main__.LinearModel object at 0x7f58c8fa3890&gt;\n",
+       "&lt;__main__.LinearModel object at 0x7f7fd21a3f10&gt;\n",
        "<table>\n",
        "<thead>\n",
        "<tr><th>name             </th><th>class    </th><th>transform  </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th>value  </th></tr>\n",
@@ -316,7 +316,7 @@
        "</table>"
       ],
       "text/plain": [
-       "<__main__.LinearModel object at 0x7f58c8fa3890>\n",
+       "<__main__.LinearModel object at 0x7f7fd21a3f10>\n",
        "name               class      transform    prior    trainable    shape    dtype    value\n",
        "-----------------  ---------  -----------  -------  -----------  -------  -------  -------\n",
        "LinearModel.slope  Parameter  Identity              True         (2, 1)   float64  [[1.]\n",
@@ -335,7 +335,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "3545611d",
+   "id": "e1cb724d",
    "metadata": {},
    "source": [
     "Finally, a `Module` has two properties that allows easy access to its leaf parameters:"
@@ -344,13 +344,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "afe7ec79",
+   "id": "e3eed561",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:24:23.076583Z",
-     "iopub.status.busy": "2023-11-27T10:24:23.076260Z",
-     "iopub.status.idle": "2023-11-27T10:24:23.083201Z",
-     "shell.execute_reply": "2023-11-27T10:24:23.082738Z"
+     "iopub.execute_input": "2023-11-29T11:39:55.292274Z",
+     "iopub.status.busy": "2023-11-29T11:39:55.291672Z",
+     "iopub.status.idle": "2023-11-29T11:39:55.301530Z",
+     "shell.execute_reply": "2023-11-29T11:39:55.300762Z"
     }
    },
    "outputs": [
@@ -375,13 +375,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "d782b118",
+   "id": "cfa16dc2",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:24:23.085458Z",
-     "iopub.status.busy": "2023-11-27T10:24:23.085204Z",
-     "iopub.status.idle": "2023-11-27T10:24:23.090483Z",
-     "shell.execute_reply": "2023-11-27T10:24:23.089962Z"
+     "iopub.execute_input": "2023-11-29T11:39:55.304428Z",
+     "iopub.status.busy": "2023-11-29T11:39:55.303913Z",
+     "iopub.status.idle": "2023-11-29T11:39:55.311425Z",
+     "shell.execute_reply": "2023-11-29T11:39:55.310724Z"
     }
    },
    "outputs": [
@@ -405,7 +405,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "85fd2f89",
+   "id": "7661abec",
    "metadata": {},
    "source": [
     "The difference between trainable and non-trainable parameters will be explained further below. For now you may notice that both our parameters are marked \"trainable\" in the `print_summary` output, and both of them are returned by `.trainable_parameters`."
@@ -413,7 +413,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d5500478",
+   "id": "db5c145a",
    "metadata": {},
    "source": [
     "Generally you should use `print_summary` to manually inspect your models, and `.parameters` and `.trainable_parameters` if you need programmatic access."
@@ -421,7 +421,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "3ad5fe6a",
+   "id": "f0d37c09",
    "metadata": {},
    "source": [
     "### Setting parameters"
@@ -429,7 +429,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "3e8bea1e",
+   "id": "ff66903f",
    "metadata": {},
    "source": [
     "Parameters have a `.assign` method you can use to set them:"
@@ -438,13 +438,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "957a1acb",
+   "id": "a0e0b671",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:24:23.092862Z",
-     "iopub.status.busy": "2023-11-27T10:24:23.092633Z",
-     "iopub.status.idle": "2023-11-27T10:24:23.099668Z",
-     "shell.execute_reply": "2023-11-27T10:24:23.099238Z"
+     "iopub.execute_input": "2023-11-29T11:39:55.314167Z",
+     "iopub.status.busy": "2023-11-29T11:39:55.313687Z",
+     "iopub.status.idle": "2023-11-29T11:39:55.325227Z",
+     "shell.execute_reply": "2023-11-29T11:39:55.324351Z"
     }
    },
    "outputs": [
@@ -477,7 +477,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ef4973ce",
+   "id": "e87c4e87",
    "metadata": {},
    "source": [
     "### Optimisation"
@@ -485,7 +485,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "02ec5ec3",
+   "id": "0bedda2f",
    "metadata": {},
    "source": [
     "The objective of optimisation is to change the parameters so that your model fits the data. Generally an optimiser takes a \"loss\" function and a list of parameters, it then changes the parameters to minimise the loss function.\n",
@@ -498,13 +498,13 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "ee820887",
+   "id": "f8c72809",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:24:23.101923Z",
-     "iopub.status.busy": "2023-11-27T10:24:23.101708Z",
-     "iopub.status.idle": "2023-11-27T10:24:23.104562Z",
-     "shell.execute_reply": "2023-11-27T10:24:23.104132Z"
+     "iopub.execute_input": "2023-11-29T11:39:55.329760Z",
+     "iopub.status.busy": "2023-11-29T11:39:55.329216Z",
+     "iopub.status.idle": "2023-11-29T11:39:55.335018Z",
+     "shell.execute_reply": "2023-11-29T11:39:55.333989Z"
     }
    },
    "outputs": [],
@@ -515,7 +515,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "0858d154",
+   "id": "c0c189e6",
    "metadata": {},
    "source": [
     "Next we need our loss function. A common choice is the mean squared error:"
@@ -524,13 +524,13 @@
   {
    "cell_type": "code",
    "execution_count": 12,
-   "id": "74375f86",
+   "id": "740da1c7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:24:23.106554Z",
-     "iopub.status.busy": "2023-11-27T10:24:23.106345Z",
-     "iopub.status.idle": "2023-11-27T10:24:23.109069Z",
-     "shell.execute_reply": "2023-11-27T10:24:23.108658Z"
+     "iopub.execute_input": "2023-11-29T11:39:55.339324Z",
+     "iopub.status.busy": "2023-11-29T11:39:55.338800Z",
+     "iopub.status.idle": "2023-11-29T11:39:55.343602Z",
+     "shell.execute_reply": "2023-11-29T11:39:55.342814Z"
     }
    },
    "outputs": [],
@@ -543,7 +543,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "cbb1c032",
+   "id": "db426c46",
    "metadata": {},
    "source": [
     "Be aware that GPflow models come with a loss-function built in &mdash; use `model.training_loss`."
@@ -551,7 +551,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "26b56325",
+   "id": "fbf5e4a5",
    "metadata": {},
    "source": [
     "Now we can plug this into the default GPflow optimiser:"
@@ -560,13 +560,13 @@
   {
    "cell_type": "code",
    "execution_count": 13,
-   "id": "cc85918f",
+   "id": "ffa77c8a",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:24:23.111079Z",
-     "iopub.status.busy": "2023-11-27T10:24:23.110879Z",
-     "iopub.status.idle": "2023-11-27T10:24:24.126743Z",
-     "shell.execute_reply": "2023-11-27T10:24:24.126266Z"
+     "iopub.execute_input": "2023-11-29T11:39:55.346419Z",
+     "iopub.status.busy": "2023-11-29T11:39:55.346053Z",
+     "iopub.status.idle": "2023-11-29T11:39:56.470138Z",
+     "shell.execute_reply": "2023-11-29T11:39:56.469430Z"
     }
    },
    "outputs": [
@@ -600,7 +600,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "9da704c6",
+   "id": "06807c4a",
    "metadata": {},
    "source": [
     "Notice how the optimiser recovered the slope of $(2, 3)$ and bias of $1$ from the equation we used to generate the data: $y_i = 2x_{i0} + 3x_{i1} + 1$."
@@ -608,7 +608,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "eba2e655",
+   "id": "54c87b24",
    "metadata": {},
    "source": [
     "The default GPflow optimiser uses a gradient descent method called [BFGS](https://en.wikipedia.org/wiki/Broyden%E2%80%93Fletcher%E2%80%93Goldfarb%E2%80%93Shanno_algorithm). For this algoritm to work well you need:\n",
@@ -619,7 +619,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d5e593d6",
+   "id": "5985413d",
    "metadata": {},
    "source": [
     "## What to do if you model fails to fit\n",
@@ -629,7 +629,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7c2f8f6d",
+   "id": "c76cb44d",
    "metadata": {},
    "source": [
     "### Dataset: $CO_2$ levels\n",
@@ -640,13 +640,13 @@
   {
    "cell_type": "code",
    "execution_count": 14,
-   "id": "a15962cd",
+   "id": "cd2133dc",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:24:24.129983Z",
-     "iopub.status.busy": "2023-11-27T10:24:24.129722Z",
-     "iopub.status.idle": "2023-11-27T10:24:24.607541Z",
-     "shell.execute_reply": "2023-11-27T10:24:24.606988Z"
+     "iopub.execute_input": "2023-11-29T11:39:56.472986Z",
+     "iopub.status.busy": "2023-11-29T11:39:56.472745Z",
+     "iopub.status.idle": "2023-11-29T11:39:56.714109Z",
+     "shell.execute_reply": "2023-11-29T11:39:56.713551Z"
     }
    },
    "outputs": [],
@@ -660,7 +660,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "9bb8ea0c",
+   "id": "f18bf4f1",
    "metadata": {},
    "source": [
     "And we will define some helper functions to train and plot a model with the data:"
@@ -669,13 +669,13 @@
   {
    "cell_type": "code",
    "execution_count": 15,
-   "id": "aaa2920b",
+   "id": "b213658d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:24:24.610936Z",
-     "iopub.status.busy": "2023-11-27T10:24:24.610676Z",
-     "iopub.status.idle": "2023-11-27T10:24:24.618974Z",
-     "shell.execute_reply": "2023-11-27T10:24:24.618307Z"
+     "iopub.execute_input": "2023-11-29T11:39:56.716810Z",
+     "iopub.status.busy": "2023-11-29T11:39:56.716544Z",
+     "iopub.status.idle": "2023-11-29T11:39:56.728879Z",
+     "shell.execute_reply": "2023-11-29T11:39:56.727943Z"
     }
    },
    "outputs": [],
@@ -726,7 +726,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ec3e2229",
+   "id": "2fe4cdf6",
    "metadata": {},
    "source": [
     "Let us start by trying to fit our favourite kernel: the squared exponential:"
@@ -735,13 +735,13 @@
   {
    "cell_type": "code",
    "execution_count": 16,
-   "id": "ec7d8099",
+   "id": "1b02f229",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:24:24.621791Z",
-     "iopub.status.busy": "2023-11-27T10:24:24.621558Z",
-     "iopub.status.idle": "2023-11-27T10:24:39.654589Z",
-     "shell.execute_reply": "2023-11-27T10:24:39.653946Z"
+     "iopub.execute_input": "2023-11-29T11:39:56.733537Z",
+     "iopub.status.busy": "2023-11-29T11:39:56.732949Z",
+     "iopub.status.idle": "2023-11-29T11:40:12.257029Z",
+     "shell.execute_reply": "2023-11-29T11:40:12.256338Z"
     }
    },
    "outputs": [
@@ -783,7 +783,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "27fd27bb",
+   "id": "cdfb9ad9",
    "metadata": {},
    "source": [
     "We are off to a good start. From the left plot it is clear that the kernel has captured the long-term trend of the data. However, on the zoomed-in plot on the right it is also clear that the data has some kind of yearly cycle that our model has failed to capture.\n",
@@ -794,13 +794,13 @@
   {
    "cell_type": "code",
    "execution_count": 17,
-   "id": "b116fa44",
+   "id": "2469016a",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:24:39.656826Z",
-     "iopub.status.busy": "2023-11-27T10:24:39.656580Z",
-     "iopub.status.idle": "2023-11-27T10:24:54.384476Z",
-     "shell.execute_reply": "2023-11-27T10:24:54.384000Z"
+     "iopub.execute_input": "2023-11-29T11:40:12.259711Z",
+     "iopub.status.busy": "2023-11-29T11:40:12.259467Z",
+     "iopub.status.idle": "2023-11-29T11:40:26.892997Z",
+     "shell.execute_reply": "2023-11-29T11:40:26.892377Z"
     }
    },
    "outputs": [
@@ -809,15 +809,15 @@
       "text/html": [
        "<table>\n",
        "<thead>\n",
-       "<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style=\"text-align: right;\">    value</th></tr>\n",
+       "<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style=\"text-align: right;\">       value</th></tr>\n",
        "</thead>\n",
        "<tbody>\n",
-       "<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">139.884  </td></tr>\n",
-       "<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\"> 78.6736 </td></tr>\n",
-       "<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">246.773  </td></tr>\n",
-       "<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\"> 12.8367 </td></tr>\n",
-       "<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">  0.00152</td></tr>\n",
-       "<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">  5.67213</td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">139.884     </td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\"> 78.6736    </td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">246.773     </td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\"> 12.8367    </td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">  0.00152493</td></tr>\n",
+       "<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">  5.67213   </td></tr>\n",
        "</tbody>\n",
        "</table>"
       ],
@@ -849,7 +849,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "1e89838e",
+   "id": "c2ed74c3",
    "metadata": {},
    "source": [
     "Huh. What happened? The optimiser has failed to find a good fit. With the extended model the loss function has become too complicated for the optimiser.\n",
@@ -859,7 +859,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "3ef90d30",
+   "id": "c8a08eb6",
    "metadata": {},
    "source": [
     "### Setting the initial value\n",
@@ -875,13 +875,13 @@
   {
    "cell_type": "code",
    "execution_count": 18,
-   "id": "43363437",
+   "id": "d02f5bdf",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:24:54.387032Z",
-     "iopub.status.busy": "2023-11-27T10:24:54.386800Z",
-     "iopub.status.idle": "2023-11-27T10:25:23.536411Z",
-     "shell.execute_reply": "2023-11-27T10:25:23.535932Z"
+     "iopub.execute_input": "2023-11-29T11:40:26.895588Z",
+     "iopub.status.busy": "2023-11-29T11:40:26.895337Z",
+     "iopub.status.idle": "2023-11-29T11:40:56.596372Z",
+     "shell.execute_reply": "2023-11-29T11:40:56.595726Z"
     }
    },
    "outputs": [
@@ -890,15 +890,15 @@
       "text/html": [
        "<table>\n",
        "<thead>\n",
-       "<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style=\"text-align: right;\">       value</th></tr>\n",
+       "<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style=\"text-align: right;\">        value</th></tr>\n",
        "</thead>\n",
        "<tbody>\n",
-       "<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">280000      </td></tr>\n",
-       "<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">    15.6552 </td></tr>\n",
-       "<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">   159.435  </td></tr>\n",
-       "<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     1.74718</td></tr>\n",
-       "<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     0.99962</td></tr>\n",
-       "<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     0.20842</td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">280000       </td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">    15.6552  </td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">   159.435   </td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     1.74718 </td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     0.999617</td></tr>\n",
+       "<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     0.208423</td></tr>\n",
        "</tbody>\n",
        "</table>"
       ],
@@ -930,7 +930,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "29d266a6",
+   "id": "301dc4a7",
    "metadata": {},
    "source": [
     "### Priors\n",
@@ -940,7 +940,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "f51188bb",
+   "id": "5ee88810",
    "metadata": {},
    "source": [
     "There are two ways to apply a prior to your parameters. First, you can create the parameter with the prior:"
@@ -949,13 +949,13 @@
   {
    "cell_type": "code",
    "execution_count": 19,
-   "id": "25620c87",
+   "id": "35cf53db",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:25:23.540687Z",
-     "iopub.status.busy": "2023-11-27T10:25:23.540415Z",
-     "iopub.status.idle": "2023-11-27T10:25:23.547031Z",
-     "shell.execute_reply": "2023-11-27T10:25:23.546585Z"
+     "iopub.execute_input": "2023-11-29T11:40:56.598564Z",
+     "iopub.status.busy": "2023-11-29T11:40:56.598310Z",
+     "iopub.status.idle": "2023-11-29T11:40:56.604878Z",
+     "shell.execute_reply": "2023-11-29T11:40:56.604385Z"
     }
    },
    "outputs": [],
@@ -965,7 +965,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "6a53bcfa",
+   "id": "8118a0d0",
    "metadata": {},
    "source": [
     "Or you can create the parameter first, and then set the prior:"
@@ -974,13 +974,13 @@
   {
    "cell_type": "code",
    "execution_count": 20,
-   "id": "40ec8583",
+   "id": "29c48c47",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:25:23.549378Z",
-     "iopub.status.busy": "2023-11-27T10:25:23.549093Z",
-     "iopub.status.idle": "2023-11-27T10:25:23.556029Z",
-     "shell.execute_reply": "2023-11-27T10:25:23.555392Z"
+     "iopub.execute_input": "2023-11-29T11:40:56.606976Z",
+     "iopub.status.busy": "2023-11-29T11:40:56.606708Z",
+     "iopub.status.idle": "2023-11-29T11:40:56.611821Z",
+     "shell.execute_reply": "2023-11-29T11:40:56.611355Z"
     }
    },
    "outputs": [],
@@ -991,7 +991,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "4b421b36",
+   "id": "a5e99ad8",
    "metadata": {},
    "source": [
     "Let us try using priors on our $CO_2$ model:"
@@ -1000,13 +1000,13 @@
   {
    "cell_type": "code",
    "execution_count": 21,
-   "id": "f4518835",
+   "id": "2426cac6",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:25:23.559049Z",
-     "iopub.status.busy": "2023-11-27T10:25:23.558583Z",
-     "iopub.status.idle": "2023-11-27T10:25:44.612974Z",
-     "shell.execute_reply": "2023-11-27T10:25:44.612487Z"
+     "iopub.execute_input": "2023-11-29T11:40:56.613836Z",
+     "iopub.status.busy": "2023-11-29T11:40:56.613627Z",
+     "iopub.status.idle": "2023-11-29T11:41:18.579824Z",
+     "shell.execute_reply": "2023-11-29T11:41:18.579336Z"
     }
    },
    "outputs": [
@@ -1015,15 +1015,15 @@
       "text/html": [
        "<table>\n",
        "<thead>\n",
-       "<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior    </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style=\"text-align: right;\">       value</th></tr>\n",
+       "<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior    </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style=\"text-align: right;\">        value</th></tr>\n",
        "</thead>\n",
        "<tbody>\n",
-       "<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>LogNormal</td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">150625      </td></tr>\n",
-       "<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>LogNormal</td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">   139.564  </td></tr>\n",
-       "<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>         </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">134518      </td></tr>\n",
-       "<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>         </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\"> 12986.8    </td></tr>\n",
-       "<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>LogNormal</td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     0.9631 </td></tr>\n",
-       "<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>         </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     4.97688</td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>LogNormal</td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">150625       </td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>LogNormal</td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">   139.564   </td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>         </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">134518       </td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>         </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\"> 12986.8     </td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>LogNormal</td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     0.963101</td></tr>\n",
+       "<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>         </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     4.97688 </td></tr>\n",
        "</tbody>\n",
        "</table>"
       ],
@@ -1063,7 +1063,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a1e3da1c",
+   "id": "55a2a679",
    "metadata": {},
    "source": [
     "Notice that many parameters have constraints on what values are valid. In this case all of `variance`, `lengthscales` and `period` should be non-negative. That is why we chose the `LogNormal` distribution for our prior - it only allows positive values."
@@ -1071,7 +1071,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "c1194dce",
+   "id": "4d95c7f3",
    "metadata": {},
    "source": [
     "Also notice in our table of parameters, that the `prior` column now shows `LogNormal` for the parameters we set the prior on."
@@ -1079,7 +1079,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "2d1e6e96",
+   "id": "3223e360",
    "metadata": {},
    "source": [
     "### Transforms\n",
@@ -1089,7 +1089,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "6da07a15",
+   "id": "feb7f49f",
    "metadata": {},
    "source": [
     "You can only set the transform of a parameter when you create it. For example:"
@@ -1098,13 +1098,13 @@
   {
    "cell_type": "code",
    "execution_count": 22,
-   "id": "4695338d",
+   "id": "b87b8f13",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:25:44.617287Z",
-     "iopub.status.busy": "2023-11-27T10:25:44.617052Z",
-     "iopub.status.idle": "2023-11-27T10:25:44.621997Z",
-     "shell.execute_reply": "2023-11-27T10:25:44.621557Z"
+     "iopub.execute_input": "2023-11-29T11:41:18.582369Z",
+     "iopub.status.busy": "2023-11-29T11:41:18.582139Z",
+     "iopub.status.idle": "2023-11-29T11:41:18.587381Z",
+     "shell.execute_reply": "2023-11-29T11:41:18.586901Z"
     }
    },
    "outputs": [],
@@ -1114,7 +1114,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "97ecfd69",
+   "id": "10aa6cf8",
    "metadata": {},
    "source": [
     "In this example we used the exponential function as a transform. Since the exponential functions maps the entire real line to positive values this transform will ensure that the parameter always take positive values."
@@ -1122,7 +1122,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e2b151db",
+   "id": "3d1a2994",
    "metadata": {},
    "source": [
     "We can access the untransformed value of the parameter:"
@@ -1131,13 +1131,13 @@
   {
    "cell_type": "code",
    "execution_count": 23,
-   "id": "387ea334",
+   "id": "bc1bdc82",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:25:44.624653Z",
-     "iopub.status.busy": "2023-11-27T10:25:44.624382Z",
-     "iopub.status.idle": "2023-11-27T10:25:44.628121Z",
-     "shell.execute_reply": "2023-11-27T10:25:44.627717Z"
+     "iopub.execute_input": "2023-11-29T11:41:18.589534Z",
+     "iopub.status.busy": "2023-11-29T11:41:18.589316Z",
+     "iopub.status.idle": "2023-11-29T11:41:18.593667Z",
+     "shell.execute_reply": "2023-11-29T11:41:18.593091Z"
     }
    },
    "outputs": [
@@ -1159,13 +1159,13 @@
   {
    "cell_type": "code",
    "execution_count": 24,
-   "id": "4227a227",
+   "id": "56da9b59",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:25:44.630736Z",
-     "iopub.status.busy": "2023-11-27T10:25:44.630525Z",
-     "iopub.status.idle": "2023-11-27T10:25:44.634365Z",
-     "shell.execute_reply": "2023-11-27T10:25:44.633931Z"
+     "iopub.execute_input": "2023-11-29T11:41:18.595886Z",
+     "iopub.status.busy": "2023-11-29T11:41:18.595668Z",
+     "iopub.status.idle": "2023-11-29T11:41:18.599958Z",
+     "shell.execute_reply": "2023-11-29T11:41:18.599398Z"
     }
    },
    "outputs": [
@@ -1186,7 +1186,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d6be5f9a",
+   "id": "4a6caf69",
    "metadata": {},
    "source": [
     "When we read the parameter we will read the transformed value, which is positive, even though we just set the untransformed value to a negative number:"
@@ -1195,13 +1195,13 @@
   {
    "cell_type": "code",
    "execution_count": 25,
-   "id": "6d65382b",
+   "id": "4d535db3",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:25:44.636851Z",
-     "iopub.status.busy": "2023-11-27T10:25:44.636645Z",
-     "iopub.status.idle": "2023-11-27T10:25:44.640526Z",
-     "shell.execute_reply": "2023-11-27T10:25:44.640131Z"
+     "iopub.execute_input": "2023-11-29T11:41:18.601912Z",
+     "iopub.status.busy": "2023-11-29T11:41:18.601695Z",
+     "iopub.status.idle": "2023-11-29T11:41:18.606387Z",
+     "shell.execute_reply": "2023-11-29T11:41:18.605838Z"
     }
    },
    "outputs": [
@@ -1222,7 +1222,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "925ef309",
+   "id": "274f3651",
    "metadata": {},
    "source": [
     "Let us try and use transforms on our $CO_2$ problem:"
@@ -1231,13 +1231,13 @@
   {
    "cell_type": "code",
    "execution_count": 26,
-   "id": "4805917e",
+   "id": "73cf7194",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:25:44.643032Z",
-     "iopub.status.busy": "2023-11-27T10:25:44.642779Z",
-     "iopub.status.idle": "2023-11-27T10:25:57.905194Z",
-     "shell.execute_reply": "2023-11-27T10:25:57.904724Z"
+     "iopub.execute_input": "2023-11-29T11:41:18.608435Z",
+     "iopub.status.busy": "2023-11-29T11:41:18.608228Z",
+     "iopub.status.idle": "2023-11-29T11:41:32.676995Z",
+     "shell.execute_reply": "2023-11-29T11:41:32.676328Z"
     }
    },
    "outputs": [
@@ -1246,15 +1246,15 @@
       "text/html": [
        "<table>\n",
        "<thead>\n",
-       "<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style=\"text-align: right;\">       value</th></tr>\n",
+       "<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style=\"text-align: right;\">        value</th></tr>\n",
        "</thead>\n",
        "<tbody>\n",
-       "<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>SoftClip        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">280000      </td></tr>\n",
-       "<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>SoftClip        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">   100.001  </td></tr>\n",
-       "<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">    59.1587 </td></tr>\n",
-       "<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     1.42275</td></tr>\n",
-       "<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>SoftClip        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     0.99962</td></tr>\n",
-       "<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     0.37533</td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>SoftClip        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">280000       </td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>SoftClip        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">   100.001   </td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">    59.1587  </td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     1.42275 </td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>SoftClip        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     0.99962 </td></tr>\n",
+       "<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     0.375332</td></tr>\n",
        "</tbody>\n",
        "</table>"
       ],
@@ -1307,7 +1307,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "1a38283a",
+   "id": "128891f4",
    "metadata": {},
    "source": [
     "Again, be aware that many parameters have constraints on what kind of values they logically can take, and if you replace the transform of a parameter you must make sure that the transform only allows values that are logically valid in the context in which they are used.\n",
@@ -1317,7 +1317,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "78931ac0",
+   "id": "bb9b44bb",
    "metadata": {},
    "source": [
     "### Trainable parameters\n",
@@ -1330,13 +1330,13 @@
   {
    "cell_type": "code",
    "execution_count": 27,
-   "id": "e3e26969",
+   "id": "7b87264c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:25:57.907760Z",
-     "iopub.status.busy": "2023-11-27T10:25:57.907527Z",
-     "iopub.status.idle": "2023-11-27T10:25:57.912013Z",
-     "shell.execute_reply": "2023-11-27T10:25:57.911566Z"
+     "iopub.execute_input": "2023-11-29T11:41:32.679203Z",
+     "iopub.status.busy": "2023-11-29T11:41:32.678972Z",
+     "iopub.status.idle": "2023-11-29T11:41:32.683796Z",
+     "shell.execute_reply": "2023-11-29T11:41:32.683193Z"
     }
    },
    "outputs": [],
@@ -1347,13 +1347,13 @@
   {
    "cell_type": "code",
    "execution_count": 28,
-   "id": "89f19ec7",
+   "id": "29fd49a9",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:25:57.914161Z",
-     "iopub.status.busy": "2023-11-27T10:25:57.913945Z",
-     "iopub.status.idle": "2023-11-27T10:25:57.921750Z",
-     "shell.execute_reply": "2023-11-27T10:25:57.921278Z"
+     "iopub.execute_input": "2023-11-29T11:41:32.685661Z",
+     "iopub.status.busy": "2023-11-29T11:41:32.685463Z",
+     "iopub.status.idle": "2023-11-29T11:41:32.692836Z",
+     "shell.execute_reply": "2023-11-29T11:41:32.692387Z"
     }
    },
    "outputs": [],
@@ -1364,7 +1364,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e2d5b596",
+   "id": "0c326707",
    "metadata": {},
    "source": [
     "The `gpflow.set_trainable` function can both be applied directly to parameters, or to modules, in which case all parameters held in the module are affected.\n",
@@ -1375,13 +1375,13 @@
   {
    "cell_type": "code",
    "execution_count": 29,
-   "id": "454f4ed8",
+   "id": "5e110038",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:25:57.924448Z",
-     "iopub.status.busy": "2023-11-27T10:25:57.924014Z",
-     "iopub.status.idle": "2023-11-27T10:26:04.525708Z",
-     "shell.execute_reply": "2023-11-27T10:26:04.525100Z"
+     "iopub.execute_input": "2023-11-29T11:41:32.694848Z",
+     "iopub.status.busy": "2023-11-29T11:41:32.694646Z",
+     "iopub.status.idle": "2023-11-29T11:41:39.683953Z",
+     "shell.execute_reply": "2023-11-29T11:41:39.683381Z"
     }
    },
    "outputs": [
@@ -1390,15 +1390,15 @@
       "text/html": [
        "<table>\n",
        "<thead>\n",
-       "<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style=\"text-align: right;\">       value</th></tr>\n",
+       "<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style=\"text-align: right;\">        value</th></tr>\n",
        "</thead>\n",
        "<tbody>\n",
-       "<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>False      </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">280000      </td></tr>\n",
-       "<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>False      </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">   140      </td></tr>\n",
-       "<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">    44.6201 </td></tr>\n",
-       "<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     1.32494</td></tr>\n",
-       "<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>False      </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     1      </td></tr>\n",
-       "<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     0.46607</td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>False      </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">280000       </td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>False      </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">   140       </td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">    44.6201  </td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     1.32494 </td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>False      </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     1       </td></tr>\n",
+       "<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     0.466071</td></tr>\n",
        "</tbody>\n",
        "</table>"
       ],
@@ -1436,7 +1436,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "c9796b3b",
+   "id": "b663bbb0",
    "metadata": {},
    "source": [
     "Notice how the `trainable` column of the parameter table reflects the whether the parameters are trainable. Also notice how the final value of the un-trainable parameters have exactly the value we initialised them to. Setting a parameter untrainable is a heavy-handed tool, and we generally recommend using one of the softer methods demonstrated above."
@@ -1444,7 +1444,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "85c912a0",
+   "id": "3b18a90c",
    "metadata": {},
    "source": [
     "## Advanced training"
@@ -1452,7 +1452,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "dd581f30",
+   "id": "4f173165",
    "metadata": {},
    "source": [
     "### Multi-stage training\n",
@@ -1465,13 +1465,13 @@
   {
    "cell_type": "code",
    "execution_count": 30,
-   "id": "726fad14",
+   "id": "6f5fa548",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:26:04.529722Z",
-     "iopub.status.busy": "2023-11-27T10:26:04.529460Z",
-     "iopub.status.idle": "2023-11-27T10:26:20.640093Z",
-     "shell.execute_reply": "2023-11-27T10:26:20.639491Z"
+     "iopub.execute_input": "2023-11-29T11:41:39.686521Z",
+     "iopub.status.busy": "2023-11-29T11:41:39.686178Z",
+     "iopub.status.idle": "2023-11-29T11:41:56.778956Z",
+     "shell.execute_reply": "2023-11-29T11:41:56.778247Z"
     }
    },
    "outputs": [
@@ -1535,7 +1535,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7319417b",
+   "id": "f40a5512",
    "metadata": {},
    "source": [
     "### The Keras optimisers\n",
@@ -1546,13 +1546,13 @@
   {
    "cell_type": "code",
    "execution_count": 31,
-   "id": "3f2f155e",
+   "id": "5d3d0df9",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:26:20.643068Z",
-     "iopub.status.busy": "2023-11-27T10:26:20.642603Z",
-     "iopub.status.idle": "2023-11-27T10:33:27.320251Z",
-     "shell.execute_reply": "2023-11-27T10:33:27.319752Z"
+     "iopub.execute_input": "2023-11-29T11:41:56.781350Z",
+     "iopub.status.busy": "2023-11-29T11:41:56.781093Z",
+     "iopub.status.idle": "2023-11-29T11:49:29.966151Z",
+     "shell.execute_reply": "2023-11-29T11:49:29.965661Z"
     }
    },
    "outputs": [
@@ -1701,15 +1701,15 @@
       "text/html": [
        "<table>\n",
        "<thead>\n",
-       "<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style=\"text-align: right;\">       value</th></tr>\n",
+       "<tr><th>name                                          </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style=\"text-align: right;\">        value</th></tr>\n",
        "</thead>\n",
        "<tbody>\n",
-       "<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">280002      </td></tr>\n",
-       "<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">   137.551  </td></tr>\n",
-       "<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     1.80475</td></tr>\n",
-       "<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     0.55257</td></tr>\n",
-       "<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     0.99962</td></tr>\n",
-       "<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     1      </td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[0].variance                </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">280002       </td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[0].lengthscales            </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">   137.551   </td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[1].base_kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     1.80475 </td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[1].base_kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     0.552569</td></tr>\n",
+       "<tr><td>GPR.kernel.kernels[1].period                  </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     0.999617</td></tr>\n",
+       "<tr><td>GPR.likelihood.variance                       </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style=\"text-align: right;\">     1       </td></tr>\n",
        "</tbody>\n",
        "</table>"
       ],

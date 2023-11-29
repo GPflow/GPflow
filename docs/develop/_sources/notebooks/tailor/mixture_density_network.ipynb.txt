@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "813b2494",
+   "id": "7f06629c",
    "metadata": {},
    "source": [
     "# Mixture Density Networks in GPflow\n",
@@ -14,7 +14,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "3e49d364",
+   "id": "cea39200",
    "metadata": {},
    "source": [
     "## Conditional Density Estimation models\n",
@@ -24,13 +24,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "8073e873",
+   "id": "7eba79e2",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:23:11.515185Z",
-     "iopub.status.busy": "2023-11-27T10:23:11.514894Z",
-     "iopub.status.idle": "2023-11-27T10:23:12.025537Z",
-     "shell.execute_reply": "2023-11-27T10:23:12.025030Z"
+     "iopub.execute_input": "2023-11-29T11:34:34.257697Z",
+     "iopub.status.busy": "2023-11-29T11:34:34.257468Z",
+     "iopub.status.idle": "2023-11-29T11:34:34.741383Z",
+     "shell.execute_reply": "2023-11-29T11:34:34.740808Z"
     }
    },
    "outputs": [],
@@ -48,13 +48,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "8009c11c",
+   "id": "12f1d504",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:23:12.028209Z",
-     "iopub.status.busy": "2023-11-27T10:23:12.027932Z",
-     "iopub.status.idle": "2023-11-27T10:23:12.202063Z",
-     "shell.execute_reply": "2023-11-27T10:23:12.201614Z"
+     "iopub.execute_input": "2023-11-29T11:34:34.744182Z",
+     "iopub.status.busy": "2023-11-29T11:34:34.743878Z",
+     "iopub.status.idle": "2023-11-29T11:34:34.912584Z",
+     "shell.execute_reply": "2023-11-29T11:34:34.912135Z"
     }
    },
    "outputs": [
@@ -91,7 +91,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "dbf1050a",
+   "id": "e1328f51",
    "metadata": {},
    "source": [
     "At first sight, this dataset doesn't seem overly complex. Both input and output have a single dimension, and the data has a clear sinusoidal pattern. However, notice that a single input $x$ can correspond to multiple output values $y$, so for example $x=0$ can yield any of the values $\\{-1.5, -3/4, 0, 0.8, 1.5\\}$. Typical regression algorithms such as Linear Regression, Gaussian Process regression and Multilayer Perceptrons (MLPs) struggle as they can only predict one output value for every input.\n",
@@ -101,7 +101,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "be48dff2",
+   "id": "3fd64be8",
    "metadata": {},
    "source": [
     "## Mixture Density Network models\n",
@@ -123,7 +123,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "0cdb77d4",
+   "id": "e2394c4b",
    "metadata": {},
    "source": [
     "## A GPflow MDN implementation\n",
@@ -136,13 +136,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "c6846903",
+   "id": "bc1a4de3",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:23:12.204451Z",
-     "iopub.status.busy": "2023-11-27T10:23:12.204220Z",
-     "iopub.status.idle": "2023-11-27T10:23:16.513881Z",
-     "shell.execute_reply": "2023-11-27T10:23:16.513267Z"
+     "iopub.execute_input": "2023-11-29T11:34:34.915105Z",
+     "iopub.status.busy": "2023-11-29T11:34:34.914864Z",
+     "iopub.status.idle": "2023-11-29T11:34:39.130798Z",
+     "shell.execute_reply": "2023-11-29T11:34:39.130290Z"
     },
     "lines_to_next_cell": 1
    },
@@ -151,7 +151,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2023-11-27 10:23:13.413628: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT\n"
+      "2023-11-29 11:34:36.113989: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT\n"
      ]
     }
    ],
@@ -166,7 +166,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "c88b7d61",
+   "id": "a9b848ad",
    "metadata": {},
    "source": [
     "Next, we create a `MDN` class that inherits from GPflow's `Model` class. We need to do the following:\n",
@@ -178,13 +178,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "364dd062",
+   "id": "83662961",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:23:16.516867Z",
-     "iopub.status.busy": "2023-11-27T10:23:16.516452Z",
-     "iopub.status.idle": "2023-11-27T10:23:16.524674Z",
-     "shell.execute_reply": "2023-11-27T10:23:16.524171Z"
+     "iopub.execute_input": "2023-11-29T11:34:39.133807Z",
+     "iopub.status.busy": "2023-11-29T11:34:39.133415Z",
+     "iopub.status.idle": "2023-11-29T11:34:39.141219Z",
+     "shell.execute_reply": "2023-11-29T11:34:39.140741Z"
     }
    },
    "outputs": [],
@@ -247,7 +247,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ee229fea",
+   "id": "8a694c24",
    "metadata": {},
    "source": [
     "### Notes\n",
@@ -264,7 +264,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "30edc712",
+   "id": "0fe89cb5",
    "metadata": {},
    "source": [
     "## Experiment 1: The sinusoidal dataset\n",
@@ -275,13 +275,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "2e7cd74d",
+   "id": "7dd3df04",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:23:16.526642Z",
-     "iopub.status.busy": "2023-11-27T10:23:16.526422Z",
-     "iopub.status.idle": "2023-11-27T10:23:16.581830Z",
-     "shell.execute_reply": "2023-11-27T10:23:16.581281Z"
+     "iopub.execute_input": "2023-11-29T11:34:39.143359Z",
+     "iopub.status.busy": "2023-11-29T11:34:39.143149Z",
+     "iopub.status.idle": "2023-11-29T11:34:39.196226Z",
+     "shell.execute_reply": "2023-11-29T11:34:39.195742Z"
     }
    },
    "outputs": [
@@ -289,21 +289,21 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "\u2552\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2555\n",
-      "\u2502 name      \u2502 class     \u2502 transform   \u2502 prior   \u2502 trainable   \u2502 shape      \u2502 dtype   \u2502 value                            \u2502\n",
-      "\u255e\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2561\n",
-      "\u2502 MDN.Ws[0] \u2502 Parameter \u2502 Identity    \u2502         \u2502 True        \u2502 (1, 100)   \u2502 float64 \u2502 [[-0.18385, 0.01075, 0.05168...  \u2502\n",
-      "\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n",
-      "\u2502 MDN.Ws[1] \u2502 Parameter \u2502 Identity    \u2502         \u2502 True        \u2502 (100, 100) \u2502 float64 \u2502 [[-0.17194, 0.00571, -0.07995... \u2502\n",
-      "\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n",
-      "\u2502 MDN.Ws[2] \u2502 Parameter \u2502 Identity    \u2502         \u2502 True        \u2502 (100, 15)  \u2502 float64 \u2502 [[-0.08247, -0.37778, 0.09596... \u2502\n",
-      "\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n",
-      "\u2502 MDN.bs[0] \u2502 Parameter \u2502 Identity    \u2502         \u2502 True        \u2502 (100,)     \u2502 float64 \u2502 [0., 0., 0....                   \u2502\n",
-      "\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n",
-      "\u2502 MDN.bs[1] \u2502 Parameter \u2502 Identity    \u2502         \u2502 True        \u2502 (100,)     \u2502 float64 \u2502 [0., 0., 0....                   \u2502\n",
-      "\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n",
-      "\u2502 MDN.bs[2] \u2502 Parameter \u2502 Identity    \u2502         \u2502 True        \u2502 (15,)      \u2502 float64 \u2502 [0., 0., 0....                   \u2502\n",
-      "\u2558\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2567\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2567\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2567\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2567\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2567\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2567\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2567\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255b\n"
+      "\u2552\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2555\n",
+      "\u2502 name      \u2502 class     \u2502 transform   \u2502 prior   \u2502 trainable   \u2502 shape      \u2502 dtype   \u2502 value                                     \u2502\n",
+      "\u255e\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2561\n",
+      "\u2502 MDN.Ws[0] \u2502 Parameter \u2502 Identity    \u2502         \u2502 True        \u2502 (1, 100)   \u2502 float64 \u2502 [[-0.18385483, 0.01074822, 0.05167668...  \u2502\n",
+      "\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n",
+      "\u2502 MDN.Ws[1] \u2502 Parameter \u2502 Identity    \u2502         \u2502 True        \u2502 (100, 100) \u2502 float64 \u2502 [[-0.17193945, 0.0057121, -0.07995475...  \u2502\n",
+      "\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n",
+      "\u2502 MDN.Ws[2] \u2502 Parameter \u2502 Identity    \u2502         \u2502 True        \u2502 (100, 15)  \u2502 float64 \u2502 [[-0.08246711, -0.37777674, 0.09595574... \u2502\n",
+      "\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n",
+      "\u2502 MDN.bs[0] \u2502 Parameter \u2502 Identity    \u2502         \u2502 True        \u2502 (100,)     \u2502 float64 \u2502 [0., 0., 0....                            \u2502\n",
+      "\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n",
+      "\u2502 MDN.bs[1] \u2502 Parameter \u2502 Identity    \u2502         \u2502 True        \u2502 (100,)     \u2502 float64 \u2502 [0., 0., 0....                            \u2502\n",
+      "\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n",
+      "\u2502 MDN.bs[2] \u2502 Parameter \u2502 Identity    \u2502         \u2502 True        \u2502 (15,)      \u2502 float64 \u2502 [0., 0., 0....                            \u2502\n",
+      "\u2558\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2567\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2567\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2567\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2567\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2567\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2567\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2567\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255b\n"
      ]
     }
    ],
@@ -317,7 +317,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "88e771be",
+   "id": "6a211162",
    "metadata": {},
    "source": [
     "The objective function for MDN instances is the `maximum_log_likelihood_objective`, which we use for optimization of the parameters. GPflow ensures that only the variables stored in `Parameter` objects are optimized. For the MDN, the only parameters are the weights and the biases of the neural net.\n",
@@ -328,13 +328,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "61345f48",
+   "id": "6704a2ef",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:23:16.584142Z",
-     "iopub.status.busy": "2023-11-27T10:23:16.583891Z",
-     "iopub.status.idle": "2023-11-27T10:24:27.803249Z",
-     "shell.execute_reply": "2023-11-27T10:24:27.802728Z"
+     "iopub.execute_input": "2023-11-29T11:34:39.198501Z",
+     "iopub.status.busy": "2023-11-29T11:34:39.198271Z",
+     "iopub.status.idle": "2023-11-29T11:35:40.413867Z",
+     "shell.execute_reply": "2023-11-29T11:35:40.413354Z"
     }
    },
    "outputs": [
@@ -361,7 +361,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "344059f3",
+   "id": "cf749ecf",
    "metadata": {},
    "source": [
     "To evaluate the validity of our model, we draw the posterior density. We also plot $\\mu(x)$ of the optimized neural net. Remember that for every $x$ the neural net outputs $M$ means $\\mu_m(x)$. These determine the location of the Gaussians. We plot all $M$ means and use their corresponding mixture weight $\\pi_m(X)$ to determine their size. Larger dots will have more impact in the Gaussian ensemble."
@@ -370,13 +370,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "b6309492",
+   "id": "9d37fcc0",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:24:27.805489Z",
-     "iopub.status.busy": "2023-11-27T10:24:27.805256Z",
-     "iopub.status.idle": "2023-11-27T10:24:28.417060Z",
-     "shell.execute_reply": "2023-11-27T10:24:28.416559Z"
+     "iopub.execute_input": "2023-11-29T11:35:40.416059Z",
+     "iopub.status.busy": "2023-11-29T11:35:40.415819Z",
+     "iopub.status.idle": "2023-11-29T11:35:41.034620Z",
+     "shell.execute_reply": "2023-11-29T11:35:41.034101Z"
     }
    },
    "outputs": [
@@ -407,7 +407,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "cda37664",
+   "id": "a9a141bb",
    "metadata": {},
    "source": [
     "## Experiment 2: The half moon dataset\n",
@@ -418,13 +418,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "5c23df0d",
+   "id": "5915b8a9",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:24:28.419601Z",
-     "iopub.status.busy": "2023-11-27T10:24:28.419347Z",
-     "iopub.status.idle": "2023-11-27T10:24:28.518283Z",
-     "shell.execute_reply": "2023-11-27T10:24:28.517760Z"
+     "iopub.execute_input": "2023-11-29T11:35:41.037075Z",
+     "iopub.status.busy": "2023-11-29T11:35:41.036808Z",
+     "iopub.status.idle": "2023-11-29T11:35:41.132695Z",
+     "shell.execute_reply": "2023-11-29T11:35:41.132188Z"
     }
    },
    "outputs": [],
@@ -441,13 +441,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "775dca21",
+   "id": "db640e0a",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:24:28.521395Z",
-     "iopub.status.busy": "2023-11-27T10:24:28.520773Z",
-     "iopub.status.idle": "2023-11-27T10:24:28.647947Z",
-     "shell.execute_reply": "2023-11-27T10:24:28.647453Z"
+     "iopub.execute_input": "2023-11-29T11:35:41.135558Z",
+     "iopub.status.busy": "2023-11-29T11:35:41.134974Z",
+     "iopub.status.idle": "2023-11-29T11:35:41.256966Z",
+     "shell.execute_reply": "2023-11-29T11:35:41.256479Z"
     }
    },
    "outputs": [
@@ -471,7 +471,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "6aa3e683",
+   "id": "8e3e545e",
    "metadata": {},
    "source": [
     "The only difference in the MDN's setup is that we lower the number of mixture components."
@@ -480,13 +480,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "b0f5c437",
+   "id": "51c9a1b5",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:24:28.649995Z",
-     "iopub.status.busy": "2023-11-27T10:24:28.649758Z",
-     "iopub.status.idle": "2023-11-27T10:24:28.661815Z",
-     "shell.execute_reply": "2023-11-27T10:24:28.661360Z"
+     "iopub.execute_input": "2023-11-29T11:35:41.259150Z",
+     "iopub.status.busy": "2023-11-29T11:35:41.258927Z",
+     "iopub.status.idle": "2023-11-29T11:35:41.270956Z",
+     "shell.execute_reply": "2023-11-29T11:35:41.270527Z"
     }
    },
    "outputs": [],
@@ -497,13 +497,13 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "5d17f972",
+   "id": "0a577428",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:24:28.663953Z",
-     "iopub.status.busy": "2023-11-27T10:24:28.663742Z",
-     "iopub.status.idle": "2023-11-27T10:28:58.178284Z",
-     "shell.execute_reply": "2023-11-27T10:28:58.177774Z"
+     "iopub.execute_input": "2023-11-29T11:35:41.273019Z",
+     "iopub.status.busy": "2023-11-29T11:35:41.272788Z",
+     "iopub.status.idle": "2023-11-29T11:38:36.896784Z",
+     "shell.execute_reply": "2023-11-29T11:38:36.896298Z"
     }
    },
    "outputs": [
@@ -528,13 +528,13 @@
   {
    "cell_type": "code",
    "execution_count": 12,
-   "id": "d17c2f12",
+   "id": "103d79e1",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-27T10:28:58.180890Z",
-     "iopub.status.busy": "2023-11-27T10:28:58.180661Z",
-     "iopub.status.idle": "2023-11-27T10:28:58.620159Z",
-     "shell.execute_reply": "2023-11-27T10:28:58.619632Z"
+     "iopub.execute_input": "2023-11-29T11:38:36.899662Z",
+     "iopub.status.busy": "2023-11-29T11:38:36.899430Z",
+     "iopub.status.idle": "2023-11-29T11:38:37.339325Z",
+     "shell.execute_reply": "2023-11-29T11:38:37.338725Z"
     }
    },
    "outputs": [
@@ -559,7 +559,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "f14f5cfc",
+   "id": "f55f12d0",
    "metadata": {},
    "source": [
     "## References\n",
