@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import unittest
 from typing import Any, Sequence, Tuple, Type
 
 import numpy as np
@@ -234,8 +235,8 @@ def test_polynomial__1d() -> None:
     Y = p(X)
     assert_allclose(
         [
-            [1.0 + 2.0 * 1.0 + 3.0 * (1.0 ** 2)],
-            [1.0 + 2.0 * 2.0 + 3.0 * (2.0 ** 2)],
+            [1.0 + 2.0 * 1.0 + 3.0 * (1.0**2)],
+            [1.0 + 2.0 * 2.0 + 3.0 * (2.0**2)],
         ],
         Y,
     )
@@ -371,3 +372,20 @@ def test_models_with_mean_functions_changes(model_class: Type[Any]) -> None:
     assert np.all(var_zero.numpy() == var_non_zero.numpy())
     # predictive mean changes after modifying mean function
     assert not np.all(mu_zero.numpy() == mu_non_zero.numpy())
+
+
+class test_bug_2091_ensureParameterTypeForLinearMeanFunction(unittest.TestCase):
+    """
+    See github issue #2091. This are tests to ensure that the prior is keeped if A is already given as Parameter.
+    """
+
+    # test_parameter_with_correct_shape
+    def test_parameter_with_correct_shape(self) -> None:
+        A = gpflow.Parameter(np.ones((1, 1)), dtype=np.float64)
+        linear_function = Linear(A, 1)
+        assert not linear_function.A.prior == None
+
+    # test_parameter_with_incorrect_shape
+    def test_parameter_with_incorrect_shape(self) -> None:
+        A = gpflow.Parameter(np.zeros(20), dtype=np.float64)
+        self.assertRaises(TypeError, Linear(A, 1))

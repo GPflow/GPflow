@@ -110,7 +110,15 @@ class Linear(MeanFunction, Function):
         MeanFunction.__init__(self)
         A = np.ones((1, 1), dtype=default_float()) if A is None else A
         b = np.zeros(1, dtype=default_float()) if b is None else b
-        self.A = Parameter(np.atleast_2d(A))
+        if isinstance(A, Parameter):
+            if len(A._shape) >= 2:
+                self.A = A
+            else:
+                raise TypeError(
+                    "Error 'gpflow.funcitons.Linear()' mean function. A has not the correct shape (at least 2d)."
+                )
+        else:
+            self.A = Parameter(np.atleast_2d(A))
         self.b = Parameter(b)
 
     @inherit_check_shapes
