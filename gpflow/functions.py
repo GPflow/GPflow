@@ -114,7 +114,7 @@ class Linear(MeanFunction, Function):
             if len(A._shape) >= 2:
                 self.A = A
             else:
-                raise TypeError(
+                raise ValueError(
                     "Error 'gpflow.funcitons.Linear()' mean function. A has not the correct shape (at least 2d)."
                 )
         else:

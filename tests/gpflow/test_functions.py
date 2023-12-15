@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import unittest
 from typing import Any, Sequence, Tuple, Type
 
 import numpy as np
 import pytest
+import tensorflow_probability as tfp
 from check_shapes import check_shapes
 from numpy.testing import assert_allclose
 
@@ -235,8 +235,8 @@ def test_polynomial__1d() -> None:
     Y = p(X)
     assert_allclose(
         [
-            [1.0 + 2.0 * 1.0 + 3.0 * (1.0**2)],
-            [1.0 + 2.0 * 2.0 + 3.0 * (2.0**2)],
+            [1.0 + 2.0 * 1.0 + 3.0 * (1.0 ** 2)],
+            [1.0 + 2.0 * 2.0 + 3.0 * (2.0 ** 2)],
         ],
         Y,
     )
@@ -374,18 +374,23 @@ def test_models_with_mean_functions_changes(model_class: Type[Any]) -> None:
     assert not np.all(mu_zero.numpy() == mu_non_zero.numpy())
 
 
-class test_bug_2091_ensureParameterTypeForLinearMeanFunction(unittest.TestCase):
+class TestIssue2091EnsureParameterTypeForLinearMeanFunction:
     """
-    See github issue #2091. This are tests to ensure that the prior is keeped if A is already given as Parameter.
+    See github issue #2091. These are tests to ensure that the prior is kept if A is already given as Parameter.
     """
 
     # test_parameter_with_correct_shape
     def test_parameter_with_correct_shape(self) -> None:
-        A = gpflow.Parameter(np.ones((1, 1)), dtype=np.float64)
+        "Check that Linear copies the prior from a correctly shaped A Parameter"
+        A = gpflow.Parameter(
+            np.ones((1, 1)), dtype=np.float64, prior=tfp.distributions.Normal(0.0, 1.0)
+        )
         linear_function = Linear(A, 1)
-        assert not linear_function.A.prior == None
+        assert linear_function.A.prior is not None
 
     # test_parameter_with_incorrect_shape
     def test_parameter_with_incorrect_shape(self) -> None:
+        "Check that Linear throws an error when the A Parameter is not correctly shaped"
         A = gpflow.Parameter(np.zeros(20), dtype=np.float64)
-        self.assertRaises(TypeError, Linear(A, 1))
+        with pytest.raises(ValueError):
+            Linear(A, 1)
