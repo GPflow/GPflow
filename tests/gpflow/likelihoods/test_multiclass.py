@@ -48,7 +48,7 @@ def test_softmax_y_shape_assert(num: int, dimX: int, dimF: int, dimY: int) -> No
 
 
 @pytest.mark.parametrize("dimX", [3])
-@pytest.mark.parametrize("num", [10, 3])
+@pytest.mark.parametrize("num", [8, 3])
 @pytest.mark.parametrize("dimF, dimY", [[2, 1]])
 def test_softmax_bernoulli_equivalence(num: int, dimX: int, dimF: int, dimY: int) -> None:
     X = tf.random.normal((num, dimX))
