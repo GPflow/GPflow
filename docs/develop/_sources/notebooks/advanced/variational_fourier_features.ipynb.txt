@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "ce2f398d",
+   "id": "ef486f2c",
    "metadata": {},
    "source": [
     "# Variational Fourier Features in the GPflow framework\n",
@@ -17,13 +17,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "88c9d63f",
+   "id": "93eceaac",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-29T11:34:31.574620Z",
-     "iopub.status.busy": "2023-11-29T11:34:31.574377Z",
-     "iopub.status.idle": "2023-11-29T11:34:36.458410Z",
-     "shell.execute_reply": "2023-11-29T11:34:36.457835Z"
+     "iopub.execute_input": "2023-12-19T12:01:47.290117Z",
+     "iopub.status.busy": "2023-12-19T12:01:47.289863Z",
+     "iopub.status.idle": "2023-12-19T12:01:51.925170Z",
+     "shell.execute_reply": "2023-12-19T12:01:51.924632Z"
     }
    },
    "outputs": [
@@ -31,7 +31,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2023-11-29 11:34:33.018798: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT\n"
+      "2023-12-19 12:01:48.702395: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT\n"
      ]
     }
    ],
@@ -52,13 +52,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "5a489ba0",
+   "id": "b7b76ce3",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-29T11:34:36.461098Z",
-     "iopub.status.busy": "2023-11-29T11:34:36.460757Z",
-     "iopub.status.idle": "2023-11-29T11:34:36.463813Z",
-     "shell.execute_reply": "2023-11-29T11:34:36.463379Z"
+     "iopub.execute_input": "2023-12-19T12:01:51.927831Z",
+     "iopub.status.busy": "2023-12-19T12:01:51.927445Z",
+     "iopub.status.idle": "2023-12-19T12:01:51.930388Z",
+     "shell.execute_reply": "2023-12-19T12:01:51.929969Z"
     }
    },
    "outputs": [],
@@ -73,13 +73,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "9d58268a",
+   "id": "eaf2000f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-29T11:34:36.465746Z",
-     "iopub.status.busy": "2023-11-29T11:34:36.465455Z",
-     "iopub.status.idle": "2023-11-29T11:34:36.766106Z",
-     "shell.execute_reply": "2023-11-29T11:34:36.765606Z"
+     "iopub.execute_input": "2023-12-19T12:01:51.932239Z",
+     "iopub.status.busy": "2023-12-19T12:01:51.931981Z",
+     "iopub.status.idle": "2023-12-19T12:01:52.225562Z",
+     "shell.execute_reply": "2023-12-19T12:01:52.225046Z"
     }
    },
    "outputs": [],
@@ -91,7 +91,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "667b64da",
+   "id": "356e2f5b",
    "metadata": {},
    "source": [
     "The VFF inducing variables are defined as a projection $u_m = \\mathcal{P}_{\\phi_m}(f)$ (eq. (59)) of the GP $f(\\cdot)$ onto a truncated Fourier basis, $\\phi_m = [1, \\cos(\\omega_1(x-a)),\\dots,\\cos(\\omega_M(x-a)),\\sin(\\omega_1(x-a)),\\dots,\\sin(\\omega_M(x-a))]$ (eq. (47)). To represent this we define a new inducing variables class that derives from the `InducingVariables` base class."
@@ -100,13 +100,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "bee939a7",
+   "id": "f86aef25",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-29T11:34:36.768872Z",
-     "iopub.status.busy": "2023-11-29T11:34:36.768471Z",
-     "iopub.status.idle": "2023-11-29T11:34:36.773261Z",
-     "shell.execute_reply": "2023-11-29T11:34:36.772826Z"
+     "iopub.execute_input": "2023-12-19T12:01:52.228964Z",
+     "iopub.status.busy": "2023-12-19T12:01:52.228544Z",
+     "iopub.status.idle": "2023-12-19T12:01:52.233463Z",
+     "shell.execute_reply": "2023-12-19T12:01:52.233017Z"
     }
    },
    "outputs": [],
@@ -139,7 +139,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "5ba57430",
+   "id": "701c3452",
    "metadata": {},
    "source": [
     "Next, we need to define how to compute $\\mathrm{K}_\\mathbf{uu} = \\operatorname{cov}(u_m, u_{m'})$ (eq. (61)) and $\\mathrm{K}_\\mathbf{uf} = \\operatorname{cov}(u_m, f(x_n))$ (eq. (60))."
@@ -148,13 +148,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "34aa5e23",
+   "id": "e83d65c7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-29T11:34:36.775381Z",
-     "iopub.status.busy": "2023-11-29T11:34:36.775168Z",
-     "iopub.status.idle": "2023-11-29T11:34:36.792006Z",
-     "shell.execute_reply": "2023-11-29T11:34:36.790616Z"
+     "iopub.execute_input": "2023-12-19T12:01:52.235462Z",
+     "iopub.status.busy": "2023-12-19T12:01:52.235251Z",
+     "iopub.status.idle": "2023-12-19T12:01:52.251075Z",
+     "shell.execute_reply": "2023-12-19T12:01:52.250634Z"
     }
    },
    "outputs": [],
@@ -284,7 +284,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e847a523",
+   "id": "eab44116",
    "metadata": {},
    "source": [
     "In principle, this is all we need; however, to be able to take advantage of the structure of `Kuu`, we need to also implement new versions of the KL divergence from the prior to the approximate posterior (`prior_kl`) and the computation of the Gaussian process conditional (posterior) equations:"
@@ -293,13 +293,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "68f8f7aa",
+   "id": "a22dc0af",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-29T11:34:36.794517Z",
-     "iopub.status.busy": "2023-11-29T11:34:36.794286Z",
-     "iopub.status.idle": "2023-11-29T11:34:36.800000Z",
-     "shell.execute_reply": "2023-11-29T11:34:36.799565Z"
+     "iopub.execute_input": "2023-12-19T12:01:52.253161Z",
+     "iopub.status.busy": "2023-12-19T12:01:52.252942Z",
+     "iopub.status.idle": "2023-12-19T12:01:52.258613Z",
+     "shell.execute_reply": "2023-12-19T12:01:52.258188Z"
     }
    },
    "outputs": [],
@@ -366,13 +366,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "35a0295c",
+   "id": "b6b99fc5",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-29T11:34:36.802092Z",
-     "iopub.status.busy": "2023-11-29T11:34:36.801783Z",
-     "iopub.status.idle": "2023-11-29T11:34:36.812412Z",
-     "shell.execute_reply": "2023-11-29T11:34:36.811954Z"
+     "iopub.execute_input": "2023-12-19T12:01:52.260782Z",
+     "iopub.status.busy": "2023-12-19T12:01:52.260486Z",
+     "iopub.status.idle": "2023-12-19T12:01:52.270963Z",
+     "shell.execute_reply": "2023-12-19T12:01:52.270541Z"
     }
    },
    "outputs": [],
@@ -512,7 +512,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "3a715010",
+   "id": "b01287ca",
    "metadata": {},
    "source": [
     "We now have to register our Posterior object:"
@@ -521,13 +521,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "f8d97fb8",
+   "id": "4d6499a9",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-29T11:34:36.814280Z",
-     "iopub.status.busy": "2023-11-29T11:34:36.814050Z",
-     "iopub.status.idle": "2023-11-29T11:34:36.816851Z",
-     "shell.execute_reply": "2023-11-29T11:34:36.816431Z"
+     "iopub.execute_input": "2023-12-19T12:01:52.274106Z",
+     "iopub.status.busy": "2023-12-19T12:01:52.273748Z",
+     "iopub.status.idle": "2023-12-19T12:01:52.277251Z",
+     "shell.execute_reply": "2023-12-19T12:01:52.276797Z"
     }
    },
    "outputs": [],
@@ -541,7 +541,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "acc52e7b",
+   "id": "631a37e2",
    "metadata": {},
    "source": [
     "`gpflow.conditionals.conditional` is a short-hand for calling the fused prediction code path:"
@@ -550,13 +550,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "ff7a19ca",
+   "id": "8c4bbb40",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-29T11:34:36.818639Z",
-     "iopub.status.busy": "2023-11-29T11:34:36.818435Z",
-     "iopub.status.idle": "2023-11-29T11:34:37.041322Z",
-     "shell.execute_reply": "2023-11-29T11:34:37.040136Z"
+     "iopub.execute_input": "2023-12-19T12:01:52.279378Z",
+     "iopub.status.busy": "2023-12-19T12:01:52.279128Z",
+     "iopub.status.idle": "2023-12-19T12:01:52.468331Z",
+     "shell.execute_reply": "2023-12-19T12:01:52.467674Z"
     }
    },
    "outputs": [],
@@ -593,7 +593,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "b1f9e830",
+   "id": "058825a8",
    "metadata": {},
    "source": [
     "We can also call the cached path:\n"
@@ -602,13 +602,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "301c1d67",
+   "id": "4fc58e4c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-29T11:34:37.045846Z",
-     "iopub.status.busy": "2023-11-29T11:34:37.045415Z",
-     "iopub.status.idle": "2023-11-29T11:34:37.119945Z",
-     "shell.execute_reply": "2023-11-29T11:34:37.119427Z"
+     "iopub.execute_input": "2023-12-19T12:01:52.475434Z",
+     "iopub.status.busy": "2023-12-19T12:01:52.471589Z",
+     "iopub.status.idle": "2023-12-19T12:01:52.548594Z",
+     "shell.execute_reply": "2023-12-19T12:01:52.548001Z"
     }
    },
    "outputs": [],
@@ -624,7 +624,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "23f1ab9b",
+   "id": "b9704996",
    "metadata": {},
    "source": [
     "We now demonstrate how to use these new types of inducing variables with the `SVGP` model class. First, let's create some toy data:"
@@ -633,13 +633,13 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "2f9469d1",
+   "id": "5b5cacdf",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-29T11:34:37.122693Z",
-     "iopub.status.busy": "2023-11-29T11:34:37.122450Z",
-     "iopub.status.idle": "2023-11-29T11:34:37.128578Z",
-     "shell.execute_reply": "2023-11-29T11:34:37.127540Z"
+     "iopub.execute_input": "2023-12-19T12:01:52.551412Z",
+     "iopub.status.busy": "2023-12-19T12:01:52.551050Z",
+     "iopub.status.idle": "2023-12-19T12:01:52.556293Z",
+     "shell.execute_reply": "2023-12-19T12:01:52.555804Z"
     }
    },
    "outputs": [],
@@ -664,13 +664,13 @@
   {
    "cell_type": "code",
    "execution_count": 12,
-   "id": "2f043e6b",
+   "id": "d44e6247",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-29T11:34:37.133030Z",
-     "iopub.status.busy": "2023-11-29T11:34:37.132574Z",
-     "iopub.status.idle": "2023-11-29T11:34:37.289572Z",
-     "shell.execute_reply": "2023-11-29T11:34:37.289094Z"
+     "iopub.execute_input": "2023-12-19T12:01:52.558581Z",
+     "iopub.status.busy": "2023-12-19T12:01:52.558161Z",
+     "iopub.status.idle": "2023-12-19T12:01:52.726025Z",
+     "shell.execute_reply": "2023-12-19T12:01:52.725555Z"
     }
    },
    "outputs": [
@@ -695,7 +695,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "48b7f594",
+   "id": "a6f3ecd5",
    "metadata": {},
    "source": [
     "Setting up an SVGP model with variational Fourier feature inducing variables is as simple as replacing the `inducing_variable` argument:"
@@ -704,13 +704,13 @@
   {
    "cell_type": "code",
    "execution_count": 13,
-   "id": "433f52c6",
+   "id": "70bf809c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-29T11:34:37.291765Z",
-     "iopub.status.busy": "2023-11-29T11:34:37.291535Z",
-     "iopub.status.idle": "2023-11-29T11:34:37.357067Z",
-     "shell.execute_reply": "2023-11-29T11:34:37.356549Z"
+     "iopub.execute_input": "2023-12-19T12:01:52.729619Z",
+     "iopub.status.busy": "2023-12-19T12:01:52.729382Z",
+     "iopub.status.idle": "2023-12-19T12:01:52.789311Z",
+     "shell.execute_reply": "2023-12-19T12:01:52.788804Z"
     }
    },
    "outputs": [],
@@ -733,13 +733,13 @@
   {
    "cell_type": "code",
    "execution_count": 14,
-   "id": "4c4857ec",
+   "id": "33431c2d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-29T11:34:37.359465Z",
-     "iopub.status.busy": "2023-11-29T11:34:37.359243Z",
-     "iopub.status.idle": "2023-11-29T11:35:00.687838Z",
-     "shell.execute_reply": "2023-11-29T11:35:00.687239Z"
+     "iopub.execute_input": "2023-12-19T12:01:52.792293Z",
+     "iopub.status.busy": "2023-12-19T12:01:52.792062Z",
+     "iopub.status.idle": "2023-12-19T12:02:14.015624Z",
+     "shell.execute_reply": "2023-12-19T12:02:14.015011Z"
     }
    },
    "outputs": [
@@ -782,7 +782,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "45c03193",
+   "id": "adcf1d1b",
    "metadata": {},
    "source": [
     "For comparison we also construct an SVGP model using inducing points and an exact GPR model:"
@@ -791,13 +791,13 @@
   {
    "cell_type": "code",
    "execution_count": 15,
-   "id": "1139b956",
+   "id": "680a6223",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-29T11:35:00.690359Z",
-     "iopub.status.busy": "2023-11-29T11:35:00.690110Z",
-     "iopub.status.idle": "2023-11-29T11:35:00.722828Z",
-     "shell.execute_reply": "2023-11-29T11:35:00.722376Z"
+     "iopub.execute_input": "2023-12-19T12:02:14.018817Z",
+     "iopub.status.busy": "2023-12-19T12:02:14.018483Z",
+     "iopub.status.idle": "2023-12-19T12:02:14.055854Z",
+     "shell.execute_reply": "2023-12-19T12:02:14.055325Z"
     }
    },
    "outputs": [],
@@ -819,13 +819,13 @@
   {
    "cell_type": "code",
    "execution_count": 16,
-   "id": "e511e385",
+   "id": "69deb239",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-29T11:35:00.725404Z",
-     "iopub.status.busy": "2023-11-29T11:35:00.725043Z",
-     "iopub.status.idle": "2023-11-29T11:35:05.588735Z",
-     "shell.execute_reply": "2023-11-29T11:35:05.588245Z"
+     "iopub.execute_input": "2023-12-19T12:02:14.058290Z",
+     "iopub.status.busy": "2023-12-19T12:02:14.058055Z",
+     "iopub.status.idle": "2023-12-19T12:02:18.526064Z",
+     "shell.execute_reply": "2023-12-19T12:02:18.525601Z"
     }
    },
    "outputs": [
@@ -868,13 +868,13 @@
   {
    "cell_type": "code",
    "execution_count": 17,
-   "id": "edd0b268",
+   "id": "c3db8e55",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-29T11:35:05.590828Z",
-     "iopub.status.busy": "2023-11-29T11:35:05.590599Z",
-     "iopub.status.idle": "2023-11-29T11:35:05.615828Z",
-     "shell.execute_reply": "2023-11-29T11:35:05.615413Z"
+     "iopub.execute_input": "2023-12-19T12:02:18.528272Z",
+     "iopub.status.busy": "2023-12-19T12:02:18.528039Z",
+     "iopub.status.idle": "2023-12-19T12:02:18.553926Z",
+     "shell.execute_reply": "2023-12-19T12:02:18.553476Z"
     }
    },
    "outputs": [
@@ -915,13 +915,13 @@
   {
    "cell_type": "code",
    "execution_count": 18,
-   "id": "6bd06d96",
+   "id": "6f2fc16e",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-29T11:35:05.617856Z",
-     "iopub.status.busy": "2023-11-29T11:35:05.617644Z",
-     "iopub.status.idle": "2023-11-29T11:35:05.803631Z",
-     "shell.execute_reply": "2023-11-29T11:35:05.803137Z"
+     "iopub.execute_input": "2023-12-19T12:02:18.555986Z",
+     "iopub.status.busy": "2023-12-19T12:02:18.555763Z",
+     "iopub.status.idle": "2023-12-19T12:02:18.717064Z",
+     "shell.execute_reply": "2023-12-19T12:02:18.716569Z"
     },
     "lines_to_next_cell": 1
    },
@@ -948,13 +948,13 @@
   {
    "cell_type": "code",
    "execution_count": 19,
-   "id": "905b1a27",
+   "id": "e65c9f67",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-11-29T11:35:05.805781Z",
-     "iopub.status.busy": "2023-11-29T11:35:05.805554Z",
-     "iopub.status.idle": "2023-11-29T11:35:06.170855Z",
-     "shell.execute_reply": "2023-11-29T11:35:06.170386Z"
+     "iopub.execute_input": "2023-12-19T12:02:18.719127Z",
+     "iopub.status.busy": "2023-12-19T12:02:18.718885Z",
+     "iopub.status.idle": "2023-12-19T12:02:19.070909Z",
+     "shell.execute_reply": "2023-12-19T12:02:19.070415Z"
     }
    },
    "outputs": [
@@ -1019,7 +1019,7 @@
    "name": "python",
    "nbconvert_exporter": "python",
    "pygments_lexer": "ipython3",
-   "version": "3.11.6"
+   "version": "3.11.7"
   }
  },
  "nbformat": 4,
