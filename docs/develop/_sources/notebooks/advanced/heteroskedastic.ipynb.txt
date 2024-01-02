@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "da63ebce",
+   "id": "51552ec4",
    "metadata": {},
    "source": [
     "# Heteroskedastic Likelihood and Multi-Latent GP"
@@ -10,7 +10,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "541936ad",
+   "id": "7c13e5b9",
    "metadata": {},
    "source": [
     "## Standard (Homoskedastic) Regression\n",
@@ -34,13 +34,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "d16f969c",
+   "id": "d26cae04",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-12-19T12:00:32.028873Z",
-     "iopub.status.busy": "2023-12-19T12:00:32.028616Z",
-     "iopub.status.idle": "2023-12-19T12:00:37.090462Z",
-     "shell.execute_reply": "2023-12-19T12:00:37.089907Z"
+     "iopub.execute_input": "2024-01-02T11:05:14.693628Z",
+     "iopub.status.busy": "2024-01-02T11:05:14.693357Z",
+     "iopub.status.idle": "2024-01-02T11:05:20.117947Z",
+     "shell.execute_reply": "2024-01-02T11:05:20.117321Z"
     }
    },
    "outputs": [
@@ -48,7 +48,20 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2023-12-19 12:00:34.026409: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT\n"
+      "2024-01-02 11:05:15.678602: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.\n",
+      "2024-01-02 11:05:15.725753: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9261] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered\n",
+      "2024-01-02 11:05:15.725793: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered\n",
+      "2024-01-02 11:05:15.727045: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1515] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n",
+      "2024-01-02 11:05:15.734163: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.\n",
+      "2024-01-02 11:05:15.734715: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.\n",
+      "To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2024-01-02 11:05:17.118141: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT\n"
      ]
     }
    ],
@@ -63,7 +76,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "55d28ba8",
+   "id": "2b447409",
    "metadata": {},
    "source": [
     "## Data Generation\n",
@@ -80,13 +93,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "f86b242e",
+   "id": "aef08de6",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-12-19T12:00:37.093333Z",
-     "iopub.status.busy": "2023-12-19T12:00:37.092930Z",
-     "iopub.status.idle": "2023-12-19T12:00:37.097740Z",
-     "shell.execute_reply": "2023-12-19T12:00:37.097189Z"
+     "iopub.execute_input": "2024-01-02T11:05:20.120649Z",
+     "iopub.status.busy": "2024-01-02T11:05:20.120232Z",
+     "iopub.status.idle": "2024-01-02T11:05:20.125174Z",
+     "shell.execute_reply": "2024-01-02T11:05:20.124654Z"
     },
     "lines_to_next_cell": 1
    },
@@ -117,7 +130,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "0e6d13f7",
+   "id": "84a73adc",
    "metadata": {},
    "source": [
     "### Plot Data\n",
@@ -127,13 +140,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "de277469",
+   "id": "df44264c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-12-19T12:00:37.100473Z",
-     "iopub.status.busy": "2023-12-19T12:00:37.100005Z",
-     "iopub.status.idle": "2023-12-19T12:00:37.302648Z",
-     "shell.execute_reply": "2023-12-19T12:00:37.302176Z"
+     "iopub.execute_input": "2024-01-02T11:05:20.127258Z",
+     "iopub.status.busy": "2024-01-02T11:05:20.127047Z",
+     "iopub.status.idle": "2024-01-02T11:05:20.301257Z",
+     "shell.execute_reply": "2024-01-02T11:05:20.300535Z"
     },
     "lines_to_next_cell": 2
    },
@@ -170,7 +183,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "15e20fee",
+   "id": "2234b76a",
    "metadata": {},
    "source": [
     "## Build Model"
@@ -178,7 +191,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "2f74a124",
+   "id": "6c261e46",
    "metadata": {},
    "source": [
     "### Likelihood\n",
@@ -191,13 +204,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "cf9fae5d",
+   "id": "87f58e37",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-12-19T12:00:37.305749Z",
-     "iopub.status.busy": "2023-12-19T12:00:37.305496Z",
-     "iopub.status.idle": "2023-12-19T12:00:37.368219Z",
-     "shell.execute_reply": "2023-12-19T12:00:37.367707Z"
+     "iopub.execute_input": "2024-01-02T11:05:20.303990Z",
+     "iopub.status.busy": "2024-01-02T11:05:20.303742Z",
+     "iopub.status.idle": "2024-01-02T11:05:20.354162Z",
+     "shell.execute_reply": "2024-01-02T11:05:20.353369Z"
     }
    },
    "outputs": [
@@ -220,7 +233,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e917b6fd",
+   "id": "809fa631",
    "metadata": {},
    "source": [
     "### Kernel\n",
@@ -234,13 +247,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "4032b645",
+   "id": "4d310fb3",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-12-19T12:00:37.370342Z",
-     "iopub.status.busy": "2023-12-19T12:00:37.370128Z",
-     "iopub.status.idle": "2023-12-19T12:00:37.408407Z",
-     "shell.execute_reply": "2023-12-19T12:00:37.407894Z"
+     "iopub.execute_input": "2024-01-02T11:05:20.356695Z",
+     "iopub.status.busy": "2024-01-02T11:05:20.356404Z",
+     "iopub.status.idle": "2024-01-02T11:05:20.407462Z",
+     "shell.execute_reply": "2024-01-02T11:05:20.406718Z"
     }
    },
    "outputs": [],
@@ -256,7 +269,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "33d3fead",
+   "id": "e4c960e6",
    "metadata": {},
    "source": [
     "### Inducing Points\n",
@@ -268,13 +281,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "4b60e2b6",
+   "id": "bcead151",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-12-19T12:00:37.410889Z",
-     "iopub.status.busy": "2023-12-19T12:00:37.410654Z",
-     "iopub.status.idle": "2023-12-19T12:00:37.419210Z",
-     "shell.execute_reply": "2023-12-19T12:00:37.418722Z"
+     "iopub.execute_input": "2024-01-02T11:05:20.410152Z",
+     "iopub.status.busy": "2024-01-02T11:05:20.409859Z",
+     "iopub.status.idle": "2024-01-02T11:05:20.421534Z",
+     "shell.execute_reply": "2024-01-02T11:05:20.420854Z"
     }
    },
    "outputs": [],
@@ -294,7 +307,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "99a47c84",
+   "id": "d77ceabf",
    "metadata": {},
    "source": [
     "### SVGP Model\n",
@@ -306,20 +319,20 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "83fb4e02",
+   "id": "94944d0f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-12-19T12:00:37.421296Z",
-     "iopub.status.busy": "2023-12-19T12:00:37.421078Z",
-     "iopub.status.idle": "2023-12-19T12:00:37.493249Z",
-     "shell.execute_reply": "2023-12-19T12:00:37.492780Z"
+     "iopub.execute_input": "2024-01-02T11:05:20.424116Z",
+     "iopub.status.busy": "2024-01-02T11:05:20.423822Z",
+     "iopub.status.idle": "2024-01-02T11:05:20.517080Z",
+     "shell.execute_reply": "2024-01-02T11:05:20.516551Z"
     }
    },
    "outputs": [
     {
      "data": {
       "text/html": [
-       "&lt;gpflow.models.svgp.SVGP object at 0x7f4029f25d90&gt;\n",
+       "&lt;gpflow.models.svgp.SVGP object at 0x7f8061db9710&gt;\n",
        "<table>\n",
        "<thead>\n",
        "<tr><th>name                                              </th><th>class    </th><th>transform     </th><th>prior  </th><th>trainable  </th><th>shape      </th><th>dtype  </th><th>value           </th></tr>\n",
@@ -337,7 +350,7 @@
        "</table>"
       ],
       "text/plain": [
-       "<gpflow.models.svgp.SVGP object at 0x7f4029f25d90>\n",
+       "<gpflow.models.svgp.SVGP object at 0x7f8061db9710>\n",
        "\u2552\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2555\n",
        "\u2502 name                                               \u2502 class     \u2502 transform      \u2502 prior   \u2502 trainable   \u2502 shape       \u2502 dtype   \u2502 value            \u2502\n",
        "\u255e\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2561\n",
@@ -377,7 +390,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "48da98de",
+   "id": "8d0eba94",
    "metadata": {},
    "source": [
     "## Model Optimization\n",
@@ -388,13 +401,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "56d57a7e",
+   "id": "e639342b",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-12-19T12:00:37.495446Z",
-     "iopub.status.busy": "2023-12-19T12:00:37.495202Z",
-     "iopub.status.idle": "2023-12-19T12:00:37.521442Z",
-     "shell.execute_reply": "2023-12-19T12:00:37.520924Z"
+     "iopub.execute_input": "2024-01-02T11:05:20.519317Z",
+     "iopub.status.busy": "2024-01-02T11:05:20.519071Z",
+     "iopub.status.idle": "2024-01-02T11:05:20.547539Z",
+     "shell.execute_reply": "2024-01-02T11:05:20.546990Z"
     }
    },
    "outputs": [],
@@ -420,7 +433,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "44d4e9a6",
+   "id": "65521745",
    "metadata": {},
    "source": [
     "### Run Optimization Loop"
@@ -429,13 +442,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "171e80a5",
+   "id": "6994fea0",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-12-19T12:00:37.523851Z",
-     "iopub.status.busy": "2023-12-19T12:00:37.523619Z",
-     "iopub.status.idle": "2023-12-19T12:01:04.841341Z",
-     "shell.execute_reply": "2023-12-19T12:01:04.840615Z"
+     "iopub.execute_input": "2024-01-02T11:05:20.550067Z",
+     "iopub.status.busy": "2024-01-02T11:05:20.549809Z",
+     "iopub.status.idle": "2024-01-02T11:05:47.754242Z",
+     "shell.execute_reply": "2024-01-02T11:05:47.753676Z"
     }
    },
    "outputs": [
@@ -443,7 +456,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "WARNING:tensorflow:From /tmp/max_venv/lib/python3.11/site-packages/tensorflow/python/util/deprecation.py:648: calling map_fn_v2 (from tensorflow.python.ops.map_fn) with dtype is deprecated and will be removed in a future version.\n",
+      "WARNING:tensorflow:From /tmp/max_venv/lib/python3.11/site-packages/tensorflow/python/util/deprecation.py:660: calling map_fn_v2 (from tensorflow.python.ops.map_fn) with dtype is deprecated and will be removed in a future version.\n",
       "Instructions for updating:\n",
       "Use fn_output_signature instead\n"
      ]
@@ -536,13 +549,13 @@
     {
      "data": {
       "text/html": [
-       "&lt;gpflow.models.svgp.SVGP object at 0x7f4029f25d90&gt;\n",
+       "&lt;gpflow.models.svgp.SVGP object at 0x7f8061db9710&gt;\n",
        "<table>\n",
        "<thead>\n",
        "<tr><th>name                                              </th><th>class    </th><th>transform     </th><th>prior  </th><th>trainable  </th><th>shape      </th><th>dtype  </th><th>value                                               </th></tr>\n",
        "</thead>\n",
        "<tbody>\n",
-       "<tr><td>SVGP.kernel.kernels[0].variance                   </td><td>Parameter</td><td>Softplus      </td><td>       </td><td>True       </td><td>()         </td><td>float64</td><td>0.837071082775368                                   </td></tr>\n",
+       "<tr><td>SVGP.kernel.kernels[0].variance                   </td><td>Parameter</td><td>Softplus      </td><td>       </td><td>True       </td><td>()         </td><td>float64</td><td>0.8370710827654084                                  </td></tr>\n",
        "<tr><td>SVGP.kernel.kernels[0].lengthscales               </td><td>Parameter</td><td>Softplus      </td><td>       </td><td>True       </td><td>()         </td><td>float64</td><td>1.18477                                             </td></tr>\n",
        "<tr><td>SVGP.kernel.kernels[1].variance                   </td><td>Parameter</td><td>Softplus      </td><td>       </td><td>True       </td><td>()         </td><td>float64</td><td>1.13101                                             </td></tr>\n",
        "<tr><td>SVGP.kernel.kernels[1].lengthscales               </td><td>Parameter</td><td>Softplus      </td><td>       </td><td>True       </td><td>()         </td><td>float64</td><td>1.05985                                             </td></tr>\n",
@@ -554,11 +567,11 @@
        "</table>"
       ],
       "text/plain": [
-       "<gpflow.models.svgp.SVGP object at 0x7f4029f25d90>\n",
+       "<gpflow.models.svgp.SVGP object at 0x7f8061db9710>\n",
        "\u2552\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2555\n",
        "\u2502 name                                               \u2502 class     \u2502 transform      \u2502 prior   \u2502 trainable   \u2502 shape       \u2502 dtype   \u2502 value                                                \u2502\n",
        "\u255e\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2561\n",
-       "\u2502 SVGP.kernel.kernels[0].variance                    \u2502 Parameter \u2502 Softplus       \u2502         \u2502 True        \u2502 ()          \u2502 float64 \u2502 0.837071082775368                                    \u2502\n",
+       "\u2502 SVGP.kernel.kernels[0].variance                    \u2502 Parameter \u2502 Softplus       \u2502         \u2502 True        \u2502 ()          \u2502 float64 \u2502 0.8370710827654084                                   \u2502\n",
        "\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n",
        "\u2502 SVGP.kernel.kernels[0].lengthscales                \u2502 Parameter \u2502 Softplus       \u2502         \u2502 True        \u2502 ()          \u2502 float64 \u2502 1.18477                                              \u2502\n",
        "\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n",
@@ -601,7 +614,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "1f0b6622",
+   "id": "bb07298c",
    "metadata": {},
    "source": [
     "## Further reading\n",

@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "20c43480",
+   "id": "ff621dca",
    "metadata": {
     "lines_to_next_cell": 0
    },
@@ -14,13 +14,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "b9a96961",
+   "id": "d55ca56c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-12-19T12:01:39.201622Z",
-     "iopub.status.busy": "2023-12-19T12:01:39.201415Z",
-     "iopub.status.idle": "2023-12-19T12:01:44.060641Z",
-     "shell.execute_reply": "2023-12-19T12:01:44.059445Z"
+     "iopub.execute_input": "2024-01-02T11:06:22.372993Z",
+     "iopub.status.busy": "2024-01-02T11:06:22.372748Z",
+     "iopub.status.idle": "2024-01-02T11:06:27.411737Z",
+     "shell.execute_reply": "2024-01-02T11:06:27.411118Z"
     }
    },
    "outputs": [
@@ -28,7 +28,20 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2023-12-19 12:01:41.050162: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT\n"
+      "2024-01-02 11:06:23.223800: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.\n",
+      "2024-01-02 11:06:23.265424: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9261] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered\n",
+      "2024-01-02 11:06:23.265462: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered\n",
+      "2024-01-02 11:06:23.266742: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1515] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n",
+      "2024-01-02 11:06:23.273836: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.\n",
+      "2024-01-02 11:06:23.274410: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.\n",
+      "To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2024-01-02 11:06:24.354590: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT\n"
      ]
     }
    ],
@@ -54,7 +67,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ccce3348",
+   "id": "84ffd4fd",
    "metadata": {},
    "source": [
     "First, we load the training data and plot it together with the exact GP solution (using the `GPR` model):"
@@ -63,13 +76,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "d17248eb",
+   "id": "57e211a4",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-12-19T12:01:44.066347Z",
-     "iopub.status.busy": "2023-12-19T12:01:44.065667Z",
-     "iopub.status.idle": "2023-12-19T12:01:46.419178Z",
-     "shell.execute_reply": "2023-12-19T12:01:46.418649Z"
+     "iopub.execute_input": "2024-01-02T11:06:27.415208Z",
+     "iopub.status.busy": "2024-01-02T11:06:27.414509Z",
+     "iopub.status.idle": "2024-01-02T11:06:29.951032Z",
+     "shell.execute_reply": "2024-01-02T11:06:29.950056Z"
     }
    },
    "outputs": [
@@ -126,13 +139,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "b93ecfff",
+   "id": "627f5de6",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-12-19T12:01:46.421392Z",
-     "iopub.status.busy": "2023-12-19T12:01:46.421131Z",
-     "iopub.status.idle": "2023-12-19T12:01:46.424348Z",
-     "shell.execute_reply": "2023-12-19T12:01:46.423895Z"
+     "iopub.execute_input": "2024-01-02T11:06:29.955424Z",
+     "iopub.status.busy": "2024-01-02T11:06:29.955109Z",
+     "iopub.status.idle": "2024-01-02T11:06:29.958665Z",
+     "shell.execute_reply": "2024-01-02T11:06:29.958068Z"
     }
    },
    "outputs": [],
@@ -145,7 +158,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "def256d0",
+   "id": "cad54bb7",
    "metadata": {},
    "source": [
     "We now construct two sparse model using the VFE (`SGPR` model) and FITC (`GPRFITC` model) optimization objectives, with the inducing points being initialized on top of the training inputs, and the model hyperparameters (kernel variance and lengthscales, and likelihood variance) being initialized to the values obtained in the optimization of the exact `GPR` model:"
@@ -154,13 +167,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "5556821e",
+   "id": "2c036f81",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-12-19T12:01:46.426303Z",
-     "iopub.status.busy": "2023-12-19T12:01:46.426083Z",
-     "iopub.status.idle": "2023-12-19T12:01:51.179889Z",
-     "shell.execute_reply": "2023-12-19T12:01:51.179010Z"
+     "iopub.execute_input": "2024-01-02T11:06:29.961737Z",
+     "iopub.status.busy": "2024-01-02T11:06:29.961312Z",
+     "iopub.status.idle": "2024-01-02T11:06:35.295396Z",
+     "shell.execute_reply": "2024-01-02T11:06:35.294457Z"
     }
    },
    "outputs": [
@@ -193,13 +206,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "c0de01e7",
+   "id": "bf42eb81",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-12-19T12:01:51.182989Z",
-     "iopub.status.busy": "2023-12-19T12:01:51.182682Z",
-     "iopub.status.idle": "2023-12-19T12:05:12.049018Z",
-     "shell.execute_reply": "2023-12-19T12:05:12.048213Z"
+     "iopub.execute_input": "2024-01-02T11:06:35.299204Z",
+     "iopub.status.busy": "2024-01-02T11:06:35.298615Z",
+     "iopub.status.idle": "2024-01-02T11:10:27.814371Z",
+     "shell.execute_reply": "2024-01-02T11:10:27.813831Z"
     }
    },
    "outputs": [
@@ -231,7 +244,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d12bc707",
+   "id": "070f889d",
    "metadata": {},
    "source": [
     "Plotting a comparison of the two algorithms, we see that VFE stays at the optimum of exact GPR, whereas the FITC approximation eventually ends up with several inducing points on top of each other, and a worse fit:"
@@ -240,13 +253,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "cb67b30e",
+   "id": "8d190053",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2023-12-19T12:05:12.051535Z",
-     "iopub.status.busy": "2023-12-19T12:05:12.051278Z",
-     "iopub.status.idle": "2023-12-19T12:05:13.351135Z",
-     "shell.execute_reply": "2023-12-19T12:05:13.350578Z"
+     "iopub.execute_input": "2024-01-02T11:10:27.816693Z",
+     "iopub.status.busy": "2024-01-02T11:10:27.816439Z",
+     "iopub.status.idle": "2024-01-02T11:10:28.954370Z",
+     "shell.execute_reply": "2024-01-02T11:10:28.953758Z"
     }
    },
    "outputs": [
@@ -299,7 +312,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "3163c60a",
+   "id": "62b9b04d",
    "metadata": {},
    "source": [
     "A more detailed discussion of the comparison between these sparse approximations can be found in [Understanding Probabilistic Sparse Gaussian Process Approximations](http://papers.nips.cc/paper/6477-understanding-probabilistic-sparse-gaussian-process-approximations) by Bauer, van der Wilk, and Rasmussen (2017)."
