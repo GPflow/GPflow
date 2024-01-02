@@ -80,7 +80,9 @@ def test_sgpr_svgp_qu_equivivalent() -> None:
 
 
 def test_sgpr_changepoint_kernel_issue_2097() -> None:
-    # regression test for https://github.com/GPflow/GPflow/issues/2097
+    """
+    Regression test for https://github.com/GPflow/GPflow/issues/2097
+    """
     X = np.array(
         [
             [0.865],
