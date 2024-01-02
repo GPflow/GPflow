@@ -56,6 +56,7 @@ This release contains contributions from:
 ## Bug Fixes and Other Changes
 
 * Don't round small values in kernel summary printout
+* allowing to set a prior for A in the Linear() mean function
 
 ## Thanks to our Contributors
 
