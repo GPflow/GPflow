@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "2d81f0f1",
+   "id": "3e14241d",
    "metadata": {},
    "source": [
     "# Kernel Design\n",
@@ -17,13 +17,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "746d263c",
+   "id": "6d322136",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-02T11:06:21.213388Z",
-     "iopub.status.busy": "2024-01-02T11:06:21.212985Z",
-     "iopub.status.idle": "2024-01-02T11:06:26.265998Z",
-     "shell.execute_reply": "2024-01-02T11:06:26.265431Z"
+     "iopub.execute_input": "2024-01-04T12:34:22.409694Z",
+     "iopub.status.busy": "2024-01-04T12:34:22.409387Z",
+     "iopub.status.idle": "2024-01-04T12:34:27.502155Z",
+     "shell.execute_reply": "2024-01-04T12:34:27.501604Z"
     }
    },
    "outputs": [
@@ -31,12 +31,12 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2024-01-02 11:06:22.051012: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.\n",
-      "2024-01-02 11:06:22.092051: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9261] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered\n",
-      "2024-01-02 11:06:22.092084: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered\n",
-      "2024-01-02 11:06:22.093430: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1515] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n",
-      "2024-01-02 11:06:22.100224: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.\n",
-      "2024-01-02 11:06:22.100684: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.\n",
+      "2024-01-04 12:34:23.249686: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.\n",
+      "2024-01-04 12:34:23.295932: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9261] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered\n",
+      "2024-01-04 12:34:23.295969: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered\n",
+      "2024-01-04 12:34:23.297175: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1515] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n",
+      "2024-01-04 12:34:23.303767: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.\n",
+      "2024-01-04 12:34:23.304239: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.\n",
       "To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     },
@@ -44,7 +44,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2024-01-02 11:06:23.123085: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT\n"
+      "2024-01-04 12:34:24.402010: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT\n"
      ]
     }
    ],
@@ -62,7 +62,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "743a28ae",
+   "id": "39501da5",
    "metadata": {},
    "source": [
     "To make this new kernel class, we inherit from the base class `gpflow.kernels.Kernel` and implement the three functions below. **NOTE:** Depending on the kernel to be implemented, other classes can be more adequate. For example, if the kernel to be implemented is isotropic stationary, you can immediately subclass `gpflow.kernels.IsotropicStationary` (at which point you\n",
@@ -85,13 +85,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "c34e13a5",
+   "id": "16ad38cf",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-02T11:06:26.269504Z",
-     "iopub.status.busy": "2024-01-02T11:06:26.269090Z",
-     "iopub.status.idle": "2024-01-02T11:06:26.324009Z",
-     "shell.execute_reply": "2024-01-02T11:06:26.323544Z"
+     "iopub.execute_input": "2024-01-04T12:34:27.505771Z",
+     "iopub.status.busy": "2024-01-04T12:34:27.505323Z",
+     "iopub.status.idle": "2024-01-04T12:34:27.557898Z",
+     "shell.execute_reply": "2024-01-04T12:34:27.557422Z"
     }
    },
    "outputs": [
@@ -138,7 +138,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "86fcb474",
+   "id": "44221e53",
    "metadata": {},
    "source": [
     "We can now evaluate our new kernel function and draw samples from a Gaussian process with this covariance:"
@@ -147,13 +147,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "59d2cee3",
+   "id": "62f26d27",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-02T11:06:26.326521Z",
-     "iopub.status.busy": "2024-01-02T11:06:26.326253Z",
-     "iopub.status.idle": "2024-01-02T11:06:29.861782Z",
-     "shell.execute_reply": "2024-01-02T11:06:29.861299Z"
+     "iopub.execute_input": "2024-01-04T12:34:27.561339Z",
+     "iopub.status.busy": "2024-01-04T12:34:27.560784Z",
+     "iopub.status.idle": "2024-01-04T12:34:36.047492Z",
+     "shell.execute_reply": "2024-01-04T12:34:36.046905Z"
     }
    },
    "outputs": [
@@ -192,7 +192,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "3ba409af",
+   "id": "697bf448",
    "metadata": {},
    "source": [
     "## Using the kernel in a model\n",
@@ -209,13 +209,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "7083592a",
+   "id": "9034c7ff",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-02T11:06:29.864565Z",
-     "iopub.status.busy": "2024-01-02T11:06:29.864316Z",
-     "iopub.status.idle": "2024-01-02T11:06:32.032960Z",
-     "shell.execute_reply": "2024-01-02T11:06:32.032370Z"
+     "iopub.execute_input": "2024-01-04T12:34:36.050297Z",
+     "iopub.status.busy": "2024-01-04T12:34:36.049907Z",
+     "iopub.status.idle": "2024-01-04T12:34:38.274786Z",
+     "shell.execute_reply": "2024-01-04T12:34:38.274249Z"
     }
    },
    "outputs": [
@@ -282,7 +282,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "5df348f1",
+   "id": "b676f1ca",
    "metadata": {},
    "source": [
     "## See also\n",

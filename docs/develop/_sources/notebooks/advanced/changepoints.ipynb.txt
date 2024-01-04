@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "15b05c4d",
+   "id": "7bad10a8",
    "metadata": {},
    "source": [
     "# Change points\n",
@@ -21,13 +21,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "97905cf3",
+   "id": "27f49f86",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-02T11:05:25.140105Z",
-     "iopub.status.busy": "2024-01-02T11:05:25.139814Z",
-     "iopub.status.idle": "2024-01-02T11:05:30.990591Z",
-     "shell.execute_reply": "2024-01-02T11:05:30.989651Z"
+     "iopub.execute_input": "2024-01-04T12:33:32.321861Z",
+     "iopub.status.busy": "2024-01-04T12:33:32.321558Z",
+     "iopub.status.idle": "2024-01-04T12:33:38.048851Z",
+     "shell.execute_reply": "2024-01-04T12:33:38.048240Z"
     }
    },
    "outputs": [
@@ -35,12 +35,12 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2024-01-02 11:05:26.328740: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.\n",
-      "2024-01-02 11:05:26.379790: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9261] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered\n",
-      "2024-01-02 11:05:26.379832: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered\n",
-      "2024-01-02 11:05:26.381375: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1515] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n",
-      "2024-01-02 11:05:26.388283: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.\n",
-      "2024-01-02 11:05:26.389069: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.\n",
+      "2024-01-04 12:33:33.496661: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.\n",
+      "2024-01-04 12:33:33.544137: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9261] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered\n",
+      "2024-01-04 12:33:33.544173: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered\n",
+      "2024-01-04 12:33:33.545371: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1515] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n",
+      "2024-01-04 12:33:33.551873: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.\n",
+      "2024-01-04 12:33:33.552659: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.\n",
       "To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     },
@@ -48,7 +48,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2024-01-02 11:05:27.637085: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT\n"
+      "2024-01-04 12:33:34.765007: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT\n"
      ]
     }
    ],
@@ -72,7 +72,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "1a4ffefe",
+   "id": "e7b7f3ad",
    "metadata": {},
    "source": [
     "We demonstrate the use of the kernel by drawing a number of samples from different parameterizations. Firstly, a simple single change-point between two kernels of differing lengthscales."
@@ -81,13 +81,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "46af53b8",
+   "id": "4b74ecf7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-02T11:05:30.993991Z",
-     "iopub.status.busy": "2024-01-02T11:05:30.993390Z",
-     "iopub.status.idle": "2024-01-02T11:05:32.950076Z",
-     "shell.execute_reply": "2024-01-02T11:05:32.949427Z"
+     "iopub.execute_input": "2024-01-04T12:33:38.052103Z",
+     "iopub.status.busy": "2024-01-04T12:33:38.051546Z",
+     "iopub.status.idle": "2024-01-04T12:33:38.503356Z",
+     "shell.execute_reply": "2024-01-04T12:33:38.502540Z"
     }
    },
    "outputs": [
@@ -115,7 +115,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "cfca2361",
+   "id": "51dd9f69",
    "metadata": {},
    "source": [
     "Secondly, an implementation of a \"change window\" in which we change from one kernel to another, then back to the original."
@@ -124,13 +124,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "43ff8f0d",
+   "id": "e658efcc",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-02T11:05:32.952822Z",
-     "iopub.status.busy": "2024-01-02T11:05:32.952555Z",
-     "iopub.status.idle": "2024-01-02T11:05:35.210682Z",
-     "shell.execute_reply": "2024-01-02T11:05:35.210215Z"
+     "iopub.execute_input": "2024-01-04T12:33:38.506095Z",
+     "iopub.status.busy": "2024-01-04T12:33:38.505800Z",
+     "iopub.status.idle": "2024-01-04T12:33:39.740421Z",
+     "shell.execute_reply": "2024-01-04T12:33:39.739725Z"
     }
    },
    "outputs": [
@@ -160,7 +160,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ddfef70d",
+   "id": "3bfcce20",
    "metadata": {},
    "source": [
     "And finally, allowing different change-points to occur more or less abruptly by defining different steepness parameters."
@@ -169,13 +169,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "501bbe55",
+   "id": "d64ceba5",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-02T11:05:35.213112Z",
-     "iopub.status.busy": "2024-01-02T11:05:35.212874Z",
-     "iopub.status.idle": "2024-01-02T11:05:36.137542Z",
-     "shell.execute_reply": "2024-01-02T11:05:36.136952Z"
+     "iopub.execute_input": "2024-01-04T12:33:39.743340Z",
+     "iopub.status.busy": "2024-01-04T12:33:39.743069Z",
+     "iopub.status.idle": "2024-01-04T12:33:41.031266Z",
+     "shell.execute_reply": "2024-01-04T12:33:41.030779Z"
     }
    },
    "outputs": [

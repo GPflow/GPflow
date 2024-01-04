@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "b2b24bc5",
+   "id": "9367a488",
    "metadata": {},
    "source": [
     "# Large Data with SGPR\n",
@@ -14,7 +14,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e3162833",
+   "id": "91e66afe",
    "metadata": {},
    "source": [
     "As usual we will start with our imports:"
@@ -23,13 +23,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "e87a1e1c",
+   "id": "dd74404f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-02T11:07:15.783056Z",
-     "iopub.status.busy": "2024-01-02T11:07:15.782857Z",
-     "iopub.status.idle": "2024-01-02T11:07:20.976457Z",
-     "shell.execute_reply": "2024-01-02T11:07:20.975945Z"
+     "iopub.execute_input": "2024-01-04T12:35:06.289638Z",
+     "iopub.status.busy": "2024-01-04T12:35:06.289433Z",
+     "iopub.status.idle": "2024-01-04T12:35:10.971626Z",
+     "shell.execute_reply": "2024-01-04T12:35:10.970949Z"
     }
    },
    "outputs": [],
@@ -44,7 +44,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "4890b5f5",
+   "id": "74027d57",
    "metadata": {},
    "source": [
     "Although the sparse models are meant for large datasets, smaller datasets can be easier to understand, so we will reuse the same data we used in our [Basic Usage](basic_usage.ipynb) chapter:"
@@ -53,13 +53,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "727b4d44",
+   "id": "e5810487",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-02T11:07:20.979245Z",
-     "iopub.status.busy": "2024-01-02T11:07:20.978852Z",
-     "iopub.status.idle": "2024-01-02T11:07:21.128724Z",
-     "shell.execute_reply": "2024-01-02T11:07:21.128235Z"
+     "iopub.execute_input": "2024-01-04T12:35:10.974348Z",
+     "iopub.status.busy": "2024-01-04T12:35:10.973922Z",
+     "iopub.status.idle": "2024-01-04T12:35:11.086815Z",
+     "shell.execute_reply": "2024-01-04T12:35:11.086252Z"
     }
    },
    "outputs": [
@@ -93,7 +93,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d3fad16f",
+   "id": "45fc8c1d",
    "metadata": {},
    "source": [
     "And a helper function for training and plotting our models:"
@@ -102,13 +102,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "11d01a8d",
+   "id": "0fbc0611",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-02T11:07:21.131065Z",
-     "iopub.status.busy": "2024-01-02T11:07:21.130818Z",
-     "iopub.status.idle": "2024-01-02T11:07:21.136971Z",
-     "shell.execute_reply": "2024-01-02T11:07:21.136506Z"
+     "iopub.execute_input": "2024-01-04T12:35:11.088911Z",
+     "iopub.status.busy": "2024-01-04T12:35:11.088674Z",
+     "iopub.status.idle": "2024-01-04T12:35:11.094722Z",
+     "shell.execute_reply": "2024-01-04T12:35:11.094212Z"
     }
    },
    "outputs": [],
@@ -143,7 +143,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "36563fb3",
+   "id": "9b8de2c7",
    "metadata": {},
    "source": [
     "As a reference, let us try fitting our usual GPR. Notice that this works because our dataset here still is of a quite managable size. In practice you should only use an SGPR when your dataset is too large for a GPR:"
@@ -152,13 +152,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "38ad8a2a",
+   "id": "42adbf16",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-02T11:07:21.138936Z",
-     "iopub.status.busy": "2024-01-02T11:07:21.138614Z",
-     "iopub.status.idle": "2024-01-02T11:07:23.479493Z",
-     "shell.execute_reply": "2024-01-02T11:07:23.478659Z"
+     "iopub.execute_input": "2024-01-04T12:35:11.096574Z",
+     "iopub.status.busy": "2024-01-04T12:35:11.096361Z",
+     "iopub.status.idle": "2024-01-04T12:35:13.509735Z",
+     "shell.execute_reply": "2024-01-04T12:35:13.509229Z"
     }
    },
    "outputs": [
@@ -204,7 +204,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "49485366",
+   "id": "fe1d1aa4",
    "metadata": {},
    "source": [
     "Let us try fitting an SGPR. As mentioned above the SGPR is based on \"inducing points\" / \"inducing variables\". The SGPR gains a speed-up by only capturing the shape of $f$ at a small(ish) number of inducing points. We need tell the model where to put these. In this example we will use four inducing points, initially spaced evenly:"
@@ -213,13 +213,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "92b1b733",
+   "id": "c579e37c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-02T11:07:23.481727Z",
-     "iopub.status.busy": "2024-01-02T11:07:23.481495Z",
-     "iopub.status.idle": "2024-01-02T11:07:25.358577Z",
-     "shell.execute_reply": "2024-01-02T11:07:25.358081Z"
+     "iopub.execute_input": "2024-01-04T12:35:13.511958Z",
+     "iopub.status.busy": "2024-01-04T12:35:13.511719Z",
+     "iopub.status.idle": "2024-01-04T12:35:15.296293Z",
+     "shell.execute_reply": "2024-01-04T12:35:15.295645Z"
     }
    },
    "outputs": [
@@ -268,7 +268,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "66a8dc99",
+   "id": "cfa2bd50",
    "metadata": {},
    "source": [
     "Here we get an excellent fit, even though the original data has 12 points, and we are approximating it with only four inducing points.\n",
@@ -280,7 +280,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "258b1018",
+   "id": "a6950ad2",
    "metadata": {},
    "source": [
     "For illustrative purposes, let us see what happens if we don't use enough inducing points:"
@@ -289,13 +289,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "f0eefc78",
+   "id": "475304e9",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-02T11:07:25.360692Z",
-     "iopub.status.busy": "2024-01-02T11:07:25.360498Z",
-     "iopub.status.idle": "2024-01-02T11:07:26.678554Z",
-     "shell.execute_reply": "2024-01-02T11:07:26.678089Z"
+     "iopub.execute_input": "2024-01-04T12:35:15.298809Z",
+     "iopub.status.busy": "2024-01-04T12:35:15.298569Z",
+     "iopub.status.idle": "2024-01-04T12:35:16.574949Z",
+     "shell.execute_reply": "2024-01-04T12:35:16.574146Z"
     }
    },
    "outputs": [
@@ -345,7 +345,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ecab0726",
+   "id": "3780eb6c",
    "metadata": {},
    "source": [
     "The two inducing points above are not enough to capture the data well, so we get an overly simplistic $f$, and the model compensates with an overly high variance."
@@ -353,7 +353,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a379d9eb",
+   "id": "01ed5fbc",
    "metadata": {},
    "source": [
     "## Picking initial inducing points\n",
@@ -366,13 +366,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "ac890d70",
+   "id": "3e78c29b",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-02T11:07:26.680738Z",
-     "iopub.status.busy": "2024-01-02T11:07:26.680491Z",
-     "iopub.status.idle": "2024-01-02T11:07:26.709884Z",
-     "shell.execute_reply": "2024-01-02T11:07:26.709063Z"
+     "iopub.execute_input": "2024-01-04T12:35:16.577388Z",
+     "iopub.status.busy": "2024-01-04T12:35:16.577114Z",
+     "iopub.status.idle": "2024-01-04T12:35:16.583028Z",
+     "shell.execute_reply": "2024-01-04T12:35:16.582398Z"
     }
    },
    "outputs": [],
@@ -397,7 +397,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a1f5a202",
+   "id": "87257a9d",
    "metadata": {},
    "source": [
     "And write a helper-function to plot a model:"
@@ -406,13 +406,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "b57de56e",
+   "id": "da746f9c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-02T11:07:26.713284Z",
-     "iopub.status.busy": "2024-01-02T11:07:26.713008Z",
-     "iopub.status.idle": "2024-01-02T11:07:26.719333Z",
-     "shell.execute_reply": "2024-01-02T11:07:26.718843Z"
+     "iopub.execute_input": "2024-01-04T12:35:16.585185Z",
+     "iopub.status.busy": "2024-01-04T12:35:16.584944Z",
+     "iopub.status.idle": "2024-01-04T12:35:16.590926Z",
+     "shell.execute_reply": "2024-01-04T12:35:16.590410Z"
     }
    },
    "outputs": [],
@@ -449,7 +449,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "5efd6c1e",
+   "id": "19f76529",
    "metadata": {},
    "source": [
     "Let us first make a plot of a dense model, for comparison:"
@@ -458,13 +458,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "63d649c9",
+   "id": "8aa84ec6",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-02T11:07:26.722803Z",
-     "iopub.status.busy": "2024-01-02T11:07:26.721850Z",
-     "iopub.status.idle": "2024-01-02T11:07:27.537371Z",
-     "shell.execute_reply": "2024-01-02T11:07:27.536885Z"
+     "iopub.execute_input": "2024-01-04T12:35:16.593040Z",
+     "iopub.status.busy": "2024-01-04T12:35:16.592818Z",
+     "iopub.status.idle": "2024-01-04T12:35:17.391417Z",
+     "shell.execute_reply": "2024-01-04T12:35:17.390948Z"
     }
    },
    "outputs": [
@@ -489,7 +489,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "9b21cbcd",
+   "id": "691cad1b",
    "metadata": {},
    "source": [
     "### Random data samples\n",
@@ -500,13 +500,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "85d8dff5",
+   "id": "e6e07d48",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-02T11:07:27.539610Z",
-     "iopub.status.busy": "2024-01-02T11:07:27.539365Z",
-     "iopub.status.idle": "2024-01-02T11:07:28.741203Z",
-     "shell.execute_reply": "2024-01-02T11:07:28.740685Z"
+     "iopub.execute_input": "2024-01-04T12:35:17.393697Z",
+     "iopub.status.busy": "2024-01-04T12:35:17.393465Z",
+     "iopub.status.idle": "2024-01-04T12:35:18.538286Z",
+     "shell.execute_reply": "2024-01-04T12:35:18.537808Z"
     }
    },
    "outputs": [
@@ -536,7 +536,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "90978eee",
+   "id": "2638dd1b",
    "metadata": {},
    "source": [
     "### k-means\n",
@@ -547,13 +547,13 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "10a7af33",
+   "id": "df0057e5",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-02T11:07:28.744393Z",
-     "iopub.status.busy": "2024-01-02T11:07:28.744161Z",
-     "iopub.status.idle": "2024-01-02T11:07:30.233849Z",
-     "shell.execute_reply": "2024-01-02T11:07:30.233308Z"
+     "iopub.execute_input": "2024-01-04T12:35:18.540345Z",
+     "iopub.status.busy": "2024-01-04T12:35:18.540119Z",
+     "iopub.status.idle": "2024-01-04T12:35:19.986226Z",
+     "shell.execute_reply": "2024-01-04T12:35:19.985720Z"
     }
    },
    "outputs": [
@@ -584,7 +584,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "95d17e58",
+   "id": "ba45bcb1",
    "metadata": {},
    "source": [
     "### Uncorrelated samples\n",
@@ -595,13 +595,13 @@
   {
    "cell_type": "code",
    "execution_count": 12,
-   "id": "d6b2d864",
+   "id": "c6f728c7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-02T11:07:30.237247Z",
-     "iopub.status.busy": "2024-01-02T11:07:30.237002Z",
-     "iopub.status.idle": "2024-01-02T11:07:31.468329Z",
-     "shell.execute_reply": "2024-01-02T11:07:31.467831Z"
+     "iopub.execute_input": "2024-01-04T12:35:19.989532Z",
+     "iopub.status.busy": "2024-01-04T12:35:19.989287Z",
+     "iopub.status.idle": "2024-01-04T12:35:21.174650Z",
+     "shell.execute_reply": "2024-01-04T12:35:21.174163Z"
     }
    },
    "outputs": [
@@ -633,7 +633,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ca272419",
+   "id": "d24e93f8",
    "metadata": {},
    "source": [
     "### Advanced initialisation\n",
