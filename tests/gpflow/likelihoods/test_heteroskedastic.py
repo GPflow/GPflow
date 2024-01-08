@@ -65,6 +65,7 @@ def test_heteroskedastic_with_linear_mean_issue_2086(A: float) -> None:
         distribution_class=tfp.distributions.Normal,
         scale_transform=tfp.bijectors.Exp(),
     )
+    assert likelihood.latent_dim == 2
     kernel = SeparateIndependent([SquaredExponential(), SquaredExponential()])
 
     Z = np.linspace(X.min(), X.max(), 20)[:, None]
@@ -93,7 +94,7 @@ def test_heteroskedastic_with_linear_mean_issue_2086(A: float) -> None:
     adam_opt = tf.optimizers.Adam(0.01)
 
     @tf.function
-    def optimisation_step():
+    def optimisation_step() -> None:
         natgrad_opt.minimize(loss_fn, variational_vars)
         adam_opt.minimize(loss_fn, adam_vars)
 
