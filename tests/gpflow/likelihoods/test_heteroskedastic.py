@@ -13,10 +13,18 @@
 # limitations under the License.
 
 import numpy as np
+import pytest
 import tensorflow as tf
+import tensorflow_probability as tfp
 
+from gpflow import set_trainable
 from gpflow.base import AnyNDArray
+from gpflow.functions import Linear
+from gpflow.inducing_variables import InducingPoints, SeparateIndependentInducingVariables
+from gpflow.kernels import SeparateIndependent, SquaredExponential
 from gpflow.likelihoods import HeteroskedasticTFPConditional
+from gpflow.models import SVGP
+from gpflow.optimizers import NaturalGradient
 
 tf.random.set_seed(99012)
 
@@ -45,3 +53,49 @@ def test_analytic_mean_and_var() -> None:
 
     np.testing.assert_allclose(y_mean, analytic_mean)
     np.testing.assert_allclose(y_var, analytic_variance, rtol=1.5e-6)
+
+
+@pytest.mark.parametrize("A", [0, 1])
+def test_heteroskedastic_with_linear_mean_issue_2086(A: float) -> None:
+
+    X = np.linspace(0, 4 * np.pi, 1001)[:, None]
+    Y = np.random.normal(np.sin(X), np.exp(np.cos(X)))
+
+    likelihood = HeteroskedasticTFPConditional(
+        distribution_class=tfp.distributions.Normal,
+        scale_transform=tfp.bijectors.Exp(),
+    )
+    kernel = SeparateIndependent([SquaredExponential(), SquaredExponential()])
+
+    Z = np.linspace(X.min(), X.max(), 20)[:, None]
+
+    inducing_variable = SeparateIndependentInducingVariables([InducingPoints(Z), InducingPoints(Z)])
+
+    mean_f = Linear(A=np.array([[A]]))
+    model = SVGP(
+        kernel=kernel,
+        likelihood=likelihood,
+        inducing_variable=inducing_variable,
+        num_latent_gps=likelihood.latent_dim,
+        mean_function=mean_f,
+    )
+
+    data = (X, Y)
+    loss_fn = model.training_loss_closure(data)
+
+    set_trainable(model.q_mu, False)
+    set_trainable(model.q_sqrt, False)
+
+    variational_vars = [(model.q_mu, model.q_sqrt)]
+    natgrad_opt = NaturalGradient(gamma=0.1)
+
+    adam_vars = model.trainable_variables
+    adam_opt = tf.optimizers.Adam(0.01)
+
+    @tf.function
+    def optimisation_step():
+        natgrad_opt.minimize(loss_fn, variational_vars)
+        adam_opt.minimize(loss_fn, adam_vars)
+
+    for epoch in range(1, 51):
+        optimisation_step()
