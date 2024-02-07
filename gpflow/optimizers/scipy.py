@@ -68,6 +68,12 @@ class Scipy:
             )
         self.compile_cache_size = compile_cache_size
 
+    def __getstate__(self) -> dict[str, Any]:
+        # Don't try to save the compile cache
+        state = self.__dict__.copy()
+        state["compile_cache"] = OrderedDict()
+        return state
+
     def minimize(
         self,
         closure: LossClosure,

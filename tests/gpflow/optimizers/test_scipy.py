@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import copy
 import unittest
 import warnings
 from typing import Any, Callable, Dict, List, Sequence, Tuple
@@ -545,3 +545,35 @@ def test_scipy__cache_with_different_models() -> None:
 
     # Check that the cache was bypassed and a new compiled function was created
     assert len(opt.compile_cache) == 2
+
+
+def test_scipy__deep_copyable() -> None:
+    opt = gpflow.optimizers.Scipy()
+    variables1 = _create_variables()
+    counter1 = [0]
+    closure1 = _loss_closure_builder(counter1, variables1)
+
+    # Ensure the cache is empty
+    assert len(opt.compile_cache) == 0
+
+    # Call eval_func multiple times with the same arguments
+    for _ in range(4):
+        opt.minimize(
+            closure1, variables1, compile=True, tf_fun_args={}, allow_unused_variables=False
+        )
+        # Check that the cache was used
+        assert len(opt.compile_cache) == 1
+
+    # Check that the optimizer can still be deepcopied
+    opt_copy = copy.deepcopy(opt)
+
+    # The cache is not copied
+    assert len(opt_copy.compile_cache) == 0
+
+    # Call eval_func multiple times with the same arguments
+    for _ in range(4):
+        opt_copy.minimize(
+            closure1, variables1, compile=True, tf_fun_args={}, allow_unused_variables=False
+        )
+        # Check that the cache was used
+        assert len(opt_copy.compile_cache) == 1
