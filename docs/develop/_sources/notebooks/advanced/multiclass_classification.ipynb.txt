@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "7e9deb40",
+   "id": "b48846ca",
    "metadata": {},
    "source": [
     "# Multiclass classification"
@@ -10,7 +10,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "9e2c0bfa",
+   "id": "854f25d6",
    "metadata": {},
    "source": [
     "The multiclass classification problem is a regression problem from an input $x \\in {\\cal X}$ to discrete labels $y\\in {\\cal Y}$, where ${\\cal Y}$ is a discrete set of size $C$ bigger than two (for $C=2$ it is the more usual binary classification).\n",
@@ -42,13 +42,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "e568dd92",
+   "id": "22624b0e",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:33:36.967345Z",
-     "iopub.status.busy": "2024-01-04T12:33:36.967091Z",
-     "iopub.status.idle": "2024-01-04T12:33:42.667183Z",
-     "shell.execute_reply": "2024-01-04T12:33:42.666380Z"
+     "iopub.execute_input": "2024-02-07T11:46:09.342072Z",
+     "iopub.status.busy": "2024-02-07T11:46:09.341697Z",
+     "iopub.status.idle": "2024-02-07T11:46:15.135334Z",
+     "shell.execute_reply": "2024-02-07T11:46:15.134534Z"
     }
    },
    "outputs": [
@@ -56,12 +56,12 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2024-01-04 12:33:38.017372: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.\n",
-      "2024-01-04 12:33:38.059596: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9261] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered\n",
-      "2024-01-04 12:33:38.059632: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered\n",
-      "2024-01-04 12:33:38.061046: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1515] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n",
-      "2024-01-04 12:33:38.068156: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.\n",
-      "2024-01-04 12:33:38.068688: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.\n",
+      "2024-02-07 11:46:10.357710: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.\n",
+      "2024-02-07 11:46:10.399451: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9261] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered\n",
+      "2024-02-07 11:46:10.399490: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered\n",
+      "2024-02-07 11:46:10.400789: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1515] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n",
+      "2024-02-07 11:46:10.407487: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.\n",
+      "2024-02-07 11:46:10.408536: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.\n",
       "To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     },
@@ -69,7 +69,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2024-01-04 12:33:39.198971: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT\n"
+      "2024-02-07 11:46:11.603828: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT\n"
      ]
     }
    ],
@@ -97,7 +97,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7b604fba",
+   "id": "e9200685",
    "metadata": {},
    "source": [
     "## Sampling from the GP multiclass generative model"
@@ -105,7 +105,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "621353b0",
+   "id": "d17afb39",
    "metadata": {},
    "source": [
     "### Declaring model parameters and input"
@@ -114,13 +114,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "87ce0ab2",
+   "id": "6b7305fe",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:33:42.671662Z",
-     "iopub.status.busy": "2024-01-04T12:33:42.671008Z",
-     "iopub.status.idle": "2024-01-04T12:33:42.676617Z",
-     "shell.execute_reply": "2024-01-04T12:33:42.675859Z"
+     "iopub.execute_input": "2024-02-07T11:46:15.138704Z",
+     "iopub.status.busy": "2024-02-07T11:46:15.138178Z",
+     "iopub.status.idle": "2024-02-07T11:46:15.142740Z",
+     "shell.execute_reply": "2024-02-07T11:46:15.142013Z"
     }
    },
    "outputs": [],
@@ -141,7 +141,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "211b0033",
+   "id": "e8712e92",
    "metadata": {},
    "source": [
     "### Sampling"
@@ -150,13 +150,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "e224b743",
+   "id": "4b83fe2f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:33:42.680030Z",
-     "iopub.status.busy": "2024-01-04T12:33:42.679684Z",
-     "iopub.status.idle": "2024-01-04T12:33:44.153184Z",
-     "shell.execute_reply": "2024-01-04T12:33:44.152231Z"
+     "iopub.execute_input": "2024-02-07T11:46:15.145680Z",
+     "iopub.status.busy": "2024-02-07T11:46:15.145383Z",
+     "iopub.status.idle": "2024-02-07T11:46:16.303661Z",
+     "shell.execute_reply": "2024-02-07T11:46:16.302626Z"
     }
    },
    "outputs": [],
@@ -180,7 +180,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "2718db4f",
+   "id": "a78c2920",
    "metadata": {},
    "source": [
     "### Plotting"
@@ -189,13 +189,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "9eb55db0",
+   "id": "edd61966",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:33:44.157380Z",
-     "iopub.status.busy": "2024-01-04T12:33:44.156965Z",
-     "iopub.status.idle": "2024-01-04T12:33:44.411266Z",
-     "shell.execute_reply": "2024-01-04T12:33:44.410699Z"
+     "iopub.execute_input": "2024-02-07T11:46:16.307235Z",
+     "iopub.status.busy": "2024-02-07T11:46:16.306896Z",
+     "iopub.status.idle": "2024-02-07T11:46:16.595408Z",
+     "shell.execute_reply": "2024-02-07T11:46:16.594729Z"
     }
    },
    "outputs": [
@@ -229,7 +229,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "79754c1f",
+   "id": "0f309706",
    "metadata": {},
    "source": [
     "## Inference\n"
@@ -237,7 +237,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "3801d90b",
+   "id": "817265a2",
    "metadata": {},
    "source": [
     "Inference here consists of computing the posterior distribution over the latent functions given the data $p(\\mathbf{f}|Y, X)$.\n",
@@ -249,7 +249,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7b130b5c",
+   "id": "c86189fb",
    "metadata": {},
    "source": [
     "### Approximate inference: Sparse Variational Gaussian Process"
@@ -257,7 +257,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "5fe1fe58",
+   "id": "8228302a",
    "metadata": {},
    "source": [
     "#### Declaring the SVGP model (see [GPs for big data](../advanced/gps_for_big_data.ipynb))"
@@ -266,13 +266,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "0105b96a",
+   "id": "3c46904d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:33:44.415564Z",
-     "iopub.status.busy": "2024-01-04T12:33:44.415288Z",
-     "iopub.status.idle": "2024-01-04T12:33:44.493964Z",
-     "shell.execute_reply": "2024-01-04T12:33:44.493108Z"
+     "iopub.execute_input": "2024-02-07T11:46:16.598198Z",
+     "iopub.status.busy": "2024-02-07T11:46:16.597724Z",
+     "iopub.status.idle": "2024-02-07T11:46:16.678038Z",
+     "shell.execute_reply": "2024-02-07T11:46:16.677520Z"
     }
    },
    "outputs": [
@@ -330,7 +330,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "f11f7f22",
+   "id": "e3a64dbc",
    "metadata": {},
    "source": [
     "#### Running inference"
@@ -339,13 +339,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "3fd73b37",
+   "id": "f307e141",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:33:44.497165Z",
-     "iopub.status.busy": "2024-01-04T12:33:44.496760Z",
-     "iopub.status.idle": "2024-01-04T12:33:51.291325Z",
-     "shell.execute_reply": "2024-01-04T12:33:51.290682Z"
+     "iopub.execute_input": "2024-02-07T11:46:16.681115Z",
+     "iopub.status.busy": "2024-02-07T11:46:16.680851Z",
+     "iopub.status.idle": "2024-02-07T11:46:24.119318Z",
+     "shell.execute_reply": "2024-02-07T11:46:24.118685Z"
     }
    },
    "outputs": [
@@ -389,13 +389,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "9e07ac36",
+   "id": "2db41718",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:33:51.293779Z",
-     "iopub.status.busy": "2024-01-04T12:33:51.293453Z",
-     "iopub.status.idle": "2024-01-04T12:33:51.866120Z",
-     "shell.execute_reply": "2024-01-04T12:33:51.865426Z"
+     "iopub.execute_input": "2024-02-07T11:46:24.122058Z",
+     "iopub.status.busy": "2024-02-07T11:46:24.121850Z",
+     "iopub.status.idle": "2024-02-07T11:46:24.645676Z",
+     "shell.execute_reply": "2024-02-07T11:46:24.644857Z"
     }
    },
    "outputs": [

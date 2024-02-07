@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "a9d9980d",
+   "id": "0333299c",
    "metadata": {},
    "source": [
     "# Heteroskedastic Likelihood and Multi-Latent GP"
@@ -10,7 +10,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a75c34f4",
+   "id": "67038a2d",
    "metadata": {},
    "source": [
     "## Standard (Homoskedastic) Regression\n",
@@ -34,13 +34,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "b736fc95",
+   "id": "339134dd",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:33:32.322485Z",
-     "iopub.status.busy": "2024-01-04T12:33:32.322284Z",
-     "iopub.status.idle": "2024-01-04T12:33:38.354304Z",
-     "shell.execute_reply": "2024-01-04T12:33:38.353497Z"
+     "iopub.execute_input": "2024-02-07T11:45:58.299392Z",
+     "iopub.status.busy": "2024-02-07T11:45:58.298830Z",
+     "iopub.status.idle": "2024-02-07T11:46:03.982798Z",
+     "shell.execute_reply": "2024-02-07T11:46:03.982246Z"
     }
    },
    "outputs": [
@@ -48,12 +48,12 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2024-01-04 12:33:33.564033: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.\n",
-      "2024-01-04 12:33:33.608602: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9261] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered\n",
-      "2024-01-04 12:33:33.608637: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered\n",
-      "2024-01-04 12:33:33.609820: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1515] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n",
-      "2024-01-04 12:33:33.616460: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.\n",
-      "2024-01-04 12:33:33.616925: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.\n",
+      "2024-02-07 11:45:59.389733: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.\n",
+      "2024-02-07 11:45:59.434481: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9261] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered\n",
+      "2024-02-07 11:45:59.434526: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered\n",
+      "2024-02-07 11:45:59.435763: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1515] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n",
+      "2024-02-07 11:45:59.443082: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.\n",
+      "2024-02-07 11:45:59.443721: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.\n",
       "To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     },
@@ -61,7 +61,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2024-01-04 12:33:34.988372: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT\n"
+      "2024-02-07 11:46:00.604760: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT\n"
      ]
     }
    ],
@@ -76,7 +76,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "167e97af",
+   "id": "f63cd1c7",
    "metadata": {},
    "source": [
     "## Data Generation\n",
@@ -93,13 +93,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "5be27e6f",
+   "id": "a386a9cc",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:33:38.357664Z",
-     "iopub.status.busy": "2024-01-04T12:33:38.357044Z",
-     "iopub.status.idle": "2024-01-04T12:33:38.365007Z",
-     "shell.execute_reply": "2024-01-04T12:33:38.363924Z"
+     "iopub.execute_input": "2024-02-07T11:46:03.985666Z",
+     "iopub.status.busy": "2024-02-07T11:46:03.985237Z",
+     "iopub.status.idle": "2024-02-07T11:46:03.989920Z",
+     "shell.execute_reply": "2024-02-07T11:46:03.989456Z"
     },
     "lines_to_next_cell": 1
    },
@@ -130,7 +130,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d4c36478",
+   "id": "c3c2ccca",
    "metadata": {},
    "source": [
     "### Plot Data\n",
@@ -140,13 +140,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "c30c3d70",
+   "id": "e6e6e491",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:33:38.369142Z",
-     "iopub.status.busy": "2024-01-04T12:33:38.368716Z",
-     "iopub.status.idle": "2024-01-04T12:33:38.637808Z",
-     "shell.execute_reply": "2024-01-04T12:33:38.637188Z"
+     "iopub.execute_input": "2024-02-07T11:46:03.992145Z",
+     "iopub.status.busy": "2024-02-07T11:46:03.991843Z",
+     "iopub.status.idle": "2024-02-07T11:46:04.183455Z",
+     "shell.execute_reply": "2024-02-07T11:46:04.182913Z"
     },
     "lines_to_next_cell": 2
    },
@@ -183,7 +183,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "669dac70",
+   "id": "22402d83",
    "metadata": {},
    "source": [
     "## Build Model"
@@ -191,7 +191,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "c8cea13c",
+   "id": "cd008eba",
    "metadata": {},
    "source": [
     "### Likelihood\n",
@@ -204,13 +204,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "9cac63cd",
+   "id": "b0a6d87c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:33:38.641023Z",
-     "iopub.status.busy": "2024-01-04T12:33:38.640690Z",
-     "iopub.status.idle": "2024-01-04T12:33:38.700858Z",
-     "shell.execute_reply": "2024-01-04T12:33:38.699914Z"
+     "iopub.execute_input": "2024-02-07T11:46:04.186584Z",
+     "iopub.status.busy": "2024-02-07T11:46:04.186304Z",
+     "iopub.status.idle": "2024-02-07T11:46:04.234433Z",
+     "shell.execute_reply": "2024-02-07T11:46:04.233850Z"
     }
    },
    "outputs": [
@@ -233,7 +233,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7c14dfea",
+   "id": "dd1e392b",
    "metadata": {},
    "source": [
     "### Kernel\n",
@@ -247,13 +247,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "06327fb0",
+   "id": "e005673c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:33:38.705004Z",
-     "iopub.status.busy": "2024-01-04T12:33:38.704525Z",
-     "iopub.status.idle": "2024-01-04T12:33:38.759606Z",
-     "shell.execute_reply": "2024-01-04T12:33:38.758969Z"
+     "iopub.execute_input": "2024-02-07T11:46:04.237447Z",
+     "iopub.status.busy": "2024-02-07T11:46:04.237185Z",
+     "iopub.status.idle": "2024-02-07T11:46:04.279829Z",
+     "shell.execute_reply": "2024-02-07T11:46:04.279174Z"
     }
    },
    "outputs": [],
@@ -269,7 +269,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "4a1bb21c",
+   "id": "af8e3d3c",
    "metadata": {},
    "source": [
     "### Inducing Points\n",
@@ -281,13 +281,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "2fe72fa0",
+   "id": "89defe91",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:33:38.762633Z",
-     "iopub.status.busy": "2024-01-04T12:33:38.762251Z",
-     "iopub.status.idle": "2024-01-04T12:33:38.776893Z",
-     "shell.execute_reply": "2024-01-04T12:33:38.776234Z"
+     "iopub.execute_input": "2024-02-07T11:46:04.282440Z",
+     "iopub.status.busy": "2024-02-07T11:46:04.282173Z",
+     "iopub.status.idle": "2024-02-07T11:46:04.293760Z",
+     "shell.execute_reply": "2024-02-07T11:46:04.292967Z"
     }
    },
    "outputs": [],
@@ -307,7 +307,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "5a969485",
+   "id": "b1706062",
    "metadata": {},
    "source": [
     "### SVGP Model\n",
@@ -319,20 +319,20 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "6cae9c9e",
+   "id": "0143d1a4",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:33:38.779544Z",
-     "iopub.status.busy": "2024-01-04T12:33:38.779336Z",
-     "iopub.status.idle": "2024-01-04T12:33:38.871572Z",
-     "shell.execute_reply": "2024-01-04T12:33:38.871085Z"
+     "iopub.execute_input": "2024-02-07T11:46:04.297494Z",
+     "iopub.status.busy": "2024-02-07T11:46:04.297086Z",
+     "iopub.status.idle": "2024-02-07T11:46:04.412596Z",
+     "shell.execute_reply": "2024-02-07T11:46:04.411801Z"
     }
    },
    "outputs": [
     {
      "data": {
       "text/html": [
-       "&lt;gpflow.models.svgp.SVGP object at 0x7f64a7baae10&gt;\n",
+       "&lt;gpflow.models.svgp.SVGP object at 0x7efe7c7000d0&gt;\n",
        "<table>\n",
        "<thead>\n",
        "<tr><th>name                                              </th><th>class    </th><th>transform     </th><th>prior  </th><th>trainable  </th><th>shape      </th><th>dtype  </th><th>value           </th></tr>\n",
@@ -350,7 +350,7 @@
        "</table>"
       ],
       "text/plain": [
-       "<gpflow.models.svgp.SVGP object at 0x7f64a7baae10>\n",
+       "<gpflow.models.svgp.SVGP object at 0x7efe7c7000d0>\n",
        "\u2552\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2555\n",
        "\u2502 name                                               \u2502 class     \u2502 transform      \u2502 prior   \u2502 trainable   \u2502 shape       \u2502 dtype   \u2502 value            \u2502\n",
        "\u255e\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2561\n",
@@ -390,7 +390,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "4c5ac380",
+   "id": "a83a9115",
    "metadata": {},
    "source": [
     "## Model Optimization\n",
@@ -401,13 +401,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "58fbe351",
+   "id": "8fc968ec",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:33:38.874524Z",
-     "iopub.status.busy": "2024-01-04T12:33:38.874243Z",
-     "iopub.status.idle": "2024-01-04T12:33:38.902897Z",
-     "shell.execute_reply": "2024-01-04T12:33:38.901941Z"
+     "iopub.execute_input": "2024-02-07T11:46:04.416005Z",
+     "iopub.status.busy": "2024-02-07T11:46:04.415558Z",
+     "iopub.status.idle": "2024-02-07T11:46:04.450298Z",
+     "shell.execute_reply": "2024-02-07T11:46:04.449667Z"
     }
    },
    "outputs": [],
@@ -433,7 +433,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "2a6b5598",
+   "id": "9eada61c",
    "metadata": {},
    "source": [
     "### Run Optimization Loop"
@@ -442,13 +442,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "2ca93ac4",
+   "id": "39b86f15",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:33:38.907049Z",
-     "iopub.status.busy": "2024-01-04T12:33:38.906729Z",
-     "iopub.status.idle": "2024-01-04T12:34:06.008232Z",
-     "shell.execute_reply": "2024-01-04T12:34:06.007518Z"
+     "iopub.execute_input": "2024-02-07T11:46:04.453114Z",
+     "iopub.status.busy": "2024-02-07T11:46:04.452875Z",
+     "iopub.status.idle": "2024-02-07T11:46:32.828275Z",
+     "shell.execute_reply": "2024-02-07T11:46:32.827544Z"
     }
    },
    "outputs": [
@@ -549,7 +549,7 @@
     {
      "data": {
       "text/html": [
-       "&lt;gpflow.models.svgp.SVGP object at 0x7f64a7baae10&gt;\n",
+       "&lt;gpflow.models.svgp.SVGP object at 0x7efe7c7000d0&gt;\n",
        "<table>\n",
        "<thead>\n",
        "<tr><th>name                                              </th><th>class    </th><th>transform     </th><th>prior  </th><th>trainable  </th><th>shape      </th><th>dtype  </th><th>value                                               </th></tr>\n",
@@ -567,7 +567,7 @@
        "</table>"
       ],
       "text/plain": [
-       "<gpflow.models.svgp.SVGP object at 0x7f64a7baae10>\n",
+       "<gpflow.models.svgp.SVGP object at 0x7efe7c7000d0>\n",
        "\u2552\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2555\n",
        "\u2502 name                                               \u2502 class     \u2502 transform      \u2502 prior   \u2502 trainable   \u2502 shape       \u2502 dtype   \u2502 value                                                \u2502\n",
        "\u255e\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2561\n",
@@ -614,7 +614,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "46782b34",
+   "id": "ddbf1c11",
    "metadata": {},
    "source": [
     "## Further reading\n",

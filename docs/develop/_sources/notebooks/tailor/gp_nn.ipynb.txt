@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "912971d4",
+   "id": "6486f942",
    "metadata": {},
    "source": [
     "# Mixing TensorFlow models with GPflow\n",
@@ -13,13 +13,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "c3cf5e83",
+   "id": "35e77a5c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:45:50.867811Z",
-     "iopub.status.busy": "2024-01-04T12:45:50.867558Z",
-     "iopub.status.idle": "2024-01-04T12:45:56.276086Z",
-     "shell.execute_reply": "2024-01-04T12:45:56.275515Z"
+     "iopub.execute_input": "2024-02-07T11:49:47.904078Z",
+     "iopub.status.busy": "2024-02-07T11:49:47.903718Z",
+     "iopub.status.idle": "2024-02-07T11:49:52.799026Z",
+     "shell.execute_reply": "2024-02-07T11:49:52.798445Z"
     }
    },
    "outputs": [
@@ -27,12 +27,12 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2024-01-04 12:45:51.432858: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.\n",
-      "2024-01-04 12:45:51.486944: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9261] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered\n",
-      "2024-01-04 12:45:51.486979: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered\n",
-      "2024-01-04 12:45:51.488222: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1515] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n",
-      "2024-01-04 12:45:51.494958: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.\n",
-      "2024-01-04 12:45:51.495454: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.\n",
+      "2024-02-07 11:49:48.461716: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.\n",
+      "2024-02-07 11:49:48.503061: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9261] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered\n",
+      "2024-02-07 11:49:48.503103: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered\n",
+      "2024-02-07 11:49:48.504420: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1515] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n",
+      "2024-02-07 11:49:48.511251: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.\n",
+      "2024-02-07 11:49:48.512039: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.\n",
       "To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     },
@@ -40,7 +40,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2024-01-04 12:45:52.603178: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT\n"
+      "2024-02-07 11:49:49.529200: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT\n"
      ]
     }
    ],
@@ -61,7 +61,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "990868ab",
+   "id": "791c1db7",
    "metadata": {},
    "source": [
     "## Convolutional network inside a GPflow model"
@@ -70,13 +70,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "69a3b33c",
+   "id": "f9fa8709",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:45:56.278849Z",
-     "iopub.status.busy": "2024-01-04T12:45:56.278440Z",
-     "iopub.status.idle": "2024-01-04T12:45:57.818090Z",
-     "shell.execute_reply": "2024-01-04T12:45:57.817460Z"
+     "iopub.execute_input": "2024-02-07T11:49:52.802450Z",
+     "iopub.status.busy": "2024-02-07T11:49:52.802034Z",
+     "iopub.status.idle": "2024-02-07T11:49:54.170040Z",
+     "shell.execute_reply": "2024-02-07T11:49:54.169512Z"
     }
    },
    "outputs": [
@@ -84,7 +84,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2024-01-04 12:45:56.291392: W external/local_tsl/tsl/platform/cloud/google_auth_provider.cc:184] All attempts to get a Google authentication bearer token failed, returning an empty token. Retrieving token from files failed with \"NOT_FOUND: Could not locate the credentials file.\". Retrieving token from GCE failed with \"FAILED_PRECONDITION: Error executing an HTTP request: libcurl code 6 meaning 'Couldn't resolve host name', error details: Could not resolve host: metadata.google.internal\".\n"
+      "2024-02-07 11:49:52.812221: W external/local_tsl/tsl/platform/cloud/google_auth_provider.cc:184] All attempts to get a Google authentication bearer token failed, returning an empty token. Retrieving token from files failed with \"NOT_FOUND: Could not locate the credentials file.\". Retrieving token from GCE failed with \"FAILED_PRECONDITION: Error executing an HTTP request: libcurl code 6 meaning 'Couldn't resolve host name', error details: Could not resolve host: metadata.google.internal\".\n"
      ]
     },
     {
@@ -97,7 +97,7 @@
     {
      "data": {
       "application/vnd.jupyter.widget-view+json": {
-       "model_id": "197af48abb0046ce997096c82aa29b77",
+       "model_id": "e381d41de44749f78018481bfb868471",
        "version_major": 2,
        "version_minor": 0
       },
@@ -145,7 +145,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "5db5dfa5",
+   "id": "bb5a0d1a",
    "metadata": {},
    "source": [
     "Here we'll use the GPflow functionality, but put a non-GPflow model inside the kernel.\\\n",
@@ -155,13 +155,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "293b5222",
+   "id": "449acb63",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:45:57.820868Z",
-     "iopub.status.busy": "2024-01-04T12:45:57.820612Z",
-     "iopub.status.idle": "2024-01-04T12:45:57.829882Z",
-     "shell.execute_reply": "2024-01-04T12:45:57.829317Z"
+     "iopub.execute_input": "2024-02-07T11:49:54.173569Z",
+     "iopub.status.busy": "2024-02-07T11:49:54.173321Z",
+     "iopub.status.idle": "2024-02-07T11:49:54.180265Z",
+     "shell.execute_reply": "2024-02-07T11:49:54.179814Z"
     }
    },
    "outputs": [],
@@ -222,7 +222,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "393f47fc",
+   "id": "ae0d3b8d",
    "metadata": {},
    "source": [
     "$K_{uf}$ is in ConvNN output space, therefore we need to update `Kuf` multidispatch."
@@ -231,13 +231,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "06d92b29",
+   "id": "ca778fd1",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:45:57.832136Z",
-     "iopub.status.busy": "2024-01-04T12:45:57.831866Z",
-     "iopub.status.idle": "2024-01-04T12:45:57.836457Z",
-     "shell.execute_reply": "2024-01-04T12:45:57.835891Z"
+     "iopub.execute_input": "2024-02-07T11:49:54.183080Z",
+     "iopub.status.busy": "2024-02-07T11:49:54.182861Z",
+     "iopub.status.idle": "2024-02-07T11:49:54.186670Z",
+     "shell.execute_reply": "2024-02-07T11:49:54.186233Z"
     }
    },
    "outputs": [],
@@ -263,7 +263,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "fba10429",
+   "id": "3dc30225",
    "metadata": {},
    "source": [
     "Now we are ready to create and initialize the model:"
@@ -272,13 +272,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "4c41db4e",
+   "id": "c2cdbf18",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:45:57.838626Z",
-     "iopub.status.busy": "2024-01-04T12:45:57.838379Z",
-     "iopub.status.idle": "2024-01-04T12:46:01.994516Z",
-     "shell.execute_reply": "2024-01-04T12:46:01.993891Z"
+     "iopub.execute_input": "2024-02-07T11:49:54.189167Z",
+     "iopub.status.busy": "2024-02-07T11:49:54.188959Z",
+     "iopub.status.idle": "2024-02-07T11:49:55.926019Z",
+     "shell.execute_reply": "2024-02-07T11:49:55.925486Z"
     }
    },
    "outputs": [
@@ -286,7 +286,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2024-01-04 12:45:57.948613: W tensorflow/core/kernels/data/cache_dataset_ops.cc:858] The calling iterator did not fully read the dataset being cached. In order to avoid unexpected truncation of the dataset, the partially cached contents of the dataset  will be discarded. This can happen if you have an input pipeline similar to `dataset.cache().take(k).repeat()`. You should use `dataset.take(k).cache().repeat()` instead.\n"
+      "2024-02-07 11:49:54.289168: W tensorflow/core/kernels/data/cache_dataset_ops.cc:858] The calling iterator did not fully read the dataset being cached. In order to avoid unexpected truncation of the dataset, the partially cached contents of the dataset  will be discarded. This can happen if you have an input pipeline similar to `dataset.cache().take(k).repeat()`. You should use `dataset.take(k).cache().repeat()` instead.\n"
      ]
     }
    ],
@@ -324,7 +324,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "667e1304",
+   "id": "c864a825",
    "metadata": {},
    "source": [
     "And start optimization:"
@@ -333,13 +333,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "f79f8d1c",
+   "id": "306841a1",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:46:01.997109Z",
-     "iopub.status.busy": "2024-01-04T12:46:01.996826Z",
-     "iopub.status.idle": "2024-01-04T12:46:33.661713Z",
-     "shell.execute_reply": "2024-01-04T12:46:33.660898Z"
+     "iopub.execute_input": "2024-02-07T11:49:55.929277Z",
+     "iopub.status.busy": "2024-02-07T11:49:55.929024Z",
+     "iopub.status.idle": "2024-02-07T11:50:27.200863Z",
+     "shell.execute_reply": "2024-02-07T11:50:27.199929Z"
     }
    },
    "outputs": [],
@@ -361,7 +361,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "f88c9fd5",
+   "id": "7c5a46b7",
    "metadata": {},
    "source": [
     "Let's do predictions after training. Don't expect that we will get a good accuracy, because we haven't run training for long enough."
@@ -370,13 +370,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "df1051e8",
+   "id": "20538723",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:46:33.664795Z",
-     "iopub.status.busy": "2024-01-04T12:46:33.664445Z",
-     "iopub.status.idle": "2024-01-04T12:46:42.390981Z",
-     "shell.execute_reply": "2024-01-04T12:46:42.390189Z"
+     "iopub.execute_input": "2024-02-07T11:50:27.204040Z",
+     "iopub.status.busy": "2024-02-07T11:50:27.203700Z",
+     "iopub.status.idle": "2024-02-07T11:50:36.017990Z",
+     "shell.execute_reply": "2024-02-07T11:50:36.017476Z"
     }
    },
    "outputs": [
@@ -384,7 +384,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "Accuracy is 69.8242%\n"
+      "Accuracy is 63.8672%\n"
      ]
     }
    ],
@@ -422,70 +422,7 @@
   "widgets": {
    "application/vnd.jupyter.widget-state+json": {
     "state": {
-     "091c647f0e0f4be2bdcbb5bc0428e1ac": {
-      "model_module": "@jupyter-widgets/controls",
-      "model_module_version": "2.0.0",
-      "model_name": "HTMLModel",
-      "state": {
-       "_dom_classes": [],
-       "_model_module": "@jupyter-widgets/controls",
-       "_model_module_version": "2.0.0",
-       "_model_name": "HTMLModel",
-       "_view_count": null,
-       "_view_module": "@jupyter-widgets/controls",
-       "_view_module_version": "2.0.0",
-       "_view_name": "HTMLView",
-       "description": "",
-       "description_allow_html": false,
-       "layout": "IPY_MODEL_73997330753b4627a943eaae2dd34cba",
-       "placeholder": "\u200b",
-       "style": "IPY_MODEL_f6b4eefcdbe94977bc86930dde85b044",
-       "tabbable": null,
-       "tooltip": null,
-       "value": " 5/5 [00:00&lt;00:00, 14.88 file/s]"
-      }
-     },
-     "197af48abb0046ce997096c82aa29b77": {
-      "model_module": "@jupyter-widgets/controls",
-      "model_module_version": "2.0.0",
-      "model_name": "HBoxModel",
-      "state": {
-       "_dom_classes": [],
-       "_model_module": "@jupyter-widgets/controls",
-       "_model_module_version": "2.0.0",
-       "_model_name": "HBoxModel",
-       "_view_count": null,
-       "_view_module": "@jupyter-widgets/controls",
-       "_view_module_version": "2.0.0",
-       "_view_name": "HBoxView",
-       "box_style": "",
-       "children": [
-        "IPY_MODEL_ba69d3c0aa8843419a32cda76820d003",
-        "IPY_MODEL_fa869c4a0e6e4461baf2b68c24e77b14",
-        "IPY_MODEL_091c647f0e0f4be2bdcbb5bc0428e1ac"
-       ],
-       "layout": "IPY_MODEL_f66e3554a015443ca8b3eecfaddd9c28",
-       "tabbable": null,
-       "tooltip": null
-      }
-     },
-     "21f553b7da9e4949baeb7a2f8a2caa96": {
-      "model_module": "@jupyter-widgets/controls",
-      "model_module_version": "2.0.0",
-      "model_name": "ProgressStyleModel",
-      "state": {
-       "_model_module": "@jupyter-widgets/controls",
-       "_model_module_version": "2.0.0",
-       "_model_name": "ProgressStyleModel",
-       "_view_count": null,
-       "_view_module": "@jupyter-widgets/base",
-       "_view_module_version": "2.0.0",
-       "_view_name": "StyleView",
-       "bar_color": null,
-       "description_width": ""
-      }
-     },
-     "41b48f4e3f4c4137ae715dce63adba21": {
+     "105b9dcf2ff4433c86453a23610f2eb0": {
       "model_module": "@jupyter-widgets/controls",
       "model_module_version": "2.0.0",
       "model_name": "HTMLStyleModel",
@@ -503,7 +440,7 @@
        "text_color": null
       }
      },
-     "4b94ebb71602497e899eb590e09995da": {
+     "2e6552a7d5b34d65a50c632e4a2beacd": {
       "model_module": "@jupyter-widgets/base",
       "model_module_version": "2.0.0",
       "model_name": "LayoutModel",
@@ -556,7 +493,7 @@
        "width": null
       }
      },
-     "73997330753b4627a943eaae2dd34cba": {
+     "4c07fd9fe59c4ed48e71e9cdefbda4c2": {
       "model_module": "@jupyter-widgets/base",
       "model_module_version": "2.0.0",
       "model_name": "LayoutModel",
@@ -609,136 +546,7 @@
        "width": null
       }
      },
-     "a203bbfa23f246059ad5cdebe3879b5e": {
-      "model_module": "@jupyter-widgets/base",
-      "model_module_version": "2.0.0",
-      "model_name": "LayoutModel",
-      "state": {
-       "_model_module": "@jupyter-widgets/base",
-       "_model_module_version": "2.0.0",
-       "_model_name": "LayoutModel",
-       "_view_count": null,
-       "_view_module": "@jupyter-widgets/base",
-       "_view_module_version": "2.0.0",
-       "_view_name": "LayoutView",
-       "align_content": null,
-       "align_items": null,
-       "align_self": null,
-       "border_bottom": null,
-       "border_left": null,
-       "border_right": null,
-       "border_top": null,
-       "bottom": null,
-       "display": null,
-       "flex": null,
-       "flex_flow": null,
-       "grid_area": null,
-       "grid_auto_columns": null,
-       "grid_auto_flow": null,
-       "grid_auto_rows": null,
-       "grid_column": null,
-       "grid_gap": null,
-       "grid_row": null,
-       "grid_template_areas": null,
-       "grid_template_columns": null,
-       "grid_template_rows": null,
-       "height": null,
-       "justify_content": null,
-       "justify_items": null,
-       "left": null,
-       "margin": null,
-       "max_height": null,
-       "max_width": null,
-       "min_height": null,
-       "min_width": null,
-       "object_fit": null,
-       "object_position": null,
-       "order": null,
-       "overflow": null,
-       "padding": null,
-       "right": null,
-       "top": null,
-       "visibility": null,
-       "width": null
-      }
-     },
-     "ba69d3c0aa8843419a32cda76820d003": {
-      "model_module": "@jupyter-widgets/controls",
-      "model_module_version": "2.0.0",
-      "model_name": "HTMLModel",
-      "state": {
-       "_dom_classes": [],
-       "_model_module": "@jupyter-widgets/controls",
-       "_model_module_version": "2.0.0",
-       "_model_name": "HTMLModel",
-       "_view_count": null,
-       "_view_module": "@jupyter-widgets/controls",
-       "_view_module_version": "2.0.0",
-       "_view_name": "HTMLView",
-       "description": "",
-       "description_allow_html": false,
-       "layout": "IPY_MODEL_4b94ebb71602497e899eb590e09995da",
-       "placeholder": "\u200b",
-       "style": "IPY_MODEL_41b48f4e3f4c4137ae715dce63adba21",
-       "tabbable": null,
-       "tooltip": null,
-       "value": "Dl Completed...: 100%"
-      }
-     },
-     "f66e3554a015443ca8b3eecfaddd9c28": {
-      "model_module": "@jupyter-widgets/base",
-      "model_module_version": "2.0.0",
-      "model_name": "LayoutModel",
-      "state": {
-       "_model_module": "@jupyter-widgets/base",
-       "_model_module_version": "2.0.0",
-       "_model_name": "LayoutModel",
-       "_view_count": null,
-       "_view_module": "@jupyter-widgets/base",
-       "_view_module_version": "2.0.0",
-       "_view_name": "LayoutView",
-       "align_content": null,
-       "align_items": null,
-       "align_self": null,
-       "border_bottom": null,
-       "border_left": null,
-       "border_right": null,
-       "border_top": null,
-       "bottom": null,
-       "display": null,
-       "flex": null,
-       "flex_flow": null,
-       "grid_area": null,
-       "grid_auto_columns": null,
-       "grid_auto_flow": null,
-       "grid_auto_rows": null,
-       "grid_column": null,
-       "grid_gap": null,
-       "grid_row": null,
-       "grid_template_areas": null,
-       "grid_template_columns": null,
-       "grid_template_rows": null,
-       "height": null,
-       "justify_content": null,
-       "justify_items": null,
-       "left": null,
-       "margin": null,
-       "max_height": null,
-       "max_width": null,
-       "min_height": null,
-       "min_width": null,
-       "object_fit": null,
-       "object_position": null,
-       "order": null,
-       "overflow": null,
-       "padding": null,
-       "right": null,
-       "top": null,
-       "visibility": null,
-       "width": null
-      }
-     },
-     "f6b4eefcdbe94977bc86930dde85b044": {
+     "51f457917ad848dc9c7ae2a8bb5e8b79": {
       "model_module": "@jupyter-widgets/controls",
       "model_module_version": "2.0.0",
       "model_name": "HTMLStyleModel",
@@ -756,7 +564,60 @@
        "text_color": null
       }
      },
-     "fa869c4a0e6e4461baf2b68c24e77b14": {
+     "67df77f0d70b49ccb77a841c39c5b972": {
+      "model_module": "@jupyter-widgets/base",
+      "model_module_version": "2.0.0",
+      "model_name": "LayoutModel",
+      "state": {
+       "_model_module": "@jupyter-widgets/base",
+       "_model_module_version": "2.0.0",
+       "_model_name": "LayoutModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/base",
+       "_view_module_version": "2.0.0",
+       "_view_name": "LayoutView",
+       "align_content": null,
+       "align_items": null,
+       "align_self": null,
+       "border_bottom": null,
+       "border_left": null,
+       "border_right": null,
+       "border_top": null,
+       "bottom": null,
+       "display": null,
+       "flex": null,
+       "flex_flow": null,
+       "grid_area": null,
+       "grid_auto_columns": null,
+       "grid_auto_flow": null,
+       "grid_auto_rows": null,
+       "grid_column": null,
+       "grid_gap": null,
+       "grid_row": null,
+       "grid_template_areas": null,
+       "grid_template_columns": null,
+       "grid_template_rows": null,
+       "height": null,
+       "justify_content": null,
+       "justify_items": null,
+       "left": null,
+       "margin": null,
+       "max_height": null,
+       "max_width": null,
+       "min_height": null,
+       "min_width": null,
+       "object_fit": null,
+       "object_position": null,
+       "order": null,
+       "overflow": null,
+       "padding": null,
+       "right": null,
+       "top": null,
+       "visibility": null,
+       "width": null
+      }
+     },
+     "7ce09fb6ccc84577a1b80f1b3594f9eb": {
       "model_module": "@jupyter-widgets/controls",
       "model_module_version": "2.0.0",
       "model_name": "FloatProgressModel",
@@ -772,14 +633,153 @@
        "bar_style": "success",
        "description": "",
        "description_allow_html": false,
-       "layout": "IPY_MODEL_a203bbfa23f246059ad5cdebe3879b5e",
+       "layout": "IPY_MODEL_67df77f0d70b49ccb77a841c39c5b972",
        "max": 5.0,
        "min": 0.0,
        "orientation": "horizontal",
-       "style": "IPY_MODEL_21f553b7da9e4949baeb7a2f8a2caa96",
+       "style": "IPY_MODEL_eaea846b8f6b4e2781bb4e8ff4d6c540",
        "tabbable": null,
        "tooltip": null,
        "value": 5.0
+      }
+     },
+     "912155c420684b87a553f3748b443237": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "2.0.0",
+      "model_name": "HTMLModel",
+      "state": {
+       "_dom_classes": [],
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "2.0.0",
+       "_model_name": "HTMLModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/controls",
+       "_view_module_version": "2.0.0",
+       "_view_name": "HTMLView",
+       "description": "",
+       "description_allow_html": false,
+       "layout": "IPY_MODEL_4c07fd9fe59c4ed48e71e9cdefbda4c2",
+       "placeholder": "\u200b",
+       "style": "IPY_MODEL_51f457917ad848dc9c7ae2a8bb5e8b79",
+       "tabbable": null,
+       "tooltip": null,
+       "value": " 5/5 [00:00&lt;00:00, 20.98 file/s]"
+      }
+     },
+     "ab4ef435418945149558993064b76062": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "2.0.0",
+      "model_name": "HTMLModel",
+      "state": {
+       "_dom_classes": [],
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "2.0.0",
+       "_model_name": "HTMLModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/controls",
+       "_view_module_version": "2.0.0",
+       "_view_name": "HTMLView",
+       "description": "",
+       "description_allow_html": false,
+       "layout": "IPY_MODEL_2e6552a7d5b34d65a50c632e4a2beacd",
+       "placeholder": "\u200b",
+       "style": "IPY_MODEL_105b9dcf2ff4433c86453a23610f2eb0",
+       "tabbable": null,
+       "tooltip": null,
+       "value": "Dl Completed...: 100%"
+      }
+     },
+     "e2f6dea4adc64d03b5a5eb616bae5f7b": {
+      "model_module": "@jupyter-widgets/base",
+      "model_module_version": "2.0.0",
+      "model_name": "LayoutModel",
+      "state": {
+       "_model_module": "@jupyter-widgets/base",
+       "_model_module_version": "2.0.0",
+       "_model_name": "LayoutModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/base",
+       "_view_module_version": "2.0.0",
+       "_view_name": "LayoutView",
+       "align_content": null,
+       "align_items": null,
+       "align_self": null,
+       "border_bottom": null,
+       "border_left": null,
+       "border_right": null,
+       "border_top": null,
+       "bottom": null,
+       "display": null,
+       "flex": null,
+       "flex_flow": null,
+       "grid_area": null,
+       "grid_auto_columns": null,
+       "grid_auto_flow": null,
+       "grid_auto_rows": null,
+       "grid_column": null,
+       "grid_gap": null,
+       "grid_row": null,
+       "grid_template_areas": null,
+       "grid_template_columns": null,
+       "grid_template_rows": null,
+       "height": null,
+       "justify_content": null,
+       "justify_items": null,
+       "left": null,
+       "margin": null,
+       "max_height": null,
+       "max_width": null,
+       "min_height": null,
+       "min_width": null,
+       "object_fit": null,
+       "object_position": null,
+       "order": null,
+       "overflow": null,
+       "padding": null,
+       "right": null,
+       "top": null,
+       "visibility": null,
+       "width": null
+      }
+     },
+     "e381d41de44749f78018481bfb868471": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "2.0.0",
+      "model_name": "HBoxModel",
+      "state": {
+       "_dom_classes": [],
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "2.0.0",
+       "_model_name": "HBoxModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/controls",
+       "_view_module_version": "2.0.0",
+       "_view_name": "HBoxView",
+       "box_style": "",
+       "children": [
+        "IPY_MODEL_ab4ef435418945149558993064b76062",
+        "IPY_MODEL_7ce09fb6ccc84577a1b80f1b3594f9eb",
+        "IPY_MODEL_912155c420684b87a553f3748b443237"
+       ],
+       "layout": "IPY_MODEL_e2f6dea4adc64d03b5a5eb616bae5f7b",
+       "tabbable": null,
+       "tooltip": null
+      }
+     },
+     "eaea846b8f6b4e2781bb4e8ff4d6c540": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "2.0.0",
+      "model_name": "ProgressStyleModel",
+      "state": {
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "2.0.0",
+       "_model_name": "ProgressStyleModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/base",
+       "_view_module_version": "2.0.0",
+       "_view_name": "StyleView",
+       "bar_color": null,
+       "description_width": ""
       }
      }
     },

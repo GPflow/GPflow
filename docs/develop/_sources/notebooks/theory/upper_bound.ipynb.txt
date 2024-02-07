@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "aab19095",
+   "id": "42f24261",
    "metadata": {},
    "source": [
     "# Discussion of the GP marginal likelihood upper bound\n",
@@ -13,13 +13,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "f0ec13f1",
+   "id": "9385f96a",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:46:12.001032Z",
-     "iopub.status.busy": "2024-01-04T12:46:12.000797Z",
-     "iopub.status.idle": "2024-01-04T12:46:17.166918Z",
-     "shell.execute_reply": "2024-01-04T12:46:17.166253Z"
+     "iopub.execute_input": "2024-02-07T11:58:26.635510Z",
+     "iopub.status.busy": "2024-02-07T11:58:26.635204Z",
+     "iopub.status.idle": "2024-02-07T11:58:31.972833Z",
+     "shell.execute_reply": "2024-02-07T11:58:31.971833Z"
     }
    },
    "outputs": [
@@ -27,12 +27,12 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2024-01-04 12:46:12.854887: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.\n",
-      "2024-01-04 12:46:12.900391: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9261] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered\n",
-      "2024-01-04 12:46:12.900430: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered\n",
-      "2024-01-04 12:46:12.901647: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1515] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n",
-      "2024-01-04 12:46:12.908346: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.\n",
-      "2024-01-04 12:46:12.908812: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.\n",
+      "2024-02-07 11:58:27.481282: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.\n",
+      "2024-02-07 11:58:27.523086: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9261] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered\n",
+      "2024-02-07 11:58:27.523129: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered\n",
+      "2024-02-07 11:58:27.524510: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1515] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n",
+      "2024-02-07 11:58:27.531340: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.\n",
+      "2024-02-07 11:58:27.531942: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.\n",
       "To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     },
@@ -40,7 +40,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2024-01-04 12:46:14.098545: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT\n"
+      "2024-02-07 11:58:28.678793: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT\n"
      ]
     }
    ],
@@ -70,13 +70,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "e136fda6",
+   "id": "e1adc85b",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:46:17.169943Z",
-     "iopub.status.busy": "2024-01-04T12:46:17.169732Z",
-     "iopub.status.idle": "2024-01-04T12:46:17.173164Z",
-     "shell.execute_reply": "2024-01-04T12:46:17.172707Z"
+     "iopub.execute_input": "2024-02-07T11:58:31.977080Z",
+     "iopub.status.busy": "2024-02-07T11:58:31.976551Z",
+     "iopub.status.idle": "2024-02-07T11:58:31.982718Z",
+     "shell.execute_reply": "2024-02-07T11:58:31.981804Z"
     }
    },
    "outputs": [],
@@ -87,13 +87,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "c1847b67",
+   "id": "4f2e4aea",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:46:17.175252Z",
-     "iopub.status.busy": "2024-01-04T12:46:17.175019Z",
-     "iopub.status.idle": "2024-01-04T12:46:17.179687Z",
-     "shell.execute_reply": "2024-01-04T12:46:17.179218Z"
+     "iopub.execute_input": "2024-02-07T11:58:31.986389Z",
+     "iopub.status.busy": "2024-02-07T11:58:31.985841Z",
+     "iopub.status.idle": "2024-02-07T11:58:31.990739Z",
+     "shell.execute_reply": "2024-02-07T11:58:31.990254Z"
     }
    },
    "outputs": [],
@@ -117,7 +117,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "c77175f5",
+   "id": "eac87b2d",
    "metadata": {},
    "source": [
     "## Full model"
@@ -126,13 +126,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "5877a46f",
+   "id": "1e072476",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:46:17.181984Z",
-     "iopub.status.busy": "2024-01-04T12:46:17.181783Z",
-     "iopub.status.idle": "2024-01-04T12:46:19.539271Z",
-     "shell.execute_reply": "2024-01-04T12:46:19.538795Z"
+     "iopub.execute_input": "2024-02-07T11:58:31.993331Z",
+     "iopub.status.busy": "2024-02-07T11:58:31.993158Z",
+     "iopub.status.idle": "2024-02-07T11:58:34.457819Z",
+     "shell.execute_reply": "2024-02-07T11:58:34.457241Z"
     }
    },
    "outputs": [
@@ -159,7 +159,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "bcbeb416",
+   "id": "3d84016b",
    "metadata": {},
    "source": [
     "## Upper bounds for sparse variational models\n",
@@ -169,13 +169,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "8550473b",
+   "id": "e96d2aed",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:46:19.541735Z",
-     "iopub.status.busy": "2024-01-04T12:46:19.541508Z",
-     "iopub.status.idle": "2024-01-04T12:46:38.570598Z",
-     "shell.execute_reply": "2024-01-04T12:46:38.570044Z"
+     "iopub.execute_input": "2024-02-07T11:58:34.461349Z",
+     "iopub.status.busy": "2024-02-07T11:58:34.461212Z",
+     "iopub.status.idle": "2024-02-07T11:58:53.304349Z",
+     "shell.execute_reply": "2024-02-07T11:58:53.303825Z"
     }
    },
    "outputs": [
@@ -183,7 +183,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "/home/circleci/project/gpflow/optimizers/scipy.py:152: OptimizeWarning: Unknown solver options: compile\n",
+      "/home/circleci/project/gpflow/optimizers/scipy.py:159: OptimizeWarning: Unknown solver options: compile\n",
       "  opt_result = scipy.optimize.minimize(\n"
      ]
     },
@@ -325,13 +325,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "3ce788a3",
+   "id": "9d8ab91c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:46:38.573131Z",
-     "iopub.status.busy": "2024-01-04T12:46:38.572886Z",
-     "iopub.status.idle": "2024-01-04T12:46:38.832881Z",
-     "shell.execute_reply": "2024-01-04T12:46:38.832343Z"
+     "iopub.execute_input": "2024-02-07T11:58:53.306637Z",
+     "iopub.status.busy": "2024-02-07T11:58:53.306442Z",
+     "iopub.status.idle": "2024-02-07T11:58:53.502769Z",
+     "shell.execute_reply": "2024-02-07T11:58:53.502289Z"
     }
    },
    "outputs": [
@@ -358,7 +358,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7c403158",
+   "id": "83d1df92",
    "metadata": {},
    "source": [
     "We see that the lower bound increases as more inducing points are added. Note that the upper bound does _not_ monotonically decrease! This is because as we train the sparse model, we also get better estimates of the hyperparameters. The upper bound will be different for this different setting of the hyperparameters, and is sometimes looser. The upper bound also converges to the true lml slower than the lower bound."
@@ -366,7 +366,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ef691c5b",
+   "id": "963bd15f",
    "metadata": {},
    "source": [
     "### Upper bounds for fixed hyperparameters\n",
@@ -376,13 +376,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "8e6e56d3",
+   "id": "97353b14",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:46:38.836407Z",
-     "iopub.status.busy": "2024-01-04T12:46:38.836176Z",
-     "iopub.status.idle": "2024-01-04T12:46:53.095161Z",
-     "shell.execute_reply": "2024-01-04T12:46:53.094576Z"
+     "iopub.execute_input": "2024-02-07T11:58:53.504959Z",
+     "iopub.status.busy": "2024-02-07T11:58:53.504778Z",
+     "iopub.status.idle": "2024-02-07T11:59:07.216028Z",
+     "shell.execute_reply": "2024-02-07T11:59:07.215567Z"
     }
    },
    "outputs": [
@@ -547,13 +547,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "a0307233",
+   "id": "6a8b837a",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:46:53.097463Z",
-     "iopub.status.busy": "2024-01-04T12:46:53.097260Z",
-     "iopub.status.idle": "2024-01-04T12:46:53.275913Z",
-     "shell.execute_reply": "2024-01-04T12:46:53.275472Z"
+     "iopub.execute_input": "2024-02-07T11:59:07.218158Z",
+     "iopub.status.busy": "2024-02-07T11:59:07.217950Z",
+     "iopub.status.idle": "2024-02-07T11:59:07.395852Z",
+     "shell.execute_reply": "2024-02-07T11:59:07.395423Z"
     }
    },
    "outputs": [
@@ -580,13 +580,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "a8d463a4",
+   "id": "bd6a6569",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:46:53.277932Z",
-     "iopub.status.busy": "2024-01-04T12:46:53.277757Z",
-     "iopub.status.idle": "2024-01-04T12:46:53.280494Z",
-     "shell.execute_reply": "2024-01-04T12:46:53.280100Z"
+     "iopub.execute_input": "2024-02-07T11:59:07.397973Z",
+     "iopub.status.busy": "2024-02-07T11:59:07.397787Z",
+     "iopub.status.idle": "2024-02-07T11:59:07.400615Z",
+     "shell.execute_reply": "2024-02-07T11:59:07.400194Z"
     }
    },
    "outputs": [],
@@ -596,7 +596,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "2f0c13e1",
+   "id": "992e29a3",
    "metadata": {},
    "source": [
     "Now, as the hyperparameters are fixed, the bound _does_ monotonically decrease. We chose the optimal hyperparameters here, but the picture should be the same for any hyperparameter setting. This shows that we increasingly get a better estimate of the marginal likelihood as we add more inducing points."
@@ -604,7 +604,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "bd791b3d",
+   "id": "9c39ec11",
    "metadata": {},
    "source": [
     "### A tight estimate bound does not imply a converged model"
@@ -613,13 +613,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "59029936",
+   "id": "d97881ae",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:46:53.282533Z",
-     "iopub.status.busy": "2024-01-04T12:46:53.282366Z",
-     "iopub.status.idle": "2024-01-04T12:46:54.750303Z",
-     "shell.execute_reply": "2024-01-04T12:46:54.749845Z"
+     "iopub.execute_input": "2024-02-07T11:59:07.402948Z",
+     "iopub.status.busy": "2024-02-07T11:59:07.402774Z",
+     "iopub.status.idle": "2024-02-07T11:59:08.792563Z",
+     "shell.execute_reply": "2024-02-07T11:59:08.792103Z"
     }
    },
    "outputs": [
@@ -655,7 +655,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ec20350b",
+   "id": "26035c41",
    "metadata": {},
    "source": [
     "In this case we show that for the hyperparameter setting, the bound is very tight. However, this does _not_ imply that we have enough inducing points, but simply that we have correctly identified the marginal likelihood for this particular hyperparameter setting. In this specific case, where we used a single inducing point, the model collapses to not using the GP at all (lengthscale is really long to model only the mean). The rest of the variance is explained by noise. This GP can be perfectly approximated with a single inducing point."
@@ -664,13 +664,13 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "d5c96559",
+   "id": "2a0841e7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:46:54.753237Z",
-     "iopub.status.busy": "2024-01-04T12:46:54.753041Z",
-     "iopub.status.idle": "2024-01-04T12:46:55.040213Z",
-     "shell.execute_reply": "2024-01-04T12:46:55.039789Z"
+     "iopub.execute_input": "2024-02-07T11:59:08.795471Z",
+     "iopub.status.busy": "2024-02-07T11:59:08.795256Z",
+     "iopub.status.idle": "2024-02-07T11:59:09.050469Z",
+     "shell.execute_reply": "2024-02-07T11:59:09.050002Z"
     }
    },
    "outputs": [
@@ -702,13 +702,13 @@
   {
    "cell_type": "code",
    "execution_count": 12,
-   "id": "ee441fcd",
+   "id": "8eb2d8f7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2024-01-04T12:46:55.042340Z",
-     "iopub.status.busy": "2024-01-04T12:46:55.042165Z",
-     "iopub.status.idle": "2024-01-04T12:46:55.054509Z",
-     "shell.execute_reply": "2024-01-04T12:46:55.054135Z"
+     "iopub.execute_input": "2024-02-07T11:59:09.052605Z",
+     "iopub.status.busy": "2024-02-07T11:59:09.052423Z",
+     "iopub.status.idle": "2024-02-07T11:59:09.065117Z",
+     "shell.execute_reply": "2024-02-07T11:59:09.064708Z"
     }
    },
    "outputs": [
@@ -741,7 +741,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d9c340a3",
+   "id": "ef733693",
    "metadata": {},
    "source": [
     "This can be diagnosed by showing that there are other hyperparameter settings with higher upper bounds. This indicates that there might be better hyperparameter settings, but we cannot identify them due to the lack of inducing points. An example of this can be seen in the previous section."
