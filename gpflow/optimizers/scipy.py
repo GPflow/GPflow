@@ -17,6 +17,7 @@ from collections import OrderedDict
 from typing import (
     Any,
     Callable,
+    Dict,
     FrozenSet,
     Iterable,
     List,
@@ -68,7 +69,7 @@ class Scipy:
             )
         self.compile_cache_size = compile_cache_size
 
-    def __getstate__(self) -> dict[str, Any]:
+    def __getstate__(self) -> Dict[str, Any]:
         # Don't try to save the compile cache
         state = self.__dict__.copy()
         state["compile_cache"] = OrderedDict()
