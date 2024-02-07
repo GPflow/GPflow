@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
 import numpy as np
 import tensorflow as tf
 
-from ..base import Parameter
+from ..base import AnyNDArray, Parameter
 from ..models import BayesianModel
 from ..utilities import parameter_dict
 from .base import MonitorTask
@@ -168,7 +168,11 @@ class ImageToTensorBoard(ToTensorBoard):
     def __init__(
         self,
         log_dir: str,
-        plotting_function: Callable[["matplotlib.figure.Figure", "matplotlib.figure.Axes"], None],
+        plotting_function: Union[
+            # if len(subplots_kw) > 1 then the function is passed an array of axes
+            Callable[["matplotlib.figure.Figure", "matplotlib.axes.Axes"], None],
+            Callable[["matplotlib.figure.Figure", AnyNDArray], None],
+        ],
         name: Optional[str] = None,
         *,
         fig_kw: Optional[Dict[str, Any]] = None,

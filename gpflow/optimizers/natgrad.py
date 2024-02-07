@@ -16,13 +16,12 @@ import abc
 import functools
 from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Union
 
-import numpy as np
 import tensorflow as tf
 from check_shapes import check_shapes
 
-from ..base import Parameter, _to_constrained
+from ..base import AnyNDArray, Parameter, _to_constrained
 
-Scalar = Union[float, tf.Tensor, np.ndarray]
+Scalar = Union[float, tf.Tensor, AnyNDArray]
 LossClosure = Callable[[], tf.Tensor]
 NatGradParameters = Union[Tuple[Parameter, Parameter], Tuple[Parameter, Parameter, "XiTransform"]]
 
