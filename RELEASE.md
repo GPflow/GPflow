@@ -55,14 +55,33 @@ This release contains contributions from:
 
 ## Bug Fixes and Other Changes
 
-* Don't round small values in kernel summary printout
-* allowing to set a prior for A in the Linear() mean function
+* <SIMILAR TO ABOVE SECTION, BUT FOR OTHER IMPORTANT CHANGES / BUG FIXES>
+* <IF A CHANGE CLOSES A GITHUB ISSUE, IT SHOULD BE DOCUMENTED HERE>
+* <NOTES SHOULD BE GROUPED PER AREA>
 
 ## Thanks to our Contributors
 
 This release contains contributions from:
 
-uri-granta
+<INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
+
+
+# Release 2.9.1
+
+This patch release fixes a number of identified issues.
+
+## Bug Fixes and Other Changes
+
+* Support pickling Scipy optimizers with a non-empty compile cache
+* Allow setting a prior for A in the `Linear` mean function
+* Avoid rounding small values in kernel summary printout
+* Test against Tensorflow 2.15
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+JSchmiegel, uri-granta
 
 
 # Release 2.9.0
