@@ -77,3 +77,61 @@ def test_sgpr_svgp_qu_equivivalent() -> None:
         svgp.predict_f(Xnew),
         atol=1e-4,
     )
+
+
+def test_sgpr_changepoint_kernel_issue_2097() -> None:
+    """
+    Regression test for https://github.com/GPflow/GPflow/issues/2097
+    """
+    X = np.array(
+        [
+            [0.865],
+            [0.666],
+            [0.804],
+            [0.771],
+            [0.147],
+            [0.866],
+            [0.007],
+            [0.026],
+            [0.171],
+            [0.889],
+            [0.243],
+            [0.028],
+        ]
+    )
+    Y = np.array(
+        [
+            [1.57],
+            [3.48],
+            [3.12],
+            [3.91],
+            [3.07],
+            [1.35],
+            [3.80],
+            [3.82],
+            [3.49],
+            [1.30],
+            [4.00],
+            [3.82],
+        ]
+    )
+
+    inducing_points = np.array([[0.125], [0.375], [0.625], [0.875]])
+    kernel1 = gpflow.kernels.SquaredExponential()
+    kernel2 = gpflow.kernels.SquaredExponential()
+
+    model = gpflow.models.SGPR(
+        (X, Y),
+        kernel=gpflow.kernels.ChangePoints(
+            kernels=[
+                kernel1,
+                kernel2,
+            ],
+            locations=[0.5],
+            steepness=0.1,
+        ),
+        inducing_variable=inducing_points,
+    )
+
+    opt = gpflow.optimizers.Scipy()
+    opt.minimize(model.training_loss, model.trainable_variables)
