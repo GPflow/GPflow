@@ -14,6 +14,7 @@
 
 from typing import Any, Callable, Optional, Type
 
+import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 from check_shapes import check_shapes, inherit_check_shapes
@@ -131,3 +132,86 @@ class HeteroskedasticTFPConditional(MultiLatentTFPConditional):
             conditional_distribution=conditional_distribution,
             **kwargs,
         )
+
+
+class HeteroskedasticGaussian(QuadratureLikelihood):
+    """
+    Analytical mplementation of the Heteroskedastic Gaussian Likelihood
+    with exponential function as the scale transform function.
+    The variational_expectations and predict_mean_and_var methods have analytical
+    expressions do not use quadrature.
+    The predict_log_density method is implemented with an analytical marginalization
+    of the location-modeling GP and uses a one-dimensional quadrature to marginalize 
+    the scale-modeling GP.
+    """
+
+    def __init__(self, quadrature=None):
+        # TODO: This should be tested whenever the quadrature attirbute is set.
+        # Maybe this should be done in the base class instead?
+        if quadrature and quadrature.dim != self._quadrature_dim:
+            raise Exception("If passing quadrature, quadrature.dim must be 1")
+
+        super().__init__(observation_dim=1, latent_dim=2, quadrature=quadrature)
+        self.scale_transform = tfp.bijectors.Exp()
+
+    @property
+    def _quadrature_dim(self) -> int:
+        """
+        By default, this returns self.latent_dim. However, in this class, the 
+        location-modeling GP's is marginalized analytically. Hence, this is overriden
+        to 1 as the quadrature only works with the scale-modeling GP.        
+        """
+        return 1
+
+    def _loc(self, F):
+        f = F[..., 0, None]
+        loc = f
+        return loc
+
+    def _scale(self, F):
+        g = F[..., 1, None]
+        scale = tf.exp(g)
+        return scale
+
+    def _split_mean_and_var(self, Fmu, Fvar):
+        m_f = Fmu[..., 0, None]
+        m_g = Fmu[..., 1, None]
+
+        k_f = Fvar[..., 0, None]
+        k_g = Fvar[..., 1, None]
+
+        return m_f, k_f, m_g, k_g
+
+    def _conditional_mean(self, F):
+        return self._loc(F)
+
+    def _conditional_variance(self, F):
+        return self._scale(F) ** 2
+
+    def _log_prob(self, F, Y):
+        y_given_fg = tfp.distributions.Normal(loc=self._loc(F), scale=self._scale(F))
+        return y_given_fg.log_prob(Y)
+
+    def _predict_mean_and_var(self, Fmu, Fvar):
+        m_f, k_f, m_g, k_g = self._split_mean_and_var(Fmu, Fvar)
+        Ymean = m_f
+        Yvar = k_f + tf.exp(2 * m_g + 2 * k_g)
+        return Ymean, Yvar
+
+    def _predict_log_density(self, Fmu, Fvar, Y):
+        m_f, k_f, m_g, k_g = self._split_mean_and_var(Fmu, Fvar)
+
+        def log_prob(g):
+            y_given_g = tfp.distributions.Normal(loc=m_f, scale=tf.sqrt(k_f + tf.exp(2 * g)))
+            return y_given_g.log_prob(Y)
+
+        result = self.quadrature(log_prob, m_g, k_g)
+        return tf.squeeze(result, axis=-1)
+
+    def _variational_expectations(self, Fmu, Fvar, Y):
+        m_f, k_f, m_g, k_g = self._split_mean_and_var(Fmu, Fvar)
+
+        result = -0.5 * (
+            np.log(2 * np.pi) + 2 * m_g + ((Y - m_f) ** 2 + k_f) * tf.exp(2 * k_g - 2 * m_g)
+        )
+        return tf.squeeze(result, axis=-1)
