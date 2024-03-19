@@ -177,7 +177,7 @@ def loss() -> tf.Tensor:
 
 
 # %% [markdown]
-# Be aware that GPflow models come with a loss-function built in &mdash; use `model.training_loss`.
+# Be aware that GPflow's own models all come with a loss-function predefined &mdash; use `model.training_loss`.
 
 # %% [markdown]
 # Now we can plug this into the default GPflow optimiser:
