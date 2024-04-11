@@ -87,6 +87,7 @@ _ = plt.ylabel("$y$")
 from typing import Callable, Optional, Tuple
 
 import tensorflow as tf
+import tf_keras
 
 from gpflow.base import Parameter
 from gpflow.models import BayesianModel, ExternalDataTrainingLossMixin
@@ -105,7 +106,7 @@ class MDN(BayesianModel, ExternalDataTrainingLossMixin):
         inner_dims: Optional[list] = [10, 10],
         activation: Optional[
             Callable[[tf.Tensor], tf.Tensor]
-        ] = tf.keras.activations.relu,
+        ] = tf_keras.activations.relu,
     ):
         super().__init__()
 

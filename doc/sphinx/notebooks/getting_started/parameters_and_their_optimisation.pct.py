@@ -41,6 +41,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 import tensorflow_probability as tfp
+import tf_keras
 from check_shapes import check_shapes
 from matplotlib.axes import Axes
 
@@ -498,7 +499,7 @@ model = gpflow.models.GPR(
     + gpflow.kernels.Periodic(gpflow.kernels.SquaredExponential(), period=1.0),
 )
 
-opt = tf.keras.optimizers.Adam()
+opt = tf_keras.optimizers.Adam()
 
 
 @tf.function

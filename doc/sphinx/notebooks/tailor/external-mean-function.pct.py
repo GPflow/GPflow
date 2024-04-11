@@ -26,6 +26,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
+import tf_keras
 
 import gpflow
 from gpflow.ci_utils import reduce_in_tests
@@ -142,14 +143,14 @@ from gpflow.config import default_float
 
 
 def build_mean_function():
-    tf.keras.backend.set_floatx("float64")
+    tf_keras.backend.set_floatx("float64")
     assert default_float() == np.float64
 
-    inputs = tf.keras.layers.Input(shape=(1,))
-    x = tf.keras.layers.Dense(64, activation="relu")(inputs)
-    x = tf.keras.layers.Dense(64, activation="relu")(x)
-    outputs = tf.keras.layers.Dense(1)(x)
-    return tf.keras.Model(inputs=inputs, outputs=outputs)
+    inputs = tf_keras.layers.Input(shape=(1,))
+    x = tf_keras.layers.Dense(64, activation="relu")(inputs)
+    x = tf_keras.layers.Dense(64, activation="relu")(x)
+    outputs = tf_keras.layers.Dense(1)(x)
+    return tf_keras.Model(inputs=inputs, outputs=outputs)
 
 
 # %% [markdown]

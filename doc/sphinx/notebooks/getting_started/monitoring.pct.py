@@ -37,6 +37,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
+import tf_keras
 
 import gpflow
 
@@ -251,7 +252,7 @@ _ = opt.minimize(
 # `gpflow.optimizers.Scipy.minimize()` runs an optimizer until convergence.
 # Other optimizers, like `tensorflow.keras.optimizers.Adam()` need `.minimize()` to be called in a loop:
 
-opt = tf.keras.optimizers.Adam()
+opt = tf_keras.optimizers.Adam()
 
 
 @tf.function
