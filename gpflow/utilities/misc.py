@@ -19,10 +19,9 @@ import tensorflow_probability as tfp
 from check_shapes import check_shapes
 
 try:
-    # use legacy Adam optimizer to support old TF versions
-    from tensorflow.keras.optimizers.legacy import Adam
-except ImportError:
-    from tensorflow.keras.optimizers import Adam
+    import tf_keras
+except ModuleNotFoundError:
+    import tf.keras as tf_keras
 
 from ..base import TensorData
 from ..config import default_float, default_int
@@ -96,7 +95,7 @@ def training_loop(
     :return:
     """
 
-    safe_optimizer = Adam() if optimizer is None else optimizer
+    safe_optimizer = tf_keras.optimizers.Adam() if optimizer is None else optimizer
     safe_var_list = [] if var_list is None else var_list
 
     def optimization_step() -> None:

@@ -20,7 +20,7 @@ import tensorflow as tf
 
 try:
     import tf_keras
-except ImportError:
+except ModuleNotFoundError:
     import tf.keras as tf_keras
 from _pytest.fixtures import SubRequest
 from packaging.version import Version
