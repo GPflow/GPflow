@@ -1,8 +1,13 @@
 from typing import Any
 
 import numpy as np
-import tensorflow as tf
 from check_shapes import ShapeChecker
+
+try:
+    # use legacy Adam optimizer to support old TF versions
+    from tensorflow.keras.optimizers.legacy import Adam
+except ImportError:
+    from tensorflow.keras.optimizers import Adam
 
 import gpflow
 from gpflow.utilities import training_loop
@@ -42,12 +47,8 @@ def assert_models_close(
 def test_training_loop_compiles() -> None:
     m1 = create_model()
     m2 = create_model()
-    training_loop(
-        m1.training_loss, tf.optimizers.Adam(), m1.trainable_variables, maxiter=50, compile=True
-    )
-    training_loop(
-        m2.training_loss, tf.optimizers.Adam(), m2.trainable_variables, maxiter=50, compile=False
-    )
+    training_loop(m1.training_loss, Adam(), m1.trainable_variables, maxiter=50, compile=True)
+    training_loop(m2.training_loss, Adam(), m2.trainable_variables, maxiter=50, compile=False)
     assert_models_close(m1, m2)
 
 
@@ -57,7 +58,7 @@ def test_training_loop_converges() -> None:
     gpflow.optimizers.Scipy().minimize(mref.training_loss, mref.trainable_variables)
     training_loop(
         m.training_loss,
-        tf.optimizers.Adam(learning_rate=0.01),
+        Adam(learning_rate=0.01),
         m.trainable_variables,
         maxiter=5000,
         compile=True,

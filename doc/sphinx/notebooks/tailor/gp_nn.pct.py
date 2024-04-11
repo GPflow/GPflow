@@ -184,7 +184,7 @@ model = gpflow.models.SVGP(
 
 # %%
 data_iterator = iter(dataset)
-adam_opt = tf.optimizers.Adam(0.001)
+adam_opt = tf_keras.optimizers.Adam(0.001)
 
 training_loss = model.training_loss_closure(data_iterator)
 
