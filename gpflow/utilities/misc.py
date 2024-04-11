@@ -21,7 +21,7 @@ from check_shapes import check_shapes
 try:
     import tf_keras
 except ModuleNotFoundError:
-    import tf.keras as tf_keras
+    import tensorflow.keras as tf_keras
 
 from ..base import TensorData
 from ..config import default_float, default_int

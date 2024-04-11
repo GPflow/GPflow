@@ -5,7 +5,7 @@ import numpy as np
 try:
     import tf_keras
 except ModuleNotFoundError:
-    import tf.keras as tf_keras
+    import tensorflow.keras as tf_keras
 from check_shapes import ShapeChecker
 
 import gpflow
