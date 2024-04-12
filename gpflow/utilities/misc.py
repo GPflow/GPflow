@@ -78,7 +78,7 @@ def is_variable(t: TensorData) -> bool:
 
 def training_loop(
     closure: Callable[[], tf.Tensor],
-    optimizer: Optional[tf.optimizers.Optimizer] = None,
+    optimizer: Optional[tf_keras.optimizers.Optimizer] = None,
     var_list: Optional[List[tf.Variable]] = None,
     maxiter: int = 1_000,
     compile: bool = False,
