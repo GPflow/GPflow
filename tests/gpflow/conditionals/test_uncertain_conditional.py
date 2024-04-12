@@ -20,6 +20,11 @@ import tensorflow as tf
 from check_shapes import ShapeChecker, check_shapes
 from numpy.testing import assert_allclose
 
+try:
+    import tf_keras
+except ModuleNotFoundError:
+    import tensorflow.keras as tf_keras
+
 import gpflow
 from gpflow.base import AnyNDArray, MeanAndVariance
 from gpflow.conditionals import conditional, uncertain_conditional
@@ -193,7 +198,7 @@ def test_no_uncertainty(white: bool, mean: Optional[str]) -> None:
 
     training_loop(
         model.training_loss_closure(Data.data),
-        optimizer=tf.optimizers.Adam(),
+        optimizer=tf_keras.optimizers.Adam(),
         var_list=model.trainable_variables,
         maxiter=100,
         compile=True,
@@ -226,7 +231,7 @@ def test_monte_carlo_1_din(white: bool, mean: Optional[str]) -> None:
 
     training_loop(
         model.training_loss_closure(DataMC1.data),
-        optimizer=tf.optimizers.Adam(),
+        optimizer=tf_keras.optimizers.Adam(),
         var_list=model.trainable_variables,
         maxiter=200,
         compile=True,
@@ -261,7 +266,7 @@ def test_monte_carlo_2_din(white: bool, mean: Optional[str]) -> None:
 
     training_loop(
         model.training_loss_closure(DataMC2.data),
-        optimizer=tf.optimizers.Adam(),
+        optimizer=tf_keras.optimizers.Adam(),
         var_list=model.trainable_variables,
         maxiter=100,
         compile=True,

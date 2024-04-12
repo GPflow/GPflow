@@ -196,7 +196,7 @@ def run_adam(model, iterations):
     """
     # Create an Adam Optimizer action
     logf = []
-    adam = tf.optimizers.Adam()
+    adam = tf_keras.optimizers.Adam()
     optimization_step = create_optimization_step(adam, model)
     for step in range(iterations):
         loss = optimization_step()

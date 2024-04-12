@@ -10,6 +10,11 @@ from check_shapes import check_shapes
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
+try:
+    import tf_keras
+except ModuleNotFoundError:
+    import tensorflow.keras as tf_keras
+
 import gpflow
 from gpflow.base import AnyNDArray
 from gpflow.models import GPR, GPModel
@@ -304,7 +309,7 @@ def test_logdir_created(monitor: Monitor, model: GPModel, tmp_path: Path) -> Non
     size_before = _get_size_directory(tmp_path)
     assert size_before > 0
 
-    opt = tf.optimizers.Adam()
+    opt = tf_keras.optimizers.Adam()
     for step in range(Data.num_steps):
         opt.minimize(model.training_loss, model.trainable_variables)
         monitor(step)
@@ -314,7 +319,7 @@ def test_logdir_created(monitor: Monitor, model: GPModel, tmp_path: Path) -> Non
 
 
 def test_compile_monitor(monitor: Monitor, model: GPModel) -> None:
-    opt = tf.optimizers.Adam()
+    opt = tf_keras.optimizers.Adam()
 
     @tf.function
     def tf_func(step: tf.Tensor) -> None:

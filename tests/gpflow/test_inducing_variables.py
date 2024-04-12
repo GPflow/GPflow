@@ -21,6 +21,11 @@ import tensorflow as tf
 from check_shapes import get_shape
 from check_shapes.error_contexts import ErrorContext, MessageBuilder
 
+try:
+    import tf_keras
+except ModuleNotFoundError:
+    import tensorflow.keras as tf_keras
+
 import gpflow
 import gpflow.inducing_variables as giv
 
@@ -50,7 +55,7 @@ def test_inducing_points_with_variable_shape() -> None:
     m = gpflow.models.SGPR(data=(X, Y), kernel=gpflow.kernels.Matern32(), inducing_variable=iv)
 
     # Check 1: that we can still optimize with None shape
-    opt = tf.optimizers.Adam()
+    opt = tf_keras.optimizers.Adam()
 
     @tf.function
     def optimization_step() -> None:
