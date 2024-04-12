@@ -41,9 +41,13 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 import tensorflow_probability as tfp
-import tf_keras
 from check_shapes import check_shapes
 from matplotlib.axes import Axes
+
+try:
+    import tf_keras
+except ModuleNotFoundError:
+    import tensorflow.keras as tf_keras
 
 import gpflow
 

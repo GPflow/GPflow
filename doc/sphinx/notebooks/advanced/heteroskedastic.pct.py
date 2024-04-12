@@ -39,7 +39,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
-import tf_keras
+
+try:
+    import tf_keras
+except ModuleNotFoundError:
+    import tensorflow.keras as tf_keras
 
 import gpflow as gpf
 

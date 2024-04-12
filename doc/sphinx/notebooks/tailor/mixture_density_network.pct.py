@@ -87,7 +87,11 @@ _ = plt.ylabel("$y$")
 from typing import Callable, Optional, Tuple
 
 import tensorflow as tf
-import tf_keras
+
+try:
+    import tf_keras
+except ModuleNotFoundError:
+    import tensorflow.keras as tf_keras
 
 from gpflow.base import Parameter
 from gpflow.models import BayesianModel, ExternalDataTrainingLossMixin
