@@ -23,15 +23,13 @@ import numpy as np
 import tensorflow as tf
 
 try:
-    import tf_keras
-except ModuleNotFoundError:
-    import tensorflow.keras as tf_keras
-
-try:
     # use legacy Adam optimizer to support old TF versions
     from tf_keras.optimizers.legacy import Adam
-except ImportError:
-    from tf_keras.optimizers import Adam
+except ModuleNotFoundError:
+    try:
+        from tensorflow.keras.optimizers.legacy import Adam
+    except ImportError:
+        from tensorflow.keras.optimizers import Adam
 
 import gpflow
 from gpflow import set_trainable
