@@ -22,21 +22,19 @@
 import numpy as np
 import tensorflow as tf
 
-try:
-    # use legacy Adam optimizer to support old TF versions
-    from tf_keras.optimizers.legacy import Adam
-except ModuleNotFoundError:
-    try:
-        from tensorflow.keras.optimizers.legacy import Adam
-    except ImportError:
-        from tensorflow.keras.optimizers import Adam
-
 import gpflow
 from gpflow import set_trainable
 from gpflow.ci_utils import reduce_in_tests
+from gpflow.keras import tf_keras
 from gpflow.models import GPR, SGPR, SVGP, VGP
 from gpflow.optimizers import NaturalGradient
 from gpflow.optimizers.natgrad import XiSqrtMeanVar
+
+try:
+    # use legacy Adam optimizer to support old TF versions
+    Adam = tf_keras.optimizers.legacy.Adam
+except AttributeError:
+    Adam = tf_keras.keras.optimizers.Adam
 
 # %matplotlib inline
 # %precision 4

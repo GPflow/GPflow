@@ -29,6 +29,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+from gpflow.keras import tf_keras
+
 # %matplotlib inline
 
 np.random.seed(1)  # for reproducibility of this notebook
@@ -87,11 +89,6 @@ _ = plt.ylabel("$y$")
 from typing import Callable, Optional, Tuple
 
 import tensorflow as tf
-
-try:
-    import tf_keras
-except ModuleNotFoundError:
-    import tensorflow.keras as tf_keras
 
 from gpflow.base import Parameter
 from gpflow.models import BayesianModel, ExternalDataTrainingLossMixin

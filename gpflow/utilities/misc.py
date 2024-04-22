@@ -18,11 +18,6 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 from check_shapes import check_shapes
 
-try:
-    import tf_keras
-except ModuleNotFoundError:
-    import tensorflow.keras as tf_keras
-
 from ..base import TensorData
 from ..config import default_float, default_int
 
@@ -33,6 +28,8 @@ __all__ = [
     "to_default_int",
     "training_loop",
 ]
+
+from ..keras import tf_keras
 
 
 @check_shapes(

@@ -21,13 +21,9 @@ import tensorflow as tf
 from check_shapes import get_shape
 from check_shapes.error_contexts import ErrorContext, MessageBuilder
 
-try:
-    import tf_keras
-except ModuleNotFoundError:
-    import tensorflow.keras as tf_keras
-
 import gpflow
 import gpflow.inducing_variables as giv
+from gpflow.keras import tf_keras
 
 
 @dataclass(frozen=True)

@@ -10,13 +10,9 @@ from check_shapes import check_shapes
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
-try:
-    import tf_keras
-except ModuleNotFoundError:
-    import tensorflow.keras as tf_keras
-
 import gpflow
 from gpflow.base import AnyNDArray
+from gpflow.keras import tf_keras
 from gpflow.models import GPR, GPModel
 from gpflow.monitor import (
     ExecuteCallback,

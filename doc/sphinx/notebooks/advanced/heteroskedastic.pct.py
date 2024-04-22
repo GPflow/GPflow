@@ -40,12 +40,8 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-try:
-    import tf_keras
-except ModuleNotFoundError:
-    import tensorflow.keras as tf_keras
-
 import gpflow as gpf
+from gpflow.keras import tf_keras
 
 # %% [markdown]
 # ## Data Generation

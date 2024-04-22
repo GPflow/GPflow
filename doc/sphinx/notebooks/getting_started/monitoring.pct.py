@@ -29,6 +29,8 @@
 import os
 import warnings
 
+from gpflow.keras import tf_keras
+
 warnings.simplefilter("ignore")
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 # hide: end
@@ -37,11 +39,6 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
-
-try:
-    import tf_keras
-except ModuleNotFoundError:
-    import tensorflow.keras as tf_keras
 
 import gpflow
 
@@ -260,7 +257,7 @@ opt = tf_keras.optimizers.Adam()
 
 
 @tf.function
-def optimization_step():
+def optimization_step() -> None:
     opt.minimize(model.training_loss, model.trainable_variables)
 
 

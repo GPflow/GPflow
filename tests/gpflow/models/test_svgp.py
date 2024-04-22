@@ -18,14 +18,10 @@ import pytest
 import tensorflow as tf
 from numpy.testing import assert_allclose
 
-try:
-    import tf_keras
-except ModuleNotFoundError:
-    import tensorflow.keras as tf_keras
-
 import gpflow
 from gpflow import set_trainable
 from gpflow.base import AnyNDArray
+from gpflow.keras import tf_keras
 from gpflow.models import SVGP
 
 

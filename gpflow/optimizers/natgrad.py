@@ -19,12 +19,8 @@ from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Union
 import tensorflow as tf
 from check_shapes import check_shapes
 
-try:
-    import tf_keras
-except ModuleNotFoundError:
-    import tensorflow.keras as tf_keras
-
 from ..base import AnyNDArray, Parameter, _to_constrained
+from ..keras import tf_keras
 
 Scalar = Union[float, tf.Tensor, AnyNDArray]
 LossClosure = Callable[[], tf.Tensor]

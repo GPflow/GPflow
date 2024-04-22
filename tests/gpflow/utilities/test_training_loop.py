@@ -1,14 +1,10 @@
 from typing import Any
 
 import numpy as np
-
-try:
-    import tf_keras
-except ModuleNotFoundError:
-    import tensorflow.keras as tf_keras
 from check_shapes import ShapeChecker
 
 import gpflow
+from gpflow.keras import tf_keras
 from gpflow.utilities import training_loop
 
 

@@ -27,13 +27,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 
-try:
-    import tf_keras
-except ModuleNotFoundError:
-    import tensorflow.keras as tf_keras
-
 import gpflow
 from gpflow.ci_utils import reduce_in_tests
+from gpflow.keras import tf_keras
 from gpflow.kernels import RBF
 from gpflow.models import GPR
 

@@ -26,13 +26,9 @@ import tensorflow as tf
 import tensorflow_datasets as tfds
 from scipy.cluster.vq import kmeans2
 
-try:
-    import tf_keras
-except ModuleNotFoundError:
-    import tensorflow.keras as tf_keras
-
 import gpflow
 from gpflow.ci_utils import reduce_in_tests
+from gpflow.keras import tf_keras
 from gpflow.utilities import to_default_float
 
 iterations = reduce_in_tests(100)

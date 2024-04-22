@@ -17,17 +17,13 @@ from typing import Any, Callable, Mapping, Optional, Type
 import numpy as np
 import pytest
 import tensorflow as tf
-
-try:
-    import tf_keras
-except ModuleNotFoundError:
-    import tensorflow.keras as tf_keras
 from _pytest.fixtures import SubRequest
 from packaging.version import Version
 
 import gpflow
 from gpflow.base import AnyNDArray
 from gpflow.config import Config, as_context
+from gpflow.keras import tf_keras
 from gpflow.utilities import set_trainable
 from gpflow.utilities.traversal import (
     _merge_leaf_components,
