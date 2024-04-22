@@ -34,7 +34,7 @@ try:
     # use legacy Adam optimizer to support old TF versions
     Adam = tf_keras.optimizers.legacy.Adam
 except AttributeError:
-    Adam = tf_keras.keras.optimizers.Adam
+    Adam = tf_keras.optimizers.Adam
 
 # %matplotlib inline
 # %precision 4
