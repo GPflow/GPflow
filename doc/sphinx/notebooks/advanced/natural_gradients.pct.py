@@ -31,7 +31,7 @@ from gpflow.optimizers import NaturalGradient
 from gpflow.optimizers.natgrad import XiSqrtMeanVar
 
 try:
-    # use legacy Adam optimizer to support old TF versions
+    # use the legacy Adam optimizer to support old TF versions
     Adam = tf_keras.optimizers.legacy.Adam
 except AttributeError:
     Adam = tf_keras.optimizers.Adam
