@@ -23,6 +23,7 @@ from packaging.version import Version
 import gpflow
 from gpflow.base import AnyNDArray
 from gpflow.config import Config, as_context
+from gpflow.keras import tf_keras
 from gpflow.utilities import set_trainable
 from gpflow.utilities.traversal import (
     _merge_leaf_components,
@@ -65,12 +66,12 @@ class B(tf.Module):
         self.var_fixed = tf.Variable(tf.ones((2, 2, 1)), trainable=False)
 
 
-class C(tf.keras.Model):
+class C(tf_keras.Model):
     def __init__(self, name: Optional[str] = None) -> None:
         super().__init__(name)
         self.variable = tf.Variable(tf.zeros((2, 2, 1)), trainable=True)
         self.param = gpflow.Parameter(0.0)
-        self.dense = tf.keras.layers.Dense(5)
+        self.dense = tf_keras.layers.Dense(5)
 
 
 def create_kernel() -> gpflow.kernels.Kernel:
@@ -409,7 +410,7 @@ def test_print_summary_output_string_with_positive_minimum() -> None:
 
 
 def test_print_summary_for_keras_model() -> None:
-    # Note: best to use `grid` formatting for `tf.keras.Model` printing
+    # Note: best to use `grid` formatting for `tf_keras.Model` printing
     # because of the duplicates in the references to the variables.
     assert tabulate_module_summary(C(), tablefmt="grid") == example_tf_keras_model
 

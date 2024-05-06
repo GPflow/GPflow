@@ -23,6 +23,7 @@ from check_shapes.error_contexts import ErrorContext, MessageBuilder
 
 import gpflow
 import gpflow.inducing_variables as giv
+from gpflow.keras import tf_keras
 
 
 @dataclass(frozen=True)
@@ -50,7 +51,7 @@ def test_inducing_points_with_variable_shape() -> None:
     m = gpflow.models.SGPR(data=(X, Y), kernel=gpflow.kernels.Matern32(), inducing_variable=iv)
 
     # Check 1: that we can still optimize with None shape
-    opt = tf.optimizers.Adam()
+    opt = tf_keras.optimizers.Adam()
 
     @tf.function
     def optimization_step() -> None:

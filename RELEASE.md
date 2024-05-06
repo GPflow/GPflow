@@ -39,31 +39,19 @@ This release contains contributions from:
 
 ## Breaking Changes
 
-* <DOCUMENT BREAKING CHANGES HERE>
-* <THIS SECTION SHOULD CONTAIN API AND BEHAVIORAL BREAKING CHANGES>
-
 ## Known Caveats
-
-* <CAVEATS REGARDING THE RELEASE (BUT NOT BREAKING CHANGES).>
-* <ADDING/BUMPING DEPENDENCIES SHOULD GO HERE>
-* <KNOWN LACK OF SUPPORT ON SOME PLATFORM SHOULD GO HERE>
 
 ## Major Features and Improvements
 
-* <INSERT MAJOR FEATURE HERE, USING MARKDOWN SYNTAX>
-* <IF RELEASE CONTAINS MULTIPLE FEATURES FROM SAME AREA, GROUP THEM TOGETHER>
-
 ## Bug Fixes and Other Changes
 
-* <SIMILAR TO ABOVE SECTION, BUT FOR OTHER IMPORTANT CHANGES / BUG FIXES>
-* <IF A CHANGE CLOSES A GITHUB ISSUE, IT SHOULD BE DOCUMENTED HERE>
-* <NOTES SHOULD BE GROUPED PER AREA>
+* Support and test against Tensorflow 2.16. **Note that (like tensorflow-probability) GPflow uses Keras 2. Since TF 2.16 defaults to Keras 3, `tf.keras` must now be imported from the `tf_keras` package. Alternatively, you can import `tf_keras` from the `gpflow.keras` module, which will automatically select the right source depending on which version of TF is installed.**
 
 ## Thanks to our Contributors
 
 This release contains contributions from:
 
-<INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
+uri-granta
 
 
 # Release 2.9.1

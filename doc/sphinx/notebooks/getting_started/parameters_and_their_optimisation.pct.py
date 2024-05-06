@@ -30,6 +30,8 @@
 import os
 import warnings
 
+from gpflow.keras import tf_keras
+
 warnings.simplefilter("ignore")
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 # hide: end
@@ -498,7 +500,7 @@ model = gpflow.models.GPR(
     + gpflow.kernels.Periodic(gpflow.kernels.SquaredExponential(), period=1.0),
 )
 
-opt = tf.keras.optimizers.Adam()
+opt = tf_keras.optimizers.Adam()
 
 
 @tf.function

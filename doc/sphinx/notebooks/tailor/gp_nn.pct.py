@@ -28,6 +28,7 @@ from scipy.cluster.vq import kmeans2
 
 import gpflow
 from gpflow.ci_utils import reduce_in_tests
+from gpflow.keras import tf_keras
 from gpflow.utilities import to_default_float
 
 iterations = reduce_in_tests(100)
@@ -81,29 +82,29 @@ class KernelWithConvNN(gpflow.kernels.Kernel):
             input_size = int(tf.reduce_prod(image_shape))
             input_shape = (input_size,)
 
-            self.cnn = tf.keras.Sequential(
+            self.cnn = tf_keras.Sequential(
                 [
-                    tf.keras.layers.InputLayer(
+                    tf_keras.layers.InputLayer(
                         input_shape=input_shape, batch_size=batch_size
                     ),
-                    tf.keras.layers.Reshape(image_shape),
-                    tf.keras.layers.Conv2D(
+                    tf_keras.layers.Reshape(image_shape),
+                    tf_keras.layers.Conv2D(
                         filters=32,
                         kernel_size=image_shape[:-1],
                         padding="same",
                         activation="relu",
                     ),
-                    tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=2),
-                    tf.keras.layers.Conv2D(
+                    tf_keras.layers.MaxPool2D(pool_size=(2, 2), strides=2),
+                    tf_keras.layers.Conv2D(
                         filters=64,
                         kernel_size=(5, 5),
                         padding="same",
                         activation="relu",
                     ),
-                    tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=2),
-                    tf.keras.layers.Flatten(),
-                    tf.keras.layers.Dense(output_dim, activation="relu"),
-                    tf.keras.layers.Lambda(to_default_float),
+                    tf_keras.layers.MaxPool2D(pool_size=(2, 2), strides=2),
+                    tf_keras.layers.Flatten(),
+                    tf_keras.layers.Dense(output_dim, activation="relu"),
+                    tf_keras.layers.Lambda(to_default_float),
                 ]
             )
 
@@ -183,7 +184,7 @@ model = gpflow.models.SVGP(
 
 # %%
 data_iterator = iter(dataset)
-adam_opt = tf.optimizers.Adam(0.001)
+adam_opt = tf_keras.optimizers.Adam(0.001)
 
 training_loss = model.training_loss_closure(data_iterator)
 

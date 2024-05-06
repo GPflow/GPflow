@@ -29,6 +29,8 @@
 import os
 import warnings
 
+from gpflow.keras import tf_keras
+
 warnings.simplefilter("ignore")
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 # hide: end
@@ -251,11 +253,11 @@ _ = opt.minimize(
 # `gpflow.optimizers.Scipy.minimize()` runs an optimizer until convergence.
 # Other optimizers, like `tensorflow.keras.optimizers.Adam()` need `.minimize()` to be called in a loop:
 
-opt = tf.keras.optimizers.Adam()
+opt = tf_keras.optimizers.Adam()
 
 
 @tf.function
-def optimization_step():
+def optimization_step() -> None:
     opt.minimize(model.training_loss, model.trainable_variables)
 
 

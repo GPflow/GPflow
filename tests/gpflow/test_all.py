@@ -58,14 +58,11 @@ _MODULES_WITH_ALL = [m for m in _MODULES if hasattr(m, "__all__")]
 
 @pytest.mark.parametrize("package", _PACKAGES)
 def test_all_present_and_up_to_date(package: ModuleType) -> None:
-    imported_sorted = sorted(attr for attr in dir(package) if not is_dunder(attr))
+    imported_set = set(attr for attr in dir(package) if not is_dunder(attr))
     all_list = getattr(package, "__all__", None)
     assert all_list is not None, f"Package {package} is missing an explicit __all__."
-    all_sorted = sorted(attr for attr in all_list if not is_dunder(attr))
-    assert imported_sorted == all_sorted, (
-        f"{package}.__all__ is outdated."
-        f" Imported values are {imported_sorted}, but exported values are {all_list}."
-    )
+    all_set = set(attr for attr in all_list if not is_dunder(attr))
+    assert imported_set == all_set, f"{package}.__all__ is outdated."
 
 
 @pytest.mark.parametrize("module", _MODULES_WITH_ALL)

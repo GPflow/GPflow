@@ -29,6 +29,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+from gpflow.keras import tf_keras
+
 # %matplotlib inline
 
 np.random.seed(1)  # for reproducibility of this notebook
@@ -105,7 +107,7 @@ class MDN(BayesianModel, ExternalDataTrainingLossMixin):
         inner_dims: Optional[list] = [10, 10],
         activation: Optional[
             Callable[[tf.Tensor], tf.Tensor]
-        ] = tf.keras.activations.relu,
+        ] = tf_keras.activations.relu,
     ):
         super().__init__()
 
