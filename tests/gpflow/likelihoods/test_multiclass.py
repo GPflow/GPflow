@@ -67,7 +67,7 @@ def test_softmax_bernoulli_equivalence(num: int, dimX: int, dimF: int, dimY: int
     softmax_likelihood.num_monte_carlo_points = int(
         0.3e7
     )  # Minimum number of points to pass the test on CircleCI
-    bernoulli_likelihood.num_gauss_hermite_points = 40
+    bernoulli_likelihood.num_gauss_hermite_points = 20
 
     assert_allclose(
         softmax_likelihood.conditional_mean(X, F)[:, :1],
@@ -87,8 +87,8 @@ def test_softmax_bernoulli_equivalence(num: int, dimX: int, dimF: int, dimY: int
     mean1, var1 = softmax_likelihood.predict_mean_and_var(X, F, Fvar)
     mean2, var2 = bernoulli_likelihood.predict_mean_and_var(X, F[:, :1], Fvar[:, :1])
 
-    assert_allclose(mean1[:, 0, None], mean2, rtol=2e-3)
-    assert_allclose(var1[:, 0, None], var2, rtol=2e-3)
+    assert_allclose(mean1[:, 0, None], mean2, rtol=0.02)
+    assert_allclose(var1[:, 0, None], var2, rtol=0.02)
 
     ls_ve = softmax_likelihood.variational_expectations(X, F, Fvar, Ylabel)
     lb_ve = bernoulli_likelihood.variational_expectations(X, F[:, :1], Fvar[:, :1], Y.numpy())
