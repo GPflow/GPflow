@@ -89,8 +89,7 @@ def metrics_box_plot(
         values.append(df.value)
     # cf https://github.com/matplotlib/matplotlib/pull/27901
     label_id = "tick_labels" if Version(matplotlib.__version__) >= Version("3.9.0") else "labels"
-    label_arg = {label_id: labels}
-    ax.boxplot(values, **label_arg)
+    ax.boxplot(values, **{label_id: labels})  # type: ignore[arg-type]
     _shared_ax_config(ax, file_key, column_key, row_key, metric)
 
 
