@@ -47,7 +47,7 @@ class InternalDataTrainingLossMixin:
       - a uniform API for the training loss :meth:`training_loss`
       - a convenience method :meth:`training_loss_closure` for constructing the closure expected by
         various optimizers, namely :class:`gpflow.optimizers.Scipy` and subclasses of
-        `tf.optimizers.Optimizer`.
+        `tf_keras.optimizers.Optimizer`.
 
     See :class:`ExternalDataTrainingLossMixin` for an equivalent mixin for models that do **not**
     own their own data.
@@ -67,7 +67,7 @@ class InternalDataTrainingLossMixin:
         """
         Convenience method. Returns a closure which itself returns the training loss. This closure
         can be passed to the minimize methods on :class:`gpflow.optimizers.Scipy` and subclasses of
-        `tf.optimizers.Optimizer`.
+        `tf_keras.optimizers.Optimizer`.
 
         :param compile: If `True` (default), compile the training loss function in a TensorFlow
             graph by wrapping it in tf.function()
@@ -86,7 +86,7 @@ class ExternalDataTrainingLossMixin:
       - a uniform API for the training loss :meth:`training_loss`
       - a convenience method :meth:`training_loss_closure` for constructing the closure expected by
         various optimizers, namely :class:`gpflow.optimizers.Scipy` and subclasses of
-        `tf.optimizers.Optimizer`.
+        `tf_keras.optimizers.Optimizer`.
 
     See :class:`InternalDataTrainingLossMixin` for an equivalent mixin for models that **do** own
     their own data.

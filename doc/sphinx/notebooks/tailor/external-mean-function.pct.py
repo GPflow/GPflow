@@ -29,6 +29,7 @@ import tensorflow as tf
 
 import gpflow
 from gpflow.ci_utils import reduce_in_tests
+from gpflow.keras import tf_keras
 from gpflow.kernels import RBF
 from gpflow.models import GPR
 
@@ -142,14 +143,14 @@ from gpflow.config import default_float
 
 
 def build_mean_function():
-    tf.keras.backend.set_floatx("float64")
+    tf_keras.backend.set_floatx("float64")
     assert default_float() == np.float64
 
-    inputs = tf.keras.layers.Input(shape=(1,))
-    x = tf.keras.layers.Dense(64, activation="relu")(inputs)
-    x = tf.keras.layers.Dense(64, activation="relu")(x)
-    outputs = tf.keras.layers.Dense(1)(x)
-    return tf.keras.Model(inputs=inputs, outputs=outputs)
+    inputs = tf_keras.layers.Input(shape=(1,))
+    x = tf_keras.layers.Dense(64, activation="relu")(inputs)
+    x = tf_keras.layers.Dense(64, activation="relu")(x)
+    outputs = tf_keras.layers.Dense(1)(x)
+    return tf_keras.Model(inputs=inputs, outputs=outputs)
 
 
 # %% [markdown]
@@ -195,7 +196,7 @@ def run_adam(model, iterations):
     """
     # Create an Adam Optimizer action
     logf = []
-    adam = tf.optimizers.Adam()
+    adam = tf_keras.optimizers.Adam()
     optimization_step = create_optimization_step(adam, model)
     for step in range(iterations):
         loss = optimization_step()

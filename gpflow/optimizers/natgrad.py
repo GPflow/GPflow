@@ -20,6 +20,7 @@ import tensorflow as tf
 from check_shapes import check_shapes
 
 from ..base import AnyNDArray, Parameter, _to_constrained
+from ..keras import tf_keras
 
 Scalar = Union[float, tf.Tensor, AnyNDArray]
 LossClosure = Callable[[], tf.Tensor]
@@ -172,7 +173,7 @@ class XiSqrtMeanVar(XiTransform):
         return natural_to_meanvarsqrt(nat1, nat2)
 
 
-class NaturalGradient(tf.optimizers.Optimizer):
+class NaturalGradient(tf_keras.optimizers.Optimizer):
     """
     Implements a natural gradient descent optimizer for variational models
     that are based on a distribution q(u) = N(q_mu, q_sqrt q_sqrtᵀ) that is
@@ -180,7 +181,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
     of the covariance.
 
     Note that this optimizer does not implement the standard API of
-    tf.optimizers.Optimizer. Its only public method is minimize(), which has
+    tf_keras.optimizers.Optimizer. Its only public method is minimize(), which has
     a custom signature (var_list needs to be a list of (q_mu, q_sqrt) tuples,
     where q_mu and q_sqrt are gpflow.Parameter instances, not tf.Variable).
 

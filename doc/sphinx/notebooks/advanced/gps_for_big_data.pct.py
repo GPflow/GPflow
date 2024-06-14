@@ -30,6 +30,7 @@ import tensorflow as tf
 
 import gpflow
 from gpflow.ci_utils import reduce_in_tests
+from gpflow.keras import tf_keras
 
 plt.style.use("ggplot")
 
@@ -214,7 +215,7 @@ def run_adam(model, iterations):
     logf = []
     train_iter = iter(train_dataset.batch(minibatch_size))
     training_loss = model.training_loss_closure(train_iter, compile=True)
-    optimizer = tf.optimizers.Adam()
+    optimizer = tf_keras.optimizers.Adam()
 
     @tf.function
     def optimization_step():

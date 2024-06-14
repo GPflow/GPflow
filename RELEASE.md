@@ -66,6 +66,21 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
+# Release 2.9.2
+
+This patch release adds support for Tensorflow 2.16.
+
+## Bug Fixes and Other Changes
+
+* Support and test against Tensorflow 2.16. **Note that (like tensorflow-probability) GPflow uses Keras 2. Since TF 2.16 defaults to Keras 3, `tf.keras` must now be imported from the `tf_keras` package. Alternatively, you can import `tf_keras` from the `gpflow.keras` module, which will automatically select the right source depending on which version of TF is installed.**
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+uri-granta
+
+
 # Release 2.9.1
 
 This patch release fixes a number of identified issues.

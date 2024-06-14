@@ -56,6 +56,7 @@ __all__ = [
     "experimental",
     "functions",
     "inducing_variables",
+    "keras",
     "kernels",
     "kullback_leiblers",
     "likelihoods",

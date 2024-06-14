@@ -41,6 +41,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 import gpflow as gpf
+from gpflow.keras import tf_keras
 
 # %% [markdown]
 # ## Data Generation
@@ -186,7 +187,7 @@ variational_vars = [(model.q_mu, model.q_sqrt)]
 natgrad_opt = gpf.optimizers.NaturalGradient(gamma=0.1)
 
 adam_vars = model.trainable_variables
-adam_opt = tf.optimizers.Adam(0.01)
+adam_opt = tf_keras.optimizers.Adam(0.01)
 
 
 @tf.function

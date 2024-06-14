@@ -1,10 +1,10 @@
 from typing import Any
 
 import numpy as np
-import tensorflow as tf
 from check_shapes import ShapeChecker
 
 import gpflow
+from gpflow.keras import tf_keras
 from gpflow.utilities import training_loop
 
 
@@ -43,10 +43,18 @@ def test_training_loop_compiles() -> None:
     m1 = create_model()
     m2 = create_model()
     training_loop(
-        m1.training_loss, tf.optimizers.Adam(), m1.trainable_variables, maxiter=50, compile=True
+        m1.training_loss,
+        tf_keras.optimizers.Adam(),
+        m1.trainable_variables,
+        maxiter=50,
+        compile=True,
     )
     training_loop(
-        m2.training_loss, tf.optimizers.Adam(), m2.trainable_variables, maxiter=50, compile=False
+        m2.training_loss,
+        tf_keras.optimizers.Adam(),
+        m2.trainable_variables,
+        maxiter=50,
+        compile=False,
     )
     assert_models_close(m1, m2)
 
@@ -57,7 +65,7 @@ def test_training_loop_converges() -> None:
     gpflow.optimizers.Scipy().minimize(mref.training_loss, mref.trainable_variables)
     training_loop(
         m.training_loss,
-        tf.optimizers.Adam(learning_rate=0.01),
+        tf_keras.optimizers.Adam(learning_rate=0.01),
         m.trainable_variables,
         maxiter=5000,
         compile=True,

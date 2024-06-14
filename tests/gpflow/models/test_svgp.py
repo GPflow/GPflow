@@ -21,6 +21,7 @@ from numpy.testing import assert_allclose
 import gpflow
 from gpflow import set_trainable
 from gpflow.base import AnyNDArray
+from gpflow.keras import tf_keras
 from gpflow.models import SVGP
 
 
@@ -184,7 +185,7 @@ def test_stochastic_gradients(
 
     def training_loop(indices: Sequence[int], num_data: int, max_iter: int) -> SVGP:
         model = get_model(num_data)
-        opt = tf.optimizers.SGD(learning_rate=0.001)
+        opt = tf_keras.optimizers.SGD(learning_rate=0.001)
         data = X[indices], Y[indices]
         for _ in range(max_iter):
             with tf.GradientTape() as tape:

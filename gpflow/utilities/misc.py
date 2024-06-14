@@ -29,6 +29,8 @@ __all__ = [
     "training_loop",
 ]
 
+from ..keras import tf_keras
+
 
 @check_shapes(
     "x: [any...]",
@@ -73,7 +75,7 @@ def is_variable(t: TensorData) -> bool:
 
 def training_loop(
     closure: Callable[[], tf.Tensor],
-    optimizer: Optional[tf.optimizers.Optimizer] = None,
+    optimizer: Optional[tf_keras.optimizers.Optimizer] = None,
     var_list: Optional[List[tf.Variable]] = None,
     maxiter: int = 1_000,
     compile: bool = False,
@@ -90,7 +92,7 @@ def training_loop(
     :return:
     """
 
-    safe_optimizer = tf.optimizers.Adam() if optimizer is None else optimizer
+    safe_optimizer = tf_keras.optimizers.Adam() if optimizer is None else optimizer
     safe_var_list = [] if var_list is None else var_list
 
     def optimization_step() -> None:

@@ -24,6 +24,7 @@ import gpflow
 from gpflow.base import AnyNDArray, MeanAndVariance
 from gpflow.conditionals import conditional, uncertain_conditional
 from gpflow.config import default_float
+from gpflow.keras import tf_keras
 from gpflow.mean_functions import Constant, Linear, MeanFunction, Zero
 from gpflow.quadrature import mvnquad
 from gpflow.utilities import training_loop
@@ -193,7 +194,7 @@ def test_no_uncertainty(white: bool, mean: Optional[str]) -> None:
 
     training_loop(
         model.training_loss_closure(Data.data),
-        optimizer=tf.optimizers.Adam(),
+        optimizer=tf_keras.optimizers.Adam(),
         var_list=model.trainable_variables,
         maxiter=100,
         compile=True,
@@ -226,7 +227,7 @@ def test_monte_carlo_1_din(white: bool, mean: Optional[str]) -> None:
 
     training_loop(
         model.training_loss_closure(DataMC1.data),
-        optimizer=tf.optimizers.Adam(),
+        optimizer=tf_keras.optimizers.Adam(),
         var_list=model.trainable_variables,
         maxiter=200,
         compile=True,
@@ -261,7 +262,7 @@ def test_monte_carlo_2_din(white: bool, mean: Optional[str]) -> None:
 
     training_loop(
         model.training_loss_closure(DataMC2.data),
-        optimizer=tf.optimizers.Adam(),
+        optimizer=tf_keras.optimizers.Adam(),
         var_list=model.trainable_variables,
         maxiter=100,
         compile=True,
