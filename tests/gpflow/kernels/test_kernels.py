@@ -597,11 +597,19 @@ def test_changepoints(
 @pytest.mark.parametrize(
     "active_dims_1, active_dims_2, is_separate",
     [
+        # Lists:
         [[1, 2, 3], None, False],
         [None, [1, 2, 3], False],
         [None, None, False],
         [[1, 2, 3], [3, 4, 5], False],
         [[1, 2, 3], [4, 5, 6], True],
+        # Slices:
+        [slice(0, 3), slice(3, 6), True],
+        [[0, 1, 2], slice(3, 6), True],
+        [slice(0, 3), slice(2, 6), False],
+        [[0, 1, 2], slice(2, 6), False],
+        [slice(0, 6, 2), slice(1, 6, 2), True],
+        [[0, 2, 4], slice(1, 6, 2), True],
     ],
 )
 def test_on_separate_dims(
