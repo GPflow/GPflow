@@ -11,7 +11,7 @@ requirements = [
     "check_shapes>=1.0.0",
     "deprecated",
     "multipledispatch>=0.6",
-    "numpy",
+    "numpy<2",
     "packaging",
     "scipy",
     "setuptools>=41.0.0",  # to satisfy dependency constraints
