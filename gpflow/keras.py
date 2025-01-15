@@ -25,6 +25,7 @@
 try:
     # check whether a (recent) tf_keras is present
     import tf_keras
+
     tf_keras.optimizers
 except (ModuleNotFoundError, AttributeError):
     import tensorflow.keras as tf_keras
