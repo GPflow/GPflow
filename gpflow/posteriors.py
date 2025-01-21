@@ -968,7 +968,7 @@ class FullyCorrelatedPosterior(BasePosterior):
 
         mean = tf.reshape(mean, (N, K))
         if full_cov == full_output_cov:
-            cov_shape = (N, K, N, K) if full_cov else (N, K)
+            cov_shape: Tuple[int, ...] = (N, K, N, K) if full_cov else (N, K)
         else:
             cov_shape = (K, N, N) if full_cov else (N, K, K)
         cov = tf.reshape(cov, cov_shape)
