@@ -24,6 +24,7 @@
 
 try:
     import tf_keras
+    tf_keras
 except ModuleNotFoundError:
     import tensorflow.keras as tf_keras
 
