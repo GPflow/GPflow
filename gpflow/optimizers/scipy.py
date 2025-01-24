@@ -214,7 +214,8 @@ class Scipy:
             if self.compile_cache_size > 0:
                 if key not in self.compile_cache:
                     if len(self.compile_cache) >= self.compile_cache_size:
-                        self.compile_cache.popitem(last=False)  # Remove the oldest entry.
+                        k, v = self.compile_cache.popitem(last=False)  # Remove the oldest entry.
+                        del k, v
                     self.compile_cache[key] = tf.function(_tf_eval, **tf_fun_args)
                 _tf_eval = self.compile_cache[key]
             else:
