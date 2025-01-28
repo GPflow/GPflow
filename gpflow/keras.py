@@ -27,7 +27,7 @@ try:
     import tf_keras
 
     tf_keras.optimizers
-except (ModuleNotFoundError, AttributeError):
+except (ModuleNotFoundError, AttributeError):  # pragma: no cover
     import tensorflow.keras as tf_keras
 
 tf_keras = tf_keras
