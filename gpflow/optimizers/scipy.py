@@ -319,7 +319,6 @@ class Scipy:
             target.assign(value)
 
 
-@tf.function
 def _compute_loss_and_gradients(
     loss_closure: LossClosure,
     variables: Sequence[tf.Variable],
