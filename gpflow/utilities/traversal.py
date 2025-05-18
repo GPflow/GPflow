@@ -286,7 +286,10 @@ def freeze_as_float32(input_module: M) -> M:
     :return: Returns a float32 frozen deepcopy of an input object.
     """
     objects_to_freeze = _get_leaf_components(input_module)
-    memo_tensors = {id(v): tf.cast(tf.convert_to_tensor(v), dtype=tf.float32) for v in objects_to_freeze.values()}
+    memo_tensors = {
+        id(v): tf.cast(tf.convert_to_tensor(v), dtype=tf.float32)
+        for v in objects_to_freeze.values()
+    }
     return deepcopy(input_module, memo_tensors)
 
 

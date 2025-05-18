@@ -92,7 +92,6 @@ def test_freeze() -> None:
     assert module.module.module.var == module_frozen.module.module.var
 
 
-
 def test_freeze_as_float32() -> None:
     module = NestedModule(NestedModule(A()))
     module_frozen = gpflow.utilities.freeze_as_float32(module)

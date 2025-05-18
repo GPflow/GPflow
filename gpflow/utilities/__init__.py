@@ -5,6 +5,7 @@ from .multipledispatch import Dispatcher
 from .traversal import (
     deepcopy,
     freeze,
+    freeze_as_float32,
     leaf_components,
     multiple_assign,
     parameter_dict,
@@ -13,7 +14,6 @@ from .traversal import (
     reset_cache_bijectors,
     select_dict_parameters_with_prior,
     tabulate_module_summary,
-    freeze_as_float32,
     traverse_module,
 )
 
