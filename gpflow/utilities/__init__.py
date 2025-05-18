@@ -13,6 +13,7 @@ from .traversal import (
     reset_cache_bijectors,
     select_dict_parameters_with_prior,
     tabulate_module_summary,
+    freeze_as_float32,
     traverse_module,
 )
 
@@ -42,6 +43,7 @@ __all__ = [
     "tabulate_module_summary",
     "to_default_float",
     "to_default_int",
+    "freeze_as_float32",
     "training_loop",
     "traversal",
     "traverse_module",

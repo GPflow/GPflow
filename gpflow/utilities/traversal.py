@@ -38,6 +38,7 @@ __all__ = [
     "reset_cache_bijectors",
     "select_dict_parameters_with_prior",
     "tabulate_module_summary",
+    "freeze_as_float32",
 ]
 LeafComponent = Union[tf.Variable, tf.Tensor, Parameter]
 LeafVariable = Union[tf.Variable, Parameter]
@@ -275,6 +276,18 @@ def freeze(input_module: M) -> M:
     memo_tensors = {id(v): tf.convert_to_tensor(v) for v in objects_to_freeze.values()}
     module_copy = deepcopy(input_module, memo_tensors)
     return module_copy
+
+
+def freeze_as_float32(input_module: M) -> M:
+    """
+    Returns a frozen deepcopy of the input tf.Module with all values converted to tf.float32.
+
+    :param input_module: tf.Module or gpflow.Module.
+    :return: Returns a float32 frozen deepcopy of an input object.
+    """
+    objects_to_freeze = _get_leaf_components(input_module)
+    memo_tensors = {id(v): tf.cast(tf.convert_to_tensor(v), dtype=tf.float32) for v in objects_to_freeze.values()}
+    return deepcopy(input_module, memo_tensors)
 
 
 def traverse_module(
