@@ -99,10 +99,10 @@ def print_summary(module: tf.Module, fmt: Optional[str] = None) -> None:
     """
     fmt = fmt if fmt is not None else default_summary_fmt()
     if fmt == "notebook":
-        from IPython.core.display import HTML, display
+        from IPython.core.display import HTML, display_html
 
         tab = tabulate_module_summary(module, "html")
-        display(HTML(tab))
+        display_html(HTML(tab))
     else:
         print(tabulate_module_summary(module, fmt))
 
