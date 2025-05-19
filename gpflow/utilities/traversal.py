@@ -30,6 +30,7 @@ from ..config import default_summary_fmt
 __all__ = [
     "deepcopy",
     "freeze",
+    "freeze_as_float32",
     "leaf_components",
     "multiple_assign",
     "parameter_dict",
@@ -38,7 +39,6 @@ __all__ = [
     "reset_cache_bijectors",
     "select_dict_parameters_with_prior",
     "tabulate_module_summary",
-    "freeze_as_float32",
 ]
 LeafComponent = Union[tf.Variable, tf.Tensor, Parameter]
 LeafVariable = Union[tf.Variable, Parameter]
