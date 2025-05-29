@@ -73,9 +73,7 @@ class SamplingHelper:
         return self._variables
 
     @property
-    def target_log_prob_fn(
-        self,
-    ) -> Callable[..., Tuple[tf.Tensor, Callable[..., Tuple[tf.Tensor, Sequence[None]]]]]:
+    def target_log_prob_fn(self) -> Callable[..., tf.Tensor]:
         """
         The target log probability, adjusted to allow for optimisation to occur on the tracked
         unconstrained underlying variables.

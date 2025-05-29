@@ -33,7 +33,7 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
-# Release 2.10.0 (next release)
+# Release 2.11.0 (next release)
 
 <INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
 
@@ -65,6 +65,19 @@ This release contains contributions from:
 
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
+# Release 2.10.0
+
+This release adds a utility function for converting tf.Modules to float32.
+
+## Improvements
+
+* Add the `freeze_as_float32` utility function, which returns a frozen deepcopy of a module with all values converted to tf.float32.
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+uri-granta
 
 # Release 2.9.2
 

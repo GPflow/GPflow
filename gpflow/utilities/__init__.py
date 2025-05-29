@@ -5,6 +5,7 @@ from .multipledispatch import Dispatcher
 from .traversal import (
     deepcopy,
     freeze,
+    freeze_as_float32,
     leaf_components,
     multiple_assign,
     parameter_dict,
@@ -24,6 +25,7 @@ __all__ = [
     "bijectors",
     "deepcopy",
     "freeze",
+    "freeze_as_float32",
     "is_variable",
     "leaf_components",
     "misc",

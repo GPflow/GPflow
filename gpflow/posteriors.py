@@ -967,10 +967,13 @@ class FullyCorrelatedPosterior(BasePosterior):
             cov = tf.linalg.adjoint(cov)
 
         mean = tf.reshape(mean, (N, K))
-        if full_cov == full_output_cov:
-            cov_shape = (N, K, N, K) if full_cov else (N, K)
-        else:
-            cov_shape = (K, N, N) if full_cov else (N, K, K)
+        # the nested if-then-else is to make both mypy and the tensorflow
+        # compiler happy across multiple different versions!
+        cov_shape: Tuple[int, ...] = (
+            ((N, K, N, K) if full_cov else (N, K))
+            if full_cov == full_output_cov
+            else ((K, N, N) if full_cov else (N, K, K))
+        )
         cov = tf.reshape(cov, cov_shape)
 
         return mean, cov

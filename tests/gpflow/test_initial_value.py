@@ -74,7 +74,7 @@ def test_assignment_value(path: Path) -> None:
             these problems.
             """
 
-            self.bad_assigns: List[ast.AST] = []
+            self.bad_assigns: List[Union[ast.Assign, ast.AugAssign, ast.AnnAssign]] = []
             """
             List of bad assignments, so that we can report multiple errors at the same time.
             """

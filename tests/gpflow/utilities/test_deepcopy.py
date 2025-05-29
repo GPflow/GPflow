@@ -14,7 +14,7 @@ from gpflow.base import TensorType
 
 class A(tf.Module):
     def __init__(self) -> None:
-        self.var = tf.Variable([1.0])
+        self.var = tf.Variable([1.0], dtype=tf.float64)
         shift = tf.Variable(1e-6)
         self.bijector = tfp.bijectors.Chain([tfp.bijectors.Softplus(), tfp.bijectors.Shift(shift)])
 
@@ -87,6 +87,21 @@ def test_freeze() -> None:
     assert module_frozen.variables == ()
     assert isinstance(module.module.module.var, tf.Variable)
     assert isinstance(module_frozen.module.module.var, tf.Tensor)
+    assert module.module.module.var.dtype is tf.float64
+    assert module_frozen.module.module.var.dtype is tf.float64
+    assert module.module.module.var == module_frozen.module.module.var
+
+
+def test_freeze_as_float32() -> None:
+    module = NestedModule(NestedModule(A()))
+    module_frozen = gpflow.utilities.freeze_as_float32(module)
+    assert len(module.variables) == 2
+    assert module_frozen.variables == ()
+    assert isinstance(module.module.module.var, tf.Variable)
+    assert isinstance(module_frozen.module.module.var, tf.Tensor)
+    assert module.module.module.var.dtype is tf.float64
+    assert module_frozen.module.module.var.dtype is tf.float32
+    assert tf.cast(module.module.module.var, tf.float32) == module_frozen.module.module.var
 
 
 def test_pickle_frozen() -> None:

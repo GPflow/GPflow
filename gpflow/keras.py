@@ -23,8 +23,11 @@
 # >> from tf_keras.optimizers import Adam
 
 try:
+    # check whether a (recent) tf_keras is present
     import tf_keras
-except ModuleNotFoundError:
+
+    tf_keras.optimizers
+except (ModuleNotFoundError, AttributeError):  # pragma: no cover
     import tensorflow.keras as tf_keras
 
 tf_keras = tf_keras

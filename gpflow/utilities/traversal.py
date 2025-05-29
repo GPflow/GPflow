@@ -30,6 +30,7 @@ from ..config import default_summary_fmt
 __all__ = [
     "deepcopy",
     "freeze",
+    "freeze_as_float32",
     "leaf_components",
     "multiple_assign",
     "parameter_dict",
@@ -98,10 +99,10 @@ def print_summary(module: tf.Module, fmt: Optional[str] = None) -> None:
     """
     fmt = fmt if fmt is not None else default_summary_fmt()
     if fmt == "notebook":
-        from IPython.core.display import HTML, display
+        from IPython.core.display import HTML, display_html
 
         tab = tabulate_module_summary(module, "html")
-        display(HTML(tab))
+        display_html(HTML(tab))
     else:
         print(tabulate_module_summary(module, fmt))
 
@@ -275,6 +276,21 @@ def freeze(input_module: M) -> M:
     memo_tensors = {id(v): tf.convert_to_tensor(v) for v in objects_to_freeze.values()}
     module_copy = deepcopy(input_module, memo_tensors)
     return module_copy
+
+
+def freeze_as_float32(input_module: M) -> M:
+    """
+    Returns a frozen deepcopy of the input tf.Module with all values converted to tf.float32.
+
+    :param input_module: tf.Module or gpflow.Module.
+    :return: Returns a float32 frozen deepcopy of an input object.
+    """
+    objects_to_freeze = _get_leaf_components(input_module)
+    memo_tensors = {
+        id(v): tf.cast(tf.convert_to_tensor(v), dtype=tf.float32)
+        for v in objects_to_freeze.values()
+    }
+    return deepcopy(input_module, memo_tensors)
 
 
 def traverse_module(
