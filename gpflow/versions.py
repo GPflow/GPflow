@@ -1,6 +1,6 @@
-import pkg_resources
+from importlib.metadata import version as get_version, PackageNotFoundError
 
 try:
-    __version__ = str(pkg_resources.get_distribution("gpflow").parsed_version)
-except pkg_resources.DistributionNotFound:
+    __version__ = get_version("gpflow")
+except PackageNotFoundError:
     __version__ = "develop"
