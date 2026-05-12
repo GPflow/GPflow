@@ -164,9 +164,7 @@ def ref_arc_hierarchical_kernel(
     r2 = np.sum(diff**2, axis=-1)
     r = np.sqrt(np.maximum(r2, 0.0))
     sqrt5 = np.sqrt(5.0)
-    result: AnyNDArray = (
-        base_variance * (1.0 + sqrt5 * r + 5.0 / 3.0 * r**2) * np.exp(-sqrt5 * r)
-    )
+    result: AnyNDArray = base_variance * (1.0 + sqrt5 * r + 5.0 / 3.0 * r**2) * np.exp(-sqrt5 * r)
     return result
 
 
@@ -193,7 +191,5 @@ def ref_wedge_hierarchical_kernel(
     r2 = np.sum(diff**2, axis=-1)
     r = np.sqrt(np.maximum(r2, 0.0))
     sqrt5 = np.sqrt(5.0)
-    result: AnyNDArray = (
-        base_variance * (1.0 + sqrt5 * r + 5.0 / 3.0 * r**2) * np.exp(-sqrt5 * r)
-    )
+    result: AnyNDArray = base_variance * (1.0 + sqrt5 * r + 5.0 / 3.0 * r**2) * np.exp(-sqrt5 * r)
     return result
