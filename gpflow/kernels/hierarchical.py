@@ -283,3 +283,48 @@ class ArcHierarchical(HierarchicalEmbeddingKernel):
         sin_part = self.radius * tf.sin(theta) * m_c
         cos_part = self.radius * tf.cos(theta) * m_c
         return tf.concat([sin_part, cos_part], axis=-1)
+
+
+class WedgeHierarchical(HierarchicalEmbeddingKernel):
+    """The Wedge kernel of Horn et al. (2019).
+
+    Each conditional column ``c`` (normalised value ``v_c`` in ``[0, 1]``,
+    activity mask ``m_c``) is mapped into the plane via
+
+    .. math::
+
+        \\phi_c(v_c, m_c) = \\big(
+            (\\theta_1 v_c + \\theta_2 v_c \\cos\\rho)\\, m_c,\\;
+            (\\theta_2 v_c \\sin\\rho)\\, m_c
+        \\big).
+
+    The "incomparable" distance now scales with the active value ``v_c``
+    rather than being constant in it. ``rho`` is bounded away from zero
+    because at ``rho = 0`` the embedding degenerates to a line.
+    """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        if self._n_cond > 0:
+            self.theta1 = Parameter(
+                tf.ones(self._n_cond, dtype=tf.float64),
+                transform=positive(),
+                name="theta1",
+            )
+            self.theta2 = Parameter(
+                tf.ones(self._n_cond, dtype=tf.float64),
+                transform=positive(),
+                name="theta2",
+            )
+            self.rho = Parameter(
+                0.5 * np.pi * tf.ones(self._n_cond, dtype=tf.float64),
+                transform=tfp.bijectors.Sigmoid(
+                    to_default_float(1e-6), to_default_float(np.pi)
+                ),
+                name="rho",
+            )
+
+    def _embed_conditional(self, v_c: tf.Tensor, m_c: tf.Tensor) -> tf.Tensor:
+        comp1 = (self.theta1 * v_c + self.theta2 * v_c * tf.cos(self.rho)) * m_c
+        comp2 = (self.theta2 * v_c * tf.sin(self.rho)) * m_c
+        return tf.concat([comp1, comp2], axis=-1)

@@ -23,6 +23,7 @@ from gpflow.kernels.hierarchical import (
     ActivityCondition,
     ArcHierarchical,
     HierarchicalEmbeddingKernel,
+    WedgeHierarchical,
 )
 
 
@@ -459,3 +460,80 @@ class TestArcHierarchical:
         K_self = float(kernel.K(X_active, X_active).numpy())
         K_cross = float(kernel.K(X_active, X_inactive).numpy())
         assert K_cross < K_self - 1e-6
+
+
+def _wedge(feature_dims: Sequence[int] = (0, 2, 3)) -> WedgeHierarchical:
+    return WedgeHierarchical(
+        feature_dims=list(feature_dims),
+        feature_bounds=tf.constant(
+            [[0.0, 1.0], [0.0, 5.0], [-1.0, 1.0]], dtype=tf.float64
+        ),
+        indicator_dims=[1],
+        activity_conditions=[
+            ActivityCondition(),
+            ActivityCondition({0: 1}),
+            ActivityCondition({0: 0}),
+        ],
+    )
+
+
+class TestWedgeHierarchical:
+    def test_parameters_are_per_conditional_column(self) -> None:
+        kernel = _wedge()
+        assert tuple(kernel.theta1.shape) == (2,)
+        assert tuple(kernel.theta2.shape) == (2,)
+        assert tuple(kernel.rho.shape) == (2,)
+
+    def test_thetas_initialised_to_one(self) -> None:
+        kernel = _wedge()
+        np.testing.assert_allclose(kernel.theta1.numpy(), [1.0, 1.0])
+        np.testing.assert_allclose(kernel.theta2.numpy(), [1.0, 1.0])
+
+    def test_rho_initialised_to_half_pi(self) -> None:
+        kernel = _wedge()
+        np.testing.assert_allclose(kernel.rho.numpy(), [np.pi / 2, np.pi / 2])
+
+    def test_K_shape_and_psd(self) -> None:
+        kernel = _wedge()
+        X = tf.constant(
+            [
+                [0.5, 1.0, 2.5, 0.0],
+                [0.5, 0.0, 2.5, 0.5],
+                [0.3, 1.0, 4.0, 0.0],
+            ],
+            dtype=tf.float64,
+        )
+        K = kernel.K(X).numpy()
+        assert K.shape == (3, 3)
+        np.testing.assert_allclose(K, K.T, atol=1e-12)
+        eigs = np.linalg.eigvalsh(K + 1e-10 * np.eye(3))
+        assert eigs.min() > -1e-8
+
+    def test_axiom_both_inactive_is_invariant_in_conditional_value(self) -> None:
+        kernel = _wedge()
+        X_a = tf.constant([[0.5, 1.0, 2.5, 0.0]], dtype=tf.float64)
+        X_b = tf.constant([[0.5, 1.0, 2.5, 0.7]], dtype=tf.float64)
+        np.testing.assert_allclose(
+            kernel.K(X_a, X_a).numpy(),
+            kernel.K(X_a, X_b).numpy(),
+            rtol=1e-12,
+        )
+
+    def test_axiom_one_active_one_inactive_distinct(self) -> None:
+        kernel = _wedge()
+        X_active = tf.constant([[0.5, 1.0, 2.5, 0.0]], dtype=tf.float64)
+        X_inactive = tf.constant([[0.5, 0.0, 2.5, 0.0]], dtype=tf.float64)
+        K_self = float(kernel.K(X_active, X_active).numpy())
+        K_cross = float(kernel.K(X_active, X_inactive).numpy())
+        assert K_cross < K_self - 1e-6
+
+    def test_axiom_both_active_equal_value_equals_self(self) -> None:
+        kernel = _wedge()
+        X_a = tf.constant([[0.5, 1.0, 2.5, 0.0]], dtype=tf.float64)
+        X_b = tf.constant([[0.5, 1.0, 2.5, 0.4]], dtype=tf.float64)
+        # x1 same, y1 same, x2 same; x3 differs but is inactive on both.
+        np.testing.assert_allclose(
+            kernel.K(X_a, X_a).numpy(),
+            kernel.K(X_a, X_b).numpy(),
+            rtol=1e-12,
+        )
