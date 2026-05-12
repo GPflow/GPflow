@@ -133,9 +133,7 @@ class TestHierarchicalEmbeddingKernelConstruction:
             ),
         ],
     )
-    def test_init_rejects_invalid_arguments(
-        self, kwargs: Dict[str, Any], match: str
-    ) -> None:
+    def test_init_rejects_invalid_arguments(self, kwargs: Dict[str, Any], match: str) -> None:
         kwargs = dict(kwargs)
         n_feat = len(kwargs.get("feature_dims", []))
         kwargs.setdefault("feature_bounds", _canonical_bounds(max(n_feat, 1)))
@@ -146,18 +144,14 @@ class TestHierarchicalEmbeddingKernelConstruction:
         with pytest.raises(ValueError, match="feature_bounds"):
             ArcHierarchical(
                 feature_dims=[0, 1],
-                feature_bounds=tf.constant(
-                    [[0.0, 1.0]], dtype=tf.float64
-                ),  # only 1 row
+                feature_bounds=tf.constant([[0.0, 1.0]], dtype=tf.float64),  # only 1 row
             )
 
     def test_init_rejects_inverted_feature_bounds(self) -> None:
         with pytest.raises(ValueError, match="feature_bounds"):
             ArcHierarchical(
                 feature_dims=[0],
-                feature_bounds=tf.constant(
-                    [[1.0, 0.0]], dtype=tf.float64
-                ),  # lower > upper
+                feature_bounds=tf.constant([[1.0, 0.0]], dtype=tf.float64),  # lower > upper
             )
 
 
@@ -196,9 +190,7 @@ def _canonical_disjunction_kernel() -> ArcHierarchical:
     y1=1, x3 active when y1=0. Column layout in X: [x1, y1, x2, x3]."""
     return ArcHierarchical(
         feature_dims=[0, 2, 3],
-        feature_bounds=tf.constant(
-            [[0.0, 1.0], [0.0, 5.0], [-1.0, 1.0]], dtype=tf.float64
-        ),
+        feature_bounds=tf.constant([[0.0, 1.0], [0.0, 5.0], [-1.0, 1.0]], dtype=tf.float64),
         indicator_dims=[1],
         activity_conditions=[
             ActivityCondition(),
@@ -390,9 +382,7 @@ class TestKDispatch:
 def _arc(feature_dims: Sequence[int] = (0, 2, 3)) -> ArcHierarchical:
     return ArcHierarchical(
         feature_dims=list(feature_dims),
-        feature_bounds=tf.constant(
-            [[0.0, 1.0], [0.0, 5.0], [-1.0, 1.0]], dtype=tf.float64
-        ),
+        feature_bounds=tf.constant([[0.0, 1.0], [0.0, 5.0], [-1.0, 1.0]], dtype=tf.float64),
         indicator_dims=[1],
         activity_conditions=[
             ActivityCondition(),
@@ -462,9 +452,7 @@ class TestArcHierarchical:
 def _wedge(feature_dims: Sequence[int] = (0, 2, 3)) -> WedgeHierarchical:
     return WedgeHierarchical(
         feature_dims=list(feature_dims),
-        feature_bounds=tf.constant(
-            [[0.0, 1.0], [0.0, 5.0], [-1.0, 1.0]], dtype=tf.float64
-        ),
+        feature_bounds=tf.constant([[0.0, 1.0], [0.0, 5.0], [-1.0, 1.0]], dtype=tf.float64),
         indicator_dims=[1],
         activity_conditions=[
             ActivityCondition(),
@@ -541,9 +529,7 @@ class TestClosedFormReference:
     def _ref_args() -> Dict[str, Any]:
         return dict(
             feature_dims=[0, 2, 3],
-            feature_bounds=np.array(
-                [[0.0, 1.0], [0.0, 5.0], [-1.0, 1.0]], dtype=np.float64
-            ),
+            feature_bounds=np.array([[0.0, 1.0], [0.0, 5.0], [-1.0, 1.0]], dtype=np.float64),
             indicator_dims=[1],
             activity_conditions=[{}, {0: 1}, {0: 0}],
         )

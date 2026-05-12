@@ -68,11 +68,7 @@ def ref_arccosine_kernel(
                 J += (np.pi - theta) * (1.0 + 2.0 * np.cos(theta) ** 2)
 
             kernel[row, col] = (
-                signal_variance
-                * (1.0 / np.pi)
-                * J
-                * x_denominator**order
-                * y_denominator**order
+                signal_variance * (1.0 / np.pi) * J * x_denominator**order * y_denominator**order
             )
     return kernel
 
@@ -159,9 +155,7 @@ def ref_arc_hierarchical_kernel(
 ) -> AnyNDArray:
     def arc(v_c: AnyNDArray, m_c: AnyNDArray) -> AnyNDArray:
         theta = np.pi * angle * v_c
-        return np.concatenate(
-            [radius * np.sin(theta) * m_c, radius * np.cos(theta) * m_c], axis=-1
-        )
+        return np.concatenate([radius * np.sin(theta) * m_c, radius * np.cos(theta) * m_c], axis=-1)
 
     Z = _hierarchical_embedding(
         X, feature_dims, feature_bounds, indicator_dims, activity_conditions, arc
