@@ -192,7 +192,7 @@ wedge = WedgeHierarchical(
     activity_conditions=activity_conditions,
 )
 kernel = gpflow.kernels.Constant() * wedge
-gpr = gpflow.models.GPR(data=(X_train, y_train), kernel=kernel, noise_variance=0.05)
+gpr = gpflow.models.GPR(data=(X_train, Y_train), kernel=kernel, noise_variance=0.05)
 print(f"LML before fit: {gpr.log_marginal_likelihood().numpy():+.3f}")
 gpflow.optimizers.Scipy().minimize(
     gpr.training_loss, gpr.trainable_variables, options={"maxiter": 100}
