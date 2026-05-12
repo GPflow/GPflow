@@ -78,9 +78,7 @@ tf.random.set_seed(1793)
 
 # %%
 feature_dims = [0, 2, 3]
-feature_bounds = tf.constant(
-    [[0.0, 1.0], [0.0, 5.0], [-1.0, 1.0]], dtype=tf.float64
-)
+feature_bounds = tf.constant([[0.0, 1.0], [0.0, 5.0], [-1.0, 1.0]], dtype=tf.float64)
 indicator_dims = [1]
 activity_conditions = [
     ActivityCondition(),  # x1: unconditional
@@ -143,9 +141,7 @@ arc_for_fit = ArcHierarchical(
     activity_conditions=activity_conditions,
 )
 kernel = gpflow.kernels.Constant() * arc_for_fit
-gpr = gpflow.models.GPR(
-    data=(X_train, Y_train), kernel=kernel, noise_variance=0.05
-)
+gpr = gpflow.models.GPR(data=(X_train, Y_train), kernel=kernel, noise_variance=0.05)
 
 print(f"LML before fit: {gpr.log_marginal_likelihood().numpy():+.3f}")
 gpflow.optimizers.Scipy().minimize(
@@ -173,9 +169,7 @@ X_test = np.array(
 mean, var = gpr.predict_f(X_test)
 truth = objective(X_test).ravel()
 for x, m, v, t in zip(X_test, mean.numpy().ravel(), var.numpy().ravel(), truth):
-    print(
-        f"  x = {x.tolist()}  ->  mean = {m:+.3f}  var = {v:.3f}  truth = {t:+.3f}"
-    )
+    print(f"  x = {x.tolist()}  ->  mean = {m:+.3f}  var = {v:.3f}  truth = {t:+.3f}")
 
 # %% [markdown]
 # ## A Wedge variant
@@ -198,13 +192,12 @@ wedge = WedgeHierarchical(
     activity_conditions=activity_conditions,
 )
 kernel = gpflow.kernels.Constant() * wedge
-gpr = gpflow.models.GPR(
-	data=(X_train, y_train), kernel = kernel, noise_variance=0.05)
+gpr = gpflow.models.GPR(data=(X_train, y_train), kernel=kernel, noise_variance=0.05)
 print(f"LML before fit: {gpr.log_marginal_likelihood().numpy():+.3f}")
 gpflow.optimizers.Scipy().minimize(
     gpr.training_loss, gpr.trainable_variables, options={"maxiter": 100}
 )
-print(f"LML after fit:  {gpr.log_marginal_likelihood().numpy():+.3f}")  
+print(f"LML after fit:  {gpr.log_marginal_likelihood().numpy():+.3f}")
 print("learnt theta1:", wedge.theta1.numpy())
 print("learnt theta2:", wedge.theta2.numpy())
 print("learnt rho:   ", wedge.rho.numpy())
@@ -227,7 +220,4 @@ X_test = np.array(
 mean, var = gpr.predict_f(X_test)
 truth = objective(X_test).ravel()
 for x, m, v, t in zip(X_test, mean.numpy().ravel(), var.numpy().ravel(), truth):
-    print(
-        f"  x = {x.tolist()}  ->  mean = {m:+.3f}  var = {v:.3f}  truth = {t:+.3f}"
-    )
-
+    print(f"  x = {x.tolist()}  ->  mean = {m:+.3f}  var = {v:.3f}  truth = {t:+.3f}")
