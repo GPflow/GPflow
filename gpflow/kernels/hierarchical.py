@@ -21,12 +21,14 @@ structure on the input space: a point whose conditional feature is
 
 import abc
 from dataclasses import dataclass, field
-from typing import Mapping, Optional, Sequence
+from typing import Any, Mapping, Optional, Sequence
 
+import numpy as np
 import tensorflow as tf
+import tensorflow_probability as tfp
 
-from ..base import TensorType
-from ..utilities import set_trainable
+from ..base import Parameter, TensorType
+from ..utilities import positive, set_trainable, to_default_float
 from .base import ActiveDims, Kernel
 from .stationaries import Matern52, Stationary
 
@@ -240,3 +242,44 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
 
     def K_diag(self, X: TensorType) -> tf.Tensor:
         return self.base_kernel.K_diag(self._embed(X))
+
+
+class ArcHierarchical(HierarchicalEmbeddingKernel):
+    """The Arc kernel of Swersky et al. (2014).
+
+    Each conditional column ``c`` (normalised value ``v_c`` in ``[0, 1]``,
+    activity mask ``m_c``) is mapped into the plane via
+
+    .. math::
+
+        \\phi_c(v_c, m_c) = \\big(
+            r_c \\sin(\\pi a_c v_c)\\, m_c,\\;
+            r_c \\cos(\\pi a_c v_c)\\, m_c
+        \\big),
+
+    so that inactive points sit at the origin and active points sit on a
+    circle whose phase depends on ``v_c``. A stationary base kernel then
+    evaluates covariance in the joint embedded space.
+    """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        if self._n_cond > 0:
+            self.angle = Parameter(
+                0.5 * tf.ones(self._n_cond, dtype=tf.float64),
+                transform=tfp.bijectors.Sigmoid(
+                    to_default_float(0.1), to_default_float(0.9)
+                ),
+                name="angle",
+            )
+            self.radius = Parameter(
+                tf.ones(self._n_cond, dtype=tf.float64),
+                transform=positive(),
+                name="radius",
+            )
+
+    def _embed_conditional(self, v_c: tf.Tensor, m_c: tf.Tensor) -> tf.Tensor:
+        theta = np.pi * self.angle * v_c
+        sin_part = self.radius * tf.sin(theta) * m_c
+        cos_part = self.radius * tf.cos(theta) * m_c
+        return tf.concat([sin_part, cos_part], axis=-1)

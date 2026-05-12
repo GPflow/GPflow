@@ -387,3 +387,75 @@ class TestKDispatch:
             np.diag(kernel.K(X).numpy()),
             rtol=1e-12,
         )
+
+
+def _arc(feature_dims: Sequence[int] = (0, 2, 3)) -> ArcHierarchical:
+    return ArcHierarchical(
+        feature_dims=list(feature_dims),
+        feature_bounds=tf.constant(
+            [[0.0, 1.0], [0.0, 5.0], [-1.0, 1.0]], dtype=tf.float64
+        ),
+        indicator_dims=[1],
+        activity_conditions=[
+            ActivityCondition(),
+            ActivityCondition({0: 1}),
+            ActivityCondition({0: 0}),
+        ],
+    )
+
+
+class TestArcHierarchical:
+    def test_parameters_are_per_conditional_column(self) -> None:
+        kernel = _arc()
+        assert tuple(kernel.angle.shape) == (2,)
+        assert tuple(kernel.radius.shape) == (2,)
+
+    def test_angle_initialised_in_centre_of_bound(self) -> None:
+        kernel = _arc()
+        np.testing.assert_allclose(kernel.angle.numpy(), [0.5, 0.5])
+
+    def test_radius_initialised_to_one(self) -> None:
+        kernel = _arc()
+        np.testing.assert_allclose(kernel.radius.numpy(), [1.0, 1.0])
+
+    def test_K_shape_and_psd(self) -> None:
+        kernel = _arc()
+        X = tf.constant(
+            [
+                [0.5, 1.0, 2.5, 0.0],
+                [0.5, 0.0, 2.5, 0.5],
+                [0.3, 1.0, 4.0, 0.0],
+            ],
+            dtype=tf.float64,
+        )
+        K = kernel.K(X).numpy()
+        assert K.shape == (3, 3)
+        np.testing.assert_allclose(K, K.T, atol=1e-12)
+        eigs = np.linalg.eigvalsh(K + 1e-10 * np.eye(3))
+        assert eigs.min() > -1e-8
+
+    def test_no_conditional_columns_means_no_angle_parameter(self) -> None:
+        kernel = ArcHierarchical(
+            feature_dims=[0, 1],
+            feature_bounds=_canonical_bounds(2),
+        )
+        assert not hasattr(kernel, "angle")
+        assert not hasattr(kernel, "radius")
+
+    def test_axiom_both_inactive_is_invariant_in_conditional_value(self) -> None:
+        kernel = _arc()
+        # y1 = 1 ⇒ x3 is inactive on both rows. Varying x3 must not change K.
+        X_a = tf.constant([[0.5, 1.0, 2.5, 0.0]], dtype=tf.float64)
+        X_b = tf.constant([[0.5, 1.0, 2.5, 0.7]], dtype=tf.float64)
+        K_aa = kernel.K(X_a, X_a).numpy()
+        K_ab = kernel.K(X_a, X_b).numpy()
+        np.testing.assert_allclose(K_aa, K_ab, rtol=1e-12)
+
+    def test_axiom_one_active_one_inactive_distinct(self) -> None:
+        kernel = _arc()
+        # Same x1, same x2 value, but y1 flips ⇒ x2 active on one row, x3 on the other.
+        X_active = tf.constant([[0.5, 1.0, 2.5, 0.0]], dtype=tf.float64)
+        X_inactive = tf.constant([[0.5, 0.0, 2.5, 0.0]], dtype=tf.float64)
+        K_self = float(kernel.K(X_active, X_active).numpy())
+        K_cross = float(kernel.K(X_active, X_inactive).numpy())
+        assert K_cross < K_self - 1e-6
