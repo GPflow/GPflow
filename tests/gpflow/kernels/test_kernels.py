@@ -265,6 +265,27 @@ def test_kernel_symmetry_1d_and_5d(D: int, kernel: Kernel, N: int) -> None:
     assert np.allclose(errors, 0)
 
 
+@pytest.mark.parametrize(
+    "kernel_class",
+    [gpflow.kernels.ArcHierarchical, gpflow.kernels.WedgeHierarchical],
+)
+def test_hierarchical_kernel_symmetry(kernel_class: type) -> None:
+    kernel = kernel_class(
+        feature_dims=[0, 2, 3],
+        feature_bounds=tf.constant([[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]], dtype=tf.float64),
+        indicator_dims=[1],
+        activity_conditions=[
+            gpflow.kernels.ActivityCondition(),
+            gpflow.kernels.ActivityCondition({0: 1}),
+            gpflow.kernels.ActivityCondition({0: 0}),
+        ],
+    )
+    X = rng.randn(10, 4)
+    X[:, 1] = rng.randint(0, 2, size=10).astype(float)
+    errors = kernel(X) - kernel(X, X)
+    assert np.allclose(errors, 0)
+
+
 @pytest.mark.parametrize("N, N2, input_dim, output_dim, rank", [[10, 12, 1, 3, 2]])
 def test_coregion_shape(N: int, N2: int, input_dim: int, output_dim: int, rank: int) -> None:
     X = np.random.randint(0, output_dim, (N, input_dim))

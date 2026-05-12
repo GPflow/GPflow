@@ -26,6 +26,20 @@ import gpflow.ci_utils
 from gpflow import kernels
 from gpflow.base import AnyNDArray, TensorType
 from gpflow.kernels.categorical import Categorical
+from gpflow.kernels.hierarchical import ActivityCondition, ArcHierarchical, WedgeHierarchical
+
+
+def _hierarchical_kwargs() -> dict[str, Any]:
+    return dict(
+        feature_dims=[0, 2, 3],
+        feature_bounds=tf.constant([[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]], dtype=tf.float64),
+        indicator_dims=[1],
+        activity_conditions=[
+            ActivityCondition(),
+            ActivityCondition({0: 1}),
+            ActivityCondition({0: 0}),
+        ],
+    )
 
 
 def create_kernels() -> Sequence[kernels.Kernel]:
@@ -67,6 +81,9 @@ def create_kernels() -> Sequence[kernels.Kernel]:
             categorical_kernel=kernels.RBF(lengthscales=0.1),
             num_labels=3,
         ),
+        # hierarchical kernels:
+        ArcHierarchical(**_hierarchical_kwargs()),
+        WedgeHierarchical(**_hierarchical_kwargs()),
     ]
     return result
 

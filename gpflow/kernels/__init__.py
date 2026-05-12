@@ -19,6 +19,12 @@ from . import multioutput
 from .base import Combination, Kernel, Product, Sum
 from .changepoints import ChangePoints
 from .convolutional import Convolutional
+from .hierarchical import (
+    ActivityCondition,
+    ArcHierarchical,
+    HierarchicalEmbeddingKernel,
+    WedgeHierarchical,
+)
 from .linears import Linear, Polynomial
 from .misc import ArcCosine, Coregion
 from .multioutput import (
@@ -50,8 +56,10 @@ Bias = Constant
 RBF = SquaredExponential
 
 __all__ = [
+    "ActivityCondition",
     "AnisotropicStationary",
     "ArcCosine",
+    "ArcHierarchical",
     "Bias",
     "ChangePoints",
     "Combination",
@@ -60,6 +68,7 @@ __all__ = [
     "Coregion",
     "Cosine",
     "Exponential",
+    "HierarchicalEmbeddingKernel",
     "IndependentLatent",
     "IsotropicStationary",
     "Kernel",
@@ -80,11 +89,13 @@ __all__ = [
     "Static",
     "Stationary",
     "Sum",
+    "WedgeHierarchical",
     "White",
     "base",
     "categorical",
     "changepoints",
     "convolutional",
+    "hierarchical",
     "linears",
     "misc",
     "multioutput",

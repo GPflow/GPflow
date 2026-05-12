@@ -13,7 +13,7 @@
 # limitations under the License.
 """Tests for ``gpflow.kernels.hierarchical``."""
 
-from typing import Mapping, Sequence
+from typing import Any, Dict, Mapping, Sequence
 
 import numpy as np
 import pytest
@@ -25,18 +25,6 @@ from gpflow.kernels.hierarchical import (
     HierarchicalEmbeddingKernel,
     WedgeHierarchical,
 )
-
-
-class _StubKernel(HierarchicalEmbeddingKernel):
-    """Test-only concrete subclass with a deterministic conditional embedding.
-
-    Each conditional column is mapped to ``[v * m, 0]`` — enough to exercise
-    the base-class plumbing without bringing in Arc/Wedge maths.
-    """
-
-    def _embed_conditional(self, v_c: tf.Tensor, m_c: tf.Tensor) -> tf.Tensor:
-        zero = tf.zeros_like(v_c)
-        return tf.concat([v_c * m_c, zero], axis=-1)
 
 
 def _canonical_bounds(n_feat: int) -> tf.Tensor:
@@ -78,7 +66,7 @@ class TestActivityCondition:
 
 class TestHierarchicalEmbeddingKernelConstruction:
     def test_unconditional_kernel_has_no_conditional_columns(self) -> None:
-        kernel = _StubKernel(
+        kernel = ArcHierarchical(
             feature_dims=[0, 1],
             feature_bounds=_canonical_bounds(2),
         )
@@ -88,7 +76,7 @@ class TestHierarchicalEmbeddingKernelConstruction:
         assert kernel._n_ind == 0
 
     def test_mixed_conditional_and_unconditional_columns(self) -> None:
-        kernel = _StubKernel(
+        kernel = ArcHierarchical(
             feature_dims=[0, 2, 3],
             feature_bounds=_canonical_bounds(3),
             indicator_dims=[1],
@@ -145,24 +133,23 @@ class TestHierarchicalEmbeddingKernelConstruction:
             ),
         ],
     )
-    def test_init_rejects_invalid_arguments(
-        self, kwargs: dict, match: str
-    ) -> None:
+    def test_init_rejects_invalid_arguments(self, kwargs: Dict[str, Any], match: str) -> None:
+        kwargs = dict(kwargs)
         n_feat = len(kwargs.get("feature_dims", []))
         kwargs.setdefault("feature_bounds", _canonical_bounds(max(n_feat, 1)))
         with pytest.raises(ValueError, match=match):
-            _StubKernel(**kwargs)
+            ArcHierarchical(**kwargs)
 
     def test_init_rejects_malformed_feature_bounds_shape(self) -> None:
         with pytest.raises(ValueError, match="feature_bounds"):
-            _StubKernel(
+            ArcHierarchical(
                 feature_dims=[0, 1],
                 feature_bounds=tf.constant([[0.0, 1.0]], dtype=tf.float64),  # only 1 row
             )
 
     def test_init_rejects_inverted_feature_bounds(self) -> None:
         with pytest.raises(ValueError, match="feature_bounds"):
-            _StubKernel(
+            ArcHierarchical(
                 feature_dims=[0],
                 feature_bounds=tf.constant([[1.0, 0.0]], dtype=tf.float64),  # lower > upper
             )
@@ -170,7 +157,7 @@ class TestHierarchicalEmbeddingKernelConstruction:
 
 class TestNormalise:
     def test_maps_bounds_to_unit_interval(self) -> None:
-        kernel = _StubKernel(
+        kernel = ArcHierarchical(
             feature_dims=[0, 1],
             feature_bounds=tf.constant([[0.0, 10.0], [-1.0, 1.0]], dtype=tf.float64),
         )
@@ -179,7 +166,7 @@ class TestNormalise:
         np.testing.assert_allclose(v.numpy(), [[0.5, 0.5], [1.0, 1.0]])
 
     def test_ignores_non_feature_columns(self) -> None:
-        kernel = _StubKernel(
+        kernel = ArcHierarchical(
             feature_dims=[0, 2],
             feature_bounds=tf.constant([[0.0, 1.0], [0.0, 4.0]], dtype=tf.float64),
             indicator_dims=[1],
@@ -189,7 +176,7 @@ class TestNormalise:
         np.testing.assert_allclose(v.numpy(), [[0.5, 0.5]])
 
     def test_zero_range_bound_does_not_nan(self) -> None:
-        kernel = _StubKernel(
+        kernel = ArcHierarchical(
             feature_dims=[0],
             feature_bounds=tf.constant([[3.0, 3.0]], dtype=tf.float64),
         )
@@ -198,14 +185,12 @@ class TestNormalise:
         assert np.all(np.isfinite(v.numpy()))
 
 
-def _canonical_disjunction_kernel() -> _StubKernel:
+def _canonical_disjunction_kernel() -> ArcHierarchical:
     """4-variable disjunction: x1 unconditional, y1 indicator, x2 active when
     y1=1, x3 active when y1=0. Column layout in X: [x1, y1, x2, x3]."""
-    return _StubKernel(
+    return ArcHierarchical(
         feature_dims=[0, 2, 3],
-        feature_bounds=tf.constant(
-            [[0.0, 1.0], [0.0, 5.0], [-1.0, 1.0]], dtype=tf.float64
-        ),
+        feature_bounds=tf.constant([[0.0, 1.0], [0.0, 5.0], [-1.0, 1.0]], dtype=tf.float64),
         indicator_dims=[1],
         activity_conditions=[
             ActivityCondition(),
@@ -226,9 +211,7 @@ class TestActivityMask:
             dtype=tf.float64,
         )
         mask = kernel._build_activity_mask(X).numpy()
-        np.testing.assert_array_equal(
-            mask, [[True, True, False], [True, False, True]]
-        )
+        np.testing.assert_array_equal(mask, [[True, True, False], [True, False, True]])
 
     def test_jittered_indicators_round_to_nearest(self) -> None:
         kernel = _canonical_disjunction_kernel()
@@ -240,12 +223,10 @@ class TestActivityMask:
             dtype=tf.float64,
         )
         mask = kernel._build_activity_mask(X).numpy()
-        np.testing.assert_array_equal(
-            mask, [[True, True, False], [True, False, True]]
-        )
+        np.testing.assert_array_equal(mask, [[True, True, False], [True, False, True]])
 
     def test_no_indicators_means_all_active(self) -> None:
-        kernel = _StubKernel(
+        kernel = ArcHierarchical(
             feature_dims=[0, 1],
             feature_bounds=_canonical_bounds(2),
         )
@@ -290,7 +271,7 @@ class TestEmbed:
         assert Z.shape == (2, 5)
 
     def test_uncond_only(self) -> None:
-        kernel = _StubKernel(
+        kernel = ArcHierarchical(
             feature_dims=[0, 1],
             feature_bounds=_canonical_bounds(2),
         )
@@ -299,32 +280,40 @@ class TestEmbed:
         assert Z.shape == (1, 2)
         np.testing.assert_allclose(Z.numpy(), [[0.5, 0.7]])
 
-    def test_inactive_column_zeroes_via_stub_embedding(self) -> None:
+    def test_inactive_columns_embed_to_origin(self) -> None:
         kernel = _canonical_disjunction_kernel()
-        # y1=0 → x2 inactive → stub embeds it to [0, 0].
-        X = tf.constant([[0.5, 0.0, 2.5, 0.5]], dtype=tf.float64)
+        # y1 = 0 ⇒ x2 inactive; y1 = 1 ⇒ x3 inactive.
+        X = tf.constant(
+            [
+                [0.5, 0.0, 2.5, 0.5],  # x2 inactive
+                [0.5, 1.0, 2.5, 0.5],  # x3 inactive
+            ],
+            dtype=tf.float64,
+        )
         Z = kernel._embed(X).numpy()
-        # Layout: [x1_normalised, x2_part1, x3_part1, x2_part2, x3_part2]
-        # stub conditional embedding: [v*m, 0]
-        # x2: m=0 → 0; x3: m=1, v=(0.5-(-1))/2=0.75 → 0.75
-        # uncond x1: (0.5-0)/1 = 0.5
-        np.testing.assert_allclose(Z, [[0.5, 0.0, 0.75, 0.0, 0.0]])
+        # Layout: [x1_normalised, sin_x2, sin_x3, cos_x2, cos_x3].
+        # Inactive column ⇒ both sin and cos coordinates are 0.
+        assert Z.shape == (2, 5)
+        np.testing.assert_allclose(Z[0, 1], 0.0)  # sin_x2 row 0 (x2 inactive)
+        np.testing.assert_allclose(Z[0, 3], 0.0)  # cos_x2 row 0
+        np.testing.assert_allclose(Z[1, 2], 0.0)  # sin_x3 row 1 (x3 inactive)
+        np.testing.assert_allclose(Z[1, 4], 0.0)  # cos_x3 row 1
+        # Unconditional column passes through normalised.
+        np.testing.assert_allclose(Z[:, 0], [0.5, 0.5])
 
 
 class TestBaseKernelPlumbing:
     def test_default_base_kernel_is_matern52(self) -> None:
         import gpflow
 
-        kernel = _StubKernel(
-            feature_dims=[0], feature_bounds=_canonical_bounds(1)
-        )
+        kernel = ArcHierarchical(feature_dims=[0], feature_bounds=_canonical_bounds(1))
         assert isinstance(kernel.base_kernel, gpflow.kernels.Matern52)
 
     def test_base_kernel_lengthscales_frozen_to_one(self) -> None:
         import gpflow
 
         base = gpflow.kernels.SquaredExponential(lengthscales=3.7)
-        kernel = _StubKernel(
+        kernel = ArcHierarchical(
             feature_dims=[0], feature_bounds=_canonical_bounds(1), base_kernel=base
         )
         np.testing.assert_allclose(kernel.base_kernel.lengthscales.numpy(), 1.0)
@@ -334,7 +323,7 @@ class TestBaseKernelPlumbing:
         import gpflow
 
         with pytest.raises(ValueError, match="Stationary"):
-            _StubKernel(
+            ArcHierarchical(
                 feature_dims=[0],
                 feature_bounds=_canonical_bounds(1),
                 base_kernel=gpflow.kernels.Constant(),
@@ -393,9 +382,7 @@ class TestKDispatch:
 def _arc(feature_dims: Sequence[int] = (0, 2, 3)) -> ArcHierarchical:
     return ArcHierarchical(
         feature_dims=list(feature_dims),
-        feature_bounds=tf.constant(
-            [[0.0, 1.0], [0.0, 5.0], [-1.0, 1.0]], dtype=tf.float64
-        ),
+        feature_bounds=tf.constant([[0.0, 1.0], [0.0, 5.0], [-1.0, 1.0]], dtype=tf.float64),
         indicator_dims=[1],
         activity_conditions=[
             ActivityCondition(),
@@ -457,17 +444,15 @@ class TestArcHierarchical:
         # Same x1, same x2 value, but y1 flips ⇒ x2 active on one row, x3 on the other.
         X_active = tf.constant([[0.5, 1.0, 2.5, 0.0]], dtype=tf.float64)
         X_inactive = tf.constant([[0.5, 0.0, 2.5, 0.0]], dtype=tf.float64)
-        K_self = float(kernel.K(X_active, X_active).numpy())
-        K_cross = float(kernel.K(X_active, X_inactive).numpy())
+        K_self = kernel.K(X_active, X_active).numpy().item()
+        K_cross = kernel.K(X_active, X_inactive).numpy().item()
         assert K_cross < K_self - 1e-6
 
 
 def _wedge(feature_dims: Sequence[int] = (0, 2, 3)) -> WedgeHierarchical:
     return WedgeHierarchical(
         feature_dims=list(feature_dims),
-        feature_bounds=tf.constant(
-            [[0.0, 1.0], [0.0, 5.0], [-1.0, 1.0]], dtype=tf.float64
-        ),
+        feature_bounds=tf.constant([[0.0, 1.0], [0.0, 5.0], [-1.0, 1.0]], dtype=tf.float64),
         indicator_dims=[1],
         activity_conditions=[
             ActivityCondition(),
@@ -523,8 +508,8 @@ class TestWedgeHierarchical:
         kernel = _wedge()
         X_active = tf.constant([[0.5, 1.0, 2.5, 0.0]], dtype=tf.float64)
         X_inactive = tf.constant([[0.5, 0.0, 2.5, 0.0]], dtype=tf.float64)
-        K_self = float(kernel.K(X_active, X_active).numpy())
-        K_cross = float(kernel.K(X_active, X_inactive).numpy())
+        K_self = kernel.K(X_active, X_active).numpy().item()
+        K_cross = kernel.K(X_active, X_inactive).numpy().item()
         assert K_cross < K_self - 1e-6
 
     def test_axiom_both_active_equal_value_equals_self(self) -> None:
@@ -537,3 +522,151 @@ class TestWedgeHierarchical:
             kernel.K(X_a, X_b).numpy(),
             rtol=1e-12,
         )
+
+
+class TestClosedFormReference:
+    @staticmethod
+    def _ref_args() -> Dict[str, Any]:
+        return dict(
+            feature_dims=[0, 2, 3],
+            feature_bounds=np.array([[0.0, 1.0], [0.0, 5.0], [-1.0, 1.0]], dtype=np.float64),
+            indicator_dims=[1],
+            activity_conditions=[{}, {0: 1}, {0: 0}],
+        )
+
+    def test_arc_matches_numpy_reference(self) -> None:
+        from tests.gpflow.kernels.reference import ref_arc_hierarchical_kernel
+
+        kernel = _arc()
+        X = np.array(
+            [
+                [0.5, 1.0, 2.5, 0.0],
+                [0.2, 0.0, 0.0, 0.5],
+                [0.7, 1.0, 4.0, -0.4],
+            ]
+        )
+        ref = ref_arc_hierarchical_kernel(
+            X,
+            angle=kernel.angle.numpy(),
+            radius=kernel.radius.numpy(),
+            **self._ref_args(),
+        )
+        actual = kernel.K(tf.constant(X)).numpy()
+        np.testing.assert_allclose(actual, ref, rtol=1e-10)
+
+    def test_wedge_matches_numpy_reference(self) -> None:
+        from tests.gpflow.kernels.reference import ref_wedge_hierarchical_kernel
+
+        kernel = _wedge()
+        X = np.array(
+            [
+                [0.5, 1.0, 2.5, 0.0],
+                [0.2, 0.0, 0.0, 0.5],
+                [0.7, 1.0, 4.0, -0.4],
+            ]
+        )
+        ref = ref_wedge_hierarchical_kernel(
+            X,
+            theta1=kernel.theta1.numpy(),
+            theta2=kernel.theta2.numpy(),
+            rho=kernel.rho.numpy(),
+            **self._ref_args(),
+        )
+        actual = kernel.K(tf.constant(X)).numpy()
+        np.testing.assert_allclose(actual, ref, rtol=1e-10)
+
+
+class TestEmptyCases:
+    def test_uncond_only_arc_skips_conditional_parameters(self) -> None:
+        kernel = ArcHierarchical(
+            feature_dims=[0, 1],
+            feature_bounds=_canonical_bounds(2),
+        )
+        X = tf.constant([[0.5, 0.7], [0.3, 0.4], [0.9, 0.1]], dtype=tf.float64)
+        K = kernel.K(X).numpy()
+        assert K.shape == (3, 3)
+        eigs = np.linalg.eigvalsh(K + 1e-10 * np.eye(3))
+        assert eigs.min() > -1e-8
+
+    def test_cond_only_wedge(self) -> None:
+        kernel = WedgeHierarchical(
+            feature_dims=[1, 2],
+            feature_bounds=tf.constant([[0.0, 1.0], [0.0, 1.0]], dtype=tf.float64),
+            indicator_dims=[0],
+            activity_conditions=[
+                ActivityCondition({0: 1}),
+                ActivityCondition({0: 0}),
+            ],
+        )
+        X = tf.constant([[1.0, 0.5, 0.0], [0.0, 0.0, 0.5]], dtype=tf.float64)
+        K = kernel.K(X).numpy()
+        assert K.shape == (2, 2)
+        assert np.all(np.isfinite(K))
+
+
+class TestComposability:
+    def test_arc_composes_with_constant_for_variance(self) -> None:
+        import gpflow
+
+        kernel = gpflow.kernels.Constant() * _arc()
+        X = tf.constant(
+            [
+                [0.5, 1.0, 2.5, 0.0],
+                [0.2, 0.0, 0.0, 0.5],
+            ],
+            dtype=tf.float64,
+        )
+        K = kernel.K(X).numpy()
+        assert K.shape == (2, 2)
+        assert np.all(np.isfinite(K))
+
+
+class TestDifferentiability:
+    def test_arc_gradients_are_finite_and_nonzero(self) -> None:
+        kernel = _arc()
+        X = tf.constant(
+            [
+                [0.5, 1.0, 2.5, 0.0],
+                [0.2, 0.0, 0.0, 0.5],
+                [0.7, 1.0, 4.0, -0.4],
+                [0.3, 0.0, 0.0, -0.2],
+            ],
+            dtype=tf.float64,
+        )
+        with tf.GradientTape() as tape:
+            K = tf.reduce_sum(kernel.K(X))
+        grads = tape.gradient(
+            K, [kernel.angle.unconstrained_variable, kernel.radius.unconstrained_variable]
+        )
+        for g in grads:
+            assert g is not None
+            g_np = g.numpy()
+            assert np.all(np.isfinite(g_np))
+            assert np.any(np.abs(g_np) > 1e-12)
+
+    def test_wedge_gradients_are_finite_and_nonzero(self) -> None:
+        kernel = _wedge()
+        X = tf.constant(
+            [
+                [0.5, 1.0, 2.5, 0.0],
+                [0.2, 0.0, 0.0, 0.5],
+                [0.7, 1.0, 4.0, -0.4],
+                [0.3, 0.0, 0.0, -0.2],
+            ],
+            dtype=tf.float64,
+        )
+        with tf.GradientTape() as tape:
+            K = tf.reduce_sum(kernel.K(X))
+        grads = tape.gradient(
+            K,
+            [
+                kernel.theta1.unconstrained_variable,
+                kernel.theta2.unconstrained_variable,
+                kernel.rho.unconstrained_variable,
+            ],
+        )
+        for g in grads:
+            assert g is not None
+            g_np = g.numpy()
+            assert np.all(np.isfinite(g_np))
+            assert np.any(np.abs(g_np) > 1e-12)

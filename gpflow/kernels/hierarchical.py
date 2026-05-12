@@ -58,9 +58,7 @@ class ActivityCondition:
     def __post_init__(self) -> None:
         for key, value in self.requirements.items():
             if not isinstance(key, int) or isinstance(key, bool) or key < 0:
-                raise ValueError(
-                    f"`requirements` keys must be non-negative ints; got key {key!r}."
-                )
+                raise ValueError(f"`requirements` keys must be non-negative ints; got key {key!r}.")
             if not isinstance(value, int) or isinstance(value, bool) or value < 0:
                 raise ValueError(
                     f"`requirements` values must be non-negative ints; got value "
@@ -113,12 +111,15 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         overlap = set(feature_dims).intersection(indicator_dims)
         if overlap:
             raise ValueError(
-                f"`feature_dims` and `indicator_dims` overlap on columns "
-                f"{sorted(overlap)}."
+                f"`feature_dims` and `indicator_dims` overlap on columns " f"{sorted(overlap)}."
             )
 
         bounds_tensor = tf.convert_to_tensor(feature_bounds, dtype=tf.float64)
-        if bounds_tensor.shape.rank != 2 or bounds_tensor.shape[0] != len(feature_dims) or bounds_tensor.shape[1] != 2:
+        if (
+            bounds_tensor.shape.rank != 2
+            or bounds_tensor.shape[0] != len(feature_dims)
+            or bounds_tensor.shape[1] != 2
+        ):
             raise ValueError(
                 f"`feature_bounds` must have shape [len(feature_dims), 2] = "
                 f"[{len(feature_dims)}, 2]; got {tuple(bounds_tensor.shape)}."
@@ -156,12 +157,8 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         self._indicator_dims = tf.constant(indicator_dims, dtype=tf.int32)
         self._bounds = bounds_tensor
 
-        cond_local_idx = [
-            j for j, ac in enumerate(activity_conditions) if ac.requirements
-        ]
-        uncond_local_idx = [
-            j for j in range(self._n_feat) if j not in set(cond_local_idx)
-        ]
+        cond_local_idx = [j for j, ac in enumerate(activity_conditions) if ac.requirements]
+        uncond_local_idx = [j for j in range(self._n_feat) if j not in set(cond_local_idx)]
 
         self._cond_local_idx = cond_local_idx
         self._uncond_local_idx = uncond_local_idx
@@ -267,9 +264,7 @@ class ArcHierarchical(HierarchicalEmbeddingKernel):
         if self._n_cond > 0:
             self.angle = Parameter(
                 0.5 * tf.ones(self._n_cond, dtype=tf.float64),
-                transform=tfp.bijectors.Sigmoid(
-                    to_default_float(0.1), to_default_float(0.9)
-                ),
+                transform=tfp.bijectors.Sigmoid(to_default_float(0.1), to_default_float(0.9)),
                 name="angle",
             )
             self.radius = Parameter(
@@ -318,9 +313,7 @@ class WedgeHierarchical(HierarchicalEmbeddingKernel):
             )
             self.rho = Parameter(
                 0.5 * np.pi * tf.ones(self._n_cond, dtype=tf.float64),
-                transform=tfp.bijectors.Sigmoid(
-                    to_default_float(1e-6), to_default_float(np.pi)
-                ),
+                transform=tfp.bijectors.Sigmoid(to_default_float(1e-6), to_default_float(np.pi)),
                 name="rho",
             )
 

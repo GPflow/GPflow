@@ -61,3 +61,30 @@ def test_positive_semidefinite_periodic(base_class: Type[kernels.IsotropicStatio
     """
     kernel = kernels.Periodic(base_class())
     pos_semidefinite(kernel)
+
+
+@pytest.mark.parametrize("kernel_class", [kernels.ArcHierarchical, kernels.WedgeHierarchical])
+def test_positive_semidefinite_hierarchical(
+    kernel_class: Type[kernels.HierarchicalEmbeddingKernel],
+) -> None:
+    """The hierarchical kernels require search-space metadata, so they cannot
+    use the bare-`kernel_class()` shape of the generic test above."""
+    kernel = kernel_class(
+        feature_dims=[0, 2, 3, 4],
+        feature_bounds=tf.constant(
+            [[0.0, 1.0], [0.0, 1.0], [0.0, 1.0], [0.0, 1.0]], dtype=tf.float64
+        ),
+        indicator_dims=[1],
+        activity_conditions=[
+            kernels.ActivityCondition(),
+            kernels.ActivityCondition({0: 1}),
+            kernels.ActivityCondition({0: 0}),
+            kernels.ActivityCondition(),
+        ],
+    )
+    # Indicator column must be integer-valued (0 or 1); rest can be float.
+    N = 50
+    X = rng.randn(N, 5)
+    X[:, 1] = rng.randint(0, 2, size=N).astype(float)
+    eig = tf.linalg.eigvalsh(kernel(X)).numpy()
+    assert_array_less(-1e-8, eig)
