@@ -26,7 +26,7 @@ def ref_rbf_kernel(
             delta = vecA - vecB
             distance_squared = np.dot(delta.T, delta)
             kernel[row_index, column_index] = signal_variance * np.exp(
-                -0.5 * distance_squared / lengthscales**2
+                -0.5 * distance_squared / lengthscales ** 2
             )
     return kernel
 
@@ -68,7 +68,11 @@ def ref_arccosine_kernel(
                 J += (np.pi - theta) * (1.0 + 2.0 * np.cos(theta) ** 2)
 
             kernel[row, col] = (
-                signal_variance * (1.0 / np.pi) * J * x_denominator**order * y_denominator**order
+                signal_variance
+                * (1.0 / np.pi)
+                * J
+                * x_denominator ** order
+                * y_denominator ** order
             )
     return kernel
 
@@ -104,7 +108,7 @@ def ref_periodic_kernel(
         exp_dist = (1 + dist) * np.exp(-dist)
     elif base_name == "Matern52":
         dist = np.sqrt(5) * np.sum(np.abs(sine_base), axis=-1)
-        exp_dist = (1 + dist + dist**2 / 3) * np.exp(-dist)
+        exp_dist = (1 + dist + dist ** 2 / 3) * np.exp(-dist)
     return signal_variance * exp_dist
 
 
@@ -161,10 +165,10 @@ def ref_arc_hierarchical_kernel(
         X, feature_dims, feature_bounds, indicator_dims, activity_conditions, arc
     )
     diff = Z[:, None, :] - Z[None, :, :]
-    r2 = np.sum(diff**2, axis=-1)
+    r2 = np.sum(diff ** 2, axis=-1)
     r = np.sqrt(np.maximum(r2, 0.0))
     sqrt5 = np.sqrt(5.0)
-    result: AnyNDArray = base_variance * (1.0 + sqrt5 * r + 5.0 / 3.0 * r**2) * np.exp(-sqrt5 * r)
+    result: AnyNDArray = base_variance * (1.0 + sqrt5 * r + 5.0 / 3.0 * r ** 2) * np.exp(-sqrt5 * r)
     return result
 
 
@@ -188,8 +192,8 @@ def ref_wedge_hierarchical_kernel(
         X, feature_dims, feature_bounds, indicator_dims, activity_conditions, wedge
     )
     diff = Z[:, None, :] - Z[None, :, :]
-    r2 = np.sum(diff**2, axis=-1)
+    r2 = np.sum(diff ** 2, axis=-1)
     r = np.sqrt(np.maximum(r2, 0.0))
     sqrt5 = np.sqrt(5.0)
-    result: AnyNDArray = base_variance * (1.0 + sqrt5 * r + 5.0 / 3.0 * r**2) * np.exp(-sqrt5 * r)
+    result: AnyNDArray = base_variance * (1.0 + sqrt5 * r + 5.0 / 3.0 * r ** 2) * np.exp(-sqrt5 * r)
     return result
