@@ -31,6 +31,15 @@
 # This notebook walks through GPflow's two hierarchical kernels —
 # `ArcHierarchical` (Swersky et al., 2014) and `WedgeHierarchical`
 # (Horn et al., 2019) — on a small synthetic disjunctive function.
+#
+# ## Worked example: fit a GP on a synthetic disjunctive function
+#
+# $$f(x_1, y_1, x_2, x_3) =
+#     \sin(2\pi x_1)
+#   \;+\; \mathbf{1}[y_1 = 1] \cdot \tfrac{1}{2} \cos(\pi x_2 / 5)
+#   \;+\; \mathbf{1}[y_1 = 0] \cdot \tfrac{1}{2} x_3.$$
+#
+# The conditional kernel must accurately represent the disjunctive structure.
 
 import numpy as np
 import tensorflow as tf
@@ -40,6 +49,43 @@ from gpflow.kernels import ActivityCondition, ArcHierarchical, WedgeHierarchical
 
 np.random.seed(1793)
 tf.random.set_seed(1793)
+
+
+def objective(X: np.ndarray) -> np.ndarray:
+    x1, y1, x2, x3 = X[:, 0], X[:, 1], X[:, 2], X[:, 3]
+    return (
+        np.sin(2.0 * np.pi * x1)
+        + (y1 > 0.5).astype(float) * 0.5 * np.cos(np.pi * x2 / 5.0)
+        + (y1 < 0.5).astype(float) * 0.5 * x3
+    ).reshape(-1, 1)
+
+
+def sample_inputs(n: int) -> np.ndarray:
+    x1 = np.random.uniform(0.0, 1.0, size=n)
+    y1 = np.random.randint(0, 2, size=n).astype(float)
+    x2 = np.random.uniform(0.0, 5.0, size=n)
+    x3 = np.random.uniform(-1.0, 1.0, size=n)
+    return np.stack([x1, y1, x2, x3], axis=-1)
+
+
+X_train = sample_inputs(40)
+Y_train = objective(X_train) + 0.05 * np.random.randn(40, 1)
+X_test = np.array(
+    [
+        [0.3, 1.0, 2.0, 0.0],  # y1 = 1 branch
+        [0.3, 0.0, 0.0, 0.5],  # y1 = 0 branch
+        [0.7, 1.0, 4.0, 0.0],
+        [0.7, 0.0, 0.0, -0.4],
+    ]
+)
+
+
+feature_dims = [0, 2, 3]
+feature_bounds = tf.constant(
+    [[0.0, 1.0], [0.0, 5.0], [-1.0, 1.0]], dtype=tf.float64
+)
+indicator_dims = [1]
+
 
 # %% [markdown]
 # ## Three axioms for a conditional distance
@@ -76,11 +122,6 @@ tf.random.set_seed(1793)
 # $[x_1, y_1, x_2, x_3]$:
 
 # %%
-feature_dims = [0, 2, 3]
-feature_bounds = tf.constant(
-    [[0.0, 1.0], [0.0, 5.0], [-1.0, 1.0]], dtype=tf.float64
-)
-indicator_dims = [1]
 activity_conditions = [
     ActivityCondition(),  # x1: unconditional
     ActivityCondition({0: 1}),  # x2: active when indicator 0 == 1
@@ -103,37 +144,6 @@ print("angle init:", arc.angle.numpy())
 print("radius init:", arc.radius.numpy())
 
 # %% [markdown]
-# ## Worked example: fit a GP on a synthetic disjunctive function
-#
-# $$f(x_1, y_1, x_2, x_3) =
-#     \sin(2\pi x_1)
-#   \;+\; \mathbf{1}[y_1 = 1] \cdot \tfrac{1}{2} \cos(\pi x_2 / 5)
-#   \;+\; \mathbf{1}[y_1 = 0] \cdot \tfrac{1}{2} x_3.$$
-#
-# The conditional kernel must accurately represent the disjunctive structure.
-
-
-# %%
-def objective(X: np.ndarray) -> np.ndarray:
-    x1, y1, x2, x3 = X[:, 0], X[:, 1], X[:, 2], X[:, 3]
-    return (
-        np.sin(2.0 * np.pi * x1)
-        + (y1 > 0.5).astype(float) * 0.5 * np.cos(np.pi * x2 / 5.0)
-        + (y1 < 0.5).astype(float) * 0.5 * x3
-    ).reshape(-1, 1)
-
-
-def sample_inputs(n: int) -> np.ndarray:
-    x1 = np.random.uniform(0.0, 1.0, size=n)
-    y1 = np.random.randint(0, 2, size=n).astype(float)
-    x2 = np.random.uniform(0.0, 5.0, size=n)
-    x3 = np.random.uniform(-1.0, 1.0, size=n)
-    return np.stack([x1, y1, x2, x3], axis=-1)
-
-
-X_train = sample_inputs(40)
-Y_train = objective(X_train) + 0.05 * np.random.randn(40, 1)
-
 # Wrap in a Constant() factor so the GP can learn an overall variance.
 arc_for_fit = ArcHierarchical(
     feature_dims=feature_dims,
@@ -161,14 +171,6 @@ print("learnt radius:", arc_for_fit.radius.numpy())
 # space, so predicted means follow the corresponding branch's signal.
 
 # %%
-X_test = np.array(
-    [
-        [0.3, 1.0, 2.0, 0.0],  # y1 = 1 branch
-        [0.3, 0.0, 0.0, 0.5],  # y1 = 0 branch
-        [0.7, 1.0, 4.0, 0.0],
-        [0.7, 0.0, 0.0, -0.4],
-    ]
-)
 mean, var = gpr.predict_f(X_test)
 truth = objective(X_test).ravel()
 for x, m, v, t in zip(X_test, mean.numpy().ravel(), var.numpy().ravel(), truth):
@@ -216,14 +218,6 @@ print("learnt rho:   ", wedge.rho.numpy())
 # space, so predicted means follow the corresponding branch's signal.
 
 # %%
-X_test = np.array(
-    [
-        [0.3, 1.0, 2.0, 0.0],  # y1 = 1 branch
-        [0.3, 0.0, 0.0, 0.5],  # y1 = 0 branch
-        [0.7, 1.0, 4.0, 0.0],
-        [0.7, 0.0, 0.0, -0.4],
-    ]
-)
 mean, var = gpr.predict_f(X_test)
 truth = objective(X_test).ravel()
 for x, m, v, t in zip(X_test, mean.numpy().ravel(), var.numpy().ravel(), truth):
