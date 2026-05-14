@@ -26,19 +26,32 @@ import gpflow.ci_utils
 from gpflow import kernels
 from gpflow.base import AnyNDArray, TensorType
 from gpflow.kernels.categorical import Categorical
-from gpflow.kernels.hierarchical import ActivityCondition, ArcHierarchical, WedgeHierarchical
+from gpflow.kernels.hierarchical import (
+    ActivityCondition,
+    ArcHierarchical,
+    HierarchyNode,
+    WedgeHierarchical,
+)
 
 
 def _hierarchical_kwargs() -> Dict[str, Any]:
     return dict(
-        feature_dims=[0, 2, 3],
-        feature_bounds=tf.constant([[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]], dtype=tf.float64),
-        indicator_dims=[1],
-        activity_conditions=[
-            ActivityCondition(),
-            ActivityCondition({0: 1}),
-            ActivityCondition({0: 0}),
+        hierarchy=[
+            HierarchyNode("shared", feature_dims=[0], feature_bounds=[[0.0, 1.0]]),
+            HierarchyNode(
+                "branch_A",
+                feature_dims=[2],
+                feature_bounds=[[0.0, 1.0]],
+                activity_condition=ActivityCondition({0: 1}),
+            ),
+            HierarchyNode(
+                "branch_B",
+                feature_dims=[3],
+                feature_bounds=[[0.0, 1.0]],
+                activity_condition=ActivityCondition({0: 0}),
+            ),
         ],
+        indicator_dims=[1],
     )
 
 
@@ -156,7 +169,9 @@ def test_broadcasting(
         loop = cs(
             unroll_batches(
                 lambda x: unroll_batches(
-                    lambda x2: mo_kernel(x, x2, full_cov=True, full_output_cov=True), X2, 2
+                    lambda x2: mo_kernel(x, x2, full_cov=True, full_output_cov=True),
+                    X2,
+                    2,
                 ),
                 X,
                 2,
@@ -187,7 +202,9 @@ def test_broadcasting(
         loop = cs(
             unroll_batches(
                 lambda x: unroll_batches(
-                    lambda x2: mo_kernel(x, x2, full_cov=True, full_output_cov=False), X2, 2
+                    lambda x2: mo_kernel(x, x2, full_cov=True, full_output_cov=False),
+                    X2,
+                    2,
                 ),
                 X,
                 2,
@@ -261,7 +278,9 @@ def test_broadcasting(
     else:  # Single-output kernel:
         loop = cs(
             unroll_batches(
-                lambda x: unroll_batches(lambda x2: kernel(x, x2, full_cov=True), X2, 2), X, 2
+                lambda x: unroll_batches(lambda x2: kernel(x, x2, full_cov=True), X2, 2),
+                X,
+                2,
             ),
             "[batch..., batch2..., N, N2]",
         )
@@ -269,7 +288,12 @@ def test_broadcasting(
             tf.transpose(
                 loop,
                 tf.concat(
-                    [np.arange(rank), [rank + rank2], np.arange(rank2) + rank, [rank + rank2 + 1]],
+                    [
+                        np.arange(rank),
+                        [rank + rank2],
+                        np.arange(rank2) + rank,
+                        [rank + rank2 + 1],
+                    ],
                     0,
                 ),
             ),

@@ -45,7 +45,12 @@ import numpy as np
 import tensorflow as tf
 
 import gpflow
-from gpflow.kernels import ActivityCondition, ArcHierarchical, WedgeHierarchical
+from gpflow.kernels import (
+    ActivityCondition,
+    ArcHierarchical,
+    HierarchyNode,
+    WedgeHierarchical,
+)
 
 np.random.seed(1793)
 tf.random.set_seed(1793)
@@ -80,10 +85,6 @@ X_test = np.array(
 )
 
 
-feature_dims = [0, 2, 3]
-feature_bounds = tf.constant(
-    [[0.0, 1.0], [0.0, 5.0], [-1.0, 1.0]], dtype=tf.float64
-)
 indicator_dims = [1]
 
 
@@ -108,36 +109,42 @@ indicator_dims = [1]
 # %% [markdown]
 # ## Describe the search space to the kernel
 #
-# The kernel needs four pieces of information:
+# The kernel takes two pieces of information:
 #
-# * `feature_dims` — column indices of real-valued features in the flat input;
-# * `feature_bounds` — `[D_f, 2]` `(lower, upper)` per feature, used for
-#   normalisation to $[0, 1]$;
-# * `indicator_dims` — column indices of the integer-valued indicators;
-# * `activity_conditions` — one `ActivityCondition` per feature column,
-#   describing the AND-conjunction of indicator requirements that gates it
-#   (an empty `ActivityCondition` means the column is unconditional).
+# * `hierarchy` — a sequence of `HierarchyNode`s. Each node binds a group of
+#   feature columns to the `ActivityCondition` that gates them (and carries
+#   the per-feature `(lower, upper)` bounds used to normalise to $[0, 1]$).
+#   An empty `ActivityCondition` makes the node's features unconditional.
+# * `indicator_dims` — column indices of the integer-valued indicators in the
+#   flat input. The keys of each node's `ActivityCondition` are interpreted as
+#   positions within this sequence.
 #
-# For our four-variable example, column layout in $X$ is
-# $[x_1, y_1, x_2, x_3]$:
+# For our four-variable example, the column layout in $X$ is
+# $[x_1, y_1, x_2, x_3]$ — so $x_1$ lives in a shared node, $x_2$ in a node
+# gated by $y_1 = 1$, and $x_3$ in a node gated by $y_1 = 0$:
 
 # %%
-activity_conditions = [
-    ActivityCondition(),  # x1: unconditional
-    ActivityCondition({0: 1}),  # x2: active when indicator 0 == 1
-    ActivityCondition({0: 0}),  # x3: active when indicator 0 == 0
+hierarchy = [
+    HierarchyNode("shared", feature_dims=[0], feature_bounds=[[0.0, 1.0]]),
+    HierarchyNode(
+        "branch_A",
+        feature_dims=[2],
+        feature_bounds=[[0.0, 5.0]],
+        activity_condition=ActivityCondition({0: 1}),
+    ),
+    HierarchyNode(
+        "branch_B",
+        feature_dims=[3],
+        feature_bounds=[[-1.0, 1.0]],
+        activity_condition=ActivityCondition({0: 0}),
+    ),
 ]
 
 # %% [markdown]
 # ## Construct an Arc kernel and inspect it
 
 # %%
-arc = ArcHierarchical(
-    feature_dims=feature_dims,
-    feature_bounds=feature_bounds,
-    indicator_dims=indicator_dims,
-    activity_conditions=activity_conditions,
-)
+arc = ArcHierarchical(hierarchy=hierarchy, indicator_dims=indicator_dims)
 print("conditional columns:", arc._n_cond)
 print("unconditional columns:", arc._n_uncond)
 print("angle init:", arc.angle.numpy())
@@ -146,10 +153,7 @@ print("radius init:", arc.radius.numpy())
 # %% [markdown]
 # Wrap in a Constant() factor so the GP can learn an overall variance.
 arc_for_fit = ArcHierarchical(
-    feature_dims=feature_dims,
-    feature_bounds=feature_bounds,
-    indicator_dims=indicator_dims,
-    activity_conditions=activity_conditions,
+    hierarchy=hierarchy, indicator_dims=indicator_dims
 )
 kernel = gpflow.kernels.Constant() * arc_for_fit
 gpr = gpflow.models.GPR(
@@ -192,12 +196,7 @@ for x, m, v, t in zip(X_test, mean.numpy().ravel(), var.numpy().ravel(), truth):
 # than being constant in it.
 
 # %%
-wedge = WedgeHierarchical(
-    feature_dims=feature_dims,
-    feature_bounds=feature_bounds,
-    indicator_dims=indicator_dims,
-    activity_conditions=activity_conditions,
-)
+wedge = WedgeHierarchical(hierarchy=hierarchy, indicator_dims=indicator_dims)
 kernel = gpflow.kernels.Constant() * wedge
 gpr = gpflow.models.GPR(
     data=(X_train, Y_train), kernel=kernel, noise_variance=0.05

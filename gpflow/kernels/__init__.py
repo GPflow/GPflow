@@ -23,6 +23,7 @@ from .hierarchical import (
     ActivityCondition,
     ArcHierarchical,
     HierarchicalEmbeddingKernel,
+    HierarchyNode,
     WedgeHierarchical,
 )
 from .linears import Linear, Polynomial
@@ -69,6 +70,7 @@ __all__ = [
     "Cosine",
     "Exponential",
     "HierarchicalEmbeddingKernel",
+    "HierarchyNode",
     "IndependentLatent",
     "IsotropicStationary",
     "Kernel",

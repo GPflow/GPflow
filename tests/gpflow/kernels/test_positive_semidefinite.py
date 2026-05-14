@@ -52,9 +52,12 @@ def test_positive_semidefinite(kernel_class: Type[kernels.Kernel]) -> None:
 
 
 @pytest.mark.parametrize(
-    "base_class", [kernel for kernel in gpflow.ci_utils.subclasses(kernels.IsotropicStationary)]
+    "base_class",
+    [kernel for kernel in gpflow.ci_utils.subclasses(kernels.IsotropicStationary)],
 )
-def test_positive_semidefinite_periodic(base_class: Type[kernels.IsotropicStationary]) -> None:
+def test_positive_semidefinite_periodic(
+    base_class: Type[kernels.IsotropicStationary],
+) -> None:
     """
     A valid kernel is positive semidefinite. Some kernels are only valid for
     particular input shapes, see https://github.com/GPflow/GPflow/issues/1328
@@ -70,17 +73,24 @@ def test_positive_semidefinite_hierarchical(
     """The hierarchical kernels require search-space metadata, so they cannot
     use the bare-`kernel_class()` shape of the generic test above."""
     kernel = kernel_class(
-        feature_dims=[0, 2, 3, 4],
-        feature_bounds=tf.constant(
-            [[0.0, 1.0], [0.0, 1.0], [0.0, 1.0], [0.0, 1.0]], dtype=tf.float64
-        ),
-        indicator_dims=[1],
-        activity_conditions=[
-            kernels.ActivityCondition(),
-            kernels.ActivityCondition({0: 1}),
-            kernels.ActivityCondition({0: 0}),
-            kernels.ActivityCondition(),
+        hierarchy=[
+            kernels.HierarchyNode(
+                "shared", feature_dims=[0, 4], feature_bounds=[[0.0, 1.0], [0.0, 1.0]]
+            ),
+            kernels.HierarchyNode(
+                "branch_A",
+                feature_dims=[2],
+                feature_bounds=[[0.0, 1.0]],
+                activity_condition=kernels.ActivityCondition({0: 1}),
+            ),
+            kernels.HierarchyNode(
+                "branch_B",
+                feature_dims=[3],
+                feature_bounds=[[0.0, 1.0]],
+                activity_condition=kernels.ActivityCondition({0: 0}),
+            ),
         ],
+        indicator_dims=[1],
     )
     # Indicator column must be integer-valued (0 or 1); rest can be float.
     N = 50

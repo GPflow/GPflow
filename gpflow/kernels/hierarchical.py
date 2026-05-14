@@ -21,7 +21,7 @@ structure on the input space: a point whose conditional feature is
 
 import abc
 from dataclasses import dataclass, field
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, List, Mapping, Optional, Sequence
 
 import numpy as np
 import tensorflow as tf
@@ -66,6 +66,60 @@ class ActivityCondition:
                 )
 
 
+@dataclass(frozen=True)
+class HierarchyNode:
+    """One node of a hierarchical kernel's search space.
+
+    A node groups one or more feature columns that share the same activation
+    condition. Every feature owned by the node is gated by
+    :attr:`activity_condition`; the empty default condition makes the node's
+    features unconditional.
+
+    :param name: human-readable name of the node; used in error messages and
+        for debugging. Must be unique within a hierarchy.
+    :param feature_dims: column indices of the (real-valued) features owned by
+        this node. Must be non-empty and contain no duplicates.
+    :param feature_bounds: tensor of shape ``[len(feature_dims), 2]`` giving
+        ``(lower, upper)`` per feature, in the same order as
+        :attr:`feature_dims`. Used for normalisation to ``[0, 1]``.
+    :param activity_condition: :class:`ActivityCondition` shared by every
+        feature this node owns. Defaults to an empty (unconditional) condition.
+    """
+
+    name: str
+    feature_dims: Sequence[int]
+    feature_bounds: TensorType
+    activity_condition: ActivityCondition = field(default_factory=ActivityCondition)
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.name, str):
+            raise ValueError(f"`name` must be a str; got {type(self.name).__name__}.")
+        feature_dims = list(self.feature_dims)
+        if not feature_dims:
+            raise ValueError(f"`feature_dims` of node {self.name!r} must be non-empty.")
+        _check_non_negative_unique(feature_dims, f"feature_dims of node {self.name!r}")
+
+        if not isinstance(self.activity_condition, ActivityCondition):
+            raise ValueError(
+                f"`activity_condition` of node {self.name!r} must be an "
+                f"ActivityCondition instance; got "
+                f"{type(self.activity_condition).__name__}."
+            )
+
+        bounds = tf.convert_to_tensor(self.feature_bounds, dtype=tf.float64)
+        if bounds.shape.rank != 2 or bounds.shape[0] != len(feature_dims) or bounds.shape[1] != 2:
+            raise ValueError(
+                f"`feature_bounds` of node {self.name!r} must have shape "
+                f"[len(feature_dims), 2] = [{len(feature_dims)}, 2]; got "
+                f"{tuple(bounds.shape)}."
+            )
+        if bool(tf.reduce_any(bounds[:, 1] < bounds[:, 0]).numpy()):
+            raise ValueError(
+                f"`feature_bounds` rows of node {self.name!r} must satisfy "
+                f"lower <= upper; got at least one inverted row."
+            )
+
+
 class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
     """Abstract base for kernels that embed conditional features into a stationary
     base kernel's input space, gated by indicator-derived activity masks.
@@ -74,28 +128,25 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
     normalised conditional features ``v_c`` and their float activity mask ``m_c``
     (both ``[batch..., N, D_cond]``) and returns ``[batch..., N, 2 * D_cond]``.
 
-    :param feature_dims: column indices of real-valued (non-indicator) features
-        in the flat input ``X``.
-    :param feature_bounds: tensor of shape ``[len(feature_dims), 2]`` giving
-        ``(lower, upper)`` per feature. Used for normalisation to ``[0, 1]``.
+    :param hierarchy: sequence of :class:`HierarchyNode`. Each node binds a
+        group of feature columns to an :class:`ActivityCondition` that gates
+        them. Feature columns must be globally unique across the hierarchy and
+        node names must be unique.
     :param indicator_dims: column indices of indicator (integer-valued) values
-        in ``X``.
-    :param activity_conditions: one :class:`ActivityCondition` per entry of
-        ``feature_dims`` (same order). An empty :class:`ActivityCondition`
-        denotes an unconditional column. If omitted, all feature columns are
-        treated as unconditional.
+        in ``X``. Indicator indices used in each node's activity condition are
+        interpreted as positions within this sequence.
+    :param base_kernel: stationary base kernel applied in the joint embedded
+        space. Defaults to :class:`Matern52` if omitted.
     :param active_dims: inherited from :class:`Kernel`. If supplied, both
-        ``feature_dims`` and ``indicator_dims`` are interpreted in the sliced
+        feature dims and ``indicator_dims`` are interpreted in the sliced
         coordinate system.
     :param name: optional kernel name.
     """
 
     def __init__(
         self,
-        feature_dims: Sequence[int],
-        feature_bounds: TensorType,
+        hierarchy: Sequence[HierarchyNode],
         indicator_dims: Sequence[int] = (),
-        activity_conditions: Sequence[ActivityCondition] = (),
         base_kernel: Optional[Stationary] = None,
         *,
         active_dims: Optional[ActiveDims] = None,
@@ -103,61 +154,53 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
     ) -> None:
         super().__init__(active_dims=active_dims, name=name)
 
-        feature_dims = list(feature_dims)
+        hierarchy = tuple(hierarchy)
+        if not hierarchy:
+            raise ValueError("`hierarchy` must contain at least one node.")
+        names = [node.name for node in hierarchy]
+        if len(set(names)) != len(names):
+            raise ValueError(f"`hierarchy` contains duplicate node names: {names}.")
+
         indicator_dims = list(indicator_dims)
-
-        _check_non_negative_unique(feature_dims, "feature_dims")
         _check_non_negative_unique(indicator_dims, "indicator_dims")
-        overlap = set(feature_dims).intersection(indicator_dims)
-        if overlap:
-            raise ValueError(
-                f"`feature_dims` and `indicator_dims` overlap on columns " f"{sorted(overlap)}."
-            )
 
-        bounds_tensor = tf.convert_to_tensor(feature_bounds, dtype=tf.float64)
-        if (
-            bounds_tensor.shape.rank != 2
-            or bounds_tensor.shape[0] != len(feature_dims)
-            or bounds_tensor.shape[1] != 2
-        ):
-            raise ValueError(
-                f"`feature_bounds` must have shape [len(feature_dims), 2] = "
-                f"[{len(feature_dims)}, 2]; got {tuple(bounds_tensor.shape)}."
-            )
-        if bool(tf.reduce_any(bounds_tensor[:, 1] < bounds_tensor[:, 0]).numpy()):
-            raise ValueError(
-                "`feature_bounds` rows must satisfy lower <= upper; "
-                "got at least one inverted row."
-            )
-
-        if not activity_conditions:
-            activity_conditions = [ActivityCondition() for _ in feature_dims]
-        else:
-            activity_conditions = list(activity_conditions)
-            if len(activity_conditions) != len(feature_dims):
-                raise ValueError(
-                    f"`activity_conditions` must have one entry per "
-                    f"`feature_dims` column ({len(feature_dims)}); got "
-                    f"{len(activity_conditions)}."
-                )
-
-        for j, ac in enumerate(activity_conditions):
-            for k in ac.requirements:
+        for node in hierarchy:
+            for k in node.activity_condition.requirements:
                 if k >= len(indicator_dims):
                     raise ValueError(
-                        f"`activity_conditions[{j}]` references indicator "
+                        f"`hierarchy` node {node.name!r} references indicator "
                         f"index {k}, but only {len(indicator_dims)} indicator "
                         f"dims were declared."
                     )
 
-        self._n_feat = len(feature_dims)
+        flat_feature_dims: List[int] = []
+        flat_bounds_rows: List[tf.Tensor] = []
+        flat_activity_conditions: List[ActivityCondition] = []
+        for node in hierarchy:
+            bounds = tf.convert_to_tensor(node.feature_bounds, dtype=tf.float64)
+            for i, fd in enumerate(node.feature_dims):
+                flat_feature_dims.append(fd)
+                flat_bounds_rows.append(bounds[i])
+                flat_activity_conditions.append(node.activity_condition)
+
+        _check_non_negative_unique(flat_feature_dims, "feature_dims")
+        overlap = set(flat_feature_dims).intersection(indicator_dims)
+        if overlap:
+            raise ValueError(
+                f"`feature_dims` and `indicator_dims` overlap on columns {sorted(overlap)}."
+            )
+
+        bounds_tensor = tf.stack(flat_bounds_rows, axis=0)
+
+        self._n_feat = len(flat_feature_dims)
         self._n_ind = len(indicator_dims)
 
-        self._feature_dims = tf.constant(feature_dims, dtype=tf.int32)
+        self._feature_dims = tf.constant(flat_feature_dims, dtype=tf.int32)
         self._indicator_dims = tf.constant(indicator_dims, dtype=tf.int32)
         self._bounds = bounds_tensor
+        self._hierarchy = hierarchy
 
-        cond_local_idx = [j for j, ac in enumerate(activity_conditions) if ac.requirements]
+        cond_local_idx = [j for j, ac in enumerate(flat_activity_conditions) if ac.requirements]
         uncond_local_idx = [j for j in range(self._n_feat) if j not in set(cond_local_idx)]
 
         self._cond_local_idx = cond_local_idx
@@ -166,7 +209,7 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         self._n_uncond = len(uncond_local_idx)
 
         required = [[_IGNORE] * self._n_ind for _ in range(self._n_feat)]
-        for j, ac in enumerate(activity_conditions):
+        for j, ac in enumerate(flat_activity_conditions):
             for k, v in ac.requirements.items():
                 required[j][k] = v
         self._required = tf.constant(required, dtype=tf.int32)
