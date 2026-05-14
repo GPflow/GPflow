@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Callable, List, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Sequence, Tuple
 
 import numpy as np
 import pytest
@@ -29,7 +29,7 @@ from gpflow.kernels.categorical import Categorical
 from gpflow.kernels.hierarchical import ActivityCondition, ArcHierarchical, WedgeHierarchical
 
 
-def _hierarchical_kwargs() -> dict[str, Any]:
+def _hierarchical_kwargs() -> Dict[str, Any]:
     return dict(
         feature_dims=[0, 2, 3],
         feature_bounds=tf.constant([[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]], dtype=tf.float64),
