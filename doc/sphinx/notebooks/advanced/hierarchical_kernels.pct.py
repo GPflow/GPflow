@@ -35,7 +35,6 @@
 import numpy as np
 import tensorflow as tf
 
-# %%
 import gpflow
 from gpflow.kernels import ActivityCondition, ArcHierarchical, WedgeHierarchical
 
