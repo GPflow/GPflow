@@ -79,9 +79,6 @@ X_test = np.array(
 )
 
 
-indicator_dims = [1]
-
-
 # %% [markdown]
 # ## Three axioms for a conditional distance
 #
@@ -142,6 +139,8 @@ hierarchy = [
 # %%
 
 from gpflow.kernels import ArcHierarchical
+
+indicator_dims = [1]
 
 arc = ArcHierarchical(hierarchy=hierarchy, indicator_dims=indicator_dims)
 print("conditional columns:", arc._n_cond)
