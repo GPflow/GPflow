@@ -45,12 +45,6 @@ import numpy as np
 import tensorflow as tf
 
 import gpflow
-from gpflow.kernels import (
-    ActivityCondition,
-    ArcHierarchical,
-    HierarchyNode,
-    WedgeHierarchical,
-)
 
 np.random.seed(1793)
 tf.random.set_seed(1793)
@@ -124,6 +118,8 @@ indicator_dims = [1]
 # gated by $y_1 = 1$, and $x_3$ in a node gated by $y_1 = 0$:
 
 # %%
+from gpflow.kernels import ActivityCondition, HierarchyNode
+
 hierarchy = [
     HierarchyNode("shared", feature_dims=[0], feature_bounds=[[0.0, 1.0]]),
     HierarchyNode(
@@ -144,6 +140,9 @@ hierarchy = [
 # ## Construct an Arc kernel and inspect it
 
 # %%
+
+from gpflow.kernels import ArcHierarchical
+
 arc = ArcHierarchical(hierarchy=hierarchy, indicator_dims=indicator_dims)
 print("conditional columns:", arc._n_cond)
 print("unconditional columns:", arc._n_uncond)
@@ -196,6 +195,8 @@ for x, m, v, t in zip(X_test, mean.numpy().ravel(), var.numpy().ravel(), truth):
 # than being constant in it.
 
 # %%
+from gpflow.kernels import WedgeHierarchical
+
 wedge = WedgeHierarchical(hierarchy=hierarchy, indicator_dims=indicator_dims)
 kernel = gpflow.kernels.Constant() * wedge
 gpr = gpflow.models.GPR(
