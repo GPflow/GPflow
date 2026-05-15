@@ -166,13 +166,6 @@ print(f"LML after fit:  {gpr.log_marginal_likelihood().numpy():+.3f}")
 print("learnt angle :", arc_for_fit.angle.numpy())
 print("learnt radius:", arc_for_fit.radius.numpy())
 
-# %% [markdown]
-# ## Predict on held-out points
-#
-# The kernel places the two branches on different parts of the embedded
-# space, so predicted means follow the corresponding branch's signal.
-
-# %%
 mean, var = gpr.predict_f(X_test)
 truth = objective(X_test).ravel()
 for x, m, v, t in zip(X_test, mean.numpy().ravel(), var.numpy().ravel(), truth):
@@ -210,13 +203,6 @@ print("learnt theta1:", wedge.theta1.numpy())
 print("learnt theta2:", wedge.theta2.numpy())
 print("learnt rho:   ", wedge.rho.numpy())
 
-# %% [markdown]
-# ## Predict on held-out points
-#
-# The kernel places the two branches on different parts of the embedded
-# space, so predicted means follow the corresponding branch's signal.
-
-# %%
 mean, var = gpr.predict_f(X_test)
 truth = objective(X_test).ravel()
 for x, m, v, t in zip(X_test, mean.numpy().ravel(), var.numpy().ravel(), truth):
