@@ -270,7 +270,7 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
             v_c = tf.gather(v, self._cond_local_idx, axis=-1)
             m_c = tf.gather(m_float, self._cond_local_idx, axis=-1)
             parts.append(self._embed_conditional(v_c, m_c))
-        if not parts:
+        if not parts:  # pragma: no cover - unreachable: enforced by HierarchyNode/__init__
             shape = tf.concat([tf.shape(X)[:-1], [0]], axis=0)
             return tf.zeros(shape, dtype=v.dtype)
         return tf.concat(parts, axis=-1)
