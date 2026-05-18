@@ -44,8 +44,6 @@
 import numpy as np
 import tensorflow as tf
 
-import gpflow
-
 np.random.seed(1793)
 tf.random.set_seed(1793)
 
@@ -138,8 +136,9 @@ hierarchy = [
 
 # %%
 
-from gpflow.kernels import ArcHierarchical
-
+from gpflow.kernels import ArcHierarchical, Constant
+from gpflow.models import GPR
+from gpflow.optimizers import Scipy
 indicator_dims = [1]
 
 arc = ArcHierarchical(hierarchy=hierarchy, indicator_dims=indicator_dims)
@@ -153,13 +152,13 @@ print("radius init:", arc.radius.numpy())
 arc_for_fit = ArcHierarchical(
     hierarchy=hierarchy, indicator_dims=indicator_dims
 )
-kernel = gpflow.kernels.Constant() * arc_for_fit
-gpr = gpflow.models.GPR(
+kernel = Constant() * arc_for_fit
+gpr = GPR(
     data=(X_train, Y_train), kernel=kernel, noise_variance=0.05
 )
 
 print(f"LML before fit: {gpr.log_marginal_likelihood().numpy():+.3f}")
-gpflow.optimizers.Scipy().minimize(
+Scipy().minimize(
     gpr.training_loss, gpr.trainable_variables, options={"maxiter": 100}
 )
 print(f"LML after fit:  {gpr.log_marginal_likelihood().numpy():+.3f}")
@@ -190,12 +189,12 @@ for x, m, v, t in zip(X_test, mean.numpy().ravel(), var.numpy().ravel(), truth):
 from gpflow.kernels import WedgeHierarchical
 
 wedge = WedgeHierarchical(hierarchy=hierarchy, indicator_dims=indicator_dims)
-kernel = gpflow.kernels.Constant() * wedge
-gpr = gpflow.models.GPR(
+kernel = Constant() * wedge
+gpr = GPR(
     data=(X_train, Y_train), kernel=kernel, noise_variance=0.05
 )
 print(f"LML before fit: {gpr.log_marginal_likelihood().numpy():+.3f}")
-gpflow.optimizers.Scipy().minimize(
+Scipy().minimize(
     gpr.training_loss, gpr.trainable_variables, options={"maxiter": 100}
 )
 print(f"LML after fit:  {gpr.log_marginal_likelihood().numpy():+.3f}")
