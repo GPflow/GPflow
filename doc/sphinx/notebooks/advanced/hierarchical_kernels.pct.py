@@ -14,7 +14,7 @@
 # ---
 
 # %% [markdown]
-# # Hierarchical (Arc and Wedge) kernels
+# # Hierarchical Arc kernels
 #
 # A *hierarchical* search space is one in which some input dimensions are only
 # meaningful when a corresponding indicator variable takes a particular value.
@@ -183,25 +183,13 @@ for x, m, v, t in zip(X_test, mean.numpy().ravel(), var.numpy().ravel(), truth):
 #
 # The "incomparable" distance now scales with the active value $v_c$ rather
 # than being constant in it.
+# GPR models may be constructed and trained in the same way as the arc above.
 
 # %%
 from gpflow.kernels import WedgeHierarchical
 
 wedge = WedgeHierarchical(hierarchy=hierarchy, indicator_dims=indicator_dims)
 kernel = Constant() * wedge
-gpr = GPR(data=(X_train, Y_train), kernel=kernel, noise_variance=0.05)
-print(f"LML before fit: {gpr.log_marginal_likelihood().numpy():+.3f}")
-Scipy().minimize(
-    gpr.training_loss, gpr.trainable_variables, options={"maxiter": 100}
-)
-print(f"LML after fit:  {gpr.log_marginal_likelihood().numpy():+.3f}")
-print("learnt theta1:", wedge.theta1.numpy())
-print("learnt theta2:", wedge.theta2.numpy())
-print("learnt rho:   ", wedge.rho.numpy())
-
-mean, var = gpr.predict_f(X_test)
-truth = objective(X_test).ravel()
-for x, m, v, t in zip(X_test, mean.numpy().ravel(), var.numpy().ravel(), truth):
-    print(
-        f"  x = {x.tolist()}  ->  mean = {m:+.3f}  var = {v:.3f}  truth = {t:+.3f}"
-    )
+print("initial theta1:", wedge.theta1.numpy())
+print("initial theta2:", wedge.theta2.numpy())
+print("initial rho:   ", wedge.rho.numpy())
