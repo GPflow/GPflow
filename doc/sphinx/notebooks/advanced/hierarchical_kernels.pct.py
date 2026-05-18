@@ -139,6 +139,7 @@ hierarchy = [
 from gpflow.kernels import ArcHierarchical, Constant
 from gpflow.models import GPR
 from gpflow.optimizers import Scipy
+
 indicator_dims = [1]
 
 arc = ArcHierarchical(hierarchy=hierarchy, indicator_dims=indicator_dims)
@@ -153,9 +154,7 @@ arc_for_fit = ArcHierarchical(
     hierarchy=hierarchy, indicator_dims=indicator_dims
 )
 kernel = Constant() * arc_for_fit
-gpr = GPR(
-    data=(X_train, Y_train), kernel=kernel, noise_variance=0.05
-)
+gpr = GPR(data=(X_train, Y_train), kernel=kernel, noise_variance=0.05)
 
 print(f"LML before fit: {gpr.log_marginal_likelihood().numpy():+.3f}")
 Scipy().minimize(
@@ -190,9 +189,7 @@ from gpflow.kernels import WedgeHierarchical
 
 wedge = WedgeHierarchical(hierarchy=hierarchy, indicator_dims=indicator_dims)
 kernel = Constant() * wedge
-gpr = GPR(
-    data=(X_train, Y_train), kernel=kernel, noise_variance=0.05
-)
+gpr = GPR(data=(X_train, Y_train), kernel=kernel, noise_variance=0.05)
 print(f"LML before fit: {gpr.log_marginal_likelihood().numpy():+.3f}")
 Scipy().minimize(
     gpr.training_loss, gpr.trainable_variables, options={"maxiter": 100}
