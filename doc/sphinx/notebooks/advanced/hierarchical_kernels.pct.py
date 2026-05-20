@@ -14,7 +14,7 @@
 # ---
 
 # %% [markdown]
-# # Hierarchical Arc kernels
+# # Hierarchical kernels
 #
 # A *hierarchical* search space is one in which some input dimensions are only
 # meaningful when a corresponding indicator variable takes a particular value.
