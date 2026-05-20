@@ -19,18 +19,13 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
+from gpflow.kernels import Constant, Matern52, SquaredExponential
 from gpflow.kernels.hierarchical import (
     ActivityCondition,
     ArcHierarchical,
     HierarchicalEmbeddingKernel,
     HierarchyNode,
     WedgeHierarchical,
-)
-
-from gpflow.kernels import (
-    Constant,
-    Matern52,
-    SquaredExponential,
 )
 
 
@@ -458,9 +453,7 @@ class TestBaseKernelPlumbing:
         assert not kernel.base_kernel.lengthscales.trainable
 
     @pytest.mark.parametrize("bad_lengthscales", [[1.0, 2.0], np.ones(7)])
-    def test_base_kernel_wrong_shape_lengthscales_rejected(
-        self, bad_lengthscales: Any
-    ) -> None:
+    def test_base_kernel_wrong_shape_lengthscales_rejected(self, bad_lengthscales: Any) -> None:
         # Canonical disjunction has D_embed=5; shapes (2,) and (7,) are wrong.
         with pytest.raises(ValueError, match="lengthscales"):
             ArcHierarchical(
@@ -780,9 +773,7 @@ class TestActiveDims:
     def _ref_args() -> Dict[str, Any]:
         return dict(
             feature_dims=[0, 2, 3],
-            feature_bounds=np.array(
-                [[0.0, 1.0], [0.0, 5.0], [-1.0, 1.0]], dtype=np.float64
-            ),
+            feature_bounds=np.array([[0.0, 1.0], [0.0, 5.0], [-1.0, 1.0]], dtype=np.float64),
             indicator_dims=[1],
             activity_conditions=[{}, {0: 1}, {0: 0}],
         )

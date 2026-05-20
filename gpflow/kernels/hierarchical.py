@@ -23,17 +23,18 @@ import abc
 from dataclasses import dataclass, field
 from typing import List, Mapping, Optional, Sequence
 
-from check_shapes import check_shapes, inherit_check_shapes
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
+from check_shapes import check_shapes, inherit_check_shapes
+
+from gpflow.experimental.utils import experimental
 
 from ..base import Parameter, TensorType
-from ..utilities import deepcopy, positive, set_trainable, to_default_float
 from ..config import default_float
+from ..utilities import deepcopy, positive, set_trainable, to_default_float
 from .base import ActiveDims, Kernel
 from .stationaries import Matern52, Stationary
-from gpflow.experimental.utils import experimental
 
 # Value used to denote inactive or ignored feature entries in
 # hierarchical/disjunctive kernel activation logic.
@@ -153,11 +154,12 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         dimension.
     :param active_dims: inherited from :class:`Kernel`. If supplied, both
         feature dims and ``indicator_dims`` are interpreted in the sliced
-        coordinate system. When the __call__ method receives inputs, the 
-        slice defined by ``active_dims`` is applied first, and the resulting 
+        coordinate system. When the __call__ method receives inputs, the
+        slice defined by ``active_dims`` is applied first, and the resulting
         coordinates are then processed according to the hierarchy and indicators.
     :param name: optional kernel name.
     """
+
     @experimental
     def __init__(
         self,
@@ -258,7 +260,7 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
     def hierarchy(self) -> Sequence[HierarchyNode]:
         """The hierarchy defining this kernel's structure."""
         return self._hierarchy
-    
+
     @property
     def n_cond_dims(self) -> int:
         """Get number of conditional feature dimensions."""
@@ -270,9 +272,8 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         return self._n_uncond
 
     @check_shapes(
-            "X: [batch..., N, D]", 
-            "return: [batch..., N, D_cond]"
-            )  # D_cond is inferred from context
+        "X: [batch..., N, D]", "return: [batch..., N, D_cond]"
+    )  # D_cond is inferred from context
     def _build_activity_mask(self, X: TensorType) -> tf.Tensor:
         if self._n_ind == 0:
             shape = tf.concat([tf.shape(X)[:-1], [self._n_feat]], axis=0)
@@ -295,9 +296,8 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         return tf.reduce_all(match, axis=-1)
 
     @check_shapes(
-            "X: [batch..., N, D]", 
-            "return: [batch..., N, D_f]"
-            )  # D_f is feature_dims (i.e. D_cond + D_uncond)
+        "X: [batch..., N, D]", "return: [batch..., N, D_f]"
+    )  # D_f is feature_dims (i.e. D_cond + D_uncond)
     def _normalise(self, X: TensorType) -> tf.Tensor:
         X_cast = tf.cast(X, self._bounds.dtype)
         v = tf.gather(X_cast, self._feature_dims, axis=-1)
@@ -308,18 +308,13 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     @check_shapes(
-            "v_c: [batch..., N, D_cond]", 
-            "m_c: [batch..., N, D_cond]", 
-            "return: [batch..., N, D_econd]"
-            ) # D_econd = 2*D_cond
+        "v_c: [batch..., N, D_cond]", "m_c: [batch..., N, D_cond]", "return: [batch..., N, D_econd]"
+    )  # D_econd = 2*D_cond
     def _embed_conditional(self, v_c: tf.Tensor, m_c: tf.Tensor) -> tf.Tensor:
         """Map ``[batch..., N, D_cond]`` conditional values and float masks to
         ``[batch..., N, 2 * D_cond]`` embedded coordinates."""
 
-    @check_shapes(
-            "X: [batch..., N, D]", 
-            "return: [batch..., N, D_e]"
-            ) # D_e = 2*D_cond + D_uncond
+    @check_shapes("X: [batch..., N, D]", "return: [batch..., N, D_e]")  # D_e = 2*D_cond + D_uncond
     def _embed(self, X: TensorType) -> tf.Tensor:
         v = self._normalise(X)
         m_float = tf.cast(self._build_activity_mask(X), v.dtype)
@@ -330,7 +325,9 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
             v_c = tf.gather(v, self._cond_local_idx, axis=-1)
             m_c = tf.gather(m_float, self._cond_local_idx, axis=-1)
             parts.append(self._embed_conditional(v_c, m_c))
-        if not parts:  # pragma: no subspace activated - unreachable: enforced by HierarchyNode/__init__
+        if (
+            not parts
+        ):  # pragma: no subspace activated - unreachable: enforced by HierarchyNode/__init__
             shape = tf.concat([tf.shape(X)[:-1], [0]], axis=0)
             return tf.zeros(shape, dtype=v.dtype)
         return tf.concat(parts, axis=-1)
@@ -338,15 +335,15 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
     @inherit_check_shapes
     def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
         """
-        Evaluate the kernel function on inputs ``X`` and ``X2``. 
-        Assumes that X and X2 are already sliced according to active_dims, if applicable. 
-        The embedding and base kernel evaluation are performed in the joint embedded 
-        space defined by the hierarchy and indicators. 
+        Evaluate the kernel function on inputs ``X`` and ``X2``.
+        Assumes that X and X2 are already sliced according to active_dims, if applicable.
+        The embedding and base kernel evaluation are performed in the joint embedded
+        space defined by the hierarchy and indicators.
         """
         Z = self._embed(X)
         Z2 = self._embed(X2) if X2 is not None else None
         return self.base_kernel.K(Z, Z2)
-    
+
     @inherit_check_shapes
     def K_diag(self, X: TensorType) -> tf.Tensor:
         """
@@ -375,21 +372,15 @@ class ArcHierarchical(HierarchicalEmbeddingKernel):
     """
 
     def __init__(
-            self,
-            hierarchy: Sequence[HierarchyNode],
-            indicator_dims: Sequence[int] = (),
-            base_kernel: Optional[Stationary] = None,
-            *,
-            active_dims: Optional[ActiveDims] = None,
-            name: Optional[str] = None,
-        ) -> None:
-        super().__init__(
-            hierarchy, 
-            indicator_dims, 
-            base_kernel, 
-            active_dims=active_dims, 
-            name=name
-        )
+        self,
+        hierarchy: Sequence[HierarchyNode],
+        indicator_dims: Sequence[int] = (),
+        base_kernel: Optional[Stationary] = None,
+        *,
+        active_dims: Optional[ActiveDims] = None,
+        name: Optional[str] = None,
+    ) -> None:
+        super().__init__(hierarchy, indicator_dims, base_kernel, active_dims=active_dims, name=name)
         if self._n_cond > 0:
             self.angle = Parameter(
                 0.5 * tf.ones(self._n_cond, dtype=default_float()),
@@ -401,6 +392,7 @@ class ArcHierarchical(HierarchicalEmbeddingKernel):
                 transform=positive(),
                 name="radius",
             )
+
     @inherit_check_shapes
     def _embed_conditional(self, v_c: tf.Tensor, m_c: tf.Tensor) -> tf.Tensor:
         theta = np.pi * self.angle * v_c
@@ -428,21 +420,15 @@ class WedgeHierarchical(HierarchicalEmbeddingKernel):
     """
 
     def __init__(
-            self,
-            hierarchy: Sequence[HierarchyNode],
-            indicator_dims: Sequence[int] = (),
-            base_kernel: Optional[Stationary] = None,
-            *,
-            active_dims: Optional[ActiveDims] = None,
-            name: Optional[str] = None,
-        ) -> None:
-        super().__init__(
-            hierarchy, 
-            indicator_dims, 
-            base_kernel, 
-            active_dims=active_dims, 
-            name=name
-        )
+        self,
+        hierarchy: Sequence[HierarchyNode],
+        indicator_dims: Sequence[int] = (),
+        base_kernel: Optional[Stationary] = None,
+        *,
+        active_dims: Optional[ActiveDims] = None,
+        name: Optional[str] = None,
+    ) -> None:
+        super().__init__(hierarchy, indicator_dims, base_kernel, active_dims=active_dims, name=name)
         if self._n_cond > 0:
             self.theta1 = Parameter(
                 tf.ones(self._n_cond, dtype=default_float()),
@@ -459,6 +445,7 @@ class WedgeHierarchical(HierarchicalEmbeddingKernel):
                 transform=tfp.bijectors.Sigmoid(to_default_float(1e-6), to_default_float(np.pi)),
                 name="rho",
             )
+
     @inherit_check_shapes
     def _embed_conditional(self, v_c: tf.Tensor, m_c: tf.Tensor) -> tf.Tensor:
         comp1 = (self.theta1 * v_c + self.theta2 * v_c * tf.cos(self.rho)) * m_c
