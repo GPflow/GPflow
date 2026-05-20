@@ -13,7 +13,7 @@
 # limitations under the License.
 """Tests for ``gpflow.kernels.hierarchical``."""
 
-from typing import Any, Dict, List, Mapping
+from typing import Any, Dict, List, Mapping, Tuple, Union
 
 import numpy as np
 import pytest
@@ -25,6 +25,12 @@ from gpflow.kernels.hierarchical import (
     HierarchicalEmbeddingKernel,
     HierarchyNode,
     WedgeHierarchical,
+)
+
+from gpflow.kernels import (
+    Constant,
+    Matern52,
+    SquaredExponential,
 )
 
 
@@ -409,15 +415,13 @@ class TestEmbed:
 
 class TestBaseKernelPlumbing:
     def test_default_base_kernel_is_matern52(self) -> None:
-        import gpflow
 
         kernel = ArcHierarchical(hierarchy=_unconditional_hierarchy([0]))
-        assert isinstance(kernel.base_kernel, gpflow.kernels.Matern52)
+        assert isinstance(kernel.base_kernel, Matern52)
 
     def test_base_kernel_lengthscales_frozen_to_one(self) -> None:
-        import gpflow
 
-        base = gpflow.kernels.SquaredExponential(lengthscales=3.7)
+        base = SquaredExponential(lengthscales=3.7)
         kernel = ArcHierarchical(
             hierarchy=_unconditional_hierarchy([0]),
             base_kernel=base,
@@ -426,12 +430,11 @@ class TestBaseKernelPlumbing:
         assert not kernel.base_kernel.lengthscales.trainable
 
     def test_non_stationary_base_kernel_rejected(self) -> None:
-        import gpflow
 
         with pytest.raises(ValueError, match="Stationary"):
             ArcHierarchical(
                 hierarchy=_unconditional_hierarchy([0]),
-                base_kernel=gpflow.kernels.Constant(),
+                base_kernel=Constant(),
             )
 
 
@@ -662,6 +665,157 @@ class TestClosedFormReference:
         np.testing.assert_allclose(actual, ref, rtol=1e-10)
 
 
+# Layout -> (X_padded, active_dims) such that `X_padded[:, active_dims] == X_base`.
+# The hierarchy used in TestActiveDims is `_canonical_disjunction_hierarchy()`,
+# whose columns are [x1, y1, x2, x3] in the *sliced* coordinate system. Each
+# layout below inserts deterministic-but-non-trivial garbage columns around
+# (or between) those four columns so that a broken `active_dims` path would
+# pick up the garbage.
+def _padded_X_and_active_dims(
+    layout: str, X_base: np.ndarray
+) -> Tuple[np.ndarray, Union[List[int], slice]]:
+    rng = np.random.default_rng(0)
+    N, D = X_base.shape
+    if layout == "list_left":
+        garbage = rng.standard_normal((N, 2))
+        return np.concatenate([garbage, X_base], axis=1), list(range(2, 2 + D))
+    if layout == "list_right":
+        garbage = rng.standard_normal((N, 3))
+        return np.concatenate([X_base, garbage], axis=1), list(range(D))
+    if layout == "list_interspersed":
+        garbage = rng.standard_normal((N, D + 1))
+        cols: List[np.ndarray] = []
+        active_dims: List[int] = []
+        position = 0
+        for i in range(D):
+            cols.append(garbage[:, i : i + 1])
+            position += 1
+            cols.append(X_base[:, i : i + 1])
+            active_dims.append(position)
+            position += 1
+        cols.append(garbage[:, D : D + 1])
+        return np.concatenate(cols, axis=1), active_dims
+    if layout == "slice_block":
+        garbage = rng.standard_normal((N, 2))
+        return np.concatenate([garbage, X_base], axis=1), slice(2, 2 + D)
+    raise AssertionError(f"unknown layout {layout!r}")
+
+
+_ACTIVE_DIMS_LAYOUTS = ["list_left", "list_right", "list_interspersed", "slice_block"]
+
+
+class TestActiveDims:
+    """`active_dims` interpretation contract for hierarchical kernels.
+
+    The canonical disjunction hierarchy is defined in the *sliced* coordinate
+    system; padding `X` with garbage columns and setting `active_dims` to skip
+    them must produce the same Gram matrix as feeding the unpadded `X`.
+    """
+
+    @staticmethod
+    def _X_base() -> np.ndarray:
+        return np.array(
+            [
+                [0.5, 1.0, 2.5, 0.0],
+                [0.2, 0.0, 0.0, 0.5],
+                [0.7, 1.0, 4.0, -0.4],
+            ]
+        )
+
+    @staticmethod
+    def _ref_args() -> Dict[str, Any]:
+        return dict(
+            feature_dims=[0, 2, 3],
+            feature_bounds=np.array(
+                [[0.0, 1.0], [0.0, 5.0], [-1.0, 1.0]], dtype=np.float64
+            ),
+            indicator_dims=[1],
+            activity_conditions=[{}, {0: 1}, {0: 0}],
+        )
+
+    @pytest.mark.parametrize("layout", _ACTIVE_DIMS_LAYOUTS)
+    def test_arc_matches_reference_under_active_dims(self, layout: str) -> None:
+        from tests.gpflow.kernels.reference import ref_arc_hierarchical_kernel
+
+        X_base = self._X_base()
+        X_padded, active_dims = _padded_X_and_active_dims(layout, X_base)
+        kernel = ArcHierarchical(
+            hierarchy=_canonical_disjunction_hierarchy(),
+            indicator_dims=[1],
+            active_dims=active_dims,
+        )
+        ref = ref_arc_hierarchical_kernel(
+            X_base,
+            angle=kernel.angle.numpy(),
+            radius=kernel.radius.numpy(),
+            **self._ref_args(),
+        )
+        actual = kernel(tf.constant(X_padded)).numpy()
+        np.testing.assert_allclose(actual, ref, rtol=1e-10)
+
+    @pytest.mark.parametrize("layout", _ACTIVE_DIMS_LAYOUTS)
+    def test_wedge_matches_reference_under_active_dims(self, layout: str) -> None:
+        from tests.gpflow.kernels.reference import ref_wedge_hierarchical_kernel
+
+        X_base = self._X_base()
+        X_padded, active_dims = _padded_X_and_active_dims(layout, X_base)
+        kernel = WedgeHierarchical(
+            hierarchy=_canonical_disjunction_hierarchy(),
+            indicator_dims=[1],
+            active_dims=active_dims,
+        )
+        ref = ref_wedge_hierarchical_kernel(
+            X_base,
+            theta1=kernel.theta1.numpy(),
+            theta2=kernel.theta2.numpy(),
+            rho=kernel.rho.numpy(),
+            **self._ref_args(),
+        )
+        actual = kernel(tf.constant(X_padded)).numpy()
+        np.testing.assert_allclose(actual, ref, rtol=1e-10)
+
+    @pytest.mark.parametrize("kernel_name", ["arc", "wedge"])
+    def test_kdiag_matches_diag_of_K_under_active_dims(self, kernel_name: str) -> None:
+        X_padded, active_dims = _padded_X_and_active_dims("list_interspersed", self._X_base())
+        cls = ArcHierarchical if kernel_name == "arc" else WedgeHierarchical
+        kernel = cls(
+            hierarchy=_canonical_disjunction_hierarchy(),
+            indicator_dims=[1],
+            active_dims=active_dims,
+        )
+        X_tf = tf.constant(X_padded)
+        K_full = kernel(X_tf).numpy()
+        K_diag = kernel(X_tf, full_cov=False).numpy()
+        np.testing.assert_allclose(K_diag, np.diag(K_full), rtol=1e-10)
+
+    @pytest.mark.parametrize("kernel_name", ["arc", "wedge"])
+    def test_presliced_roundtrip(self, kernel_name: str) -> None:
+        X_padded, active_dims = _padded_X_and_active_dims("list_left", self._X_base())
+        cls = ArcHierarchical if kernel_name == "arc" else WedgeHierarchical
+        kernel = cls(
+            hierarchy=_canonical_disjunction_hierarchy(),
+            indicator_dims=[1],
+            active_dims=active_dims,
+        )
+        X_tf = tf.constant(X_padded)
+        K_via_call = kernel(X_tf).numpy()
+        X_sliced, _ = kernel.slice(X_tf, None)
+        K_presliced = kernel(X_sliced, presliced=True).numpy()
+        np.testing.assert_allclose(K_via_call, K_presliced, rtol=1e-12)
+
+    def test_active_dims_too_narrow_to_cover_feature_dims_raises(self) -> None:
+        # Hierarchy needs two feature columns (positions 0 and 1 in the sliced
+        # view), but active_dims yields only one column. The internal gather
+        # for column 1 must fail rather than silently aliasing.
+        kernel = ArcHierarchical(
+            hierarchy=_unconditional_hierarchy([0, 1]),
+            active_dims=[0],
+        )
+        X = tf.constant([[0.5, 0.7], [0.3, 0.4]], dtype=tf.float64)
+        with pytest.raises((tf.errors.InvalidArgumentError, ValueError)):
+            kernel(X).numpy()
+
+
 class TestEmptyCases:
     def test_uncond_only_arc_skips_conditional_parameters(self) -> None:
         kernel = ArcHierarchical(hierarchy=_unconditional_hierarchy([0, 1]))
@@ -697,9 +851,8 @@ class TestEmptyCases:
 
 class TestComposability:
     def test_arc_composes_with_constant_for_variance(self) -> None:
-        import gpflow
 
-        kernel = gpflow.kernels.Constant() * _arc()
+        kernel = Constant() * _arc()
         X = tf.constant(
             [
                 [0.5, 1.0, 2.5, 0.0],
@@ -762,8 +915,3 @@ class TestDifferentiability:
             g_np = g.numpy()
             assert np.all(np.isfinite(g_np))
             assert np.any(np.abs(g_np) > 1e-12)
-
-
-# Silence unused-import warnings — HierarchicalEmbeddingKernel is part of the
-# public surface and re-exported here for downstream test ergonomics.
-_ = HierarchicalEmbeddingKernel

@@ -157,6 +157,29 @@ def ref_arc_hierarchical_kernel(
     radius: AnyNDArray,
     base_variance: float = 1.0,
 ) -> AnyNDArray:
+    """Numpy reference for :class:`gpflow.kernels.ArcHierarchical`.
+
+    Each conditional feature column ``c`` (normalised value ``v_c``, float
+    activity mask ``m_c``) is embedded into the plane as
+    ``(r_c sin(pi a_c v_c) m_c, r_c cos(pi a_c v_c) m_c)``; unconditional
+    columns are passed through unchanged. The full embedding is then fed
+    into a unit-lengthscale Matérn-5/2 kernel.
+
+    :param X: input data of shape ``[N, D]``.
+    :param feature_dims: column indices of the real-valued features.
+    :param feature_bounds: ``[len(feature_dims), 2]`` lower/upper bounds used
+        to normalise each feature column to ``[0, 1]``.
+    :param indicator_dims: column indices of integer-valued indicators that
+        gate the conditional features.
+    :param activity_conditions: per-feature mapping from *local indicator
+        index* (position within ``indicator_dims``) to its required integer
+        value. An empty mapping makes the feature unconditional.
+    :param angle: per-conditional-column angle parameters ``a_c``.
+    :param radius: per-conditional-column radius parameters ``r_c``.
+    :param base_variance: signal variance applied to the base Matérn-5/2.
+    :returns: kernel matrix of shape ``[N, N]``.
+    """
+
     def arc(v_c: AnyNDArray, m_c: AnyNDArray) -> AnyNDArray:
         theta = np.pi * angle * v_c
         return np.concatenate([radius * np.sin(theta) * m_c, radius * np.cos(theta) * m_c], axis=-1)
@@ -183,6 +206,31 @@ def ref_wedge_hierarchical_kernel(
     rho: AnyNDArray,
     base_variance: float = 1.0,
 ) -> AnyNDArray:
+    """Numpy reference for :class:`gpflow.kernels.WedgeHierarchical`.
+
+    Each conditional feature column ``c`` (normalised value ``v_c``, float
+    activity mask ``m_c``) is embedded into the plane as
+    ``((theta1 v_c + theta2 v_c cos rho) m_c, (theta2 v_c sin rho) m_c)``;
+    unconditional columns are passed through unchanged. The full embedding
+    is then fed into a unit-lengthscale Matérn-5/2 kernel.
+
+    :param X: input data of shape ``[N, D]``.
+    :param feature_dims: column indices of the real-valued features.
+    :param feature_bounds: ``[len(feature_dims), 2]`` lower/upper bounds used
+        to normalise each feature column to ``[0, 1]``.
+    :param indicator_dims: column indices of integer-valued indicators that
+        gate the conditional features.
+    :param activity_conditions: per-feature mapping from *local indicator
+        index* (position within ``indicator_dims``) to its required integer
+        value. An empty mapping makes the feature unconditional.
+    :param theta1: per-conditional-column ``theta1`` parameters.
+    :param theta2: per-conditional-column ``theta2`` parameters.
+    :param rho: per-conditional-column wedge-angle parameters (strictly
+        between ``0`` and ``pi``).
+    :param base_variance: signal variance applied to the base Matérn-5/2.
+    :returns: kernel matrix of shape ``[N, N]``.
+    """
+
     def wedge(v_c: AnyNDArray, m_c: AnyNDArray) -> AnyNDArray:
         comp1 = (theta1 * v_c + theta2 * v_c * np.cos(rho)) * m_c
         comp2 = (theta2 * v_c * np.sin(rho)) * m_c
