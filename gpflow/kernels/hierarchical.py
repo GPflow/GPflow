@@ -29,7 +29,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 from ..base import Parameter, TensorType
-from ..utilities import positive, set_trainable, to_default_float
+from ..utilities import deepcopy, positive, set_trainable, to_default_float
 from ..config import default_float
 from .base import ActiveDims, Kernel
 from .stationaries import Matern52, Stationary
@@ -141,7 +141,16 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         in ``X``. Indicator indices used in each node's activity condition are
         interpreted as positions within this sequence.
     :param base_kernel: stationary base kernel applied in the joint embedded
-        space. Defaults to :class:`Matern52` if omitted.
+        space. Defaults to :class:`Matern52` if omitted. The supplied kernel
+        is deep-copied via :func:`gpflow.utilities.deepcopy` before use, so
+        the caller's object is never mutated. Its ``lengthscales`` must be
+        scalar or have shape ``(2 * n_cond + n_uncond,)`` matching the
+        embedded dimension; the copy's lengthscales are then forced to 1
+        and set non-trainable, because the per-conditional-column
+        parameters of the concrete subclass (e.g. ``angle`` / ``radius``
+        for ``ArcHierarchical`` or ``theta1`` / ``theta2`` for
+        ``WedgeHierarchical``) already carry the scale of each embedded
+        dimension.
     :param active_dims: inherited from :class:`Kernel`. If supplied, both
         feature dims and ``indicator_dims`` are interpreted in the sliced
         coordinate system. When the __call__ method receives inputs, the 
@@ -224,14 +233,41 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
 
         if base_kernel is None:
             base_kernel = Matern52()
-        if not isinstance(base_kernel, Stationary):
+        else:
+            if not isinstance(base_kernel, Stationary):
+                raise ValueError(
+                    f"`base_kernel` must be a gpflow.kernels.Stationary instance; "
+                    f"got {type(base_kernel).__name__}."
+                )
+            base_kernel = deepcopy(base_kernel)
+
+        d_embed = 2 * self._n_cond + self._n_uncond
+        ls_shape = tuple(base_kernel.lengthscales.shape)
+        if ls_shape not in ((), (1,), (d_embed,)):
             raise ValueError(
-                f"`base_kernel` must be a gpflow.kernels.Stationary instance; "
-                f"got {type(base_kernel).__name__}."
+                f"`base_kernel.lengthscales` must be scalar or have shape "
+                f"({d_embed},) to match the embedded dimension "
+                f"`2 * n_cond + n_uncond`; got shape {ls_shape}."
             )
+
         base_kernel.lengthscales.assign(tf.ones_like(base_kernel.lengthscales))
         set_trainable(base_kernel.lengthscales, False)
         self.base_kernel = base_kernel
+
+    @property
+    def hierarchy(self) -> Sequence[HierarchyNode]:
+        """The hierarchy defining this kernel's structure."""
+        return self._hierarchy
+    
+    @property
+    def n_cond_dims(self) -> int:
+        """Get number of conditional feature dimensions."""
+        return self._n_cond
+
+    @property
+    def n_uncond_dims(self) -> int:
+        """Get number of unconditional feature dimensions."""
+        return self._n_uncond
 
     @check_shapes(
             "X: [batch..., N, D]", 

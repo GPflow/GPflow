@@ -437,6 +437,60 @@ class TestBaseKernelPlumbing:
                 base_kernel=Constant(),
             )
 
+    def test_supplied_base_kernel_is_not_mutated(self) -> None:
+        # Canonical disjunction: n_cond=2, n_uncond=1, D_embed = 2*2 + 1 = 5.
+        base = Matern52(lengthscales=2.5)
+        original_value = base.lengthscales.numpy()
+        original_trainable = base.lengthscales.trainable
+
+        kernel = ArcHierarchical(
+            hierarchy=_canonical_disjunction_hierarchy(),
+            indicator_dims=[1],
+            base_kernel=base,
+        )
+
+        # The caller's object is untouched.
+        np.testing.assert_allclose(base.lengthscales.numpy(), original_value)
+        assert base.lengthscales.trainable is original_trainable
+        # The kernel holds a different object whose lengthscales are forced.
+        assert kernel.base_kernel is not base
+        np.testing.assert_allclose(kernel.base_kernel.lengthscales.numpy(), 1.0)
+        assert not kernel.base_kernel.lengthscales.trainable
+
+    @pytest.mark.parametrize("bad_lengthscales", [[1.0, 2.0], np.ones(7)])
+    def test_base_kernel_wrong_shape_lengthscales_rejected(
+        self, bad_lengthscales: Any
+    ) -> None:
+        # Canonical disjunction has D_embed=5; shapes (2,) and (7,) are wrong.
+        with pytest.raises(ValueError, match="lengthscales"):
+            ArcHierarchical(
+                hierarchy=_canonical_disjunction_hierarchy(),
+                indicator_dims=[1],
+                base_kernel=Matern52(lengthscales=bad_lengthscales),
+            )
+
+    def test_base_kernel_ard_correct_shape_accepted(self) -> None:
+        # D_embed = 5 for the canonical disjunction.
+        kernel = ArcHierarchical(
+            hierarchy=_canonical_disjunction_hierarchy(),
+            indicator_dims=[1],
+            base_kernel=Matern52(lengthscales=np.linspace(0.5, 2.5, 5)),
+        )
+        X = tf.constant(
+            [
+                [0.5, 1.0, 2.5, 0.0],
+                [0.5, 0.0, 2.5, 0.5],
+                [0.3, 1.0, 4.0, 0.0],
+            ],
+            dtype=tf.float64,
+        )
+        K = kernel.K(X).numpy()
+        assert K.shape == (3, 3)
+        assert np.all(np.isfinite(K))
+        np.testing.assert_allclose(K, K.T, atol=1e-12)
+        eigs = np.linalg.eigvalsh(K + 1e-10 * np.eye(3))
+        assert eigs.min() > -1e-8
+
 
 class TestKDispatch:
     def test_K_shape_and_psd(self) -> None:
