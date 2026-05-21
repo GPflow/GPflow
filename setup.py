@@ -3,11 +3,14 @@
 
 # pylint: skip-file
 
+from typing import Any
+
 from setuptools import find_packages, setup
 
 ##### Dependencies of GPflow
 
 requirements = [
+    "importlib_metadata; python_version<'3.8'",
     "check_shapes>=1.0.0",
     "deprecated",
     "multipledispatch>=0.6",
@@ -35,6 +38,14 @@ readme_text = read_file("README.md")
 
 packages = find_packages(".", exclude=["tests"])
 
+# Mypy + types-setuptools on Python 3.10+ reject plain dicts for these kwargs.
+_project_urls: Any = {
+    "Source on GitHub": "https://github.com/GPflow/GPflow",
+    "Documentation": "https://gpflow.github.io/GPflow/",
+}
+_package_data: Any = {"": ["*.lark"]}
+_extras_require: Any = {"ImageToTensorBoard": ["matplotlib"]}
+
 setup(
     name="gpflow",
     version=version,
@@ -46,15 +57,12 @@ setup(
     license="Apache License 2.0",
     keywords="machine-learning gaussian-processes kernels tensorflow",
     url="https://www.gpflow.org",
-    project_urls={
-        "Source on GitHub": "https://github.com/GPflow/GPflow",
-        "Documentation": "https://gpflow.github.io/GPflow/",
-    },
+    project_urls=_project_urls,
     packages=packages,
-    package_data={"": ["*.lark"]},
+    package_data=_package_data,
     include_package_data=True,
     install_requires=requirements,
-    extras_require={"ImageToTensorBoard": ["matplotlib"]},
+    extras_require=_extras_require,
     python_requires=">=3.7",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
