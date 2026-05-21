@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Callable, List, Sequence, Tuple, cast
+from typing import Any, Callable, List, Sequence, Tuple
 
 import numpy as np
 import pytest
@@ -134,7 +134,7 @@ def test_broadcasting(
     rank2 = len(batch2_shape) - 1
 
     if isinstance(kernel, kernels.MultioutputKernel):
-        mo_kernel = cast(kernels.MultioutputKernel, kernel)
+        mo_kernel = kernel
 
         loop = cs(
             unroll_batches(
