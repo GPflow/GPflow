@@ -1,6 +1,11 @@
-import pkg_resources
+import sys
+
+if sys.version_info >= (3, 8):
+    from importlib.metadata import PackageNotFoundError, version
+else:
+    from importlib_metadata import PackageNotFoundError, version
 
 try:
-    __version__ = str(pkg_resources.get_distribution("gpflow").parsed_version)
-except pkg_resources.DistributionNotFound:
+    __version__ = version("gpflow")
+except PackageNotFoundError:
     __version__ = "develop"
