@@ -8,6 +8,7 @@ from setuptools import find_packages, setup
 ##### Dependencies of GPflow
 
 requirements = [
+    "importlib_metadata; python_version<'3.8'",
     "check_shapes>=1.0.0",
     "deprecated",
     "multipledispatch>=0.6",
