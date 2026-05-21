@@ -19,6 +19,7 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
+from gpflow.base import AnyNDArray
 from gpflow.kernels import Constant, Matern52, SquaredExponential
 from gpflow.kernels.hierarchical import (
     ActivityCondition,
@@ -719,8 +720,8 @@ class TestClosedFormReference:
 # (or between) those four columns so that a broken `active_dims` path would
 # pick up the garbage.
 def _padded_X_and_active_dims(
-    layout: str, X_base: np.ndarray
-) -> Tuple[np.ndarray, Union[List[int], slice]]:
+    layout: str, X_base: AnyNDArray
+) -> Tuple[AnyNDArray, Union[List[int], slice]]:
     rng = np.random.default_rng(0)
     N, D = X_base.shape
     if layout == "list_left":
@@ -731,7 +732,7 @@ def _padded_X_and_active_dims(
         return np.concatenate([X_base, garbage], axis=1), list(range(D))
     if layout == "list_interspersed":
         garbage = rng.standard_normal((N, D + 1))
-        cols: List[np.ndarray] = []
+        cols: List[AnyNDArray] = []
         active_dims: List[int] = []
         position = 0
         for i in range(D):
@@ -760,7 +761,7 @@ class TestActiveDims:
     """
 
     @staticmethod
-    def _X_base() -> np.ndarray:
+    def _X_base() -> AnyNDArray:
         return np.array(
             [
                 [0.5, 1.0, 2.5, 0.0],
