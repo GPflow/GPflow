@@ -13,7 +13,7 @@
 # limitations under the License.
 """Tests for ``gpflow.kernels.hierarchical``."""
 
-from typing import Any, Dict, List, Mapping, Tuple, Union
+from typing import Any, Dict, List, Mapping, Tuple, Type, Union
 
 import numpy as np
 import pytest
@@ -862,7 +862,9 @@ class TestActiveDims:
     @pytest.mark.parametrize("kernel_name", ["arc", "wedge"])
     def test_kdiag_matches_diag_of_K_under_active_dims(self, kernel_name: str) -> None:
         X_padded, active_dims = _padded_X_and_active_dims("list_interspersed", self._X_base())
-        cls = ArcHierarchical if kernel_name == "arc" else WedgeHierarchical
+        cls: Type[HierarchicalEmbeddingKernel] = (
+            ArcHierarchical if kernel_name == "arc" else WedgeHierarchical
+        )
         kernel = cls(
             hierarchy=_canonical_disjunction_hierarchy(),
             active_dims=active_dims,
@@ -875,7 +877,9 @@ class TestActiveDims:
     @pytest.mark.parametrize("kernel_name", ["arc", "wedge"])
     def test_presliced_roundtrip(self, kernel_name: str) -> None:
         X_padded, active_dims = _padded_X_and_active_dims("list_left", self._X_base())
-        cls = ArcHierarchical if kernel_name == "arc" else WedgeHierarchical
+        cls: Type[HierarchicalEmbeddingKernel] = (
+            ArcHierarchical if kernel_name == "arc" else WedgeHierarchical
+        )
         kernel = cls(
             hierarchy=_canonical_disjunction_hierarchy(),
             active_dims=active_dims,
