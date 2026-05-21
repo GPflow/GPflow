@@ -65,6 +65,22 @@ This release contains contributions from:
 
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
+
+# Release 2.10.1
+
+This release fixes GPflow to work with recent setuptools.
+
+## Bug Fixes and Other Changes
+
+* Migrate from pkg_resources, which is deprecated.
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+uri-granta
+
+
 # Release 2.10.0
 
 This release adds a utility function for converting tf.Modules to float32.
