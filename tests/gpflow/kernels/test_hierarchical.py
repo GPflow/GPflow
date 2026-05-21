@@ -70,7 +70,10 @@ def _canonical_disjunction_hierarchy() -> List[HierarchyNode]:
 
 
 def _canonical_disjunction_kernel() -> ArcHierarchical:
-    return ArcHierarchical(hierarchy=_canonical_disjunction_hierarchy())
+    return ArcHierarchical(
+        hierarchy=_canonical_disjunction_hierarchy(),
+        active_dims=list(range(4)),
+    )
 
 
 class TestActivityCondition:
@@ -171,14 +174,17 @@ class TestHierarchyNode:
 
 class TestHierarchicalEmbeddingKernelConstruction:
     def test_unconditional_kernel_has_no_conditional_columns(self) -> None:
-        kernel = ArcHierarchical(hierarchy=_unconditional_hierarchy([0, 1]))
+        kernel = ArcHierarchical(hierarchy=_unconditional_hierarchy([0, 1]), active_dims=[0, 1])
         assert kernel._n_feat == 2
         assert kernel._n_uncond == 2
         assert kernel._n_cond == 0
         assert kernel._n_ind == 0
 
     def test_mixed_conditional_and_unconditional_columns(self) -> None:
-        kernel = ArcHierarchical(hierarchy=_canonical_disjunction_hierarchy())
+        kernel = ArcHierarchical(
+            hierarchy=_canonical_disjunction_hierarchy(),
+            active_dims=list(range(4)),
+        )
         assert kernel._n_feat == 3
         assert kernel._n_uncond == 1
         assert kernel._n_cond == 2
@@ -198,6 +204,7 @@ class TestHierarchicalEmbeddingKernelConstruction:
                     activity_condition=ActivityCondition({1: 1}),
                 ),
             ],
+            active_dims=[0, 1, 2],
         )
         assert kernel._n_cond == 2
         assert kernel._cond_local_idx == [0, 1]
@@ -205,7 +212,7 @@ class TestHierarchicalEmbeddingKernelConstruction:
 
     def test_empty_hierarchy_rejected(self) -> None:
         with pytest.raises(ValueError, match="at least one node"):
-            ArcHierarchical(hierarchy=[])
+            ArcHierarchical(hierarchy=[], active_dims=[0])
 
     def test_duplicate_node_names_rejected(self) -> None:
         with pytest.raises(ValueError, match="duplicate node names"):
@@ -214,6 +221,7 @@ class TestHierarchicalEmbeddingKernelConstruction:
                     HierarchyNode("foo", feature_dims=[0], feature_bounds=[[0.0, 1.0]]),
                     HierarchyNode("foo", feature_dims=[1], feature_bounds=[[0.0, 1.0]]),
                 ],
+                active_dims=[0, 1],
             )
 
     def test_duplicate_feature_dims_across_nodes_rejected(self) -> None:
@@ -223,6 +231,7 @@ class TestHierarchicalEmbeddingKernelConstruction:
                     HierarchyNode("a", feature_dims=[0], feature_bounds=[[0.0, 1.0]]),
                     HierarchyNode("b", feature_dims=[0], feature_bounds=[[0.0, 1.0]]),
                 ],
+                active_dims=[0, 1],
             )
 
     def test_feature_indicator_overlap_rejected(self) -> None:
@@ -239,11 +248,12 @@ class TestHierarchicalEmbeddingKernelConstruction:
                         activity_condition=ActivityCondition({0: 1}),
                     ),
                 ],
+                active_dims=[0, 1],
             )
 
     def test_hierarchy_is_stored_for_introspection(self) -> None:
         hierarchy = _canonical_disjunction_hierarchy()
-        kernel = ArcHierarchical(hierarchy=hierarchy)
+        kernel = ArcHierarchical(hierarchy=hierarchy, active_dims=list(range(4)))
         assert kernel._hierarchy == tuple(hierarchy)
 
     def test_indicator_dims_property_is_derived_and_sorted(self) -> None:
@@ -263,9 +273,28 @@ class TestHierarchicalEmbeddingKernelConstruction:
                     activity_condition=ActivityCondition({4: 0}),
                 ),
             ],
+            active_dims=list(range(5)),
         )
         # Derived from the union of ActivityCondition keys, sorted ascending.
         assert kernel.indicator_dims == (1, 4)
+
+    def test_required_active_dims_uniform_length_check(self) -> None:
+        # The canonical disjunction needs exactly 4 sliced columns; passing 3
+        # is rejected regardless of whether active_dims is a list or a slice.
+        hierarchy = _canonical_disjunction_hierarchy()
+        with pytest.raises(ValueError, match="selects 3"):
+            ArcHierarchical(hierarchy=hierarchy, active_dims=[0, 1, 2])
+        with pytest.raises(ValueError, match="selects 3"):
+            ArcHierarchical(hierarchy=hierarchy, active_dims=slice(0, 3))
+
+    def test_open_ended_active_dims_slice_rejected(self) -> None:
+        # A slice whose `stop` is None has no statically determinable width
+        # and must be rejected (length check cannot run).
+        with pytest.raises(ValueError, match="width"):
+            ArcHierarchical(
+                hierarchy=_canonical_disjunction_hierarchy(),
+                active_dims=slice(None, None, None),
+            )
 
 
 class TestNormalise:
@@ -278,20 +307,26 @@ class TestNormalise:
                     feature_bounds=tf.constant([[0.0, 10.0], [-1.0, 1.0]], dtype=tf.float64),
                 ),
             ],
+            active_dims=[0, 1],
         )
         X = tf.constant([[5.0, 0.0], [10.0, 1.0]], dtype=tf.float64)
         v = kernel._normalise(X)
         np.testing.assert_allclose(v.numpy(), [[0.5, 0.5], [1.0, 1.0]])
 
-    def test_ignores_non_feature_columns(self) -> None:
+    def test_ignores_indicator_columns(self) -> None:
+        # `_normalise` should pick out only the feature columns from its
+        # input; indicator columns (here column 1, gated by an
+        # `ActivityCondition`) must not appear in the normalised output.
         kernel = ArcHierarchical(
             hierarchy=[
                 HierarchyNode(
                     "n",
                     feature_dims=[0, 2],
                     feature_bounds=tf.constant([[0.0, 1.0], [0.0, 4.0]], dtype=tf.float64),
+                    activity_condition=ActivityCondition({1: 1}),
                 ),
             ],
+            active_dims=[0, 1, 2],
         )
         X = tf.constant([[0.5, 1.0, 2.0]], dtype=tf.float64)
         v = kernel._normalise(X)
@@ -306,6 +341,7 @@ class TestNormalise:
                     feature_bounds=tf.constant([[3.0, 3.0]], dtype=tf.float64),
                 ),
             ],
+            active_dims=[0],
         )
         X = tf.constant([[3.0], [3.0]], dtype=tf.float64)
         v = kernel._normalise(X)
@@ -338,7 +374,7 @@ class TestActivityMask:
         np.testing.assert_array_equal(mask, [[True, True, False], [True, False, True]])
 
     def test_no_indicators_means_all_active(self) -> None:
-        kernel = ArcHierarchical(hierarchy=_unconditional_hierarchy([0, 1]))
+        kernel = ArcHierarchical(hierarchy=_unconditional_hierarchy([0, 1]), active_dims=[0, 1])
         X = tf.constant([[0.5, 0.5], [0.3, 0.7]], dtype=tf.float64)
         mask = kernel._build_activity_mask(X).numpy()
         np.testing.assert_array_equal(mask, np.ones((2, 2), dtype=bool))
@@ -380,7 +416,7 @@ class TestEmbed:
         assert Z.shape == (2, 5)
 
     def test_uncond_only(self) -> None:
-        kernel = ArcHierarchical(hierarchy=_unconditional_hierarchy([0, 1]))
+        kernel = ArcHierarchical(hierarchy=_unconditional_hierarchy([0, 1]), active_dims=[0, 1])
         X = tf.constant([[0.5, 0.7]], dtype=tf.float64)
         Z = kernel._embed(X)
         assert Z.shape == (1, 2)
@@ -411,7 +447,7 @@ class TestEmbed:
 class TestBaseKernelPlumbing:
     def test_default_base_kernel_is_matern52(self) -> None:
 
-        kernel = ArcHierarchical(hierarchy=_unconditional_hierarchy([0]))
+        kernel = ArcHierarchical(hierarchy=_unconditional_hierarchy([0]), active_dims=[0])
         assert isinstance(kernel.base_kernel, Matern52)
 
     def test_base_kernel_lengthscales_frozen_to_one(self) -> None:
@@ -420,6 +456,7 @@ class TestBaseKernelPlumbing:
         kernel = ArcHierarchical(
             hierarchy=_unconditional_hierarchy([0]),
             base_kernel=base,
+            active_dims=[0],
         )
         np.testing.assert_allclose(kernel.base_kernel.lengthscales.numpy(), 1.0)
         assert not kernel.base_kernel.lengthscales.trainable
@@ -430,6 +467,7 @@ class TestBaseKernelPlumbing:
             ArcHierarchical(
                 hierarchy=_unconditional_hierarchy([0]),
                 base_kernel=Constant(),
+                active_dims=[0],
             )
 
     def test_supplied_base_kernel_is_not_mutated(self) -> None:
@@ -441,6 +479,7 @@ class TestBaseKernelPlumbing:
         kernel = ArcHierarchical(
             hierarchy=_canonical_disjunction_hierarchy(),
             base_kernel=base,
+            active_dims=list(range(4)),
         )
 
         # The caller's object is untouched.
@@ -458,6 +497,7 @@ class TestBaseKernelPlumbing:
             ArcHierarchical(
                 hierarchy=_canonical_disjunction_hierarchy(),
                 base_kernel=Matern52(lengthscales=bad_lengthscales),
+                active_dims=list(range(4)),
             )
 
     def test_base_kernel_ard_correct_shape_accepted(self) -> None:
@@ -465,6 +505,7 @@ class TestBaseKernelPlumbing:
         kernel = ArcHierarchical(
             hierarchy=_canonical_disjunction_hierarchy(),
             base_kernel=Matern52(lengthscales=np.linspace(0.5, 2.5, 5)),
+            active_dims=list(range(4)),
         )
         X = tf.constant(
             [
@@ -532,7 +573,10 @@ class TestKDispatch:
 
 
 def _arc() -> ArcHierarchical:
-    return ArcHierarchical(hierarchy=_canonical_disjunction_hierarchy())
+    return ArcHierarchical(
+        hierarchy=_canonical_disjunction_hierarchy(),
+        active_dims=list(range(4)),
+    )
 
 
 class TestArcHierarchical:
@@ -566,7 +610,7 @@ class TestArcHierarchical:
         assert eigs.min() > -1e-8
 
     def test_no_conditional_columns_means_no_angle_parameter(self) -> None:
-        kernel = ArcHierarchical(hierarchy=_unconditional_hierarchy([0, 1]))
+        kernel = ArcHierarchical(hierarchy=_unconditional_hierarchy([0, 1]), active_dims=[0, 1])
         assert not hasattr(kernel, "angle")
         assert not hasattr(kernel, "radius")
 
@@ -590,7 +634,10 @@ class TestArcHierarchical:
 
 
 def _wedge() -> WedgeHierarchical:
-    return WedgeHierarchical(hierarchy=_canonical_disjunction_hierarchy())
+    return WedgeHierarchical(
+        hierarchy=_canonical_disjunction_hierarchy(),
+        active_dims=list(range(4)),
+    )
 
 
 class TestWedgeHierarchical:
@@ -866,7 +913,7 @@ class TestActiveDims:
 
 class TestEmptyCases:
     def test_uncond_only_arc_skips_conditional_parameters(self) -> None:
-        kernel = ArcHierarchical(hierarchy=_unconditional_hierarchy([0, 1]))
+        kernel = ArcHierarchical(hierarchy=_unconditional_hierarchy([0, 1]), active_dims=[0, 1])
         X = tf.constant([[0.5, 0.7], [0.3, 0.4], [0.9, 0.1]], dtype=tf.float64)
         K = kernel.K(X).numpy()
         assert K.shape == (3, 3)
@@ -889,6 +936,7 @@ class TestEmptyCases:
                     activity_condition=ActivityCondition({0: 0}),
                 ),
             ],
+            active_dims=[0, 1, 2],
         )
         X = tf.constant([[1.0, 0.5, 0.0], [0.0, 0.0, 0.5]], dtype=tf.float64)
         K = kernel.K(X).numpy()

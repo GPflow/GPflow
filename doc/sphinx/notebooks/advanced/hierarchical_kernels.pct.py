@@ -140,16 +140,16 @@ from gpflow.kernels import ArcHierarchical, Constant
 from gpflow.models import GPR
 from gpflow.optimizers import Scipy
 
-arc = ArcHierarchical(hierarchy=hierarchy)
-print("conditional columns:", arc._n_cond)
-print("unconditional columns:", arc._n_uncond)
+arc = ArcHierarchical(hierarchy=hierarchy, active_dims=list(range(4)))
+print("conditional columns:", arc.n_cond)
+print("unconditional columns:", arc.n_uncond)
 print("indicator columns (derived):", arc.indicator_dims)
 print("angle init:", arc.angle.numpy())
 print("radius init:", arc.radius.numpy())
 
 # %% [markdown]
 # Wrap in a Constant() factor so the GP can learn an overall variance.
-arc_for_fit = ArcHierarchical(hierarchy=hierarchy)
+arc_for_fit = ArcHierarchical(hierarchy=hierarchy, active_dims=list(range(4)))
 kernel = Constant() * arc_for_fit
 gpr = GPR(data=(X_train, Y_train), kernel=kernel, noise_variance=0.05)
 
@@ -185,7 +185,7 @@ for x, m, v, t in zip(X_test, mean.numpy().ravel(), var.numpy().ravel(), truth):
 # %%
 from gpflow.kernels import WedgeHierarchical
 
-wedge = WedgeHierarchical(hierarchy=hierarchy)
+wedge = WedgeHierarchical(hierarchy=hierarchy, active_dims=list(range(4)))
 kernel = Constant() * wedge
 print("initial theta1:", wedge.theta1.numpy())
 print("initial theta2:", wedge.theta2.numpy())

@@ -286,6 +286,7 @@ def test_hierarchical_kernel_symmetry(kernel_class: type) -> None:
                 activity_condition=gpflow.kernels.ActivityCondition({1: 0}),
             ),
         ],
+        active_dims=list(range(4)),
     )
     X = rng.randn(10, 4)
     X[:, 1] = rng.randint(0, 2, size=10).astype(float)

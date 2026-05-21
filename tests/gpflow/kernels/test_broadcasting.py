@@ -51,6 +51,7 @@ def _hierarchical_kwargs() -> Dict[str, Any]:
                 activity_condition=ActivityCondition({1: 0}),
             ),
         ],
+        active_dims=list(range(4)),
     )
 
 

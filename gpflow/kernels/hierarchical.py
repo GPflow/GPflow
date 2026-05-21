@@ -33,7 +33,7 @@ from gpflow.experimental.utils import experimental
 from ..base import Parameter, TensorType
 from ..config import default_float
 from ..utilities import deepcopy, positive, set_trainable, to_default_float
-from .base import ActiveDims, Kernel
+from .base import ActiveDims, Kernel, NormalizedActiveDims
 from .stationaries import Matern52, Stationary
 
 # Value used to denote inactive or ignored feature entries in
@@ -47,6 +47,20 @@ def _check_non_negative_unique(values: Sequence[int], name: str) -> None:
             raise ValueError(f"`{name}` entries must be non-negative; got {v}.")
     if len(set(values)) != len(values):
         raise ValueError(f"`{name}` contains duplicate entries: {list(values)}.")
+
+
+def _active_dims_width(active_dims: NormalizedActiveDims) -> Optional[int]:
+    """Number of columns selected by ``active_dims``, or ``None`` if it cannot
+    be determined without knowing the input dimension (an open-ended slice)."""
+    if isinstance(active_dims, np.ndarray):
+        return int(active_dims.size)
+    if isinstance(active_dims, slice):
+        if active_dims.stop is None:
+            return None
+        start = 0 if active_dims.start is None else active_dims.start
+        step = 1 if active_dims.step is None else active_dims.step
+        return len(range(start, active_dims.stop, step))
+    return None
 
 
 @dataclass(frozen=True)
@@ -152,14 +166,16 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         for ``ArcHierarchical`` or ``theta1`` / ``theta2`` for
         ``WedgeHierarchical``) already carry the scale of each embedded
         dimension.
-    :param active_dims: inherited from :class:`Kernel`. If supplied,
-        ``feature_dims`` and :class:`ActivityCondition` keys are both
-        interpreted in the sliced coordinate system. When :meth:`__call__`
-        receives inputs, the slice defined by ``active_dims`` is applied
-        first, and the resulting coordinates are then processed according to
-        the hierarchy. When supplied as a list or array, its length must
-        equal the total number of feature columns plus indicator columns
-        defined by the hierarchy (``len(feature_dims) + len(indicator_dims)``).
+    :param active_dims: required. ``feature_dims`` and
+        :class:`ActivityCondition` keys are interpreted in the sliced
+        coordinate system. When :meth:`__call__` receives inputs, the slice
+        defined by ``active_dims`` is applied first, and the resulting
+        coordinates are then processed according to the hierarchy. Must
+        select exactly ``n_feat + n_ind`` columns, where ``n_feat`` is the
+        total number of feature columns in the hierarchy and ``n_ind`` is
+        the number of derived indicator columns. May be a sequence of int
+        column indices, or a :class:`slice` whose ``stop`` is concrete (so
+        its width can be validated at construction).
     :param name: optional kernel name.
     """
 
@@ -169,7 +185,7 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         hierarchy: Sequence[HierarchyNode],
         base_kernel: Optional[Stationary] = None,
         *,
-        active_dims: Optional[ActiveDims] = None,
+        active_dims: ActiveDims,
         name: Optional[str] = None,
     ) -> None:
         super().__init__(active_dims=active_dims, name=name)
@@ -210,15 +226,22 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         self._n_feat = len(flat_feature_dims)
         self._n_ind = len(indicator_dims)
 
-        if isinstance(self._active_dims, np.ndarray):
-            n_expected = self._n_feat + self._n_ind
-            if len(self._active_dims) != n_expected:
-                raise ValueError(
-                    f"`active_dims` has {len(self._active_dims)} dimension(s), but the "
-                    f"hierarchy defines {self._n_feat} feature dimension(s) and "
-                    f"{self._n_ind} indicator dimension(s) (total {n_expected}); "
-                    f"`active_dims` must select exactly that many columns."
-                )
+        n_expected = self._n_feat + self._n_ind
+        width = _active_dims_width(self._active_dims)
+        if width is None:
+            raise ValueError(
+                "`active_dims` must allow its width to be determined at "
+                "construction: pass a sequence of column indices, or a "
+                "`slice` whose `stop` is concrete; "
+                f"got {self._active_dims!r}."
+            )
+        if width != n_expected:
+            raise ValueError(
+                f"`active_dims` selects {width} column(s), but the hierarchy "
+                f"defines {self._n_feat} feature dimension(s) and "
+                f"{self._n_ind} indicator dimension(s) (total {n_expected}); "
+                f"`active_dims` must select exactly that many columns."
+            )
 
         self._feature_dims = tf.constant(flat_feature_dims, dtype=tf.int32)
         self._indicator_dims_tuple: Tuple[int, ...] = tuple(indicator_dims)
@@ -390,7 +413,7 @@ class ArcHierarchical(HierarchicalEmbeddingKernel):
         hierarchy: Sequence[HierarchyNode],
         base_kernel: Optional[Stationary] = None,
         *,
-        active_dims: Optional[ActiveDims] = None,
+        active_dims: ActiveDims,
         name: Optional[str] = None,
     ) -> None:
         super().__init__(hierarchy, base_kernel, active_dims=active_dims, name=name)
@@ -437,7 +460,7 @@ class WedgeHierarchical(HierarchicalEmbeddingKernel):
         hierarchy: Sequence[HierarchyNode],
         base_kernel: Optional[Stationary] = None,
         *,
-        active_dims: Optional[ActiveDims] = None,
+        active_dims: ActiveDims,
         name: Optional[str] = None,
     ) -> None:
         super().__init__(hierarchy, base_kernel, active_dims=active_dims, name=name)

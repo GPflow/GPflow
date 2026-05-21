@@ -90,6 +90,7 @@ def test_positive_semidefinite_hierarchical(
                 activity_condition=kernels.ActivityCondition({1: 0}),
             ),
         ],
+        active_dims=list(range(5)),
     )
     # Indicator column must be integer-valued (0 or 1); rest can be float.
     N = 50
