@@ -134,7 +134,7 @@ def test_broadcasting(
     rank2 = len(batch2_shape) - 1
 
     if isinstance(kernel, kernels.MultioutputKernel):
-        mo_kernel = cast(kernels.MultioutputKernel, kernel)
+        mo_kernel = cast(kernels.MultioutputKernel, kernel)  # type: ignore[redundant-cast]
 
         loop = cs(
             unroll_batches(
