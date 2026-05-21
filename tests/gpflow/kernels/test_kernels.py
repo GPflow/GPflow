@@ -277,16 +277,15 @@ def test_hierarchical_kernel_symmetry(kernel_class: type) -> None:
                 "branch_A",
                 feature_dims=[2],
                 feature_bounds=[[0.0, 1.0]],
-                activity_condition=gpflow.kernels.ActivityCondition({0: 1}),
+                activity_condition=gpflow.kernels.ActivityCondition({1: 1}),
             ),
             gpflow.kernels.HierarchyNode(
                 "branch_B",
                 feature_dims=[3],
                 feature_bounds=[[0.0, 1.0]],
-                activity_condition=gpflow.kernels.ActivityCondition({0: 0}),
+                activity_condition=gpflow.kernels.ActivityCondition({1: 0}),
             ),
         ],
-        indicator_dims=[1],
     )
     X = rng.randn(10, 4)
     X[:, 1] = rng.randint(0, 2, size=10).astype(float)

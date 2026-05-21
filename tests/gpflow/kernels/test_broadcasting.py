@@ -42,16 +42,15 @@ def _hierarchical_kwargs() -> Dict[str, Any]:
                 "branch_A",
                 feature_dims=[2],
                 feature_bounds=[[0.0, 1.0]],
-                activity_condition=ActivityCondition({0: 1}),
+                activity_condition=ActivityCondition({1: 1}),
             ),
             HierarchyNode(
                 "branch_B",
                 feature_dims=[3],
                 feature_bounds=[[0.0, 1.0]],
-                activity_condition=ActivityCondition({0: 0}),
+                activity_condition=ActivityCondition({1: 0}),
             ),
         ],
-        indicator_dims=[1],
     )
 
 

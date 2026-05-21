@@ -116,7 +116,6 @@ def _hierarchical_embedding(
     X: AnyNDArray,
     feature_dims: Sequence[int],
     feature_bounds: AnyNDArray,
-    indicator_dims: Sequence[int],
     activity_conditions: Sequence[Mapping[int, int]],
     embed_conditional: _EmbedFn,
 ) -> AnyNDArray:
@@ -125,14 +124,10 @@ def _hierarchical_embedding(
     rng = np.where(np.abs(hi - lo) < 1e-12, 1.0, hi - lo)
     v = (X_feat - lo) / rng
 
-    if indicator_dims:
-        ind = np.rint(X[:, list(indicator_dims)]).astype(int)
-        mask = np.ones((X.shape[0], len(feature_dims)), dtype=bool)
-        for j, req in enumerate(activity_conditions):
-            for k, val in req.items():
-                mask[:, j] &= ind[:, k] == val
-    else:
-        mask = np.ones((X.shape[0], len(feature_dims)), dtype=bool)
+    mask = np.ones((X.shape[0], len(feature_dims)), dtype=bool)
+    for j, req in enumerate(activity_conditions):
+        for col, val in req.items():
+            mask[:, j] &= np.rint(X[:, col]).astype(int) == val
 
     cond_idx = [j for j, req in enumerate(activity_conditions) if req]
     uncond_idx = [j for j in range(len(feature_dims)) if j not in set(cond_idx)]
@@ -151,7 +146,6 @@ def ref_arc_hierarchical_kernel(
     X: AnyNDArray,
     feature_dims: Sequence[int],
     feature_bounds: AnyNDArray,
-    indicator_dims: Sequence[int],
     activity_conditions: Sequence[Mapping[int, int]],
     angle: AnyNDArray,
     radius: AnyNDArray,
@@ -169,11 +163,10 @@ def ref_arc_hierarchical_kernel(
     :param feature_dims: column indices of the real-valued features.
     :param feature_bounds: ``[len(feature_dims), 2]`` lower/upper bounds used
         to normalise each feature column to ``[0, 1]``.
-    :param indicator_dims: column indices of integer-valued indicators that
-        gate the conditional features.
-    :param activity_conditions: per-feature mapping from *local indicator
-        index* (position within ``indicator_dims``) to its required integer
-        value. An empty mapping makes the feature unconditional.
+    :param activity_conditions: per-feature mapping from indicator column
+        index (in the same coordinate system as ``feature_dims``) to its
+        required integer value. An empty mapping makes the feature
+        unconditional.
     :param angle: per-conditional-column angle parameters ``a_c``.
     :param radius: per-conditional-column radius parameters ``r_c``.
     :param base_variance: signal variance applied to the base Matérn-5/2.
@@ -184,9 +177,7 @@ def ref_arc_hierarchical_kernel(
         theta = np.pi * angle * v_c
         return np.concatenate([radius * np.sin(theta) * m_c, radius * np.cos(theta) * m_c], axis=-1)
 
-    Z = _hierarchical_embedding(
-        X, feature_dims, feature_bounds, indicator_dims, activity_conditions, arc
-    )
+    Z = _hierarchical_embedding(X, feature_dims, feature_bounds, activity_conditions, arc)
     diff = Z[:, None, :] - Z[None, :, :]
     r2 = np.sum(diff ** 2, axis=-1)
     r = np.sqrt(np.maximum(r2, 0.0))
@@ -199,7 +190,6 @@ def ref_wedge_hierarchical_kernel(
     X: AnyNDArray,
     feature_dims: Sequence[int],
     feature_bounds: AnyNDArray,
-    indicator_dims: Sequence[int],
     activity_conditions: Sequence[Mapping[int, int]],
     theta1: AnyNDArray,
     theta2: AnyNDArray,
@@ -218,11 +208,10 @@ def ref_wedge_hierarchical_kernel(
     :param feature_dims: column indices of the real-valued features.
     :param feature_bounds: ``[len(feature_dims), 2]`` lower/upper bounds used
         to normalise each feature column to ``[0, 1]``.
-    :param indicator_dims: column indices of integer-valued indicators that
-        gate the conditional features.
-    :param activity_conditions: per-feature mapping from *local indicator
-        index* (position within ``indicator_dims``) to its required integer
-        value. An empty mapping makes the feature unconditional.
+    :param activity_conditions: per-feature mapping from indicator column
+        index (in the same coordinate system as ``feature_dims``) to its
+        required integer value. An empty mapping makes the feature
+        unconditional.
     :param theta1: per-conditional-column ``theta1`` parameters.
     :param theta2: per-conditional-column ``theta2`` parameters.
     :param rho: per-conditional-column wedge-angle parameters (strictly
@@ -236,9 +225,7 @@ def ref_wedge_hierarchical_kernel(
         comp2 = (theta2 * v_c * np.sin(rho)) * m_c
         return np.concatenate([comp1, comp2], axis=-1)
 
-    Z = _hierarchical_embedding(
-        X, feature_dims, feature_bounds, indicator_dims, activity_conditions, wedge
-    )
+    Z = _hierarchical_embedding(X, feature_dims, feature_bounds, activity_conditions, wedge)
     diff = Z[:, None, :] - Z[None, :, :]
     r2 = np.sum(diff ** 2, axis=-1)
     r = np.sqrt(np.maximum(r2, 0.0))

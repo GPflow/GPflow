@@ -21,7 +21,7 @@ structure on the input space: a point whose conditional feature is
 
 import abc
 from dataclasses import dataclass, field
-from typing import List, Mapping, Optional, Sequence
+from typing import Dict, List, Mapping, Optional, Sequence, Tuple
 
 import numpy as np
 import tensorflow as tf
@@ -53,8 +53,9 @@ def _check_non_negative_unique(values: Sequence[int], name: str) -> None:
 class ActivityCondition:
     """Conjunction of indicator-equality requirements gating one feature column.
 
-    :param requirements: mapping from *local indicator index* (the position of
-        the indicator within ``indicator_dims``) to its required integer value.
+    :param requirements: mapping from indicator column index (in the sliced
+        coordinate system, i.e. the same space as
+        :attr:`HierarchyNode.feature_dims`) to its required integer value.
         An empty mapping denotes an unconditional column. Keys and values must
         be non-negative ``int``.
     """
@@ -137,10 +138,9 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
     :param hierarchy: sequence of :class:`HierarchyNode`. Each node binds a
         group of feature columns to an :class:`ActivityCondition` that gates
         them. Feature columns must be globally unique across the hierarchy and
-        node names must be unique.
-    :param indicator_dims: column indices of indicator (integer-valued) values
-        in ``X``. Indicator indices used in each node's activity condition are
-        interpreted as positions within this sequence.
+        node names must be unique. The set of indicator columns is derived
+        from the union of all :class:`ActivityCondition` keys appearing in
+        the hierarchy; no separate ``indicator_dims`` argument is required.
     :param base_kernel: stationary base kernel applied in the joint embedded
         space. Defaults to :class:`Matern52` if omitted. The supplied kernel
         is deep-copied via :func:`gpflow.utilities.deepcopy` before use, so
@@ -152,11 +152,14 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         for ``ArcHierarchical`` or ``theta1`` / ``theta2`` for
         ``WedgeHierarchical``) already carry the scale of each embedded
         dimension.
-    :param active_dims: inherited from :class:`Kernel`. If supplied, both
-        feature dims and ``indicator_dims`` are interpreted in the sliced
-        coordinate system. When the __call__ method receives inputs, the
-        slice defined by ``active_dims`` is applied first, and the resulting
-        coordinates are then processed according to the hierarchy and indicators.
+    :param active_dims: inherited from :class:`Kernel`. If supplied,
+        ``feature_dims`` and :class:`ActivityCondition` keys are both
+        interpreted in the sliced coordinate system. When :meth:`__call__`
+        receives inputs, the slice defined by ``active_dims`` is applied
+        first, and the resulting coordinates are then processed according to
+        the hierarchy. When supplied as a list or array, its length must
+        equal the total number of feature columns plus indicator columns
+        defined by the hierarchy (``len(feature_dims) + len(indicator_dims)``).
     :param name: optional kernel name.
     """
 
@@ -164,7 +167,6 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
     def __init__(
         self,
         hierarchy: Sequence[HierarchyNode],
-        indicator_dims: Sequence[int] = (),
         base_kernel: Optional[Stationary] = None,
         *,
         active_dims: Optional[ActiveDims] = None,
@@ -179,18 +181,6 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         if len(set(names)) != len(names):
             raise ValueError(f"`hierarchy` contains duplicate node names: {names}.")
 
-        indicator_dims = list(indicator_dims)
-        _check_non_negative_unique(indicator_dims, "indicator_dims")
-
-        for node in hierarchy:
-            for k in node.activity_condition.requirements:
-                if k >= len(indicator_dims):
-                    raise ValueError(
-                        f"`hierarchy` node {node.name!r} references indicator "
-                        f"index {k}, but only {len(indicator_dims)} indicator "
-                        f"dims were declared."
-                    )
-
         flat_feature_dims: List[int] = []
         flat_bounds_rows: List[tf.Tensor] = []
         flat_activity_conditions: List[ActivityCondition] = []
@@ -202,18 +192,36 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
                 flat_activity_conditions.append(node.activity_condition)
 
         _check_non_negative_unique(flat_feature_dims, "feature_dims")
+
+        indicator_dims: List[int] = sorted(
+            {k for ac in flat_activity_conditions for k in ac.requirements}
+        )
         overlap = set(flat_feature_dims).intersection(indicator_dims)
         if overlap:
             raise ValueError(
-                f"`feature_dims` and `indicator_dims` overlap on columns {sorted(overlap)}."
+                f"`ActivityCondition` keys overlap with `feature_dims` on columns "
+                f"{sorted(overlap)}; a column cannot be both a feature and an indicator."
             )
+
+        key_to_pos: Dict[int, int] = {k: p for p, k in enumerate(indicator_dims)}
 
         bounds_tensor = tf.stack(flat_bounds_rows, axis=0)
 
         self._n_feat = len(flat_feature_dims)
         self._n_ind = len(indicator_dims)
 
+        if isinstance(self._active_dims, np.ndarray):
+            n_expected = self._n_feat + self._n_ind
+            if len(self._active_dims) != n_expected:
+                raise ValueError(
+                    f"`active_dims` has {len(self._active_dims)} dimension(s), but the "
+                    f"hierarchy defines {self._n_feat} feature dimension(s) and "
+                    f"{self._n_ind} indicator dimension(s) (total {n_expected}); "
+                    f"`active_dims` must select exactly that many columns."
+                )
+
         self._feature_dims = tf.constant(flat_feature_dims, dtype=tf.int32)
+        self._indicator_dims_tuple: Tuple[int, ...] = tuple(indicator_dims)
         self._indicator_dims = tf.constant(indicator_dims, dtype=tf.int32)
         self._bounds = bounds_tensor
         self._hierarchy = hierarchy
@@ -229,7 +237,7 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         required = [[_IGNORE] * self._n_ind for _ in range(self._n_feat)]
         for j, ac in enumerate(flat_activity_conditions):
             for k, v in ac.requirements.items():
-                required[j][k] = v
+                required[j][key_to_pos[k]] = v
         self._required = tf.constant(required, dtype=tf.int32)
         self._required_is_ignore = tf.equal(self._required, _IGNORE)
 
@@ -260,6 +268,12 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
     def hierarchy(self) -> Sequence[HierarchyNode]:
         """The hierarchy defining this kernel's structure."""
         return self._hierarchy
+
+    @property
+    def indicator_dims(self) -> Tuple[int, ...]:
+        """Column indices (sliced coordinate system) of the indicators referenced
+        by any :class:`ActivityCondition` in the hierarchy, sorted ascending."""
+        return self._indicator_dims_tuple
 
     @property
     def n_cond_dims(self) -> int:
@@ -374,13 +388,12 @@ class ArcHierarchical(HierarchicalEmbeddingKernel):
     def __init__(
         self,
         hierarchy: Sequence[HierarchyNode],
-        indicator_dims: Sequence[int] = (),
         base_kernel: Optional[Stationary] = None,
         *,
         active_dims: Optional[ActiveDims] = None,
         name: Optional[str] = None,
     ) -> None:
-        super().__init__(hierarchy, indicator_dims, base_kernel, active_dims=active_dims, name=name)
+        super().__init__(hierarchy, base_kernel, active_dims=active_dims, name=name)
         if self._n_cond > 0:
             self.angle = Parameter(
                 0.5 * tf.ones(self._n_cond, dtype=default_float()),
@@ -422,13 +435,12 @@ class WedgeHierarchical(HierarchicalEmbeddingKernel):
     def __init__(
         self,
         hierarchy: Sequence[HierarchyNode],
-        indicator_dims: Sequence[int] = (),
         base_kernel: Optional[Stationary] = None,
         *,
         active_dims: Optional[ActiveDims] = None,
         name: Optional[str] = None,
     ) -> None:
-        super().__init__(hierarchy, indicator_dims, base_kernel, active_dims=active_dims, name=name)
+        super().__init__(hierarchy, base_kernel, active_dims=active_dims, name=name)
         if self._n_cond > 0:
             self.theta1 = Parameter(
                 tf.ones(self._n_cond, dtype=default_float()),

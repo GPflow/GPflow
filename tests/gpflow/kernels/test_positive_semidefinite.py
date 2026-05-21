@@ -81,16 +81,15 @@ def test_positive_semidefinite_hierarchical(
                 "branch_A",
                 feature_dims=[2],
                 feature_bounds=[[0.0, 1.0]],
-                activity_condition=kernels.ActivityCondition({0: 1}),
+                activity_condition=kernels.ActivityCondition({1: 1}),
             ),
             kernels.HierarchyNode(
                 "branch_B",
                 feature_dims=[3],
                 feature_bounds=[[0.0, 1.0]],
-                activity_condition=kernels.ActivityCondition({0: 0}),
+                activity_condition=kernels.ActivityCondition({1: 0}),
             ),
         ],
-        indicator_dims=[1],
     )
     # Indicator column must be integer-valued (0 or 1); rest can be float.
     N = 50

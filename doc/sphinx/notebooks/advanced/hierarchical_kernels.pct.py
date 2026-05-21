@@ -98,19 +98,19 @@ X_test = np.array(
 # %% [markdown]
 # ## Describe the search space to the kernel
 #
-# The kernel takes two pieces of information:
+# The kernel takes a single piece of information:
 #
 # * `hierarchy` — a sequence of `HierarchyNode`s. Each node binds a group of
 #   feature columns to the `ActivityCondition` that gates them (and carries
 #   the per-feature `(lower, upper)` bounds used to normalise to $[0, 1]$).
 #   An empty `ActivityCondition` makes the node's features unconditional.
-# * `indicator_dims` — column indices of the integer-valued indicators in the
-#   flat input. The keys of each node's `ActivityCondition` are interpreted as
-#   positions within this sequence.
+#   The keys of each `ActivityCondition` are column indices in $X$ (the same
+#   coordinate system as `feature_dims`) — the set of indicator columns is
+#   derived automatically.
 #
 # For our four-variable example, the column layout in $X$ is
 # $[x_1, y_1, x_2, x_3]$ — so $x_1$ lives in a shared node, $x_2$ in a node
-# gated by $y_1 = 1$, and $x_3$ in a node gated by $y_1 = 0$:
+# gated by $y_1 = 1$ (column 1), and $x_3$ in a node gated by $y_1 = 0$:
 
 # %%
 from gpflow.kernels import ActivityCondition, HierarchyNode
@@ -121,13 +121,13 @@ hierarchy = [
         "branch_A",
         feature_dims=[2],
         feature_bounds=[[0.0, 5.0]],
-        activity_condition=ActivityCondition({0: 1}),
+        activity_condition=ActivityCondition({1: 1}),
     ),
     HierarchyNode(
         "branch_B",
         feature_dims=[3],
         feature_bounds=[[-1.0, 1.0]],
-        activity_condition=ActivityCondition({0: 0}),
+        activity_condition=ActivityCondition({1: 0}),
     ),
 ]
 
@@ -140,19 +140,16 @@ from gpflow.kernels import ArcHierarchical, Constant
 from gpflow.models import GPR
 from gpflow.optimizers import Scipy
 
-indicator_dims = [1]
-
-arc = ArcHierarchical(hierarchy=hierarchy, indicator_dims=indicator_dims)
+arc = ArcHierarchical(hierarchy=hierarchy)
 print("conditional columns:", arc._n_cond)
 print("unconditional columns:", arc._n_uncond)
+print("indicator columns (derived):", arc.indicator_dims)
 print("angle init:", arc.angle.numpy())
 print("radius init:", arc.radius.numpy())
 
 # %% [markdown]
 # Wrap in a Constant() factor so the GP can learn an overall variance.
-arc_for_fit = ArcHierarchical(
-    hierarchy=hierarchy, indicator_dims=indicator_dims
-)
+arc_for_fit = ArcHierarchical(hierarchy=hierarchy)
 kernel = Constant() * arc_for_fit
 gpr = GPR(data=(X_train, Y_train), kernel=kernel, noise_variance=0.05)
 
@@ -188,7 +185,7 @@ for x, m, v, t in zip(X_test, mean.numpy().ravel(), var.numpy().ravel(), truth):
 # %%
 from gpflow.kernels import WedgeHierarchical
 
-wedge = WedgeHierarchical(hierarchy=hierarchy, indicator_dims=indicator_dims)
+wedge = WedgeHierarchical(hierarchy=hierarchy)
 kernel = Constant() * wedge
 print("initial theta1:", wedge.theta1.numpy())
 print("initial theta2:", wedge.theta2.numpy())
