@@ -13,7 +13,7 @@
 # limitations under the License.
 """Tests for ``gpflow.kernels.hierarchical``."""
 
-from typing import Any, Dict, List, Mapping, Tuple, Type, Union
+from typing import Any, Dict, List, Mapping, Tuple, Union
 
 import numpy as np
 import pytest
@@ -862,13 +862,12 @@ class TestActiveDims:
     @pytest.mark.parametrize("kernel_name", ["arc", "wedge"])
     def test_kdiag_matches_diag_of_K_under_active_dims(self, kernel_name: str) -> None:
         X_padded, active_dims = _padded_X_and_active_dims("list_interspersed", self._X_base())
-        cls: Type[HierarchicalEmbeddingKernel] = (
-            ArcHierarchical if kernel_name == "arc" else WedgeHierarchical
-        )
-        kernel = cls(
-            hierarchy=_canonical_disjunction_hierarchy(),
-            active_dims=active_dims,
-        )
+        hierarchy = _canonical_disjunction_hierarchy()
+        kernel: HierarchicalEmbeddingKernel
+        if kernel_name == "arc":
+            kernel = ArcHierarchical(hierarchy=hierarchy, active_dims=active_dims)
+        else:
+            kernel = WedgeHierarchical(hierarchy=hierarchy, active_dims=active_dims)
         X_tf = tf.constant(X_padded)
         K_full = kernel(X_tf).numpy()
         K_diag = kernel(X_tf, full_cov=False).numpy()
@@ -877,13 +876,12 @@ class TestActiveDims:
     @pytest.mark.parametrize("kernel_name", ["arc", "wedge"])
     def test_presliced_roundtrip(self, kernel_name: str) -> None:
         X_padded, active_dims = _padded_X_and_active_dims("list_left", self._X_base())
-        cls: Type[HierarchicalEmbeddingKernel] = (
-            ArcHierarchical if kernel_name == "arc" else WedgeHierarchical
-        )
-        kernel = cls(
-            hierarchy=_canonical_disjunction_hierarchy(),
-            active_dims=active_dims,
-        )
+        hierarchy = _canonical_disjunction_hierarchy()
+        kernel: HierarchicalEmbeddingKernel
+        if kernel_name == "arc":
+            kernel = ArcHierarchical(hierarchy=hierarchy, active_dims=active_dims)
+        else:
+            kernel = WedgeHierarchical(hierarchy=hierarchy, active_dims=active_dims)
         X_tf = tf.constant(X_padded)
         K_via_call = kernel(X_tf).numpy()
         X_sliced, _ = kernel.slice(X_tf, None)
