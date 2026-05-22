@@ -141,8 +141,8 @@ from gpflow.models import GPR
 from gpflow.optimizers import Scipy
 
 arc = ArcHierarchical(hierarchy=hierarchy, active_dims=list(range(4)))
-print("conditional columns:", arc.n_cond)
-print("unconditional columns:", arc.n_uncond)
+print("conditional columns:", arc.n_cond_dims)
+print("unconditional columns:", arc.n_uncond_dims)
 print("indicator columns (derived):", arc.indicator_dims)
 print("angle init:", arc.angle.numpy())
 print("radius init:", arc.radius.numpy())
