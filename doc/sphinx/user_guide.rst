@@ -169,3 +169,10 @@ In this notebook we demonstrate how new types of inducing variables can easily b
    notebooks/advanced/natural_gradients
 
 How to optimize the variational approximate posterior's parameters.
+
+.. toctree::
+   :maxdepth: 1
+
+   notebooks/advanced/hierarchical_kernels
+
+How to model hierarchical (conditional / disjunctive) search spaces, where some input dimensions are only meaningful when an indicator variable takes a particular value, using the ``ArcHierarchical`` and ``WedgeHierarchical`` kernels.
