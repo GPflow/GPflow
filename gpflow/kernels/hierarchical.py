@@ -222,7 +222,6 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         key_to_pos: Dict[int, int] = {k: p for p, k in enumerate(indicator_dims)}
 
         bounds_tensor = tf.stack(flat_bounds_rows, axis=0)
-
         self._n_feat = len(flat_feature_dims)
         self._n_ind = len(indicator_dims)
 
@@ -242,7 +241,14 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
                 f"{self._n_ind} indicator dimension(s) (total {n_expected}); "
                 f"`active_dims` must select exactly that many columns."
             )
-
+        if list(range(width)) != sorted(flat_feature_dims + indicator_dims):
+            raise ValueError(
+                f"`active_dims` selects {width} columns."
+                f" The feature and indicator dims reference the "
+                f"sliced coordinate system. Checks on this fail: "
+                f"{list(range(width))} != "
+                f"{sorted(flat_feature_dims + indicator_dims)}"
+            )
         self._feature_dims = tf.constant(flat_feature_dims, dtype=tf.int32)
         self._indicator_dims_tuple: Tuple[int, ...] = tuple(indicator_dims)
         self._indicator_dims = tf.constant(indicator_dims, dtype=tf.int32)
