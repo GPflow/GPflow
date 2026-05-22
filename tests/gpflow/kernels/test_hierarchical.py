@@ -26,6 +26,7 @@ from gpflow.kernels.hierarchical import (
     ArcHierarchical,
     HierarchicalEmbeddingKernel,
     HierarchyNode,
+    WedgeHierarchical,
 )
 
 
@@ -632,6 +633,75 @@ class TestArcHierarchical:
         assert K_cross < K_self - 1e-6
 
 
+def _wedge() -> WedgeHierarchical:
+    return WedgeHierarchical(
+        hierarchy=_canonical_disjunction_hierarchy(),
+        active_dims=list(range(4)),
+    )
+
+
+class TestWedgeHierarchical:
+    def test_parameters_are_per_conditional_column(self) -> None:
+        kernel = _wedge()
+        assert tuple(kernel.theta1.shape) == (2,)
+        assert tuple(kernel.theta2.shape) == (2,)
+        assert tuple(kernel.rho.shape) == (2,)
+
+    def test_thetas_initialised_to_one(self) -> None:
+        kernel = _wedge()
+        np.testing.assert_allclose(kernel.theta1.numpy(), [1.0, 1.0])
+        np.testing.assert_allclose(kernel.theta2.numpy(), [1.0, 1.0])
+
+    def test_rho_initialised_to_half_pi(self) -> None:
+        kernel = _wedge()
+        np.testing.assert_allclose(kernel.rho.numpy(), [np.pi / 2, np.pi / 2])
+
+    def test_K_shape_and_psd(self) -> None:
+        kernel = _wedge()
+        X = tf.constant(
+            [
+                [0.5, 1.0, 2.5, 0.0],
+                [0.5, 0.0, 2.5, 0.5],
+                [0.3, 1.0, 4.0, 0.0],
+            ],
+            dtype=tf.float64,
+        )
+        K = kernel.K(X).numpy()
+        assert K.shape == (3, 3)
+        np.testing.assert_allclose(K, K.T, atol=1e-12)
+        eigs = np.linalg.eigvalsh(K + 1e-10 * np.eye(3))
+        assert eigs.min() > -1e-8
+
+    def test_axiom_both_inactive_is_invariant_in_conditional_value(self) -> None:
+        kernel = _wedge()
+        X_a = tf.constant([[0.5, 1.0, 2.5, 0.0]], dtype=tf.float64)
+        X_b = tf.constant([[0.5, 1.0, 2.5, 0.7]], dtype=tf.float64)
+        np.testing.assert_allclose(
+            kernel.K(X_a, X_a).numpy(),
+            kernel.K(X_a, X_b).numpy(),
+            rtol=1e-12,
+        )
+
+    def test_axiom_one_active_one_inactive_distinct(self) -> None:
+        kernel = _wedge()
+        X_active = tf.constant([[0.5, 1.0, 2.5, 0.0]], dtype=tf.float64)
+        X_inactive = tf.constant([[0.5, 0.0, 2.5, 0.0]], dtype=tf.float64)
+        K_self = kernel.K(X_active, X_active).numpy().item()
+        K_cross = kernel.K(X_active, X_inactive).numpy().item()
+        assert K_cross < K_self - 1e-6
+
+    def test_axiom_both_active_equal_value_equals_self(self) -> None:
+        kernel = _wedge()
+        X_a = tf.constant([[0.5, 1.0, 2.5, 0.0]], dtype=tf.float64)
+        X_b = tf.constant([[0.5, 1.0, 2.5, 0.4]], dtype=tf.float64)
+        # x1 same, y1 same, x2 same; x3 differs but is inactive on both.
+        np.testing.assert_allclose(
+            kernel.K(X_a, X_a).numpy(),
+            kernel.K(X_a, X_b).numpy(),
+            rtol=1e-12,
+        )
+
+
 class TestClosedFormReference:
     @staticmethod
     def _ref_args() -> Dict[str, Any]:
@@ -658,6 +728,27 @@ class TestClosedFormReference:
             X,
             angle=kernel.angle.numpy(),
             radius=kernel.radius.numpy(),
+            **self._ref_args(),
+        )
+        actual = kernel.K(tf.constant(X)).numpy()
+        np.testing.assert_allclose(actual, ref, rtol=1e-10)
+
+    def test_wedge_matches_numpy_reference(self) -> None:
+        from tests.gpflow.kernels.reference import ref_wedge_hierarchical_kernel
+
+        kernel = _wedge()
+        X = np.array(
+            [
+                [0.5, 1.0, 2.5, 0.0],
+                [0.2, 0.0, 0.0, 0.5],
+                [0.7, 1.0, 4.0, -0.4],
+            ]
+        )
+        ref = ref_wedge_hierarchical_kernel(
+            X,
+            theta1=kernel.theta1.numpy(),
+            theta2=kernel.theta2.numpy(),
+            rho=kernel.rho.numpy(),
             **self._ref_args(),
         )
         actual = kernel.K(tf.constant(X)).numpy()
@@ -748,21 +839,49 @@ class TestActiveDims:
         actual = kernel(tf.constant(X_padded)).numpy()
         np.testing.assert_allclose(actual, ref, rtol=1e-10)
 
-    def test_kdiag_matches_diag_of_K_under_active_dims(self) -> None:
-        X_padded, active_dims = _padded_X_and_active_dims("list_interspersed", self._X_base())
-        kernel = ArcHierarchical(
-            hierarchy=_canonical_disjunction_hierarchy(), active_dims=active_dims
+    @pytest.mark.parametrize("layout", _ACTIVE_DIMS_LAYOUTS)
+    def test_wedge_matches_reference_under_active_dims(self, layout: str) -> None:
+        from tests.gpflow.kernels.reference import ref_wedge_hierarchical_kernel
+
+        X_base = self._X_base()
+        X_padded, active_dims = _padded_X_and_active_dims(layout, X_base)
+        kernel = WedgeHierarchical(
+            hierarchy=_canonical_disjunction_hierarchy(),
+            active_dims=active_dims,
         )
+        ref = ref_wedge_hierarchical_kernel(
+            X_base,
+            theta1=kernel.theta1.numpy(),
+            theta2=kernel.theta2.numpy(),
+            rho=kernel.rho.numpy(),
+            **self._ref_args(),
+        )
+        actual = kernel(tf.constant(X_padded)).numpy()
+        np.testing.assert_allclose(actual, ref, rtol=1e-10)
+
+    @pytest.mark.parametrize("kernel_name", ["arc", "wedge"])
+    def test_kdiag_matches_diag_of_K_under_active_dims(self, kernel_name: str) -> None:
+        X_padded, active_dims = _padded_X_and_active_dims("list_interspersed", self._X_base())
+        hierarchy = _canonical_disjunction_hierarchy()
+        kernel: HierarchicalEmbeddingKernel
+        if kernel_name == "arc":
+            kernel = ArcHierarchical(hierarchy=hierarchy, active_dims=active_dims)
+        else:
+            kernel = WedgeHierarchical(hierarchy=hierarchy, active_dims=active_dims)
         X_tf = tf.constant(X_padded)
         K_full = kernel(X_tf).numpy()
         K_diag = kernel(X_tf, full_cov=False).numpy()
         np.testing.assert_allclose(K_diag, np.diag(K_full), rtol=1e-10)
 
-    def test_presliced_roundtrip(self) -> None:
+    @pytest.mark.parametrize("kernel_name", ["arc", "wedge"])
+    def test_presliced_roundtrip(self, kernel_name: str) -> None:
         X_padded, active_dims = _padded_X_and_active_dims("list_left", self._X_base())
-        kernel = ArcHierarchical(
-            hierarchy=_canonical_disjunction_hierarchy(), active_dims=active_dims
-        )
+        hierarchy = _canonical_disjunction_hierarchy()
+        kernel: HierarchicalEmbeddingKernel
+        if kernel_name == "arc":
+            kernel = ArcHierarchical(hierarchy=hierarchy, active_dims=active_dims)
+        else:
+            kernel = WedgeHierarchical(hierarchy=hierarchy, active_dims=active_dims)
         X_tf = tf.constant(X_padded)
         K_via_call = kernel(X_tf).numpy()
         X_sliced, _ = kernel.slice(X_tf, None)
@@ -803,6 +922,29 @@ class TestEmptyCases:
         eigs = np.linalg.eigvalsh(K + 1e-10 * np.eye(3))
         assert eigs.min() > -1e-8
 
+    def test_cond_only_wedge(self) -> None:
+        kernel = WedgeHierarchical(
+            hierarchy=[
+                HierarchyNode(
+                    "branch_A",
+                    feature_dims=[1],
+                    feature_bounds=[[0.0, 1.0]],
+                    activity_condition=ActivityCondition({0: 1}),
+                ),
+                HierarchyNode(
+                    "branch_B",
+                    feature_dims=[2],
+                    feature_bounds=[[0.0, 1.0]],
+                    activity_condition=ActivityCondition({0: 0}),
+                ),
+            ],
+            active_dims=[0, 1, 2],
+        )
+        X = tf.constant([[1.0, 0.5, 0.0], [0.0, 0.0, 0.5]], dtype=tf.float64)
+        K = kernel.K(X).numpy()
+        assert K.shape == (2, 2)
+        assert np.all(np.isfinite(K))
+
 
 class TestComposability:
     def test_arc_composes_with_constant_for_variance(self) -> None:
@@ -837,6 +979,33 @@ class TestDifferentiability:
         grads = tape.gradient(
             K,
             [kernel.angle.unconstrained_variable, kernel.radius.unconstrained_variable],
+        )
+        for g in grads:
+            assert g is not None
+            g_np = g.numpy()
+            assert np.all(np.isfinite(g_np))
+            assert np.any(np.abs(g_np) > 1e-12)
+
+    def test_wedge_gradients_are_finite_and_nonzero(self) -> None:
+        kernel = _wedge()
+        X = tf.constant(
+            [
+                [0.5, 1.0, 2.5, 0.0],
+                [0.2, 0.0, 0.0, 0.5],
+                [0.7, 1.0, 4.0, -0.4],
+                [0.3, 0.0, 0.0, -0.2],
+            ],
+            dtype=tf.float64,
+        )
+        with tf.GradientTape() as tape:
+            K = tf.reduce_sum(kernel.K(X))
+        grads = tape.gradient(
+            K,
+            [
+                kernel.theta1.unconstrained_variable,
+                kernel.theta2.unconstrained_variable,
+                kernel.rho.unconstrained_variable,
+            ],
         )
         for g in grads:
             assert g is not None

@@ -184,3 +184,51 @@ def ref_arc_hierarchical_kernel(
     sqrt5 = np.sqrt(5.0)
     result: AnyNDArray = base_variance * (1.0 + sqrt5 * r + 5.0 / 3.0 * r ** 2) * np.exp(-sqrt5 * r)
     return result
+
+
+def ref_wedge_hierarchical_kernel(
+    X: AnyNDArray,
+    feature_dims: Sequence[int],
+    feature_bounds: AnyNDArray,
+    activity_conditions: Sequence[Mapping[int, int]],
+    theta1: AnyNDArray,
+    theta2: AnyNDArray,
+    rho: AnyNDArray,
+    base_variance: float = 1.0,
+) -> AnyNDArray:
+    """Numpy reference for :class:`gpflow.kernels.WedgeHierarchical`.
+
+    Each conditional feature column ``c`` (normalised value ``v_c``, float
+    activity mask ``m_c``) is embedded into the plane as
+    ``((theta1 v_c + theta2 v_c cos rho) m_c, (theta2 v_c sin rho) m_c)``;
+    unconditional columns are passed through unchanged. The full embedding
+    is then fed into a unit-lengthscale Matérn-5/2 kernel.
+
+    :param X: input data of shape ``[N, D]``.
+    :param feature_dims: column indices of the real-valued features.
+    :param feature_bounds: ``[len(feature_dims), 2]`` lower/upper bounds used
+        to normalise each feature column to ``[0, 1]``.
+    :param activity_conditions: per-feature mapping from indicator column
+        index (in the same coordinate system as ``feature_dims``) to its
+        required integer value. An empty mapping makes the feature
+        unconditional.
+    :param theta1: per-conditional-column ``theta1`` parameters.
+    :param theta2: per-conditional-column ``theta2`` parameters.
+    :param rho: per-conditional-column wedge-angle parameters (strictly
+        between ``0`` and ``pi``).
+    :param base_variance: signal variance applied to the base Matérn-5/2.
+    :returns: kernel matrix of shape ``[N, N]``.
+    """
+
+    def wedge(v_c: AnyNDArray, m_c: AnyNDArray) -> AnyNDArray:
+        comp1 = (theta1 * v_c + theta2 * v_c * np.cos(rho)) * m_c
+        comp2 = (theta2 * v_c * np.sin(rho)) * m_c
+        return np.concatenate([comp1, comp2], axis=-1)
+
+    Z = _hierarchical_embedding(X, feature_dims, feature_bounds, activity_conditions, wedge)
+    diff = Z[:, None, :] - Z[None, :, :]
+    r2 = np.sum(diff ** 2, axis=-1)
+    r = np.sqrt(np.maximum(r2, 0.0))
+    sqrt5 = np.sqrt(5.0)
+    result: AnyNDArray = base_variance * (1.0 + sqrt5 * r + 5.0 / 3.0 * r ** 2) * np.exp(-sqrt5 * r)
+    return result

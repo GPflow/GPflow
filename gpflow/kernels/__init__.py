@@ -24,6 +24,7 @@ from .hierarchical import (
     ArcHierarchical,
     HierarchicalEmbeddingKernel,
     HierarchyNode,
+    WedgeHierarchical,
 )
 from .linears import Linear, Polynomial
 from .misc import ArcCosine, Coregion
@@ -90,6 +91,7 @@ __all__ = [
     "Static",
     "Stationary",
     "Sum",
+    "WedgeHierarchical",
     "White",
     "base",
     "categorical",
