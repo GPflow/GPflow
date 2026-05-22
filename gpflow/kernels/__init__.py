@@ -19,7 +19,12 @@ from . import multioutput
 from .base import Combination, Kernel, Product, Sum
 from .changepoints import ChangePoints
 from .convolutional import Convolutional
-from .hierarchical import ActivityCondition, HierarchicalEmbeddingKernel, HierarchyNode
+from .hierarchical import (
+    ActivityCondition,
+    ArcHierarchical,
+    HierarchicalEmbeddingKernel,
+    HierarchyNode,
+)
 from .linears import Linear, Polynomial
 from .misc import ArcCosine, Coregion
 from .multioutput import (
@@ -54,6 +59,7 @@ __all__ = [
     "ActivityCondition",
     "AnisotropicStationary",
     "ArcCosine",
+    "ArcHierarchical",
     "Bias",
     "ChangePoints",
     "Combination",
