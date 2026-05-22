@@ -26,6 +26,9 @@ import gpflow.ci_utils
 from gpflow import kernels
 from gpflow.base import AnyNDArray, TensorType
 from gpflow.kernels.categorical import Categorical
+from gpflow.kernels.hierarchical import HierarchyNode
+
+from .test_hierarchical import _FakeEmbedKernel
 
 
 def create_kernels() -> Sequence[kernels.Kernel]:
@@ -66,6 +69,13 @@ def create_kernels() -> Sequence[kernels.Kernel]:
             non_categorical_kernel=kernels.RBF(lengthscales=0.1),
             categorical_kernel=kernels.RBF(lengthscales=0.1),
             num_labels=3,
+        ),
+        # Hierarchical: exercised via the test-only `_FakeEmbedKernel` until
+        # the first concrete subclass (`ArcHierarchical`) lands. Its MRO
+        # also covers `HierarchicalEmbeddingKernel` in `test_no_kernels_missed`.
+        _FakeEmbedKernel(
+            hierarchy=[HierarchyNode("only", feature_dims=[0], feature_bounds=[[0.0, 1.0]])],
+            active_dims=[0],
         ),
     ]
     return result

@@ -19,12 +19,24 @@ structure on the input space: a point whose conditional feature is
 *active and equal in value*.
 """
 
+import abc
 from dataclasses import dataclass, field
-from typing import Mapping, Sequence
+from typing import Dict, List, Mapping, Optional, Sequence, Tuple
 
+import numpy as np
 import tensorflow as tf
+from check_shapes import check_shapes, inherit_check_shapes
+
+from gpflow.experimental.utils import experimental
 
 from ..base import TensorType
+from ..utilities import deepcopy, set_trainable
+from .base import ActiveDims, Kernel, NormalizedActiveDims
+from .stationaries import Matern52, Stationary
+
+# Value used to denote inactive or ignored feature entries in
+# hierarchical/disjunctive kernel activation logic.
+_IGNORE = -1
 
 
 def _check_non_negative_unique(values: Sequence[int], name: str) -> None:
@@ -33,6 +45,20 @@ def _check_non_negative_unique(values: Sequence[int], name: str) -> None:
             raise ValueError(f"`{name}` entries must be non-negative; got {v}.")
     if len(set(values)) != len(values):
         raise ValueError(f"`{name}` contains duplicate entries: {list(values)}.")
+
+
+def _active_dims_width(active_dims: NormalizedActiveDims) -> Optional[int]:
+    """Number of columns selected by ``active_dims``, or ``None`` if it cannot
+    be determined without knowing the input dimension (an open-ended slice)."""
+    if isinstance(active_dims, np.ndarray):
+        return int(active_dims.size)
+    if isinstance(active_dims, slice):
+        if active_dims.stop is None:
+            return None
+        start = 0 if active_dims.start is None else active_dims.start
+        step = 1 if active_dims.step is None else active_dims.step
+        return len(range(start, active_dims.stop, step))
+    return None
 
 
 @dataclass(frozen=True)
@@ -111,3 +137,258 @@ class HierarchyNode:
                 f"`feature_bounds` rows of node {self.name!r} must satisfy "
                 f"lower <= upper; got at least one inverted row."
             )
+
+
+class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
+    """Abstract base for kernels that embed conditional features into a stationary
+    base kernel's input space, gated by indicator-derived activity masks.
+
+    Concrete subclasses implement :meth:`_embed_conditional`, which receives the
+    normalised conditional features ``v_c`` and their float activity mask ``m_c``
+    (both ``[batch..., N, D_cond]``) and returns ``[batch..., N, 2 * D_cond]``.
+
+    :param hierarchy: sequence of :class:`HierarchyNode`. Each node binds a
+        group of feature columns to an :class:`ActivityCondition` that gates
+        them. Feature columns must be globally unique across the hierarchy and
+        node names must be unique. The set of indicator columns is derived
+        from the union of all :class:`ActivityCondition` keys appearing in
+        the hierarchy; no separate ``indicator_dims`` argument is required.
+    :param base_kernel: stationary base kernel applied in the joint embedded
+        space. Defaults to :class:`Matern52` if omitted. The supplied kernel
+        is deep-copied via :func:`gpflow.utilities.deepcopy` before use, so
+        the caller's object is never mutated. Its ``lengthscales`` must be
+        scalar or have shape ``(2 * n_cond + n_uncond,)`` matching the
+        embedded dimension; the copy's lengthscales are then forced to 1
+        and set non-trainable, because the per-conditional-column
+        parameters of the concrete subclass (e.g. ``angle`` / ``radius``
+        for ``ArcHierarchical`` or ``theta1`` / ``theta2`` for
+        ``WedgeHierarchical``) already carry the scale of each embedded
+        dimension.
+    :param active_dims: required. ``feature_dims`` and
+        :class:`ActivityCondition` keys are interpreted in the sliced
+        coordinate system. When :meth:`__call__` receives inputs, the slice
+        defined by ``active_dims`` is applied first, and the resulting
+        coordinates are then processed according to the hierarchy. Must
+        select exactly ``n_feat + n_ind`` columns, where ``n_feat`` is the
+        total number of feature columns in the hierarchy and ``n_ind`` is
+        the number of derived indicator columns. May be a sequence of int
+        column indices, or a :class:`slice` whose ``stop`` is concrete (so
+        its width can be validated at construction).
+    :param name: optional kernel name.
+    """
+
+    @experimental
+    def __init__(
+        self,
+        hierarchy: Sequence[HierarchyNode],
+        base_kernel: Optional[Stationary] = None,
+        *,
+        active_dims: ActiveDims,
+        name: Optional[str] = None,
+    ) -> None:
+        super().__init__(active_dims=active_dims, name=name)
+
+        hierarchy = tuple(hierarchy)
+        if not hierarchy:
+            raise ValueError("`hierarchy` must contain at least one node.")
+        names = [node.name for node in hierarchy]
+        if len(set(names)) != len(names):
+            raise ValueError(f"`hierarchy` contains duplicate node names: {names}.")
+
+        flat_feature_dims: List[int] = []
+        flat_bounds_rows: List[tf.Tensor] = []
+        flat_activity_conditions: List[ActivityCondition] = []
+        for node in hierarchy:
+            bounds = tf.convert_to_tensor(node.feature_bounds, dtype=tf.float64)
+            for i, fd in enumerate(node.feature_dims):
+                flat_feature_dims.append(fd)
+                flat_bounds_rows.append(bounds[i])
+                flat_activity_conditions.append(node.activity_condition)
+
+        _check_non_negative_unique(flat_feature_dims, "feature_dims")
+
+        indicator_dims: List[int] = sorted(
+            {k for ac in flat_activity_conditions for k in ac.requirements}
+        )
+        overlap = set(flat_feature_dims).intersection(indicator_dims)
+        if overlap:
+            raise ValueError(
+                f"`ActivityCondition` keys overlap with `feature_dims` on columns "
+                f"{sorted(overlap)}; a column cannot be both a feature and an indicator."
+            )
+
+        key_to_pos: Dict[int, int] = {k: p for p, k in enumerate(indicator_dims)}
+
+        bounds_tensor = tf.stack(flat_bounds_rows, axis=0)
+        self._n_feat = len(flat_feature_dims)
+        self._n_ind = len(indicator_dims)
+
+        n_expected = self._n_feat + self._n_ind
+        width = _active_dims_width(self._active_dims)
+        if width is None:
+            raise ValueError(
+                "`active_dims` must allow its width to be determined at "
+                "construction: pass a sequence of column indices, or a "
+                "`slice` whose `stop` is concrete; "
+                f"got {self._active_dims!r}."
+            )
+        if width != n_expected:
+            raise ValueError(
+                f"`active_dims` selects {width} column(s), but the hierarchy "
+                f"defines {self._n_feat} feature dimension(s) and "
+                f"{self._n_ind} indicator dimension(s) (total {n_expected}); "
+                f"`active_dims` must select exactly that many columns."
+            )
+        if list(range(width)) != sorted(flat_feature_dims + indicator_dims):
+            raise ValueError(
+                f"`active_dims` selects {width} columns."
+                f" The feature and indicator dims reference the "
+                f"sliced coordinate system. Checks on this fail: "
+                f"{list(range(width))} != "
+                f"{sorted(flat_feature_dims + indicator_dims)}"
+            )
+        self._feature_dims = tf.constant(flat_feature_dims, dtype=tf.int32)
+        self._indicator_dims_tuple: Tuple[int, ...] = tuple(indicator_dims)
+        self._indicator_dims = tf.constant(indicator_dims, dtype=tf.int32)
+        self._bounds = bounds_tensor
+        self._hierarchy = hierarchy
+
+        cond_local_idx = [j for j, ac in enumerate(flat_activity_conditions) if ac.requirements]
+        uncond_local_idx = [j for j in range(self._n_feat) if j not in set(cond_local_idx)]
+
+        self._cond_local_idx = cond_local_idx
+        self._uncond_local_idx = uncond_local_idx
+        self._n_cond = len(cond_local_idx)
+        self._n_uncond = len(uncond_local_idx)
+
+        required = [[_IGNORE] * self._n_ind for _ in range(self._n_feat)]
+        for j, ac in enumerate(flat_activity_conditions):
+            for k, v in ac.requirements.items():
+                required[j][key_to_pos[k]] = v
+        self._required = tf.constant(required, dtype=tf.int32)
+        self._required_is_ignore = tf.equal(self._required, _IGNORE)
+
+        if base_kernel is None:
+            base_kernel = Matern52()
+        else:
+            if not isinstance(base_kernel, Stationary):
+                raise ValueError(
+                    f"`base_kernel` must be a gpflow.kernels.Stationary instance; "
+                    f"got {type(base_kernel).__name__}."
+                )
+            base_kernel = deepcopy(base_kernel)
+
+        d_embed = 2 * self._n_cond + self._n_uncond
+        ls_shape = tuple(base_kernel.lengthscales.shape)
+        if ls_shape not in ((), (1,), (d_embed,)):
+            raise ValueError(
+                f"`base_kernel.lengthscales` must be scalar or have shape "
+                f"({d_embed},) to match the embedded dimension "
+                f"`2 * n_cond + n_uncond`; got shape {ls_shape}."
+            )
+
+        base_kernel.lengthscales.assign(tf.ones_like(base_kernel.lengthscales))
+        set_trainable(base_kernel.lengthscales, False)
+        self.base_kernel = base_kernel
+
+    @property
+    def hierarchy(self) -> Sequence[HierarchyNode]:
+        """The hierarchy defining this kernel's structure."""
+        return self._hierarchy
+
+    @property
+    def indicator_dims(self) -> Tuple[int, ...]:
+        """Column indices (sliced coordinate system) of the indicators referenced
+        by any :class:`ActivityCondition` in the hierarchy, sorted ascending."""
+        return self._indicator_dims_tuple
+
+    @property
+    def n_cond_dims(self) -> int:
+        """Get number of conditional feature dimensions."""
+        return self._n_cond
+
+    @property
+    def n_uncond_dims(self) -> int:
+        """Get number of unconditional feature dimensions."""
+        return self._n_uncond
+
+    @check_shapes(
+        "X: [batch..., N, D]", "return: [batch..., N, D_cond]"
+    )  # D_cond is inferred from context
+    def _build_activity_mask(self, X: TensorType) -> tf.Tensor:
+        if self._n_ind == 0:
+            shape = tf.concat([tf.shape(X)[:-1], [self._n_feat]], axis=0)
+            return tf.ones(shape, dtype=tf.bool)
+        ind = tf.gather(X, self._indicator_dims, axis=-1)
+        ind = tf.cast(tf.round(tf.cast(ind, tf.float64)), tf.int32)  # [..., N, D_i]
+        # broadcast comparison: ind[..., :, None, :] vs _required[None, :, :]
+        ind_expanded = tf.expand_dims(ind, axis=-2)  # [..., N, 1, D_i]
+        required_expanded = self._required[None, :, :]  # [1, D_f, D_i]
+        # left-pad required for extra leading batch dims
+        while required_expanded.shape.ndims < ind_expanded.shape.ndims:
+            required_expanded = tf.expand_dims(required_expanded, axis=0)
+        ignore_expanded = self._required_is_ignore[None, :, :]
+        while ignore_expanded.shape.ndims < ind_expanded.shape.ndims:
+            ignore_expanded = tf.expand_dims(ignore_expanded, axis=0)
+        match = tf.logical_or(
+            ignore_expanded,
+            tf.equal(ind_expanded, required_expanded),
+        )
+        return tf.reduce_all(match, axis=-1)
+
+    @check_shapes(
+        "X: [batch..., N, D]", "return: [batch..., N, D_f]"
+    )  # D_f is feature_dims (i.e. D_cond + D_uncond)
+    def _normalise(self, X: TensorType) -> tf.Tensor:
+        X_cast = tf.cast(X, self._bounds.dtype)
+        v = tf.gather(X_cast, self._feature_dims, axis=-1)
+        lo, hi = self._bounds[:, 0], self._bounds[:, 1]
+        rng = hi - lo
+        safe_rng = tf.where(tf.abs(rng) < 1e-12, tf.ones_like(rng), rng)
+        return (v - lo) / safe_rng
+
+    @abc.abstractmethod
+    @check_shapes(
+        "v_c: [batch..., N, D_cond]", "m_c: [batch..., N, D_cond]", "return: [batch..., N, D_econd]"
+    )  # D_econd = 2*D_cond
+    def _embed_conditional(self, v_c: tf.Tensor, m_c: tf.Tensor) -> tf.Tensor:
+        """Map ``[batch..., N, D_cond]`` conditional values and float masks to
+        ``[batch..., N, 2 * D_cond]`` embedded coordinates."""
+
+    @check_shapes("X: [batch..., N, D]", "return: [batch..., N, D_e]")  # D_e = 2*D_cond + D_uncond
+    def _embed(self, X: TensorType) -> tf.Tensor:
+        v = self._normalise(X)
+        m_float = tf.cast(self._build_activity_mask(X), v.dtype)
+        parts = []
+        if self._n_uncond > 0:
+            parts.append(tf.gather(v, self._uncond_local_idx, axis=-1))
+        if self._n_cond > 0:
+            v_c = tf.gather(v, self._cond_local_idx, axis=-1)
+            m_c = tf.gather(m_float, self._cond_local_idx, axis=-1)
+            parts.append(self._embed_conditional(v_c, m_c))
+        if (
+            not parts
+        ):  # pragma: no subspace activated - unreachable: enforced by HierarchyNode/__init__
+            shape = tf.concat([tf.shape(X)[:-1], [0]], axis=0)
+            return tf.zeros(shape, dtype=v.dtype)
+        return tf.concat(parts, axis=-1)
+
+    @inherit_check_shapes
+    def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
+        """
+        Evaluate the kernel function on inputs ``X`` and ``X2``.
+        Assumes that X and X2 are already sliced according to active_dims, if applicable.
+        The embedding and base kernel evaluation are performed in the joint embedded
+        space defined by the hierarchy and indicators.
+        """
+        Z = self._embed(X)
+        Z2 = self._embed(X2) if X2 is not None else None
+        return self.base_kernel.K(Z, Z2)
+
+    @inherit_check_shapes
+    def K_diag(self, X: TensorType) -> tf.Tensor:
+        """
+        Evaluate the kernel function on the diagonal of the covariance matrix for input ``X``.
+        Assumes that X is already sliced according to active_dims, if applicable.
+        """
+        return self.base_kernel.K_diag(self._embed(X))
