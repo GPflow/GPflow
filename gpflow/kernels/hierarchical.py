@@ -127,7 +127,7 @@ class HierarchyNode:
             )
 
         bounds = tf.convert_to_tensor(self.feature_bounds, dtype=tf.float64)
-        if bounds.shape.rank != 2 or bounds.shape[0] != len(feature_dims) or bounds.shape[1] != 2:
+        if bounds.shape != tf.TensorShape([len(feature_dims), 2]):
             raise ValueError(
                 f"`feature_bounds` of node {self.name!r} must have shape "
                 f"[len(feature_dims), 2] = [{len(feature_dims)}, 2]; got "

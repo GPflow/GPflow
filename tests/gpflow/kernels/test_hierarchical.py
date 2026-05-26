@@ -180,6 +180,13 @@ class TestHierarchyNode:
                 feature_bounds=[[0.0, 1.0]],
             )
 
+    def test_value_equality(self) -> None:
+        a = HierarchyNode("n", feature_dims=[0], feature_bounds=[[0.0, 1.0]])
+        b = HierarchyNode("n", feature_dims=[0], feature_bounds=[[0.0, 1.0]])
+        c = HierarchyNode("n", feature_dims=[1], feature_bounds=[[0.0, 1.0]])
+        assert a == b
+        assert a != c
+
 
 class TestHierarchicalEmbeddingKernelConstruction:
     def test_unconditional_kernel_has_no_conditional_columns(self) -> None:
