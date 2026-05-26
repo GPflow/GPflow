@@ -292,3 +292,72 @@ class TestInputDim:
                 seed=0,
                 input_dim=-1,
             )
+
+
+class TestActiveDimsSlice:
+    """The hierarchy is authored in sliced coordinates; the kernel may slice
+    an offset sub-range of a wider input. The validator's ``active_dims``
+    parameter maps sliced positions to full-input columns so test values
+    land where the kernel will actually read them."""
+
+    @staticmethod
+    def _arc_with_offset() -> ArcHierarchical:
+        # Hierarchy uses sliced positions [0, 1, 2, 3]; kernel slices full
+        # columns [2, 3, 4, 5] from a wider input.
+        return ArcHierarchical(
+            hierarchy=_canonical_disjunction_hierarchy(),
+            active_dims=[2, 3, 4, 5],
+        )
+
+    def test_subrange_active_dims_passes(self) -> None:
+        report = validate_hierarchical_axioms(
+            self._arc_with_offset(),
+            _canonical_disjunction_hierarchy(),
+            seed=0,
+            input_dim=6,
+            active_dims=[2, 3, 4, 5],
+        )
+        assert report.passed, str(report)
+        # Sanity: without the mapping the kernel would only see zeros at
+        # columns 2..5, making every K(x,x') equal and producing
+        # max_violation=0 across the board. A non-zero axiom-1 floor
+        # confirms the kernel actually observed the placed values.
+        assert any(c.max_violation > 0 for c in report.checks)
+
+    def test_subrange_active_dims_with_extra_child_kernel_passes(self) -> None:
+        # Matern52 slices full column 0 — disjoint from the hierarchy's
+        # mapped range [2..5]. The composition should still satisfy every
+        # axiom (Matern cannot react to any indicator or conditional
+        # feature, so it cannot break axioms 1 or 3, and both children are
+        # stationary so axiom 2 holds).
+        kernel = self._arc_with_offset() + Matern52(active_dims=[0])
+        report = validate_hierarchical_axioms(
+            kernel,
+            _canonical_disjunction_hierarchy(),
+            seed=0,
+            input_dim=6,
+            active_dims=[2, 3, 4, 5],
+        )
+        assert report.passed, str(report)
+
+    def test_active_dims_slice_object_resolves_against_input_dim(self) -> None:
+        report = validate_hierarchical_axioms(
+            self._arc_with_offset(),
+            _canonical_disjunction_hierarchy(),
+            seed=0,
+            input_dim=6,
+            active_dims=slice(2, 6),
+        )
+        assert report.passed, str(report)
+
+    def test_active_dims_too_few_columns_rejected(self) -> None:
+        # Hierarchy references sliced position 3, but the mapping only
+        # supplies 2 columns -> ValueError.
+        with pytest.raises(ValueError, match="active_dims"):
+            validate_hierarchical_axioms(
+                self._arc_with_offset(),
+                _canonical_disjunction_hierarchy(),
+                seed=0,
+                input_dim=4,
+                active_dims=[2, 3],
+            )

@@ -53,7 +53,7 @@ import tensorflow as tf
 
 from ..base import AnyNDArray
 from ..experimental.utils import experimental
-from .base import Kernel
+from .base import ActiveDims, Kernel
 from .hierarchical import ActivityCondition, HierarchyNode
 
 
@@ -124,26 +124,77 @@ def _violating_value(required: int) -> int:
     return required + 1
 
 
-def _set_active(x: AnyNDArray, condition: ActivityCondition) -> AnyNDArray:
-    """Return a copy of ``x`` with every indicator dim set to satisfy
-    ``condition``."""
+def _set_active_at(x: AnyNDArray, requirements_full: Dict[int, int]) -> AnyNDArray:
+    """Return a copy of ``x`` with every full-input column listed in
+    ``requirements_full`` set to its required integer value (satisfies the
+    activity condition the mapping was derived from)."""
     out = x.copy()
-    for ind_dim, required in condition.requirements.items():
-        out[ind_dim] = float(required)
+    for full_pos, required in requirements_full.items():
+        out[full_pos] = float(required)
     return out
 
 
-def _set_inactive(x: AnyNDArray, condition: ActivityCondition) -> AnyNDArray:
-    """Return a copy of ``x`` with one indicator dim set so that
-    ``condition`` is violated. The other indicators in the condition are
-    set to satisfy it, isolating the flip as much as possible."""
+def _set_inactive_at(x: AnyNDArray, requirements_full: Dict[int, int]) -> AnyNDArray:
+    """Return a copy of ``x`` with one full-input column set to a value that
+    violates the activity condition the mapping was derived from; the other
+    listed columns are still set to their required values, so the flip is
+    isolated to a single indicator."""
     out = x.copy()
-    items = list(condition.requirements.items())
-    flip_dim, flip_required = items[0]
-    out[flip_dim] = float(_violating_value(flip_required))
-    for ind_dim, required in items[1:]:
-        out[ind_dim] = float(required)
+    items = list(requirements_full.items())
+    flip_pos, flip_required = items[0]
+    out[flip_pos] = float(_violating_value(flip_required))
+    for full_pos, required in items[1:]:
+        out[full_pos] = float(required)
     return out
+
+
+def _resolve_active_dims_mapping(
+    active_dims: Optional[ActiveDims],
+    max_hierarchy_position: int,
+    input_dim: Optional[int],
+) -> Tuple[Dict[int, int], int]:
+    """Resolve ``active_dims`` into a ``{sliced_position: full_position}``
+    mapping table and the implied ``input_dim``.
+
+    ``active_dims`` semantics mirror :class:`gpflow.kernels.Kernel`: ``None``
+    means identity, a ``slice`` selects a sub-range of the input, and a
+    sequence of ``int`` lists the full-input columns in sliced-position
+    order. The returned mapping covers every sliced position the hierarchy
+    references (``0..max_hierarchy_position`` inclusive). The returned
+    ``input_dim`` is either the caller-supplied value or a default inferred
+    from ``active_dims``.
+    """
+    n_sliced_required = max_hierarchy_position + 1 if max_hierarchy_position >= 0 else 0
+
+    if active_dims is None:
+        mapping = {i: i for i in range(n_sliced_required)}
+        resolved_input_dim = input_dim if input_dim is not None else max(n_sliced_required, 1)
+        return mapping, resolved_input_dim
+
+    if isinstance(active_dims, slice):
+        if input_dim is None:
+            if active_dims.stop is None:
+                raise ValueError(
+                    "`active_dims` is an open-ended slice; `input_dim` must be "
+                    "provided so the slice can be resolved."
+                )
+            input_dim = int(active_dims.stop)
+        full_positions = list(range(input_dim))[active_dims]
+    else:
+        full_positions = [int(d) for d in active_dims]
+        if input_dim is None:
+            input_dim = (max(full_positions) + 1) if full_positions else 1
+
+    if len(full_positions) < n_sliced_required:
+        raise ValueError(
+            f"`active_dims` resolves to {len(full_positions)} column(s) "
+            f"({full_positions!r}), but the hierarchy references sliced "
+            f"position {max_hierarchy_position}; need at least "
+            f"{n_sliced_required} columns."
+        )
+
+    mapping = {i: full_positions[i] for i in range(n_sliced_required)}
+    return mapping, input_dim
 
 
 def _within(a: float, b: float, *, atol: float, rtol: float) -> Tuple[bool, float]:
@@ -160,6 +211,7 @@ def validate_hierarchical_axioms(
     *,
     n_samples: int = 8,
     input_dim: Optional[int] = None,
+    active_dims: Optional[ActiveDims] = None,
     atol: float = 1e-8,
     rtol: float = 1e-6,
     seed: Optional[int] = 0,
@@ -175,19 +227,28 @@ def validate_hierarchical_axioms(
     reported.
 
     :param kernel: any GPflow :class:`Kernel`. The validator only calls
-        ``kernel.K`` and is agnostic to whether the kernel is a single
-        hierarchical kernel, a ``Sum`` / ``Product`` composition, a scaling
-        with ``Constant``, or anything else.
+        ``kernel(...)`` (i.e. :meth:`Kernel.__call__`), never ``kernel.K``
+        directly. ``__call__`` is what routes per-child ``active_dims``
+        slicing through ``Sum`` / ``Product`` / future combination kernels;
+        ``Sum.K`` bypasses that slicing and would feed the raw input to
+        every child.
     :param hierarchy: the same :class:`HierarchyNode` sequence the user
         passed (or would pass) to a
         :class:`gpflow.kernels.HierarchicalEmbeddingKernel`. Used only to
         construct test inputs; the kernel itself is treated as a black box.
     :param n_samples: number of random backgrounds per (node, feature, axiom)
         triple. Each background drives independent feature samples.
-    :param input_dim: width of the test input vectors. Defaults to
-        ``max(referenced column) + 1`` across the hierarchy. Override
-        when the kernel expects a wider input (e.g. its ``active_dims``
-        slices a sub-range).
+    :param input_dim: width of the test input vectors. Defaults to the
+        smallest value compatible with ``active_dims``: when ``active_dims``
+        is ``None``, that is ``max(referenced column) + 1`` across the
+        hierarchy; when ``active_dims`` is provided, it is
+        ``max(active_dims) + 1`` (or the slice's ``stop``).
+    :param active_dims: optional mapping from the hierarchy's sliced-coord
+        positions to full-input column indices, matching the ``active_dims``
+        of the hierarchical kernel under test. Use this when the kernel
+        slices an offset sub-range of a wider input (e.g.
+        ``active_dims=[2, 3, 4, 5]`` inside a width-6 input). ``None``
+        (the default) is the identity mapping.
     :param atol: absolute tolerance used by the equality predicates
         (axioms 1 and 2) and as the minimum margin for axiom 3.
     :param rtol: relative tolerance used by the equality predicates.
@@ -209,27 +270,29 @@ def validate_hierarchical_axioms(
             indicator_dims.add(int(k))
 
     feature_dim_set = {fd for _, fd, _, _ in per_feature}
-    if input_dim is None:
-        all_dims = feature_dim_set | indicator_dims
-        input_dim = (max(all_dims) + 1) if all_dims else 1
+    all_hier_positions = feature_dim_set | indicator_dims
+    max_hier_pos = max(all_hier_positions) if all_hier_positions else -1
+
+    mapping, input_dim = _resolve_active_dims_mapping(active_dims, max_hier_pos, input_dim)
     if input_dim <= 0:
         raise ValueError(f"`input_dim` must be positive; got {input_dim}.")
 
-    bounds_by_col: Dict[int, Tuple[float, float]] = {
-        fd: bnds for _, fd, bnds, _ in per_feature
+    # Bounds keyed by *full-input* column.
+    bounds_by_full_col: Dict[int, Tuple[float, float]] = {
+        mapping[fd]: bnds for _, fd, bnds, _ in per_feature
     }
 
     def _sample_background() -> AnyNDArray:
         x = np.zeros(input_dim, dtype=np.float64)
-        for fd, (lo, hi) in bounds_by_col.items():
+        for full_col, (lo, hi) in bounds_by_full_col.items():
             span = hi - lo
             if span > 0:
                 eps = 0.05 * span
-                x[fd] = rng.uniform(lo + eps, hi - eps)
+                x[full_col] = rng.uniform(lo + eps, hi - eps)
             else:
-                x[fd] = lo
-        # Indicators default to 0; they'll be overridden by _set_active /
-        # _set_inactive on the condition under test.
+                x[full_col] = lo
+        # Indicators default to 0; they'll be overridden by
+        # _set_active_at / _set_inactive_at on the condition under test.
         return x
 
     def _K(a: AnyNDArray, b: AnyNDArray) -> float:
@@ -246,6 +309,12 @@ def validate_hierarchical_axioms(
     for node_name, fd, (lo, hi), condition in per_feature:
         if not condition.requirements:
             continue
+        full_fd = mapping[fd]
+        # Indicator requirements re-keyed to full-input columns.
+        requirements_full: Dict[int, int] = {
+            mapping[ind_dim]: required
+            for ind_dim, required in condition.requirements.items()
+        }
         span = hi - lo
         eps = 0.05 * span if span > 0 else 0.0
 
@@ -256,13 +325,13 @@ def validate_hierarchical_axioms(
         max_vio_1 = 0.0
         a1_passed = True
         for _ in range(n_samples):
-            base = _set_inactive(_sample_background(), condition)
+            base = _set_inactive_at(_sample_background(), requirements_full)
             v_a = _sample_in_range()
             v_b = _sample_in_range()
             x_a = base.copy()
-            x_a[fd] = v_a
+            x_a[full_fd] = v_a
             x_b = base.copy()
-            x_b[fd] = v_b
+            x_b[full_fd] = v_b
             K_aa = _K(x_a, x_a)
             K_ab = _K(x_a, x_b)
             ok, diff = _within(K_aa, K_ab, atol=atol, rtol=rtol)
@@ -286,7 +355,7 @@ def validate_hierarchical_axioms(
         max_vio_2 = 0.0
         a2_passed = True
         for _ in range(n_samples):
-            base = _set_active(_sample_background(), condition)
+            base = _set_active_at(_sample_background(), requirements_full)
             if span <= 0:
                 # Degenerate bounds: nothing meaningful to test; record a pass.
                 continue
@@ -299,13 +368,13 @@ def validate_hierarchical_axioms(
                 continue
             shift = float(rng.uniform(lo_shift, hi_shift))
             x_a = base.copy()
-            x_a[fd] = v_a
+            x_a[full_fd] = v_a
             y_a = base.copy()
-            y_a[fd] = v_y
+            y_a[full_fd] = v_y
             x_b = base.copy()
-            x_b[fd] = v_a + shift
+            x_b[full_fd] = v_a + shift
             y_b = base.copy()
-            y_b[fd] = v_y + shift
+            y_b[full_fd] = v_y + shift
             K_a = _K(x_a, y_a)
             K_b = _K(x_b, y_b)
             ok, diff = _within(K_a, K_b, atol=atol, rtol=rtol)
@@ -331,10 +400,10 @@ def validate_hierarchical_axioms(
         for _ in range(n_samples):
             bg = _sample_background()
             v = _sample_in_range()
-            x_active = _set_active(bg, condition)
-            x_active[fd] = v
-            x_inactive = _set_inactive(bg, condition)
-            x_inactive[fd] = v
+            x_active = _set_active_at(bg, requirements_full)
+            x_active[full_fd] = v
+            x_inactive = _set_inactive_at(bg, requirements_full)
+            x_inactive[full_fd] = v
             K_self = _K(x_active, x_active)
             K_cross = _K(x_active, x_inactive)
             margin = K_self - K_cross
