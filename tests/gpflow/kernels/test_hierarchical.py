@@ -19,6 +19,7 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
+from gpflow.base import Parameter
 from gpflow.base import AnyNDArray
 from gpflow.kernels import Constant, Matern52, SquaredExponential
 from gpflow.kernels.hierarchical import (
@@ -74,6 +75,25 @@ def _canonical_disjunction_kernel() -> ArcHierarchical:
         hierarchy=_canonical_disjunction_hierarchy(),
         active_dims=list(range(4)),
     )
+
+
+def _all_conditional_hierarchy() -> List[HierarchyNode]:
+    """All-conditional 3-column hierarchy: indicator at column 0, x1 at column 1
+    active when y0=1, x2 at column 2 active when y0=0. No unconditional features."""
+    return [
+        HierarchyNode(
+            "branch_A",
+            feature_dims=[1],
+            feature_bounds=tf.constant([[0.0, 1.0]], dtype=tf.float64),
+            activity_condition=ActivityCondition({0: 1}),
+        ),
+        HierarchyNode(
+            "branch_B",
+            feature_dims=[2],
+            feature_bounds=tf.constant([[0.0, 1.0]], dtype=tf.float64),
+            activity_condition=ActivityCondition({0: 0}),
+        ),
+    ]
 
 
 class TestActivityCondition:
@@ -170,6 +190,13 @@ class TestHierarchyNode:
                 feature_dims=[0],
                 feature_bounds=[[0.0, 1.0]],
             )
+
+    def test_value_equality(self) -> None:
+        a = HierarchyNode("n", feature_dims=[0], feature_bounds=[[0.0, 1.0]])
+        b = HierarchyNode("n", feature_dims=[0], feature_bounds=[[0.0, 1.0]])
+        c = HierarchyNode("n", feature_dims=[1], feature_bounds=[[0.0, 1.0]])
+        assert a == b
+        assert a != c
 
 
 class TestHierarchicalEmbeddingKernelConstruction:
@@ -521,6 +548,92 @@ class TestBaseKernelPlumbing:
         np.testing.assert_allclose(K, K.T, atol=1e-12)
         eigs = np.linalg.eigvalsh(K + 1e-10 * np.eye(3))
         assert eigs.min() > -1e-8
+
+
+class TestUncondLengthscales:
+    def test_uncond_lengthscales_exists_and_trainable(self) -> None:
+        # Canonical disjunction: n_uncond=1.
+        kernel = _canonical_disjunction_kernel()
+        assert isinstance(kernel.uncond_lengthscales, Parameter)
+        assert tuple(kernel.uncond_lengthscales.shape) == (1,)
+        assert kernel.uncond_lengthscales.trainable
+
+        # All-unconditional with two features: n_uncond=2.
+        kernel2 = _FakeEmbedKernel(
+            hierarchy=_unconditional_hierarchy([0, 1]),
+            active_dims=[0, 1],
+        )
+        assert isinstance(kernel2.uncond_lengthscales, Parameter)
+        assert tuple(kernel2.uncond_lengthscales.shape) == (2,)
+        assert kernel2.uncond_lengthscales.trainable
+
+    def test_uncond_lengthscales_init_from_vector_lengthscales(self) -> None:
+        # d_embed = 5; the first n_uncond=1 entries seed uncond_lengthscales.
+        ls = np.linspace(0.5, 2.5, 5)
+        kernel = _FakeEmbedKernel(
+            hierarchy=_canonical_disjunction_hierarchy(),
+            base_kernel=Matern52(lengthscales=ls),
+            active_dims=list(range(4)),
+        )
+        np.testing.assert_allclose(kernel.uncond_lengthscales.numpy(), ls[:1])
+
+    def test_uncond_lengthscales_init_from_scalar_defaults_to_ones(self) -> None:
+        kernel = _FakeEmbedKernel(
+            hierarchy=_canonical_disjunction_hierarchy(),
+            base_kernel=Matern52(lengthscales=3.7),
+            active_dims=list(range(4)),
+        )
+        np.testing.assert_allclose(kernel.uncond_lengthscales.numpy(), [1.0])
+
+    def test_uncond_lengthscales_absent_when_no_uncond(self) -> None:
+        kernel_no_uncond = _FakeEmbedKernel(
+            hierarchy=_all_conditional_hierarchy(),
+            active_dims=list(range(3)),
+        )
+        assert kernel_no_uncond.uncond_lengthscales is None
+
+        kernel_with_uncond = _canonical_disjunction_kernel()
+        assert (
+            len(kernel_with_uncond.trainable_variables)
+            == len(kernel_no_uncond.trainable_variables) + 1
+        )
+
+    def test_K_off_diagonals_increase_with_uncond_lengthscales(self) -> None:
+        # Two points differing only in the unconditional feature (column 0).
+        # Increasing uncond_lengthscales shrinks the effective input distance,
+        # so the off-diagonal kernel value should move towards the diagonal.
+        kernel = _canonical_disjunction_kernel()
+        X = tf.constant(
+            [
+                [0.0, 1.0, 2.5, 0.0],
+                [1.0, 1.0, 2.5, 0.0],
+            ],
+            dtype=tf.float64,
+        )
+        K_small = kernel.K(X).numpy()
+        diag = K_small[0, 0]
+        off_small = K_small[0, 1]
+
+        kernel.uncond_lengthscales.assign([10.0])
+        K_large = kernel.K(X).numpy()
+        off_large = K_large[0, 1]
+
+        # Diagonal unchanged (point vs itself).
+        np.testing.assert_allclose(K_large[0, 0], diag)
+        # Off-diagonal moves closer to the diagonal.
+        assert off_large > off_small
+        assert off_large < diag
+
+    def test_base_kernel_lengthscales_still_frozen_to_one(self) -> None:
+        # The new Parameter must not disturb the base kernel invariant.
+        base = SquaredExponential(lengthscales=3.7)
+        kernel = _FakeEmbedKernel(
+            hierarchy=_canonical_disjunction_hierarchy(),
+            base_kernel=base,
+            active_dims=list(range(4)),
+        )
+        np.testing.assert_allclose(kernel.base_kernel.lengthscales.numpy(), 1.0)
+        assert not kernel.base_kernel.lengthscales.trainable
 
 
 class TestKDispatch:
