@@ -202,9 +202,7 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         names = [node.name for node in hierarchy]
         duplicate_names = [name for name, count in Counter(names).items() if count > 1]
         if duplicate_names:
-            raise ValueError(
-                f"`hierarchy` contains duplicate node names: {duplicate_names}."
-            )
+            raise ValueError(f"`hierarchy` contains duplicate node names: {duplicate_names}.")
 
         flat_feature_dims: List[int] = []
         flat_bounds_rows: List[tf.Tensor] = []
