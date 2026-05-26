@@ -30,8 +30,8 @@ from check_shapes import check_shapes, inherit_check_shapes
 
 from gpflow.experimental.utils import experimental
 
-from ..base import TensorType
-from ..utilities import deepcopy, set_trainable
+from ..base import Parameter, TensorType
+from ..utilities import deepcopy, positive, set_trainable
 from .base import ActiveDims, Kernel, NormalizedActiveDims
 from .stationaries import Matern52, Stationary
 
@@ -159,12 +159,19 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         is deep-copied via :func:`gpflow.utilities.deepcopy` before use, so
         the caller's object is never mutated. Its ``lengthscales`` must be
         scalar or have shape ``(2 * n_cond + n_uncond,)`` matching the
-        embedded dimension; the copy's lengthscales are then forced to 1
-        and set non-trainable, because the per-conditional-column
-        parameters of the concrete subclass (e.g. ``angle`` / ``radius``
-        for ``ArcHierarchical`` or ``theta1`` / ``theta2`` for
-        ``WedgeHierarchical``) already carry the scale of each embedded
-        dimension.
+        embedded dimension; on the copy they are then forced to 1 and set
+        non-trainable. The conditional dimensions carry their scale via the
+        per-conditional-column parameters of the concrete subclass (e.g.
+        ``angle`` / ``radius`` for ``ArcHierarchical`` or ``theta1`` /
+        ``theta2`` for ``WedgeHierarchical``). The unconditional dimensions'
+        scale is carried by the learnable :attr:`uncond_lengthscales`
+        Parameter (shape ``(n_uncond,)``, positive transform). When
+        ``base_kernel.lengthscales`` is supplied with shape
+        ``(2 * n_cond + n_uncond,)`` the first ``n_uncond`` entries (which
+        match the ``[uncond | cond]`` layout produced by ``_embed``) are used
+        as the initial values for :attr:`uncond_lengthscales`; otherwise it
+        is initialised to ones. When ``n_uncond == 0`` the attribute is
+        ``None``.
     :param active_dims: required. ``feature_dims`` and
         :class:`ActivityCondition` keys are interpreted in the sliced
         coordinate system. When :meth:`__call__` receives inputs, the slice
@@ -291,6 +298,20 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
                 f"`2 * n_cond + n_uncond`; got shape {ls_shape}."
             )
 
+        if self._n_uncond > 0:
+            ls_np = base_kernel.lengthscales.numpy()
+            if ls_shape == (d_embed,):
+                uncond_ls_init = ls_np[: self._n_uncond]
+            else:
+                uncond_ls_init = np.ones(self._n_uncond, dtype=ls_np.dtype)
+            self.uncond_lengthscales = Parameter(
+                uncond_ls_init,
+                transform=positive(),
+                name="uncond_lengthscales",
+            )
+        else:
+            self.uncond_lengthscales = None
+
         base_kernel.lengthscales.assign(tf.ones_like(base_kernel.lengthscales))
         set_trainable(base_kernel.lengthscales, False)
         self.base_kernel = base_kernel
@@ -366,7 +387,8 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         m_float = tf.cast(self._build_activity_mask(X), v.dtype)
         parts = []
         if self._n_uncond > 0:
-            parts.append(tf.gather(v, self._uncond_local_idx, axis=-1))
+            v_unc = tf.gather(v, self._uncond_local_idx, axis=-1)
+            parts.append(v_unc / self.uncond_lengthscales)
         if self._n_cond > 0:
             v_c = tf.gather(v, self._cond_local_idx, axis=-1)
             m_c = tf.gather(m_float, self._cond_local_idx, axis=-1)
