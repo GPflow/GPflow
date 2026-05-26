@@ -190,3 +190,42 @@ kernel = Constant() * wedge
 print("initial theta1:", wedge.theta1.numpy())
 print("initial theta2:", wedge.theta2.numpy())
 print("initial rho:   ", wedge.rho.numpy())
+
+# %% [markdown]
+# ## Validating composed kernels against the axioms
+#
+# Once you start composing a hierarchical kernel with other kernels — scaling
+# with `Constant()`, adding a `Matern52` on the unconditional dims, summing
+# two hierarchical kernels — it stops being obvious whether the result still
+# respects the three axioms. GPflow ships `validate_hierarchical_axioms` for
+# exactly this: hand it any kernel plus the hierarchy spec, and it
+# numerically checks the kernel-level shadows of each axiom.
+
+# %%
+from gpflow.kernels import Matern52, validate_hierarchical_axioms
+
+safe = Constant() * ArcHierarchical(hierarchy=hierarchy, active_dims=list(range(4)))
+report = validate_hierarchical_axioms(safe, hierarchy, seed=0)
+print(report)
+
+# %% [markdown]
+# Multiplying by a positive `Constant()` just rescales `K` and preserves
+# every axiom, so the report is all-`PASS`. Now build a kernel that
+# deliberately ignores the hierarchy — add a plain `Matern52` over the full
+# input space — and re-run the validator:
+
+# %%
+broken = ArcHierarchical(hierarchy=hierarchy, active_dims=list(range(4))) + Matern52(
+    active_dims=list(range(4))
+)
+report = validate_hierarchical_axioms(broken, hierarchy, seed=0)
+print(report)
+assert not report.passed
+print("axiom-1 violations:", [c.max_violation for c in report.for_axiom(1)])
+
+# %% [markdown]
+# Axiom 1 fails: the `Matern52` term responds to changes in a conditional
+# feature value regardless of whether the activity condition is satisfied,
+# so `K(x, x)` and `K(x, x')` differ even though both points are inactive
+# on that feature. Axioms 2 and 3 still pass — they were never the
+# discriminating predicates for this kind of break.
