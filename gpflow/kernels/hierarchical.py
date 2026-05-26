@@ -344,12 +344,13 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         "X: [batch..., N, D]", "return: [batch..., N, D_f]"
     )  # D_f is feature_dims (i.e. D_cond + D_uncond)
     def _normalise(self, X: TensorType) -> tf.Tensor:
-        X_cast = tf.cast(X, self._bounds.dtype)
+        X_cast = tf.cast(X, X.dtype)
         v = tf.gather(X_cast, self._feature_dims, axis=-1)
         lo, hi = self._bounds[:, 0], self._bounds[:, 1]
-        rng = hi - lo
+        lo_cast, hi_cast = tf.cast(lo, v.dtype), tf.cast(hi, v.dtype)
+        rng = hi_cast - lo_cast
         safe_rng = tf.where(tf.abs(rng) < 1e-12, tf.ones_like(rng), rng)
-        return (v - lo) / safe_rng
+        return (v - lo_cast) / safe_rng
 
     @abc.abstractmethod
     @check_shapes(
