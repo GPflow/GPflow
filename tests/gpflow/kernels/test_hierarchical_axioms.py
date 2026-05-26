@@ -87,31 +87,23 @@ def _silence_experimental_warning() -> None:
 
 class TestPassingCompositions:
     def test_arc_alone_passes_all_axioms(self) -> None:
-        report = validate_hierarchical_axioms(
-            _arc(), _canonical_disjunction_hierarchy(), seed=0
-        )
+        report = validate_hierarchical_axioms(_arc(), _canonical_disjunction_hierarchy(), seed=0)
         assert report.passed, str(report)
         # Two conditional nodes × three axioms = 6 checks.
         assert len(report.checks) == 6
 
     def test_wedge_alone_passes_all_axioms(self) -> None:
-        report = validate_hierarchical_axioms(
-            _wedge(), _canonical_disjunction_hierarchy(), seed=0
-        )
+        report = validate_hierarchical_axioms(_wedge(), _canonical_disjunction_hierarchy(), seed=0)
         assert report.passed, str(report)
 
     def test_constant_times_arc_passes(self) -> None:
         kernel = Constant() * _arc()
-        report = validate_hierarchical_axioms(
-            kernel, _canonical_disjunction_hierarchy(), seed=0
-        )
+        report = validate_hierarchical_axioms(kernel, _canonical_disjunction_hierarchy(), seed=0)
         assert report.passed, str(report)
 
     def test_arc_plus_wedge_same_hierarchy_passes(self) -> None:
         kernel = _arc() + _wedge()
-        report = validate_hierarchical_axioms(
-            kernel, _canonical_disjunction_hierarchy(), seed=0
-        )
+        report = validate_hierarchical_axioms(kernel, _canonical_disjunction_hierarchy(), seed=0)
         assert report.passed, str(report)
 
     def test_arc_plus_matern_on_unconditional_dim_only_passes(self) -> None:
@@ -119,9 +111,7 @@ class TestPassingCompositions:
         # the activity mask or to the conditional feature dims, so the
         # composition inherits the axiom-respecting behaviour of arc.
         kernel = _arc() + Matern52(active_dims=[0])
-        report = validate_hierarchical_axioms(
-            kernel, _canonical_disjunction_hierarchy(), seed=0
-        )
+        report = validate_hierarchical_axioms(kernel, _canonical_disjunction_hierarchy(), seed=0)
         assert report.passed, str(report)
 
 
@@ -134,9 +124,7 @@ class TestFailingCompositions:
         # responds to changes in those columns regardless of the activity
         # mask. Axiom 1 must flag this.
         kernel = _arc() + Matern52(active_dims=list(range(4)))
-        report = validate_hierarchical_axioms(
-            kernel, _canonical_disjunction_hierarchy(), seed=0
-        )
+        report = validate_hierarchical_axioms(kernel, _canonical_disjunction_hierarchy(), seed=0)
         assert not report.passed
         a1_checks = report.for_axiom(1)
         assert any(not c.passed for c in a1_checks)
@@ -149,9 +137,7 @@ class TestFailingCompositions:
         # because Matern responds to the conditional feature value when
         # the activity condition is violated.
         kernel = Matern52()
-        report = validate_hierarchical_axioms(
-            kernel, _canonical_disjunction_hierarchy(), seed=0
-        )
+        report = validate_hierarchical_axioms(kernel, _canonical_disjunction_hierarchy(), seed=0)
         assert not report.passed
         assert all(not c.passed for c in report.for_axiom(1))
 
@@ -159,9 +145,7 @@ class TestFailingCompositions:
         # Polynomial is non-stationary, so K depends on absolute coordinate
         # values rather than just their differences. Axiom 2 must flag this.
         kernel = _arc() + Polynomial(active_dims=list(range(4)))
-        report = validate_hierarchical_axioms(
-            kernel, _canonical_disjunction_hierarchy(), seed=0
-        )
+        report = validate_hierarchical_axioms(kernel, _canonical_disjunction_hierarchy(), seed=0)
         assert not report.passed
         a2_checks = report.for_axiom(2)
         assert any(not c.passed for c in a2_checks)
@@ -171,9 +155,7 @@ class TestFailingCompositions:
         # K(active, inactive) == K(active, active): axiom 3 has zero
         # margin and must fail.
         kernel = Constant()
-        report = validate_hierarchical_axioms(
-            kernel, _canonical_disjunction_hierarchy(), seed=0
-        )
+        report = validate_hierarchical_axioms(kernel, _canonical_disjunction_hierarchy(), seed=0)
         assert not report.passed
         a3_checks = report.for_axiom(3)
         assert all(not c.passed for c in a3_checks)
@@ -184,9 +166,7 @@ class TestFailingCompositions:
 
 class TestReportStructure:
     def test_report_breaks_down_per_node_and_per_axiom(self) -> None:
-        report = validate_hierarchical_axioms(
-            _arc(), _canonical_disjunction_hierarchy(), seed=0
-        )
+        report = validate_hierarchical_axioms(_arc(), _canonical_disjunction_hierarchy(), seed=0)
         node_names = {c.node_name for c in report.checks}
         axioms = {c.axiom for c in report.checks}
         assert node_names == {"branch_A", "branch_B"}
@@ -214,9 +194,7 @@ class TestReportStructure:
         assert "no conditional nodes" in str(report)
 
     def test_str_contains_pass_fail_summary(self) -> None:
-        report = validate_hierarchical_axioms(
-            _arc(), _canonical_disjunction_hierarchy(), seed=0
-        )
+        report = validate_hierarchical_axioms(_arc(), _canonical_disjunction_hierarchy(), seed=0)
         s = str(report)
         assert "PASS" in s
         assert "axiom 1" in s
@@ -238,9 +216,7 @@ class TestReportStructure:
             check.passed = False  # type: ignore[misc]
 
     def test_axiom_report_is_immutable_tuple_of_checks(self) -> None:
-        report = AxiomReport(checks=(
-            AxiomCheck("x", 0, 1, True, 0.0, "ok"),
-        ))
+        report = AxiomReport(checks=(AxiomCheck("x", 0, 1, True, 0.0, "ok"),))
         assert isinstance(report.checks, tuple)
         assert report.passed
 
@@ -268,9 +244,7 @@ class TestDeterminism:
 
 class TestInputDim:
     def test_input_dim_default_uses_max_referenced_column(self) -> None:
-        report = validate_hierarchical_axioms(
-            _arc(), _canonical_disjunction_hierarchy(), seed=0
-        )
+        report = validate_hierarchical_axioms(_arc(), _canonical_disjunction_hierarchy(), seed=0)
         assert report.passed
 
     def test_explicit_input_dim_overrides_default(self) -> None:
