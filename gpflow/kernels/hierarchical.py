@@ -20,6 +20,7 @@ structure on the input space: a point whose conditional feature is
 """
 
 import abc
+from collections import Counter
 from dataclasses import dataclass, field
 from typing import Dict, List, Mapping, Optional, Sequence, Tuple
 
@@ -192,8 +193,11 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         if not hierarchy:
             raise ValueError("`hierarchy` must contain at least one node.")
         names = [node.name for node in hierarchy]
-        if len(set(names)) != len(names):
-            raise ValueError(f"`hierarchy` contains duplicate node names: {names}.")
+        duplicate_names = [name for name, count in Counter(names).items() if count > 1]
+        if duplicate_names:
+            raise ValueError(
+                f"`hierarchy` contains duplicate node names: {duplicate_names}."
+            )
 
         flat_feature_dims: List[int] = []
         flat_bounds_rows: List[tf.Tensor] = []
