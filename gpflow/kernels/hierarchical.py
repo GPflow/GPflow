@@ -31,9 +31,9 @@ from check_shapes import check_shapes, inherit_check_shapes
 
 from gpflow.experimental.utils import experimental
 
-from ..base import Parameter, Parameter, TensorType
+from ..base import Parameter, TensorType
 from ..config import default_float
-from ..utilities import deepcopy, positive, positive, set_trainable, to_default_float
+from ..utilities import deepcopy, positive, set_trainable, to_default_float
 from .base import ActiveDims, Kernel, NormalizedActiveDims
 from .stationaries import Matern52, Stationary
 

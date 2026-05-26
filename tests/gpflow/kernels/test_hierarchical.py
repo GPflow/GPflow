@@ -559,7 +559,7 @@ class TestUncondLengthscales:
         assert kernel.uncond_lengthscales.trainable
 
         # All-unconditional with two features: n_uncond=2.
-        kernel2 = _FakeEmbedKernel(
+        kernel2 = ArcHierarchical(
             hierarchy=_unconditional_hierarchy([0, 1]),
             active_dims=[0, 1],
         )
@@ -570,7 +570,7 @@ class TestUncondLengthscales:
     def test_uncond_lengthscales_init_from_vector_lengthscales(self) -> None:
         # d_embed = 5; the first n_uncond=1 entries seed uncond_lengthscales.
         ls = np.linspace(0.5, 2.5, 5)
-        kernel = _FakeEmbedKernel(
+        kernel = ArcHierarchical(
             hierarchy=_canonical_disjunction_hierarchy(),
             base_kernel=Matern52(lengthscales=ls),
             active_dims=list(range(4)),
@@ -578,7 +578,7 @@ class TestUncondLengthscales:
         np.testing.assert_allclose(kernel.uncond_lengthscales.numpy(), ls[:1])
 
     def test_uncond_lengthscales_init_from_scalar_defaults_to_ones(self) -> None:
-        kernel = _FakeEmbedKernel(
+        kernel = ArcHierarchical(
             hierarchy=_canonical_disjunction_hierarchy(),
             base_kernel=Matern52(lengthscales=3.7),
             active_dims=list(range(4)),
@@ -586,7 +586,7 @@ class TestUncondLengthscales:
         np.testing.assert_allclose(kernel.uncond_lengthscales.numpy(), [1.0])
 
     def test_uncond_lengthscales_absent_when_no_uncond(self) -> None:
-        kernel_no_uncond = _FakeEmbedKernel(
+        kernel_no_uncond = ArcHierarchical(
             hierarchy=_all_conditional_hierarchy(),
             active_dims=list(range(3)),
         )
@@ -627,7 +627,7 @@ class TestUncondLengthscales:
     def test_base_kernel_lengthscales_still_frozen_to_one(self) -> None:
         # The new Parameter must not disturb the base kernel invariant.
         base = SquaredExponential(lengthscales=3.7)
-        kernel = _FakeEmbedKernel(
+        kernel = ArcHierarchical(
             hierarchy=_canonical_disjunction_hierarchy(),
             base_kernel=base,
             active_dims=list(range(4)),
