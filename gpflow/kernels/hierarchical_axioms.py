@@ -264,7 +264,12 @@ def validate_hierarchical_axioms(
         bounds = np.asarray(node.feature_bounds, dtype=np.float64)
         for i, fd in enumerate(node.feature_dims):
             per_feature.append(
-                (node.name, int(fd), (float(bounds[i, 0]), float(bounds[i, 1])), node.activity_condition)
+                (
+                    node.name,
+                    int(fd),
+                    (float(bounds[i, 0]), float(bounds[i, 1])),
+                    node.activity_condition,
+                )
             )
         for k in node.activity_condition.requirements:
             indicator_dims.add(int(k))
@@ -312,8 +317,7 @@ def validate_hierarchical_axioms(
         full_fd = mapping[fd]
         # Indicator requirements re-keyed to full-input columns.
         requirements_full: Dict[int, int] = {
-            mapping[ind_dim]: required
-            for ind_dim, required in condition.requirements.items()
+            mapping[ind_dim]: required for ind_dim, required in condition.requirements.items()
         }
         span = hi - lo
         eps = 0.05 * span if span > 0 else 0.0

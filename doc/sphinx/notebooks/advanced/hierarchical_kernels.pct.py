@@ -204,7 +204,9 @@ print("initial rho:   ", wedge.rho.numpy())
 # %%
 from gpflow.kernels import Matern52, validate_hierarchical_axioms
 
-safe = Constant() * ArcHierarchical(hierarchy=hierarchy, active_dims=list(range(4)))
+safe = Constant() * ArcHierarchical(
+    hierarchy=hierarchy, active_dims=list(range(4))
+)
 report = validate_hierarchical_axioms(safe, hierarchy, seed=0)
 print(report)
 
@@ -215,9 +217,9 @@ print(report)
 # input space — and re-run the validator:
 
 # %%
-broken = ArcHierarchical(hierarchy=hierarchy, active_dims=list(range(4))) + Matern52(
-    active_dims=list(range(4))
-)
+broken = ArcHierarchical(
+    hierarchy=hierarchy, active_dims=list(range(4))
+) + Matern52(active_dims=list(range(4)))
 report = validate_hierarchical_axioms(broken, hierarchy, seed=0)
 print(report)
 assert not report.passed
