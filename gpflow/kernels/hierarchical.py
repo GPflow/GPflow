@@ -298,6 +298,7 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
                 f"`2 * n_cond + n_uncond`; got shape {ls_shape}."
             )
 
+        self.uncond_lengthscales: Optional[Parameter] = None
         if self._n_uncond > 0:
             ls_np = base_kernel.lengthscales.numpy()
             if ls_shape == (d_embed,):
@@ -309,8 +310,6 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
                 transform=positive(),
                 name="uncond_lengthscales",
             )
-        else:
-            self.uncond_lengthscales = None
 
         base_kernel.lengthscales.assign(tf.ones_like(base_kernel.lengthscales))
         set_trainable(base_kernel.lengthscales, False)
