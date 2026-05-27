@@ -19,8 +19,8 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
-from gpflow.base import Parameter
 from gpflow.base import AnyNDArray
+from gpflow.base import Parameter
 from gpflow.kernels import Constant, Matern52, SquaredExponential
 from gpflow.kernels.hierarchical import (
     ActivityCondition,
@@ -548,6 +548,311 @@ class TestBaseKernelPlumbing:
         np.testing.assert_allclose(K, K.T, atol=1e-12)
         eigs = np.linalg.eigvalsh(K + 1e-10 * np.eye(3))
         assert eigs.min() > -1e-8
+
+
+class TestUncondLengthscales:
+    def test_uncond_lengthscales_exists_and_trainable(self) -> None:
+        # Canonical disjunction: n_uncond=1.
+        kernel = _canonical_disjunction_kernel()
+        assert isinstance(kernel.uncond_lengthscales, Parameter)
+        assert tuple(kernel.uncond_lengthscales.shape) == (1,)
+        assert kernel.uncond_lengthscales.trainable
+
+        # All-unconditional with two features: n_uncond=2.
+        kernel2 = ArcHierarchical(
+            hierarchy=_unconditional_hierarchy([0, 1]),
+            active_dims=[0, 1],
+        )
+        assert isinstance(kernel2.uncond_lengthscales, Parameter)
+        assert tuple(kernel2.uncond_lengthscales.shape) == (2,)
+        assert kernel2.uncond_lengthscales.trainable
+
+    def test_uncond_lengthscales_init_from_vector_lengthscales(self) -> None:
+        # d_embed = 5; the first n_uncond=1 entries seed uncond_lengthscales.
+        ls = np.linspace(0.5, 2.5, 5)
+        kernel = ArcHierarchical(
+            hierarchy=_canonical_disjunction_hierarchy(),
+            base_kernel=Matern52(lengthscales=ls),
+            active_dims=list(range(4)),
+        )
+        np.testing.assert_allclose(kernel.uncond_lengthscales.numpy(), ls[:1])
+
+    def test_uncond_lengthscales_init_from_scalar_defaults_to_ones(self) -> None:
+        kernel = ArcHierarchical(
+            hierarchy=_canonical_disjunction_hierarchy(),
+            base_kernel=Matern52(lengthscales=3.7),
+            active_dims=list(range(4)),
+        )
+        np.testing.assert_allclose(kernel.uncond_lengthscales.numpy(), [1.0])
+
+    def test_uncond_lengthscales_absent_when_no_uncond(self) -> None:
+        kernel_no_uncond = ArcHierarchical(
+            hierarchy=_all_conditional_hierarchy(),
+            active_dims=list(range(3)),
+        )
+        assert kernel_no_uncond.uncond_lengthscales is None
+
+        kernel_with_uncond = _canonical_disjunction_kernel()
+        assert (
+            len(kernel_with_uncond.trainable_variables)
+            == len(kernel_no_uncond.trainable_variables) + 1
+        )
+
+    def test_K_off_diagonals_increase_with_uncond_lengthscales(self) -> None:
+        # Two points differing only in the unconditional feature (column 0).
+        # Increasing uncond_lengthscales shrinks the effective input distance,
+        # so the off-diagonal kernel value should move towards the diagonal.
+        kernel = _canonical_disjunction_kernel()
+        X = tf.constant(
+            [
+                [0.0, 1.0, 2.5, 0.0],
+                [1.0, 1.0, 2.5, 0.0],
+            ],
+            dtype=tf.float64,
+        )
+        K_small = kernel.K(X).numpy()
+        diag = K_small[0, 0]
+        off_small = K_small[0, 1]
+
+        kernel.uncond_lengthscales.assign([10.0])
+        K_large = kernel.K(X).numpy()
+        off_large = K_large[0, 1]
+
+        # Diagonal unchanged (point vs itself).
+        np.testing.assert_allclose(K_large[0, 0], diag)
+        # Off-diagonal moves closer to the diagonal.
+        assert off_large > off_small
+        assert off_large < diag
+
+    def test_base_kernel_lengthscales_still_frozen_to_one(self) -> None:
+        # The new Parameter must not disturb the base kernel invariant.
+        base = SquaredExponential(lengthscales=3.7)
+        kernel = ArcHierarchical(
+            hierarchy=_canonical_disjunction_hierarchy(),
+            base_kernel=base,
+            active_dims=list(range(4)),
+        )
+        np.testing.assert_allclose(kernel.base_kernel.lengthscales.numpy(), 1.0)
+        assert not kernel.base_kernel.lengthscales.trainable
+
+
+def _scatter_columns(
+    X_compact: tf.Tensor,
+    positions: List[int],
+    total_cols: int,
+    fill: float = np.nan,
+) -> tf.Tensor:
+    """Embed a compact ``[N, d]`` array into a wider ``[N, total_cols]`` one.
+
+    Column ``j`` of ``X_compact`` is placed at column ``positions[j]``; every other
+    column is set to ``fill``. The default NaN fill turns any accidental read of an
+    unselected (redundant) column into a NaN in the output, so a leak is impossible
+    to miss.
+    """
+    X_np = np.asarray(X_compact, dtype=np.float64)
+    n_rows, n_cols = X_np.shape
+    assert len(positions) == n_cols, "positions must give one target per compact column"
+    padded = np.full((n_rows, total_cols), fill, dtype=np.float64)
+    for j, p in enumerate(positions):
+        padded[:, p] = X_np[:, j]
+    return tf.constant(padded, dtype=tf.float64)
+
+
+def _disjunction_data() -> tf.Tensor:
+    """Compact ``[x1, y1, x2, x3]`` data exercising both branches (y1=1 and y1=0)."""
+    return tf.constant(
+        [
+            [0.5, 1.0, 2.5, 0.0],
+            [0.3, 0.0, 4.0, 0.5],
+            [0.8, 1.0, 1.0, -0.5],
+        ],
+        dtype=tf.float64,
+    )
+
+
+def _all_conditional_data() -> tf.Tensor:
+    """Compact ``[y0, x1, x2]`` data for the all-conditional hierarchy."""
+    return tf.constant(
+        [
+            [1.0, 0.4, 0.7],
+            [0.0, 0.2, 0.9],
+            [1.0, 0.6, 0.1],
+        ],
+        dtype=tf.float64,
+    )
+
+
+class TestNonTrivialActiveDims:
+    """`active_dims` that do not start at 0 and/or have gaps, with redundant columns.
+
+    The hierarchy's feature/indicator dims live in the *sliced* coordinate system, so
+    these tests keep the hierarchy fixed and vary only the physical layout of ``X`` and
+    ``active_dims``. Slicing happens in ``Kernel.__call__``, so they go through the full
+    ``kernel(X)`` call path (unlike the rest of the suite, which calls ``K`` on
+    pre-sliced inputs). A padded/offset layout must reproduce the compact baseline.
+    """
+
+    @staticmethod
+    def _assert_matches_compact(
+        hierarchy_fn: Any,
+        X_compact: tf.Tensor,
+        positions: List[int],
+        total_cols: int,
+        active_dims: Any,
+    ) -> None:
+        n_cols = int(X_compact.shape[1])
+        kernel_compact = ArcHierarchical(
+            hierarchy=hierarchy_fn(), active_dims=list(range(n_cols))
+        )
+        kernel_padded = ArcHierarchical(hierarchy=hierarchy_fn(), active_dims=active_dims)
+        X_padded = _scatter_columns(X_compact, positions, total_cols)
+
+        # Full covariance through the slicing call path.
+        K_ref = kernel_compact(X_compact).numpy()
+        K_padded = kernel_padded(X_padded).numpy()
+        np.testing.assert_allclose(K_padded, K_ref, atol=1e-12)
+        # NaN-filled redundant columns never leaked into the computation.
+        assert np.all(np.isfinite(K_padded))
+
+        # Diagonal (full_cov=False) through the same call path.
+        diag_ref = kernel_compact(X_compact, full_cov=False).numpy()
+        diag_padded = kernel_padded(X_padded, full_cov=False).numpy()
+        np.testing.assert_allclose(diag_padded, diag_ref, atol=1e-12)
+        assert np.all(np.isfinite(diag_padded))
+
+    def test_gap_active_dims_matches_compact(self) -> None:
+        # Relevant columns scattered to odd positions in a 9-column array.
+        self._assert_matches_compact(
+            _canonical_disjunction_hierarchy,
+            _disjunction_data(),
+            positions=[1, 3, 5, 7],
+            total_cols=9,
+            active_dims=[1, 3, 5, 7],
+        )
+
+    def test_active_dims_not_starting_at_zero(self) -> None:
+        # Contiguous block offset by two redundant leading columns.
+        self._assert_matches_compact(
+            _canonical_disjunction_hierarchy,
+            _disjunction_data(),
+            positions=[2, 3, 4, 5],
+            total_cols=6,
+            active_dims=[2, 3, 4, 5],
+        )
+
+    def test_scrambled_layout_reconstructed_by_active_dims(self) -> None:
+        # Physical layout scrambled; active_dims order must gather back to
+        # [x1, y1, x2, x3] so that feature/indicator re-indexing stays correct.
+        self._assert_matches_compact(
+            _canonical_disjunction_hierarchy,
+            _disjunction_data(),
+            positions=[3, 0, 5, 1],
+            total_cols=6,
+            active_dims=[3, 0, 5, 1],
+        )
+
+    def test_slice_active_dims_matches_compact(self) -> None:
+        # Exercise the `slice` branch of Kernel.slice (distinct from tf.gather).
+        self._assert_matches_compact(
+            _canonical_disjunction_hierarchy,
+            _disjunction_data(),
+            positions=[2, 3, 4, 5],
+            total_cols=6,
+            active_dims=slice(2, 6),
+        )
+
+    def test_all_conditional_non_trivial_active_dims(self) -> None:
+        # n_uncond == 0: exercises the indicator-gather / activity-mask path under
+        # an offset, guarding indicator indexing specifically.
+        self._assert_matches_compact(
+            _all_conditional_hierarchy,
+            _all_conditional_data(),
+            positions=[1, 4, 6],
+            total_cols=8,
+            active_dims=[1, 4, 6],
+        )
+
+
+class TestTFFunctionCompilation:
+    """The kernel must be usable inside a ``tf.function`` (graph mode).
+
+    GPflow models wrap loss/prediction in ``tf.function``; the kernel's Python-level
+    ``if``/``while`` branch only on static values (``self._n_*`` ints, ``.shape.ndims``),
+    so it should trace cleanly. These tests prove it does and that compiled output matches
+    eager. An ``input_signature`` with ``None`` rows means a single trace must handle any
+    ``N``; a tracing failure raises, so a passing call is itself evidence of compilation.
+    """
+
+    def test_K_compiles_and_matches_eager(self) -> None:
+        kernel = _canonical_disjunction_kernel()
+
+        @tf.function(input_signature=[tf.TensorSpec([None, 4], dtype=tf.float64)])
+        def compiled_K(X: tf.Tensor) -> tf.Tensor:
+            return kernel(X)
+
+        for X in (_disjunction_data(), _disjunction_data()[:2]):
+            np.testing.assert_allclose(
+                compiled_K(X).numpy(), kernel(X).numpy(), atol=1e-12
+            )
+
+    def test_K_with_X2_compiles_and_matches_eager(self) -> None:
+        kernel = _canonical_disjunction_kernel()
+
+        @tf.function(
+            input_signature=[
+                tf.TensorSpec([None, 4], dtype=tf.float64),
+                tf.TensorSpec([None, 4], dtype=tf.float64),
+            ]
+        )
+        def compiled_K(X: tf.Tensor, X2: tf.Tensor) -> tf.Tensor:
+            return kernel(X, X2)
+
+        X = _disjunction_data()
+        X2 = _disjunction_data()[:2]
+        np.testing.assert_allclose(
+            compiled_K(X, X2).numpy(), kernel(X, X2).numpy(), atol=1e-12
+        )
+
+    def test_K_diag_compiles_and_matches_eager(self) -> None:
+        kernel = _canonical_disjunction_kernel()
+
+        @tf.function(input_signature=[tf.TensorSpec([None, 4], dtype=tf.float64)])
+        def compiled_K_diag(X: tf.Tensor) -> tf.Tensor:
+            return kernel(X, full_cov=False)
+
+        for X in (_disjunction_data(), _disjunction_data()[:2]):
+            np.testing.assert_allclose(
+                compiled_K_diag(X).numpy(),
+                kernel(X, full_cov=False).numpy(),
+                atol=1e-12,
+            )
+
+    def test_batched_input_compiles(self) -> None:
+        # Leading batch dim exercises the static-rank rank-padding `while` loop in
+        # `_build_activity_mask` under graph mode.
+        kernel = _canonical_disjunction_kernel()
+
+        @tf.function(input_signature=[tf.TensorSpec([None, None, 4], dtype=tf.float64)])
+        def compiled_K(X: tf.Tensor) -> tf.Tensor:
+            return kernel(X)
+
+        X = tf.stack([_disjunction_data(), _disjunction_data() + 0.1], axis=0)
+        np.testing.assert_allclose(compiled_K(X).numpy(), kernel(X).numpy(), atol=1e-12)
+
+    def test_all_conditional_compiles(self) -> None:
+        # n_uncond == 0: traces the indicator-gather / activity-mask branch.
+        kernel = ArcHierarchical(
+            hierarchy=_all_conditional_hierarchy(), active_dims=list(range(3))
+        )
+
+        @tf.function(input_signature=[tf.TensorSpec([None, 3], dtype=tf.float64)])
+        def compiled_K(X: tf.Tensor) -> tf.Tensor:
+            return kernel(X)
+
+        for X in (_all_conditional_data(), _all_conditional_data()[:2]):
+            np.testing.assert_allclose(
+                compiled_K(X).numpy(), kernel(X).numpy(), atol=1e-12
+            )
 
 
 class TestUncondLengthscales:
