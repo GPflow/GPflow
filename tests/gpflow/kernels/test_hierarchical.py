@@ -686,9 +686,7 @@ class TestNonTrivialActiveDims:
         active_dims: Any,
     ) -> None:
         n_cols = int(X_compact.shape[1])
-        kernel_compact = _FakeEmbedKernel(
-            hierarchy=hierarchy_fn(), active_dims=list(range(n_cols))
-        )
+        kernel_compact = _FakeEmbedKernel(hierarchy=hierarchy_fn(), active_dims=list(range(n_cols)))
         kernel_padded = _FakeEmbedKernel(hierarchy=hierarchy_fn(), active_dims=active_dims)
         X_padded = _scatter_columns(X_compact, positions, total_cols)
 
@@ -776,9 +774,7 @@ class TestTFFunctionCompilation:
             return kernel(X)
 
         for X in (_disjunction_data(), _disjunction_data()[:2]):
-            np.testing.assert_allclose(
-                compiled_K(X).numpy(), kernel(X).numpy(), atol=1e-12
-            )
+            np.testing.assert_allclose(compiled_K(X).numpy(), kernel(X).numpy(), atol=1e-12)
 
     def test_K_with_X2_compiles_and_matches_eager(self) -> None:
         kernel = _canonical_disjunction_kernel()
@@ -794,9 +790,7 @@ class TestTFFunctionCompilation:
 
         X = _disjunction_data()
         X2 = _disjunction_data()[:2]
-        np.testing.assert_allclose(
-            compiled_K(X, X2).numpy(), kernel(X, X2).numpy(), atol=1e-12
-        )
+        np.testing.assert_allclose(compiled_K(X, X2).numpy(), kernel(X, X2).numpy(), atol=1e-12)
 
     def test_K_diag_compiles_and_matches_eager(self) -> None:
         kernel = _canonical_disjunction_kernel()
@@ -835,6 +829,4 @@ class TestTFFunctionCompilation:
             return kernel(X)
 
         for X in (_all_conditional_data(), _all_conditional_data()[:2]):
-            np.testing.assert_allclose(
-                compiled_K(X).numpy(), kernel(X).numpy(), atol=1e-12
-            )
+            np.testing.assert_allclose(compiled_K(X).numpy(), kernel(X).numpy(), atol=1e-12)
