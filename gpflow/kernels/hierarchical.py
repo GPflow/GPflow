@@ -59,7 +59,7 @@ def _active_dims_width(active_dims: NormalizedActiveDims) -> Optional[int]:
         start = 0 if active_dims.start is None else active_dims.start
         step = 1 if active_dims.step is None else active_dims.step
         return len(range(start, active_dims.stop, step))
-    return None
+    return None  # pragma: no cover -- unreachable: _normalize_active_dims yields slice|ndarray
 
 
 @dataclass(frozen=True)
@@ -390,11 +390,10 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
             v_c = tf.gather(v, self._cond_local_idx, axis=-1)
             m_c = tf.gather(m_float, self._cond_local_idx, axis=-1)
             parts.append(self._embed_conditional(v_c, m_c))
-        if (
-            not parts
-        ):  # pragma: no subspace activated - unreachable: enforced by HierarchyNode/__init__
-            shape = tf.concat([tf.shape(X)[:-1], [0]], axis=0)
-            return tf.zeros(shape, dtype=v.dtype)
+        if not parts:
+            # Unreachable: HierarchyNode/__init__ guarantee >= 1 feature column.
+            shape = tf.concat([tf.shape(X)[:-1], [0]], axis=0)  # pragma: no cover
+            return tf.zeros(shape, dtype=v.dtype)  # pragma: no cover
         return tf.concat(parts, axis=-1)
 
     @inherit_check_shapes
