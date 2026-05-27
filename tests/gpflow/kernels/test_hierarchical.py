@@ -560,6 +560,7 @@ class TestUncondLengthscales:
             base_kernel=Matern52(lengthscales=ls),
             active_dims=list(range(4)),
         )
+        assert kernel.uncond_lengthscales is not None
         np.testing.assert_allclose(kernel.uncond_lengthscales.numpy(), ls[:1])
 
     def test_uncond_lengthscales_init_from_scalar_defaults_to_ones(self) -> None:
@@ -568,6 +569,7 @@ class TestUncondLengthscales:
             base_kernel=Matern52(lengthscales=3.7),
             active_dims=list(range(4)),
         )
+        assert kernel.uncond_lengthscales is not None
         np.testing.assert_allclose(kernel.uncond_lengthscales.numpy(), [1.0])
 
     def test_uncond_lengthscales_absent_when_no_uncond(self) -> None:
@@ -599,6 +601,7 @@ class TestUncondLengthscales:
         diag = K_small[0, 0]
         off_small = K_small[0, 1]
 
+        assert kernel.uncond_lengthscales is not None
         kernel.uncond_lengthscales.assign([10.0])
         K_large = kernel.K(X).numpy()
         off_large = K_large[0, 1]
