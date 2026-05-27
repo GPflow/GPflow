@@ -19,8 +19,7 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
-from gpflow.base import AnyNDArray
-from gpflow.base import Parameter
+from gpflow.base import AnyNDArray, Parameter
 from gpflow.kernels import Constant, Matern52, SquaredExponential
 from gpflow.kernels.hierarchical import (
     ActivityCondition,
@@ -701,9 +700,7 @@ class TestNonTrivialActiveDims:
         active_dims: Any,
     ) -> None:
         n_cols = int(X_compact.shape[1])
-        kernel_compact = ArcHierarchical(
-            hierarchy=hierarchy_fn(), active_dims=list(range(n_cols))
-        )
+        kernel_compact = ArcHierarchical(hierarchy=hierarchy_fn(), active_dims=list(range(n_cols)))
         kernel_padded = ArcHierarchical(hierarchy=hierarchy_fn(), active_dims=active_dims)
         X_padded = _scatter_columns(X_compact, positions, total_cols)
 
@@ -791,9 +788,7 @@ class TestTFFunctionCompilation:
             return kernel(X)
 
         for X in (_disjunction_data(), _disjunction_data()[:2]):
-            np.testing.assert_allclose(
-                compiled_K(X).numpy(), kernel(X).numpy(), atol=1e-12
-            )
+            np.testing.assert_allclose(compiled_K(X).numpy(), kernel(X).numpy(), atol=1e-12)
 
     def test_K_with_X2_compiles_and_matches_eager(self) -> None:
         kernel = _canonical_disjunction_kernel()
@@ -809,9 +804,7 @@ class TestTFFunctionCompilation:
 
         X = _disjunction_data()
         X2 = _disjunction_data()[:2]
-        np.testing.assert_allclose(
-            compiled_K(X, X2).numpy(), kernel(X, X2).numpy(), atol=1e-12
-        )
+        np.testing.assert_allclose(compiled_K(X, X2).numpy(), kernel(X, X2).numpy(), atol=1e-12)
 
     def test_K_diag_compiles_and_matches_eager(self) -> None:
         kernel = _canonical_disjunction_kernel()
@@ -841,18 +834,14 @@ class TestTFFunctionCompilation:
 
     def test_all_conditional_compiles(self) -> None:
         # n_uncond == 0: traces the indicator-gather / activity-mask branch.
-        kernel = ArcHierarchical(
-            hierarchy=_all_conditional_hierarchy(), active_dims=list(range(3))
-        )
+        kernel = ArcHierarchical(hierarchy=_all_conditional_hierarchy(), active_dims=list(range(3)))
 
         @tf.function(input_signature=[tf.TensorSpec([None, 3], dtype=tf.float64)])
         def compiled_K(X: tf.Tensor) -> tf.Tensor:
             return kernel(X)
 
         for X in (_all_conditional_data(), _all_conditional_data()[:2]):
-            np.testing.assert_allclose(
-                compiled_K(X).numpy(), kernel(X).numpy(), atol=1e-12
-            )
+            np.testing.assert_allclose(compiled_K(X).numpy(), kernel(X).numpy(), atol=1e-12)
 
 
 class TestUncondLengthscales:
@@ -1006,9 +995,7 @@ class TestNonTrivialActiveDims:
         active_dims: Any,
     ) -> None:
         n_cols = int(X_compact.shape[1])
-        kernel_compact = ArcHierarchical(
-            hierarchy=hierarchy_fn(), active_dims=list(range(n_cols))
-        )
+        kernel_compact = ArcHierarchical(hierarchy=hierarchy_fn(), active_dims=list(range(n_cols)))
         kernel_padded = ArcHierarchical(hierarchy=hierarchy_fn(), active_dims=active_dims)
         X_padded = _scatter_columns(X_compact, positions, total_cols)
 
@@ -1096,9 +1083,7 @@ class TestTFFunctionCompilation:
             return kernel(X)
 
         for X in (_disjunction_data(), _disjunction_data()[:2]):
-            np.testing.assert_allclose(
-                compiled_K(X).numpy(), kernel(X).numpy(), atol=1e-12
-            )
+            np.testing.assert_allclose(compiled_K(X).numpy(), kernel(X).numpy(), atol=1e-12)
 
     def test_K_with_X2_compiles_and_matches_eager(self) -> None:
         kernel = _canonical_disjunction_kernel()
@@ -1114,9 +1099,7 @@ class TestTFFunctionCompilation:
 
         X = _disjunction_data()
         X2 = _disjunction_data()[:2]
-        np.testing.assert_allclose(
-            compiled_K(X, X2).numpy(), kernel(X, X2).numpy(), atol=1e-12
-        )
+        np.testing.assert_allclose(compiled_K(X, X2).numpy(), kernel(X, X2).numpy(), atol=1e-12)
 
     def test_K_diag_compiles_and_matches_eager(self) -> None:
         kernel = _canonical_disjunction_kernel()
@@ -1146,18 +1129,14 @@ class TestTFFunctionCompilation:
 
     def test_all_conditional_compiles(self) -> None:
         # n_uncond == 0: traces the indicator-gather / activity-mask branch.
-        kernel = ArcHierarchical(
-            hierarchy=_all_conditional_hierarchy(), active_dims=list(range(3))
-        )
+        kernel = ArcHierarchical(hierarchy=_all_conditional_hierarchy(), active_dims=list(range(3)))
 
         @tf.function(input_signature=[tf.TensorSpec([None, 3], dtype=tf.float64)])
         def compiled_K(X: tf.Tensor) -> tf.Tensor:
             return kernel(X)
 
         for X in (_all_conditional_data(), _all_conditional_data()[:2]):
-            np.testing.assert_allclose(
-                compiled_K(X).numpy(), kernel(X).numpy(), atol=1e-12
-            )
+            np.testing.assert_allclose(compiled_K(X).numpy(), kernel(X).numpy(), atol=1e-12)
 
 
 class TestKDispatch:
