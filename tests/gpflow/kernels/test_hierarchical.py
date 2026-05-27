@@ -840,7 +840,7 @@ class TestTFFunctionCompilation:
 
     def test_all_conditional_compiles(self) -> None:
         # n_uncond == 0: traces the indicator-gather / activity-mask branch.
-        kernel = _FakeEmbedKernel(
+        kernel = ArcHierarchical(
             hierarchy=_all_conditional_hierarchy(), active_dims=list(range(3))
         )
 
