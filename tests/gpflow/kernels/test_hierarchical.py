@@ -635,6 +635,143 @@ class TestUncondLengthscales:
         assert not kernel.base_kernel.lengthscales.trainable
 
 
+def _scatter_columns(
+    X_compact: tf.Tensor,
+    positions: List[int],
+    total_cols: int,
+    fill: float = np.nan,
+) -> tf.Tensor:
+    """Embed a compact ``[N, d]`` array into a wider ``[N, total_cols]`` one.
+
+    Column ``j`` of ``X_compact`` is placed at column ``positions[j]``; every other
+    column is set to ``fill``. The default NaN fill turns any accidental read of an
+    unselected (redundant) column into a NaN in the output, so a leak is impossible
+    to miss.
+    """
+    X_np = np.asarray(X_compact, dtype=np.float64)
+    n_rows, n_cols = X_np.shape
+    assert len(positions) == n_cols, "positions must give one target per compact column"
+    padded = np.full((n_rows, total_cols), fill, dtype=np.float64)
+    for j, p in enumerate(positions):
+        padded[:, p] = X_np[:, j]
+    return tf.constant(padded, dtype=tf.float64)
+
+
+def _disjunction_data() -> tf.Tensor:
+    """Compact ``[x1, y1, x2, x3]`` data exercising both branches (y1=1 and y1=0)."""
+    return tf.constant(
+        [
+            [0.5, 1.0, 2.5, 0.0],
+            [0.3, 0.0, 4.0, 0.5],
+            [0.8, 1.0, 1.0, -0.5],
+        ],
+        dtype=tf.float64,
+    )
+
+
+def _all_conditional_data() -> tf.Tensor:
+    """Compact ``[y0, x1, x2]`` data for the all-conditional hierarchy."""
+    return tf.constant(
+        [
+            [1.0, 0.4, 0.7],
+            [0.0, 0.2, 0.9],
+            [1.0, 0.6, 0.1],
+        ],
+        dtype=tf.float64,
+    )
+
+
+class TestNonTrivialActiveDims:
+    """`active_dims` that do not start at 0 and/or have gaps, with redundant columns.
+
+    The hierarchy's feature/indicator dims live in the *sliced* coordinate system, so
+    these tests keep the hierarchy fixed and vary only the physical layout of ``X`` and
+    ``active_dims``. Slicing happens in ``Kernel.__call__``, so they go through the full
+    ``kernel(X)`` call path (unlike the rest of the suite, which calls ``K`` on
+    pre-sliced inputs). A padded/offset layout must reproduce the compact baseline.
+    """
+
+    @staticmethod
+    def _assert_matches_compact(
+        hierarchy_fn: Any,
+        X_compact: tf.Tensor,
+        positions: List[int],
+        total_cols: int,
+        active_dims: Any,
+    ) -> None:
+        n_cols = int(X_compact.shape[1])
+        kernel_compact = ArcHierarchical(
+            hierarchy=hierarchy_fn(), active_dims=list(range(n_cols))
+        )
+        kernel_padded = ArcHierarchical(hierarchy=hierarchy_fn(), active_dims=active_dims)
+        X_padded = _scatter_columns(X_compact, positions, total_cols)
+
+        # Full covariance through the slicing call path.
+        K_ref = kernel_compact(X_compact).numpy()
+        K_padded = kernel_padded(X_padded).numpy()
+        np.testing.assert_allclose(K_padded, K_ref, atol=1e-12)
+        # NaN-filled redundant columns never leaked into the computation.
+        assert np.all(np.isfinite(K_padded))
+
+        # Diagonal (full_cov=False) through the same call path.
+        diag_ref = kernel_compact(X_compact, full_cov=False).numpy()
+        diag_padded = kernel_padded(X_padded, full_cov=False).numpy()
+        np.testing.assert_allclose(diag_padded, diag_ref, atol=1e-12)
+        assert np.all(np.isfinite(diag_padded))
+
+    def test_gap_active_dims_matches_compact(self) -> None:
+        # Relevant columns scattered to odd positions in a 9-column array.
+        self._assert_matches_compact(
+            _canonical_disjunction_hierarchy,
+            _disjunction_data(),
+            positions=[1, 3, 5, 7],
+            total_cols=9,
+            active_dims=[1, 3, 5, 7],
+        )
+
+    def test_active_dims_not_starting_at_zero(self) -> None:
+        # Contiguous block offset by two redundant leading columns.
+        self._assert_matches_compact(
+            _canonical_disjunction_hierarchy,
+            _disjunction_data(),
+            positions=[2, 3, 4, 5],
+            total_cols=6,
+            active_dims=[2, 3, 4, 5],
+        )
+
+    def test_scrambled_layout_reconstructed_by_active_dims(self) -> None:
+        # Physical layout scrambled; active_dims order must gather back to
+        # [x1, y1, x2, x3] so that feature/indicator re-indexing stays correct.
+        self._assert_matches_compact(
+            _canonical_disjunction_hierarchy,
+            _disjunction_data(),
+            positions=[3, 0, 5, 1],
+            total_cols=6,
+            active_dims=[3, 0, 5, 1],
+        )
+
+    def test_slice_active_dims_matches_compact(self) -> None:
+        # Exercise the `slice` branch of Kernel.slice (distinct from tf.gather).
+        self._assert_matches_compact(
+            _canonical_disjunction_hierarchy,
+            _disjunction_data(),
+            positions=[2, 3, 4, 5],
+            total_cols=6,
+            active_dims=slice(2, 6),
+        )
+
+    def test_all_conditional_non_trivial_active_dims(self) -> None:
+        # n_uncond == 0: exercises the indicator-gather / activity-mask path under
+        # an offset, guarding indicator indexing specifically.
+        self._assert_matches_compact(
+            _all_conditional_hierarchy,
+            _all_conditional_data(),
+            positions=[1, 4, 6],
+            total_cols=8,
+            active_dims=[1, 4, 6],
+        )
+
+
 class TestKDispatch:
     def test_K_shape_and_psd(self) -> None:
         kernel = _canonical_disjunction_kernel()
