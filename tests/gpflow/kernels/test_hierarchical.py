@@ -772,6 +772,88 @@ class TestNonTrivialActiveDims:
         )
 
 
+class TestTFFunctionCompilation:
+    """The kernel must be usable inside a ``tf.function`` (graph mode).
+
+    GPflow models wrap loss/prediction in ``tf.function``; the kernel's Python-level
+    ``if``/``while`` branch only on static values (``self._n_*`` ints, ``.shape.ndims``),
+    so it should trace cleanly. These tests prove it does and that compiled output matches
+    eager. An ``input_signature`` with ``None`` rows means a single trace must handle any
+    ``N``; a tracing failure raises, so a passing call is itself evidence of compilation.
+    """
+
+    def test_K_compiles_and_matches_eager(self) -> None:
+        kernel = _canonical_disjunction_kernel()
+
+        @tf.function(input_signature=[tf.TensorSpec([None, 4], dtype=tf.float64)])
+        def compiled_K(X: tf.Tensor) -> tf.Tensor:
+            return kernel(X)
+
+        for X in (_disjunction_data(), _disjunction_data()[:2]):
+            np.testing.assert_allclose(
+                compiled_K(X).numpy(), kernel(X).numpy(), atol=1e-12
+            )
+
+    def test_K_with_X2_compiles_and_matches_eager(self) -> None:
+        kernel = _canonical_disjunction_kernel()
+
+        @tf.function(
+            input_signature=[
+                tf.TensorSpec([None, 4], dtype=tf.float64),
+                tf.TensorSpec([None, 4], dtype=tf.float64),
+            ]
+        )
+        def compiled_K(X: tf.Tensor, X2: tf.Tensor) -> tf.Tensor:
+            return kernel(X, X2)
+
+        X = _disjunction_data()
+        X2 = _disjunction_data()[:2]
+        np.testing.assert_allclose(
+            compiled_K(X, X2).numpy(), kernel(X, X2).numpy(), atol=1e-12
+        )
+
+    def test_K_diag_compiles_and_matches_eager(self) -> None:
+        kernel = _canonical_disjunction_kernel()
+
+        @tf.function(input_signature=[tf.TensorSpec([None, 4], dtype=tf.float64)])
+        def compiled_K_diag(X: tf.Tensor) -> tf.Tensor:
+            return kernel(X, full_cov=False)
+
+        for X in (_disjunction_data(), _disjunction_data()[:2]):
+            np.testing.assert_allclose(
+                compiled_K_diag(X).numpy(),
+                kernel(X, full_cov=False).numpy(),
+                atol=1e-12,
+            )
+
+    def test_batched_input_compiles(self) -> None:
+        # Leading batch dim exercises the static-rank rank-padding `while` loop in
+        # `_build_activity_mask` under graph mode.
+        kernel = _canonical_disjunction_kernel()
+
+        @tf.function(input_signature=[tf.TensorSpec([None, None, 4], dtype=tf.float64)])
+        def compiled_K(X: tf.Tensor) -> tf.Tensor:
+            return kernel(X)
+
+        X = tf.stack([_disjunction_data(), _disjunction_data() + 0.1], axis=0)
+        np.testing.assert_allclose(compiled_K(X).numpy(), kernel(X).numpy(), atol=1e-12)
+
+    def test_all_conditional_compiles(self) -> None:
+        # n_uncond == 0: traces the indicator-gather / activity-mask branch.
+        kernel = _FakeEmbedKernel(
+            hierarchy=_all_conditional_hierarchy(), active_dims=list(range(3))
+        )
+
+        @tf.function(input_signature=[tf.TensorSpec([None, 3], dtype=tf.float64)])
+        def compiled_K(X: tf.Tensor) -> tf.Tensor:
+            return kernel(X)
+
+        for X in (_all_conditional_data(), _all_conditional_data()[:2]):
+            np.testing.assert_allclose(
+                compiled_K(X).numpy(), kernel(X).numpy(), atol=1e-12
+            )
+
+
 class TestKDispatch:
     def test_K_shape_and_psd(self) -> None:
         kernel = _canonical_disjunction_kernel()
