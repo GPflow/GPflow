@@ -335,3 +335,97 @@ class TestActiveDimsSlice:
                 input_dim=4,
                 active_dims=[2, 3],
             )
+
+
+class TestEdgeCaseBranches:
+    """Exercise branches the happy-path tests above skip: multi-indicator
+    conditions, ``active_dims`` resolved without an explicit ``input_dim``, and
+    degenerate (zero-width) feature bounds."""
+
+    def test_multi_indicator_condition(self) -> None:
+        # A conditional node gated by *two* indicators. Sliced coords:
+        # [x1(0, uncond), y1(1, ind), y2(2, ind), x2(3, active when y1=1 & y2=0)].
+        # Valid because sorted(feature_dims + indicator_dims) == range(4).
+        hierarchy = [
+            HierarchyNode(
+                "shared",
+                feature_dims=[0],
+                feature_bounds=tf.constant([[0.0, 1.0]], dtype=tf.float64),
+            ),
+            HierarchyNode(
+                "branch_AND",
+                feature_dims=[3],
+                feature_bounds=tf.constant([[0.0, 5.0]], dtype=tf.float64),
+                activity_condition=ActivityCondition({1: 1, 2: 0}),
+            ),
+        ]
+        kernel = ArcHierarchical(hierarchy=hierarchy, active_dims=[0, 1, 2, 3])
+        report = validate_hierarchical_axioms(kernel, hierarchy, seed=0)
+        assert report.passed, str(report)
+        # One conditional node x three axioms.
+        assert len(report.checks) == 3
+        assert {c.node_name for c in report.checks} == {"branch_AND"}
+
+    def test_bounded_slice_without_input_dim(self) -> None:
+        # Bounded slice with no explicit input_dim: input_dim is inferred from
+        # the slice's stop.
+        report = validate_hierarchical_axioms(
+            _arc(),
+            _canonical_disjunction_hierarchy(),
+            seed=0,
+            active_dims=slice(0, 4),
+        )
+        assert report.passed, str(report)
+
+    def test_open_ended_slice_without_input_dim_rejected(self) -> None:
+        # Open-ended slice cannot be resolved without an input_dim.
+        with pytest.raises(ValueError, match="open-ended"):
+            validate_hierarchical_axioms(
+                _arc(),
+                _canonical_disjunction_hierarchy(),
+                seed=0,
+                active_dims=slice(None, None),
+            )
+
+    def test_sequence_active_dims_without_input_dim(self) -> None:
+        # Sequence active_dims with no explicit input_dim: input_dim defaults to
+        # max(active_dims) + 1.
+        report = validate_hierarchical_axioms(
+            _arc(),
+            _canonical_disjunction_hierarchy(),
+            seed=0,
+            active_dims=[0, 1, 2, 3],
+        )
+        assert report.passed, str(report)
+
+    def test_degenerate_feature_bounds(self) -> None:
+        # A conditional feature with zero-width bounds (lo == hi) exercises the
+        # span == 0 paths: the background sampler pins the column to lo, and the
+        # axiom-2 loop has nothing to vary so it records a vacuous pass.
+        hierarchy = [
+            HierarchyNode(
+                "shared",
+                feature_dims=[0],
+                feature_bounds=tf.constant([[0.0, 1.0]], dtype=tf.float64),
+            ),
+            HierarchyNode(
+                "branch_fixed",
+                feature_dims=[2],
+                feature_bounds=tf.constant([[2.0, 2.0]], dtype=tf.float64),
+                activity_condition=ActivityCondition({1: 1}),
+            ),
+            HierarchyNode(
+                "branch_B",
+                feature_dims=[3],
+                feature_bounds=tf.constant([[-1.0, 1.0]], dtype=tf.float64),
+                activity_condition=ActivityCondition({1: 0}),
+            ),
+        ]
+        kernel = ArcHierarchical(hierarchy=hierarchy, active_dims=[0, 1, 2, 3])
+        report = validate_hierarchical_axioms(kernel, hierarchy, seed=0)
+        assert report.passed, str(report)
+        # The degenerate node's axiom-2 check passes vacuously (no value to vary).
+        fixed_a2 = [c for c in report.for_axiom(2) if c.node_name == "branch_fixed"]
+        assert len(fixed_a2) == 1
+        assert fixed_a2[0].passed
+        assert fixed_a2[0].max_violation == 0.0

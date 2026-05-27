@@ -368,7 +368,10 @@ def validate_hierarchical_axioms(
             v_y = float(rng.uniform(lo + eps, hi - eps - half))
             lo_shift = (lo + eps) - min(v_a, v_y)
             hi_shift = (hi - eps) - max(v_a, v_y)
-            if hi_shift <= lo_shift:
+            # Defensive: with v_a, v_y drawn from [L, L + 0.4*span] (L = lo + eps),
+            # hi_shift >= 0.5*span > 0 >= lo_shift always, so the shift window is
+            # never empty here. Kept in case the sampling bounds above change.
+            if hi_shift <= lo_shift:  # pragma: no cover
                 continue
             shift = float(rng.uniform(lo_shift, hi_shift))
             x_a = base.copy()
