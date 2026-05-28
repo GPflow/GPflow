@@ -241,13 +241,6 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
                 "`slice` whose `stop` is concrete; "
                 f"got {self._active_dims!r}."
             )
-        if width != n_expected:
-            raise ValueError(
-                f"`active_dims` selects {width} column(s), but the hierarchy "
-                f"defines {self._n_feat} feature dimension(s) and "
-                f"{self._n_ind} indicator dimension(s) (total {n_expected}); "
-                f"`active_dims` must select exactly that many columns."
-            )
         if list(range(width)) != sorted(flat_feature_dims + indicator_dims):
             raise ValueError(
                 f"`active_dims` selects {width} columns."
@@ -362,8 +355,7 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         "X: [batch..., N, D]", "return: [batch..., N, D_f]"
     )  # D_f is feature_dims (i.e. D_cond + D_uncond)
     def _normalise(self, X: TensorType) -> tf.Tensor:
-        X_cast = tf.cast(X, X.dtype)
-        v = tf.gather(X_cast, self._feature_dims, axis=-1)
+        v = tf.gather(X, self._feature_dims, axis=-1)
         lo, hi = self._bounds[:, 0], self._bounds[:, 1]
         lo_cast, hi_cast = tf.cast(lo, v.dtype), tf.cast(hi, v.dtype)
         rng = hi_cast - lo_cast
