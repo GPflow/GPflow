@@ -16,7 +16,8 @@
 This module provides covariance functions that respect an activation
 structure on the input space: a point whose conditional feature is
 *inactive* is not treated as equivalent to one whose feature is
-*active and equal in value*.
+*active and equal in value*. Great for learning functions for use
+in generalised disjunctive programming frameworks
 """
 
 import abc
