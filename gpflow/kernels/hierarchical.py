@@ -27,12 +27,14 @@ from typing import Dict, List, Mapping, Optional, Sequence, Tuple
 
 import numpy as np
 import tensorflow as tf
+import tensorflow_probability as tfp
 from check_shapes import check_shapes, inherit_check_shapes
 
 from gpflow.experimental.utils import experimental
 
 from ..base import Parameter, TensorType
-from ..utilities import deepcopy, positive, set_trainable
+from ..config import default_float
+from ..utilities import deepcopy, positive, set_trainable, to_default_float
 from .base import ActiveDims, Kernel, NormalizedActiveDims
 from .stationaries import Matern52, Stationary
 
@@ -408,3 +410,101 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         Assumes that X is already sliced according to active_dims, if applicable.
         """
         return self.base_kernel.K_diag(self._embed(X))
+
+
+class ArcHierarchical(HierarchicalEmbeddingKernel):
+    """The Arc kernel of Swersky et al. (2014).
+
+    Each conditional column ``c`` (normalised value ``v_c`` in ``[0, 1]``,
+    activity mask ``m_c``) is mapped into the plane via
+
+    .. math::
+
+        \\phi_c(v_c, m_c) = \\big(
+            r_c \\sin(\\pi a_c v_c)\\, m_c,\\;
+            r_c \\cos(\\pi a_c v_c)\\, m_c
+        \\big),
+
+    so that inactive points sit at the origin and active points sit on a
+    circle whose phase depends on ``v_c``. A stationary base kernel then
+    evaluates covariance in the joint embedded space.
+    """
+
+    def __init__(
+        self,
+        hierarchy: Sequence[HierarchyNode],
+        base_kernel: Optional[Stationary] = None,
+        *,
+        active_dims: ActiveDims,
+        name: Optional[str] = None,
+    ) -> None:
+        super().__init__(hierarchy, base_kernel, active_dims=active_dims, name=name)
+        if self._n_cond > 0:
+            self.angle = Parameter(
+                0.5 * tf.ones(self._n_cond, dtype=default_float()),
+                transform=tfp.bijectors.Sigmoid(to_default_float(0.1), to_default_float(0.9)),
+                name="angle",
+            )
+            self.radius = Parameter(
+                tf.ones(self._n_cond, dtype=default_float()),
+                transform=positive(),
+                name="radius",
+            )
+
+    @inherit_check_shapes
+    def _embed_conditional(self, v_c: tf.Tensor, m_c: tf.Tensor) -> tf.Tensor:
+        theta = np.pi * self.angle * v_c
+        sin_part = self.radius * tf.sin(theta) * m_c
+        cos_part = self.radius * tf.cos(theta) * m_c
+        return tf.concat([sin_part, cos_part], axis=-1)
+
+
+class WedgeHierarchical(HierarchicalEmbeddingKernel):
+    """The Wedge kernel of Horn et al. (2019).
+
+    Each conditional column ``c`` (normalised value ``v_c`` in ``[0, 1]``,
+    activity mask ``m_c``) is mapped into the plane via
+
+    .. math::
+
+        \\phi_c(v_c, m_c) = \\big(
+            (\\theta_1 v_c + \\theta_2 v_c \\cos\\rho)\\, m_c,\\;
+            (\\theta_2 v_c \\sin\\rho)\\, m_c
+        \\big).
+
+    The "incomparable" distance now scales with the active value ``v_c``
+    rather than being constant in it. ``rho`` is bounded away from zero
+    because at ``rho = 0`` the embedding degenerates to a line.
+    """
+
+    def __init__(
+        self,
+        hierarchy: Sequence[HierarchyNode],
+        base_kernel: Optional[Stationary] = None,
+        *,
+        active_dims: ActiveDims,
+        name: Optional[str] = None,
+    ) -> None:
+        super().__init__(hierarchy, base_kernel, active_dims=active_dims, name=name)
+        if self._n_cond > 0:
+            self.theta1 = Parameter(
+                tf.ones(self._n_cond, dtype=default_float()),
+                transform=positive(),
+                name="theta1",
+            )
+            self.theta2 = Parameter(
+                tf.ones(self._n_cond, dtype=default_float()),
+                transform=positive(),
+                name="theta2",
+            )
+            self.rho = Parameter(
+                0.5 * np.pi * tf.ones(self._n_cond, dtype=default_float()),
+                transform=tfp.bijectors.Sigmoid(to_default_float(1e-6), to_default_float(np.pi)),
+                name="rho",
+            )
+
+    @inherit_check_shapes
+    def _embed_conditional(self, v_c: tf.Tensor, m_c: tf.Tensor) -> tf.Tensor:
+        comp1 = (self.theta1 * v_c + self.theta2 * v_c * tf.cos(self.rho)) * m_c
+        comp2 = (self.theta2 * v_c * tf.sin(self.rho)) * m_c
+        return tf.concat([comp1, comp2], axis=-1)

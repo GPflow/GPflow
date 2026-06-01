@@ -19,7 +19,14 @@ from . import multioutput
 from .base import Combination, Kernel, Product, Sum
 from .changepoints import ChangePoints
 from .convolutional import Convolutional
-from .hierarchical import ActivityCondition, HierarchicalEmbeddingKernel, HierarchyNode
+from .hierarchical import (
+    ActivityCondition,
+    ArcHierarchical,
+    HierarchicalEmbeddingKernel,
+    HierarchyNode,
+    WedgeHierarchical,
+)
+from .hierarchical_axioms import AxiomCheck, AxiomReport, validate_hierarchical_axioms
 from .linears import Linear, Polynomial
 from .misc import ArcCosine, Coregion
 from .multioutput import (
@@ -54,6 +61,9 @@ __all__ = [
     "ActivityCondition",
     "AnisotropicStationary",
     "ArcCosine",
+    "ArcHierarchical",
+    "AxiomCheck",
+    "AxiomReport",
     "Bias",
     "ChangePoints",
     "Combination",
@@ -84,16 +94,19 @@ __all__ = [
     "Static",
     "Stationary",
     "Sum",
+    "WedgeHierarchical",
     "White",
     "base",
     "categorical",
     "changepoints",
     "convolutional",
     "hierarchical",
+    "hierarchical_axioms",
     "linears",
     "misc",
     "multioutput",
     "periodic",
     "statics",
     "stationaries",
+    "validate_hierarchical_axioms",
 ]
