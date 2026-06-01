@@ -26,6 +26,7 @@ from .hierarchical import (
     HierarchyNode,
     WedgeHierarchical,
 )
+from .hierarchical_axioms import AxiomCheck, AxiomReport, validate_hierarchical_axioms
 from .linears import Linear, Polynomial
 from .misc import ArcCosine, Coregion
 from .multioutput import (
@@ -61,6 +62,8 @@ __all__ = [
     "AnisotropicStationary",
     "ArcCosine",
     "ArcHierarchical",
+    "AxiomCheck",
+    "AxiomReport",
     "Bias",
     "ChangePoints",
     "Combination",
@@ -98,10 +101,12 @@ __all__ = [
     "changepoints",
     "convolutional",
     "hierarchical",
+    "hierarchical_axioms",
     "linears",
     "misc",
     "multioutput",
     "periodic",
     "statics",
     "stationaries",
+    "validate_hierarchical_axioms",
 ]

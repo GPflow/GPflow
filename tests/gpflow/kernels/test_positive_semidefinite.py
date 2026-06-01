@@ -52,12 +52,49 @@ def test_positive_semidefinite(kernel_class: Type[kernels.Kernel]) -> None:
 
 
 @pytest.mark.parametrize(
-    "base_class", [kernel for kernel in gpflow.ci_utils.subclasses(kernels.IsotropicStationary)]
+    "base_class",
+    [kernel for kernel in gpflow.ci_utils.subclasses(kernels.IsotropicStationary)],
 )
-def test_positive_semidefinite_periodic(base_class: Type[kernels.IsotropicStationary]) -> None:
+def test_positive_semidefinite_periodic(
+    base_class: Type[kernels.IsotropicStationary],
+) -> None:
     """
     A valid kernel is positive semidefinite. Some kernels are only valid for
     particular input shapes, see https://github.com/GPflow/GPflow/issues/1328
     """
     kernel = kernels.Periodic(base_class())
     pos_semidefinite(kernel)
+
+
+@pytest.mark.parametrize("kernel_class", [kernels.ArcHierarchical, kernels.WedgeHierarchical])
+def test_positive_semidefinite_hierarchical(
+    kernel_class: Type[kernels.HierarchicalEmbeddingKernel],
+) -> None:
+    """The hierarchical kernels require search-space metadata, so they cannot
+    use the bare-`kernel_class()` shape of the generic test above."""
+    kernel = kernel_class(
+        hierarchy=[
+            kernels.HierarchyNode(
+                "shared", feature_dims=[0, 4], feature_bounds=[[0.0, 1.0], [0.0, 1.0]]
+            ),
+            kernels.HierarchyNode(
+                "branch_A",
+                feature_dims=[2],
+                feature_bounds=[[0.0, 1.0]],
+                activity_condition=kernels.ActivityCondition({1: 1}),
+            ),
+            kernels.HierarchyNode(
+                "branch_B",
+                feature_dims=[3],
+                feature_bounds=[[0.0, 1.0]],
+                activity_condition=kernels.ActivityCondition({1: 0}),
+            ),
+        ],
+        active_dims=list(range(5)),
+    )
+    # Indicator column must be integer-valued (0 or 1); rest can be float.
+    N = 50
+    X = rng.randn(N, 5)
+    X[:, 1] = rng.randint(0, 2, size=N).astype(float)
+    eig = tf.linalg.eigvalsh(kernel(X)).numpy()
+    assert_array_less(-1e-8, eig)
