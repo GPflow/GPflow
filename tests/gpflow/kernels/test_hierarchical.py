@@ -327,7 +327,7 @@ class TestHierarchicalEmbeddingKernelConstruction:
         # not form the contiguous range 0..width-1 in the sliced coordinate
         # system (here feature_dims=[0, 3] with width 2) -> rejected.
         with pytest.raises(ValueError, match="sliced coordinate system"):
-            _FakeEmbedKernel(
+            ArcHierarchical(
                 hierarchy=[
                     HierarchyNode(
                         "a",
@@ -340,7 +340,7 @@ class TestHierarchicalEmbeddingKernelConstruction:
 
     def test_public_dimension_and_hierarchy_properties(self) -> None:
         hierarchy = _canonical_disjunction_hierarchy()
-        kernel = _FakeEmbedKernel(hierarchy=hierarchy, active_dims=list(range(4)))
+        kernel = ArcHierarchical(hierarchy=hierarchy, active_dims=list(range(4)))
         # Public read-only views over the construction-time counts/structure.
         assert kernel.n_uncond_dims == 1
         assert kernel.n_cond_dims == 2
