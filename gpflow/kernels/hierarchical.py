@@ -16,7 +16,8 @@
 This module provides covariance functions that respect an activation
 structure on the input space: a point whose conditional feature is
 *inactive* is not treated as equivalent to one whose feature is
-*active and equal in value*.
+*active and equal in value*. Great for learning functions for use
+in generalised disjunctive programming frameworks
 """
 
 import abc
@@ -61,7 +62,7 @@ def _active_dims_width(active_dims: NormalizedActiveDims) -> Optional[int]:
         start = 0 if active_dims.start is None else active_dims.start
         step = 1 if active_dims.step is None else active_dims.step
         return len(range(start, active_dims.stop, step))
-    return None
+    return None  # pragma: no cover -- unreachable: _normalize_active_dims yields slice|ndarray
 
 
 @dataclass(frozen=True)
@@ -243,13 +244,6 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
                 "`slice` whose `stop` is concrete; "
                 f"got {self._active_dims!r}."
             )
-        if width != n_expected:
-            raise ValueError(
-                f"`active_dims` selects {width} column(s), but the hierarchy "
-                f"defines {self._n_feat} feature dimension(s) and "
-                f"{self._n_ind} indicator dimension(s) (total {n_expected}); "
-                f"`active_dims` must select exactly that many columns."
-            )
         if list(range(width)) != sorted(flat_feature_dims + indicator_dims):
             raise ValueError(
                 f"`active_dims` selects {width} columns."
@@ -364,8 +358,7 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         "X: [batch..., N, D]", "return: [batch..., N, D_f]"
     )  # D_f is feature_dims (i.e. D_cond + D_uncond)
     def _normalise(self, X: TensorType) -> tf.Tensor:
-        X_cast = tf.cast(X, X.dtype)
-        v = tf.gather(X_cast, self._feature_dims, axis=-1)
+        v = tf.gather(X, self._feature_dims, axis=-1)
         lo, hi = self._bounds[:, 0], self._bounds[:, 1]
         lo_cast, hi_cast = tf.cast(lo, v.dtype), tf.cast(hi, v.dtype)
         rng = hi_cast - lo_cast
@@ -392,11 +385,10 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
             v_c = tf.gather(v, self._cond_local_idx, axis=-1)
             m_c = tf.gather(m_float, self._cond_local_idx, axis=-1)
             parts.append(self._embed_conditional(v_c, m_c))
-        if (
-            not parts
-        ):  # pragma: no subspace activated - unreachable: enforced by HierarchyNode/__init__
-            shape = tf.concat([tf.shape(X)[:-1], [0]], axis=0)
-            return tf.zeros(shape, dtype=v.dtype)
+        if not parts:
+            # Unreachable: HierarchyNode/__init__ guarantee >= 1 feature column.
+            shape = tf.concat([tf.shape(X)[:-1], [0]], axis=0)  # pragma: no cover
+            return tf.zeros(shape, dtype=v.dtype)  # pragma: no cover
         return tf.concat(parts, axis=-1)
 
     @inherit_check_shapes

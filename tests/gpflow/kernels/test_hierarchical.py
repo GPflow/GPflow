@@ -322,6 +322,30 @@ class TestHierarchicalEmbeddingKernelConstruction:
                 active_dims=slice(None, None, None),
             )
 
+    def test_non_contiguous_sliced_dims_rejected(self) -> None:
+        # width matches n_feat + n_ind, but the feature/indicator columns do
+        # not form the contiguous range 0..width-1 in the sliced coordinate
+        # system (here feature_dims=[0, 3] with width 2) -> rejected.
+        with pytest.raises(ValueError, match="sliced coordinate system"):
+            _FakeEmbedKernel(
+                hierarchy=[
+                    HierarchyNode(
+                        "a",
+                        feature_dims=[0, 3],
+                        feature_bounds=_canonical_bounds(2),
+                    ),
+                ],
+                active_dims=[0, 1],
+            )
+
+    def test_public_dimension_and_hierarchy_properties(self) -> None:
+        hierarchy = _canonical_disjunction_hierarchy()
+        kernel = _FakeEmbedKernel(hierarchy=hierarchy, active_dims=list(range(4)))
+        # Public read-only views over the construction-time counts/structure.
+        assert kernel.n_uncond_dims == 1
+        assert kernel.n_cond_dims == 2
+        assert tuple(kernel.hierarchy) == tuple(hierarchy)
+
 
 class TestNormalise:
     def test_maps_bounds_to_unit_interval(self) -> None:
