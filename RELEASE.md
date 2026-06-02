@@ -63,7 +63,11 @@ This release contains contributions from:
 
 This release contains contributions from:
 
-<INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
+mawbray, pakhaykwok, AlexGoodallAI, uri-granta
+
+# Release 2.10.2
+
+This release introduces hierarchical kernels enabling modelling of functions on disjunctive domains. 
 
 
 # Release 2.10.1
