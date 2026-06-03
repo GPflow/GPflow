@@ -90,5 +90,7 @@ Because GitHub's [graph of contributors](http://github.com/GPflow/GPflow/graphs/
 [@partev](https://github.com/partev)
 [@uri-granta](https://github.com/uri-granta)
 [@jschmiegel](https://github.com/jschmiegel)
-
+[@mawbray](https://github.com/mawbray)
+[@pakhaykwok](https://github.com/pakhaykwok)
+[@AlexGoodallAI](https://github.com/AlexGoodallAI)
 Add yourself when you first contribute to GPflow's code, tests, or documentation!

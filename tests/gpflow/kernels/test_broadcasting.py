@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Callable, List, Sequence, Tuple, cast
+from typing import Any, Callable, Dict, List, Sequence, Tuple, cast
 
 import numpy as np
 import pytest
@@ -26,6 +26,33 @@ import gpflow.ci_utils
 from gpflow import kernels
 from gpflow.base import AnyNDArray, TensorType
 from gpflow.kernels.categorical import Categorical
+from gpflow.kernels.hierarchical import (
+    ActivityCondition,
+    ArcHierarchical,
+    HierarchyNode,
+    WedgeHierarchical,
+)
+
+
+def _hierarchical_kwargs() -> Dict[str, Any]:
+    return dict(
+        hierarchy=[
+            HierarchyNode("shared", feature_dims=[0], feature_bounds=[[0.0, 1.0]]),
+            HierarchyNode(
+                "branch_A",
+                feature_dims=[2],
+                feature_bounds=[[0.0, 1.0]],
+                activity_condition=ActivityCondition({1: 1}),
+            ),
+            HierarchyNode(
+                "branch_B",
+                feature_dims=[3],
+                feature_bounds=[[0.0, 1.0]],
+                activity_condition=ActivityCondition({1: 0}),
+            ),
+        ],
+        active_dims=list(range(4)),
+    )
 
 
 def create_kernels() -> Sequence[kernels.Kernel]:
@@ -67,6 +94,9 @@ def create_kernels() -> Sequence[kernels.Kernel]:
             categorical_kernel=kernels.RBF(lengthscales=0.1),
             num_labels=3,
         ),
+        # hierarchical kernels:
+        ArcHierarchical(**_hierarchical_kwargs()),
+        WedgeHierarchical(**_hierarchical_kwargs()),
     ]
     return result
 
