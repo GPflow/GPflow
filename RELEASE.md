@@ -61,13 +61,22 @@ This release contains contributions from:
 
 ## Thanks to our Contributors
 
+<INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
+
+
+# Release 2.11.0
+
+This release introduces hierarchical kernels, enabling modelling of functions on disjunctive domains.
+
+## Improvements
+
+* Add the `ArcHierarchical` and `WedgeHierarchical` hierarchical kernels, alongside a notebook and user-guide entry.
+
+## Thanks to our Contributors
+
 This release contains contributions from:
 
-mawbray, pakhaykwok, AlexGoodallAI, uri-granta
-
-# Release 2.10.2
-
-This release introduces hierarchical kernels enabling modelling of functions on disjunctive domains. 
+mawbray, pakhaykwok, AlexGoodallAI
 
 
 # Release 2.10.1
