@@ -243,14 +243,14 @@ jobs:
       - image: cimg/python:<<pipeline.parameters.max_py_ver>>
         environment:
           DOCS: True  # This is used in gpflow/ci_utils.py
-    parallelism: 12
+    parallelism: 20
     steps:
       - checkout
       - attach_workspace:
           at: /tmp/
       - run:
           name: Build notebooks
-          no_output_timeout: 90m
+          no_output_timeout: 60m
           command: |
             source /tmp/<<pipeline.parameters.max_venv_dir>>/bin/activate
             mkdir -p /tmp/gpflow_build_docs
