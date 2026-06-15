@@ -16,10 +16,12 @@
 This module provides covariance functions that respect an activation
 structure on the input space: a point whose conditional feature is
 *inactive* is not treated as equivalent to one whose feature is
-*active and equal in value*.
+*active and equal in value*. Great for learning functions for use
+in generalised disjunctive programming frameworks
 """
 
 import abc
+from collections import Counter
 from dataclasses import dataclass, field
 from typing import Dict, List, Mapping, Optional, Sequence, Tuple
 
@@ -49,17 +51,6 @@ def _check_non_negative_unique(values: Sequence[int], name: str) -> None:
         raise ValueError(f"`{name}` contains duplicate entries: {list(values)}.")
 
 
-def _vector_sigmoid(low: float, high: float, n: int) -> tfp.bijectors.Sigmoid:
-    """A ``Sigmoid`` bijector whose ``low``/``high`` are length-``n`` vectors, so
-    per-element bounds line up with an ``[n]``-shaped Parameter (e.g. for
-    bound-aware multistart restart sampling)."""
-    ones = tf.ones(n, dtype=default_float())
-    return tfp.bijectors.Sigmoid(
-        low=to_default_float(low) * ones,
-        high=to_default_float(high) * ones,
-    )
-
-
 def _active_dims_width(active_dims: NormalizedActiveDims) -> Optional[int]:
     """Number of columns selected by ``active_dims``, or ``None`` if it cannot
     be determined without knowing the input dimension (an open-ended slice)."""
@@ -71,7 +62,7 @@ def _active_dims_width(active_dims: NormalizedActiveDims) -> Optional[int]:
         start = 0 if active_dims.start is None else active_dims.start
         step = 1 if active_dims.step is None else active_dims.step
         return len(range(start, active_dims.stop, step))
-    return None
+    return None  # pragma: no cover -- unreachable: _normalize_active_dims yields slice|ndarray
 
 
 @dataclass(frozen=True)
@@ -139,7 +130,7 @@ class HierarchyNode:
             )
 
         bounds = tf.convert_to_tensor(self.feature_bounds, dtype=tf.float64)
-        if bounds.shape.rank != 2 or bounds.shape[0] != len(feature_dims) or bounds.shape[1] != 2:
+        if bounds.shape != tf.TensorShape([len(feature_dims), 2]):
             raise ValueError(
                 f"`feature_bounds` of node {self.name!r} must have shape "
                 f"[len(feature_dims), 2] = [{len(feature_dims)}, 2]; got "
@@ -171,12 +162,19 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         is deep-copied via :func:`gpflow.utilities.deepcopy` before use, so
         the caller's object is never mutated. Its ``lengthscales`` must be
         scalar or have shape ``(2 * n_cond + n_uncond,)`` matching the
-        embedded dimension; the copy's lengthscales are then forced to 1
-        and set non-trainable, because the per-conditional-column
-        parameters of the concrete subclass (e.g. ``angle`` / ``radius``
-        for ``ArcHierarchical`` or ``theta1`` / ``theta2`` for
-        ``WedgeHierarchical``) already carry the scale of each embedded
-        dimension.
+        embedded dimension; on the copy they are then forced to 1 and set
+        non-trainable. The conditional dimensions carry their scale via the
+        per-conditional-column parameters of the concrete subclass (e.g.
+        ``angle`` / ``radius`` for ``ArcHierarchical`` or ``theta1`` /
+        ``theta2`` for ``WedgeHierarchical``). The unconditional dimensions'
+        scale is carried by the learnable :attr:`uncond_lengthscales`
+        Parameter (shape ``(n_uncond,)``, positive transform). When
+        ``base_kernel.lengthscales`` is supplied with shape
+        ``(2 * n_cond + n_uncond,)`` the first ``n_uncond`` entries (which
+        match the ``[uncond | cond]`` layout produced by ``_embed``) are used
+        as the initial values for :attr:`uncond_lengthscales`; otherwise it
+        is initialised to ones. When ``n_uncond == 0`` the attribute is
+        ``None``.
     :param active_dims: required. ``feature_dims`` and
         :class:`ActivityCondition` keys are interpreted in the sliced
         coordinate system. When :meth:`__call__` receives inputs, the slice
@@ -205,8 +203,9 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         if not hierarchy:
             raise ValueError("`hierarchy` must contain at least one node.")
         names = [node.name for node in hierarchy]
-        if len(set(names)) != len(names):
-            raise ValueError(f"`hierarchy` contains duplicate node names: {names}.")
+        duplicate_names = [name for name, count in Counter(names).items() if count > 1]
+        if duplicate_names:
+            raise ValueError(f"`hierarchy` contains duplicate node names: {duplicate_names}.")
 
         flat_feature_dims: List[int] = []
         flat_bounds_rows: List[tf.Tensor] = []
@@ -244,13 +243,6 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
                 "construction: pass a sequence of column indices, or a "
                 "`slice` whose `stop` is concrete; "
                 f"got {self._active_dims!r}."
-            )
-        if width != n_expected:
-            raise ValueError(
-                f"`active_dims` selects {width} column(s), but the hierarchy "
-                f"defines {self._n_feat} feature dimension(s) and "
-                f"{self._n_ind} indicator dimension(s) (total {n_expected}); "
-                f"`active_dims` must select exactly that many columns."
             )
         if list(range(width)) != sorted(flat_feature_dims + indicator_dims):
             raise ValueError(
@@ -298,6 +290,19 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
                 f"`base_kernel.lengthscales` must be scalar or have shape "
                 f"({d_embed},) to match the embedded dimension "
                 f"`2 * n_cond + n_uncond`; got shape {ls_shape}."
+            )
+
+        self.uncond_lengthscales: Optional[Parameter] = None
+        if self._n_uncond > 0:
+            ls_np = base_kernel.lengthscales.numpy()
+            if ls_shape == (d_embed,):
+                uncond_ls_init = ls_np[: self._n_uncond]
+            else:
+                uncond_ls_init = np.ones(self._n_uncond, dtype=ls_np.dtype)
+            self.uncond_lengthscales = Parameter(
+                uncond_ls_init,
+                transform=positive(),
+                name="uncond_lengthscales",
             )
 
         base_kernel.lengthscales.assign(tf.ones_like(base_kernel.lengthscales))
@@ -353,12 +358,12 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         "X: [batch..., N, D]", "return: [batch..., N, D_f]"
     )  # D_f is feature_dims (i.e. D_cond + D_uncond)
     def _normalise(self, X: TensorType) -> tf.Tensor:
-        X_cast = tf.cast(X, self._bounds.dtype)
-        v = tf.gather(X_cast, self._feature_dims, axis=-1)
+        v = tf.gather(X, self._feature_dims, axis=-1)
         lo, hi = self._bounds[:, 0], self._bounds[:, 1]
-        rng = hi - lo
+        lo_cast, hi_cast = tf.cast(lo, v.dtype), tf.cast(hi, v.dtype)
+        rng = hi_cast - lo_cast
         safe_rng = tf.where(tf.abs(rng) < 1e-12, tf.ones_like(rng), rng)
-        return (v - lo) / safe_rng
+        return (v - lo_cast) / safe_rng
 
     @abc.abstractmethod
     @check_shapes(
@@ -374,16 +379,16 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         m_float = tf.cast(self._build_activity_mask(X), v.dtype)
         parts = []
         if self._n_uncond > 0:
-            parts.append(tf.gather(v, self._uncond_local_idx, axis=-1))
+            v_unc = tf.gather(v, self._uncond_local_idx, axis=-1)
+            parts.append(v_unc / self.uncond_lengthscales)
         if self._n_cond > 0:
             v_c = tf.gather(v, self._cond_local_idx, axis=-1)
             m_c = tf.gather(m_float, self._cond_local_idx, axis=-1)
             parts.append(self._embed_conditional(v_c, m_c))
-        if (
-            not parts
-        ):  # pragma: no subspace activated - unreachable: enforced by HierarchyNode/__init__
-            shape = tf.concat([tf.shape(X)[:-1], [0]], axis=0)
-            return tf.zeros(shape, dtype=v.dtype)
+        if not parts:
+            # Unreachable: HierarchyNode/__init__ guarantee >= 1 feature column.
+            shape = tf.concat([tf.shape(X)[:-1], [0]], axis=0)  # pragma: no cover
+            return tf.zeros(shape, dtype=v.dtype)  # pragma: no cover
         return tf.concat(parts, axis=-1)
 
     @inherit_check_shapes
@@ -437,7 +442,7 @@ class ArcHierarchical(HierarchicalEmbeddingKernel):
         if self._n_cond > 0:
             self.angle = Parameter(
                 0.5 * tf.ones(self._n_cond, dtype=default_float()),
-                transform=_vector_sigmoid(0.1, 0.9, self._n_cond),
+                transform=tfp.bijectors.Sigmoid(to_default_float(0.1), to_default_float(0.9)),
                 name="angle",
             )
             self.radius = Parameter(
@@ -494,7 +499,7 @@ class WedgeHierarchical(HierarchicalEmbeddingKernel):
             )
             self.rho = Parameter(
                 0.5 * np.pi * tf.ones(self._n_cond, dtype=default_float()),
-                transform=_vector_sigmoid(1e-6, np.pi, self._n_cond),
+                transform=tfp.bijectors.Sigmoid(to_default_float(1e-6), to_default_float(np.pi)),
                 name="rho",
             )
 
