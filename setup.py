@@ -17,7 +17,7 @@ requirements = [
     "numpy<2",
     "packaging",
     "scipy",
-    "setuptools>=41.0.0,<80.0.0",  # to satisfy dependency constraints, and dropping from >=82
+    "setuptools>=41.0.0",  # to satisfy dependency constraints
     "tabulate",
     "tensorflow-probability[tf]>=0.12.0",
     "tensorflow>=2.4.0; platform_system!='Darwin' or platform_machine!='arm64'",
