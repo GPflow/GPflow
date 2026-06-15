@@ -362,7 +362,9 @@ def plot_2d_kernel_samples(ax: Axes3D, kernel: gpflow.kernels.Kernel) -> None:
     ax.set_title("Example $f$")
 
 
-def plot_2d_kernel_prediction(ax: Axes3D, kernel: gpflow.kernels.Kernel) -> None:
+def plot_2d_kernel_prediction(
+    ax: Axes3D, kernel: gpflow.kernels.Kernel
+) -> None:
     n_grid = 30
     # hide: begin
     # fmt: off
