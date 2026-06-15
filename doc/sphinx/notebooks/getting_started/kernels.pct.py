@@ -40,7 +40,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 from matplotlib.axes import Axes
-from matplotlib.cm import coolwarm
+from mpl_toolkits.mplot3d import Axes3D
 
 import gpflow
 
@@ -194,7 +194,7 @@ plot_kernel_prediction(ax, gpflow.kernels.Matern12())
 plot_kernel_prediction(ax, gpflow.kernels.Matern32())
 plot_kernel_prediction(ax, gpflow.kernels.Matern52())
 plot_kernel_prediction(ax, gpflow.kernels.SquaredExponential())
-_ = ax.legend()
+_ = ax.legend()  # type: ignore[assignment]
 
 # hide: begin
 _reset_fig_height()
@@ -344,7 +344,7 @@ plot_kernel(
 # Let us define a function to plot a kernel with 2D input:
 
 # %%
-def plot_2d_kernel_samples(ax: Axes, kernel: gpflow.kernels.Kernel) -> None:
+def plot_2d_kernel_samples(ax: Axes3D, kernel: gpflow.kernels.Kernel) -> None:
     n_grid = 30
     X = np.zeros((0, 2))
     Y = np.zeros((0, 1))
@@ -358,11 +358,11 @@ def plot_2d_kernel_samples(ax: Axes, kernel: gpflow.kernels.Kernel) -> None:
     tf.random.set_seed(20220903)
     fs = model.predict_f_samples(Xplot, num_samples=1)
     fs = fs.numpy().reshape((n_grid, n_grid))
-    ax.plot_surface(Xplot1, Xplot2, fs, cmap=coolwarm)
+    ax.plot_surface(Xplot1, Xplot2, fs, cmap="coolwarm")
     ax.set_title("Example $f$")
 
 
-def plot_2d_kernel_prediction(ax: Axes, kernel: gpflow.kernels.Kernel) -> None:
+def plot_2d_kernel_prediction(ax: Axes3D, kernel: gpflow.kernels.Kernel) -> None:
     n_grid = 30
     # hide: begin
     # fmt: off
@@ -391,7 +391,7 @@ def plot_2d_kernel_prediction(ax: Axes, kernel: gpflow.kernels.Kernel) -> None:
 
     f_mean, _ = model.predict_f(Xplot, full_cov=False)
     f_mean = f_mean.numpy().reshape((n_grid, n_grid))
-    ax.plot_surface(Xplot1, Xplot2, f_mean, cmap=coolwarm, alpha=0.7)
+    ax.plot_surface(Xplot1, Xplot2, f_mean, cmap="coolwarm", alpha=0.7)
     ax.scatter(X[:, 0], X[:, 1], Y[:, 0], s=50, c="black")
     ax.set_title("Example data fit")
 

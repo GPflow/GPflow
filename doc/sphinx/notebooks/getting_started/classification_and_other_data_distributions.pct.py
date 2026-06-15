@@ -243,7 +243,7 @@ gpflow.utilities.print_summary(model, "notebook")
 Xplot = np.linspace(0, 1, 200)[:, None]
 Fsamples = model.predict_f_samples(Xplot, 10).numpy().squeeze().T
 
-_ = plt.plot(Xplot, Fsamples, "C0", lw=0.5)
+_ = plt.plot(Xplot, Fsamples, "C0", lw=0.5)  # type: ignore[assignment]
 
 # %% [markdown]
 # How do we interpret this? Remember these are $f$ samples from before they're "squished" into the $[0; 1]$ range. The `likelihood.invlink` function implements the above-mentioned cumulative density function that is used to perform the "squishing". We can use this to map our $f$ samples to probabilities:

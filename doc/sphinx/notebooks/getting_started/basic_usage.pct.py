@@ -177,7 +177,7 @@ plt.plot(Xplot, y_upper, ".", color="C0")
 plt.fill_between(
     Xplot[:, 0], y_lower[:, 0], y_upper[:, 0], color="C0", alpha=0.1
 )
-_ = plt.legend()
+_ = plt.legend()  # type: ignore[assignment]
 
 # %% [markdown]
 # Notice how the confidence of $f$ is greater when you're further away from our data, and smaller near the data. Notice also how we're more certain about $f$ than about $Y$; sometimes we're even certain that $f$ lies away from a data point.
