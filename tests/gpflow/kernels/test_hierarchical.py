@@ -945,8 +945,10 @@ class TestArcHierarchical:
         # Bounds must be [n_cond] vectors so a multistart scheme that samples
         # `tf.random.uniform(bijector.low.shape, ...)` gets a per-column restart.
         kernel = _arc()
-        low = kernel.angle.transform.low
-        high = kernel.angle.transform.high
+        transform = kernel.angle.transform
+        assert transform is not None
+        low = transform.low
+        high = transform.high
         assert tuple(low.shape) == (2,)
         assert tuple(high.shape) == (2,)
         np.testing.assert_allclose(low.numpy(), [0.1, 0.1])
@@ -955,7 +957,9 @@ class TestArcHierarchical:
     def test_angle_multistart_restart_roundtrip(self) -> None:
         kernel = _arc()
         param = kernel.angle
-        low, high = param.transform.low, param.transform.high
+        transform = param.transform
+        assert transform is not None
+        low, high = transform.low, transform.high
         sample = tf.random.uniform(low.shape, minval=low, maxval=high, dtype=low.dtype)
         assert tuple(sample.shape) == (2,)
         param.assign(sample)
@@ -1042,8 +1046,10 @@ class TestWedgeHierarchical:
         # Bounds must be [n_cond] vectors so a multistart scheme that samples
         # `tf.random.uniform(bijector.low.shape, ...)` gets a per-column restart.
         kernel = _wedge()
-        low = kernel.rho.transform.low
-        high = kernel.rho.transform.high
+        transform = kernel.rho.transform
+        assert transform is not None
+        low = transform.low
+        high = transform.high
         assert tuple(low.shape) == (2,)
         assert tuple(high.shape) == (2,)
         np.testing.assert_allclose(low.numpy(), [1e-6, 1e-6])
@@ -1052,7 +1058,9 @@ class TestWedgeHierarchical:
     def test_rho_multistart_restart_roundtrip(self) -> None:
         kernel = _wedge()
         param = kernel.rho
-        low, high = param.transform.low, param.transform.high
+        transform = param.transform
+        assert transform is not None
+        low, high = transform.low, transform.high
         sample = tf.random.uniform(low.shape, minval=low, maxval=high, dtype=low.dtype)
         assert tuple(sample.shape) == (2,)
         param.assign(sample)
