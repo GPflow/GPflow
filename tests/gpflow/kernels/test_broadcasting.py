@@ -164,12 +164,14 @@ def test_broadcasting(
     rank2 = len(batch2_shape) - 1
 
     if isinstance(kernel, kernels.MultioutputKernel):
-        mo_kernel = cast(kernels.MultioutputKernel, kernel)  # type: ignore[redundant-cast]
+        mo_kernel: kernels.MultioutputKernel = kernel
 
         loop = cs(
             unroll_batches(
                 lambda x: unroll_batches(
-                    lambda x2: mo_kernel(x, x2, full_cov=True, full_output_cov=True), X2, 2
+                    lambda x2: mo_kernel(x, x2, full_cov=True, full_output_cov=True),
+                    X2,
+                    2,
                 ),
                 X,
                 2,
@@ -200,7 +202,9 @@ def test_broadcasting(
         loop = cs(
             unroll_batches(
                 lambda x: unroll_batches(
-                    lambda x2: mo_kernel(x, x2, full_cov=True, full_output_cov=False), X2, 2
+                    lambda x2: mo_kernel(x, x2, full_cov=True, full_output_cov=False),
+                    X2,
+                    2,
                 ),
                 X,
                 2,
@@ -274,7 +278,9 @@ def test_broadcasting(
     else:  # Single-output kernel:
         loop = cs(
             unroll_batches(
-                lambda x: unroll_batches(lambda x2: kernel(x, x2, full_cov=True), X2, 2), X, 2
+                lambda x: unroll_batches(lambda x2: kernel(x, x2, full_cov=True), X2, 2),
+                X,
+                2,
             ),
             "[batch..., batch2..., N, N2]",
         )
@@ -282,7 +288,12 @@ def test_broadcasting(
             tf.transpose(
                 loop,
                 tf.concat(
-                    [np.arange(rank), [rank + rank2], np.arange(rank2) + rank, [rank + rank2 + 1]],
+                    [
+                        np.arange(rank),
+                        [rank + rank2],
+                        np.arange(rank2) + rank,
+                        [rank + rank2 + 1],
+                    ],
                     0,
                 ),
             ),

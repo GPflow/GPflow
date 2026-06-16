@@ -85,7 +85,7 @@ commands:
       - run:
           name: Upload coverage report
           command: |
-            curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import # One-time step
+            curl https://keybase.io/codecovsecops/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import
             curl -Os "https://uploader.codecov.io/latest/linux/codecov"
             curl -Os "https://uploader.codecov.io/latest/linux/codecov.SHA256SUM"
             curl -Os "https://uploader.codecov.io/latest/linux/codecov.SHA256SUM.sig"
@@ -243,14 +243,14 @@ jobs:
       - image: cimg/python:<<pipeline.parameters.max_py_ver>>
         environment:
           DOCS: True  # This is used in gpflow/ci_utils.py
-    parallelism: 10
+    parallelism: 12
     steps:
       - checkout
       - attach_workspace:
           at: /tmp/
       - run:
           name: Build notebooks
-          no_output_timeout: 60m
+          no_output_timeout: 90m
           command: |
             source /tmp/<<pipeline.parameters.max_venv_dir>>/bin/activate
             mkdir -p /tmp/gpflow_build_docs
