@@ -51,6 +51,17 @@ def _check_non_negative_unique(values: Sequence[int], name: str) -> None:
         raise ValueError(f"`{name}` contains duplicate entries: {list(values)}.")
 
 
+def _vector_sigmoid(low: float, high: float, n: int) -> tfp.bijectors.Sigmoid:
+    """A ``Sigmoid`` bijector whose ``low``/``high`` are length-``n`` vectors, so
+    per-element bounds line up with an ``[n]``-shaped Parameter (e.g. for
+    bound-aware multistart restart sampling)."""
+    ones = tf.ones(n, dtype=default_float())
+    return tfp.bijectors.Sigmoid(
+        low=to_default_float(low) * ones,
+        high=to_default_float(high) * ones,
+    )
+
+
 def _active_dims_width(active_dims: NormalizedActiveDims) -> Optional[int]:
     """Number of columns selected by ``active_dims``, or ``None`` if it cannot
     be determined without knowing the input dimension (an open-ended slice)."""
@@ -442,7 +453,7 @@ class ArcHierarchical(HierarchicalEmbeddingKernel):
         if self._n_cond > 0:
             self.angle = Parameter(
                 0.5 * tf.ones(self._n_cond, dtype=default_float()),
-                transform=tfp.bijectors.Sigmoid(to_default_float(0.1), to_default_float(0.9)),
+                transform=_vector_sigmoid(0.1, 0.9, self._n_cond),
                 name="angle",
             )
             self.radius = Parameter(
@@ -499,7 +510,7 @@ class WedgeHierarchical(HierarchicalEmbeddingKernel):
             )
             self.rho = Parameter(
                 0.5 * np.pi * tf.ones(self._n_cond, dtype=default_float()),
-                transform=tfp.bijectors.Sigmoid(to_default_float(1e-6), to_default_float(np.pi)),
+                transform=_vector_sigmoid(1e-6, np.pi, self._n_cond),
                 name="rho",
             )
 

@@ -941,6 +941,44 @@ class TestArcHierarchical:
         kernel = _arc()
         np.testing.assert_allclose(kernel.radius.numpy(), [1.0, 1.0])
 
+    def test_angle_sigmoid_bounds_are_per_conditional_vectors(self) -> None:
+        # Bounds must be [n_cond] vectors so a multistart scheme that samples
+        # `tf.random.uniform(bijector.low.shape, ...)` gets a per-column restart.
+        kernel = _arc()
+        transform = kernel.angle.transform
+        assert transform is not None
+        low = transform.low
+        high = transform.high
+        assert tuple(low.shape) == (2,)
+        assert tuple(high.shape) == (2,)
+        np.testing.assert_allclose(low.numpy(), [0.1, 0.1])
+        np.testing.assert_allclose(high.numpy(), [0.9, 0.9])
+
+    def test_angle_multistart_restart_roundtrip(self) -> None:
+        kernel = _arc()
+        param = kernel.angle
+        transform = param.transform
+        assert transform is not None
+        low, high = transform.low, transform.high
+        sample = tf.random.uniform(low.shape, minval=low, maxval=high, dtype=low.dtype)
+        assert tuple(sample.shape) == (2,)
+        param.assign(sample)
+        assert tuple(param.shape) == (2,)
+        assert np.all(param.numpy() >= low.numpy())
+        assert np.all(param.numpy() <= high.numpy())
+        X = tf.constant(
+            [
+                [0.5, 1.0, 2.5, 0.0],
+                [0.5, 0.0, 2.5, 0.5],
+                [0.3, 1.0, 4.0, 0.0],
+            ],
+            dtype=tf.float64,
+        )
+        K = kernel.K(X).numpy()
+        assert np.all(np.isfinite(K))
+        eigs = np.linalg.eigvalsh(K + 1e-10 * np.eye(3))
+        assert eigs.min() > -1e-8
+
     def test_K_shape_and_psd(self) -> None:
         kernel = _arc()
         X = tf.constant(
@@ -1003,6 +1041,44 @@ class TestWedgeHierarchical:
     def test_rho_initialised_to_half_pi(self) -> None:
         kernel = _wedge()
         np.testing.assert_allclose(kernel.rho.numpy(), [np.pi / 2, np.pi / 2])
+
+    def test_rho_sigmoid_bounds_are_per_conditional_vectors(self) -> None:
+        # Bounds must be [n_cond] vectors so a multistart scheme that samples
+        # `tf.random.uniform(bijector.low.shape, ...)` gets a per-column restart.
+        kernel = _wedge()
+        transform = kernel.rho.transform
+        assert transform is not None
+        low = transform.low
+        high = transform.high
+        assert tuple(low.shape) == (2,)
+        assert tuple(high.shape) == (2,)
+        np.testing.assert_allclose(low.numpy(), [1e-6, 1e-6])
+        np.testing.assert_allclose(high.numpy(), [np.pi, np.pi])
+
+    def test_rho_multistart_restart_roundtrip(self) -> None:
+        kernel = _wedge()
+        param = kernel.rho
+        transform = param.transform
+        assert transform is not None
+        low, high = transform.low, transform.high
+        sample = tf.random.uniform(low.shape, minval=low, maxval=high, dtype=low.dtype)
+        assert tuple(sample.shape) == (2,)
+        param.assign(sample)
+        assert tuple(param.shape) == (2,)
+        assert np.all(param.numpy() >= low.numpy())
+        assert np.all(param.numpy() <= high.numpy())
+        X = tf.constant(
+            [
+                [0.5, 1.0, 2.5, 0.0],
+                [0.5, 0.0, 2.5, 0.5],
+                [0.3, 1.0, 4.0, 0.0],
+            ],
+            dtype=tf.float64,
+        )
+        K = kernel.K(X).numpy()
+        assert np.all(np.isfinite(K))
+        eigs = np.linalg.eigvalsh(K + 1e-10 * np.eye(3))
+        assert eigs.min() > -1e-8
 
     def test_K_shape_and_psd(self) -> None:
         kernel = _wedge()
