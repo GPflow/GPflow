@@ -33,35 +33,19 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
-# Release 2.11.0 (next release)
+# Release 2.11.1
 
-<INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
-
-## Breaking Changes
-
-* <DOCUMENT BREAKING CHANGES HERE>
-* <THIS SECTION SHOULD CONTAIN API AND BEHAVIORAL BREAKING CHANGES>
-
-## Known Caveats
-
-* <CAVEATS REGARDING THE RELEASE (BUT NOT BREAKING CHANGES).>
-* <ADDING/BUMPING DEPENDENCIES SHOULD GO HERE>
-* <KNOWN LACK OF SUPPORT ON SOME PLATFORM SHOULD GO HERE>
-
-## Major Features and Improvements
-
-* <INSERT MAJOR FEATURE HERE, USING MARKDOWN SYNTAX>
-* <IF RELEASE CONTAINS MULTIPLE FEATURES FROM SAME AREA, GROUP THEM TOGETHER>
+This release fixes a bug in the hierarchical kernels introduced in 2.11.0.
 
 ## Bug Fixes and Other Changes
 
-* <SIMILAR TO ABOVE SECTION, BUT FOR OTHER IMPORTANT CHANGES / BUG FIXES>
-* <IF A CHANGE CLOSES A GITHUB ISSUE, IT SHOULD BE DOCUMENTED HERE>
-* <NOTES SHOULD BE GROUPED PER AREA>
+* Fix `ArcHierarchical` and `WedgeHierarchical` parameter bounds to be per-conditional-column vectors rather than scalars, enabling correct multistart hyperparameter sampling (e.g. via `randomize_hyperparameters`).
 
 ## Thanks to our Contributors
 
-<INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
+This release contains contributions from:
+
+mawbray
 
 
 # Release 2.11.0
