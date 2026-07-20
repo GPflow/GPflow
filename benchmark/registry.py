@@ -50,7 +50,7 @@ class Registry(Generic[N]):
         """
         assert (
             member.name not in self._members
-        ), f"{member} already registred under name {member.name}."
+        ), f"{member} already registered under name {member.name}."
         self._members[member.name] = member
         return member
 
