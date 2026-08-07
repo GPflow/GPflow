@@ -32,6 +32,12 @@
 # `ArcHierarchical` (Swersky et al., 2014) and `WedgeHierarchical`
 # (Horn et al., 2019) — on a small synthetic disjunctive function.
 #
+# These are ordinary kernels, so they are not restricted to the `GPR` used
+# below. See [classification on a hierarchical search
+# space](hierarchical_classification.ipynb) for how to combine one with a
+# non-Gaussian likelihood in `VGP` and `SVGP`, and for the practical details of
+# doing so.
+#
 # ## Worked example: fit a GP on a synthetic disjunctive function
 #
 # $$f(x_1, y_1, x_2, x_3) =

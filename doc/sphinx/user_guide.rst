@@ -176,3 +176,10 @@ How to optimize the variational approximate posterior's parameters.
    notebooks/advanced/hierarchical_kernels
 
 How to model hierarchical (conditional / disjunctive) search spaces, where some input dimensions are only meaningful when an indicator variable takes a particular value, using the ``ArcHierarchical`` and ``WedgeHierarchical`` kernels.
+
+.. toctree::
+   :maxdepth: 1
+
+   notebooks/advanced/hierarchical_classification
+
+How to combine a hierarchical kernel with a ``Bernoulli`` likelihood to build a classifier over a conditional search space, covering the ``active_dims`` contract, which kernel hyperparameters are trainable, and how inducing points behave in ``SVGP``.
