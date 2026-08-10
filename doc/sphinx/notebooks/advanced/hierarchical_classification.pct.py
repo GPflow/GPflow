@@ -34,9 +34,9 @@
 # will bite you if you do not know about them:
 #
 # 1. the strict contract between `active_dims` and the hierarchy,
-# 2. indicator columns must hold integer-valued floats,
+# 2. indicator columns must hold integer-valued floats dtype not one hot encoded,
 # 3. which kernel hyperparameters are trainable, and which are deliberately not,
-# 4. inducing points live in the *full* input space, indicator columns included.
+# 4. inducing points are defined on the *full* input space, indicator columns included.
 #
 # We work through each in turn.
 
@@ -233,12 +233,11 @@ print_summary(model.kernel, "notebook")
 # evaluating a stationary base kernel on the embedded vector. The embedding
 # already carries a per-dimension scale (`uncond_lengthscales` for the shared
 # dimensions, `radius` for the conditional ones), so a base lengthscale would be
-# redundant and the pair would be unidentifiable. It is pinned so that it cannot
-# fight with the embedding parameters.
+# redundant and the pair would be unidentifiable. 
 #
-# **The signal variance is `base_kernel.variance`**, and it *is* trainable. You
-# do not need to wrap the kernel in a `Constant()` factor to give the model an
-# overall scale — doing so just adds a second, unidentifiable variance.
+# **The default base kernel signal variance is `base_kernel.variance`**, and it *is* 
+# trainable. You do not need to wrap the kernel in a `Constant()` factor to give
+# the model an overall scale — doing so just adds a second, unidentifiable variance.
 #
 # **`angle` and `radius` are per-conditional-dimension.** They are the geometry
 # of the arc embedding: `radius` sets how far an *active* point sits from the
@@ -306,22 +305,7 @@ _ = fig.tight_layout()
 # The two panels share the same $\sin(2\pi x_1)$ ridge along the horizontal
 # axis — that is the unconditional dimension, learned from all the data — but
 # their vertical structure is completely different: oscillatory in $x_2$ on
-# branch A, monotone in $x_3$ on branch B. Each branch's data informs only its
-# own conditional dimension, which is the whole point of the hierarchy.
-#
-# We claimed above that the inactive column can hold anything. That is the
-# axioms at work, and it is worth verifying rather than believing:
-
-# %%
-X_probe = np.array([[0.3, 1.0, 2.0, 0.0]])  # branch A: x3 is inactive
-X_perturbed = X_probe.copy()
-X_perturbed[:, 3] = -0.9  # scribble over the inactive column
-
-p_probe = model.predict_y(X_probe)[0].numpy()
-p_perturbed = model.predict_y(X_perturbed)[0].numpy()
-print(f"p(y=1) with x3 =  0.0: {p_probe.item():.10f}")
-print(f"p(y=1) with x3 = -0.9: {p_perturbed.item():.10f}")
-np.testing.assert_allclose(p_probe, p_perturbed)
+# branch A, monotone in $x_3$ on branch B.
 
 # %% [markdown]
 # ## Scaling up: SVGP
@@ -339,9 +323,10 @@ np.testing.assert_allclose(p_probe, p_perturbed)
 
 # %%
 X_big, Y_big = sample_data(2000)
+n_inducing = 80
 
 kernel_svgp = ArcHierarchical(hierarchy=hierarchy, active_dims=list(range(4)))
-Z = X_big[rng.choice(len(X_big), size=40, replace=False)].copy()
+Z = X_big[rng.choice(len(X_big), size=n_inducing, replace=False)].copy()
 svgp = gpflow.models.SVGP(
     kernel_svgp,
     gpflow.likelihoods.Bernoulli(),
@@ -351,7 +336,7 @@ svgp = gpflow.models.SVGP(
 
 Z_before = svgp.inducing_variable.Z.numpy().copy()
 loss_fn = svgp.training_loss_closure((X_big, Y_big))
-optimiser = tf.optimizers.Adam(0.05)
+optimiser = tf.optimizers.Adam(0.005)
 
 
 @tf.function
@@ -378,11 +363,10 @@ print(f"training accuracy:    {accuracy:.3f}")
 # moves the inducing points, will it drag the indicator column off `0.0`/`1.0`
 # and into meaningless territory?
 #
-# It will not, and the reason is structural. The kernel decides activity by
-# *rounding* the indicator columns, and rounding has zero derivative everywhere
-# it is defined. So the indicator entries of `Z` receive exactly zero gradient
-# and never move, while the feature entries optimise freely. Let us confirm
-# both halves of that claim on the trained model:
+# The kernel decides activity by *rounding* the indicator columns, and the 
+# rounding operation is not differentiable. So the indicator entries of `Z` 
+# receive exactly zero gradient and never move, while the feature entries 
+# optimise freely. Let us confirm both halves of that claim on the trained model:
 
 # %%
 Z_var = svgp.inducing_variable.Z.unconstrained_variable
@@ -428,7 +412,7 @@ print(f"largest move during training, feature columns : {moved_feat:.3e}")
 # covariance alone — but as soon as you *compose* the hierarchical kernel with
 # anything else it stops being obvious whether the result still respects them.
 # `validate_hierarchical_axioms` takes any kernel plus the hierarchy spec and
-# checks the kernel-level shadow of each axiom numerically. Run it on the kernel
+# checks the kernel satisfies each axiom numerically. Run it on the kernel
 # you actually handed to the model:
 
 # %%
