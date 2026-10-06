@@ -197,3 +197,33 @@ def test_stochastic_gradients(
     model_1 = training_loop(indices_1, num_data=num_data1, max_iter=max_iter)
     model_2 = training_loop(indices_2, num_data=num_data2, max_iter=max_iter)
     assert _check_models_close(model_1, model_2)
+
+
+def test_non_finite_posterior_cholesky_raises() -> None:
+    """A collapsed ARD lengthscale on a binary column makes Kuu non-positive-definite.
+
+    The cached posterior factorises Kuu in BasePosterior._precompute.
+    """
+    data_rng = np.random.RandomState(0)
+    n = 10
+    binary = np.array([0.0, 1.0] * (n // 2))[:, None]
+    X = np.hstack([data_rng.randn(n, 2), binary])
+    Y = data_rng.randn(n, 1)
+    collapsed = gpflow.models.SVGP(
+        kernel=gpflow.kernels.SquaredExponential(lengthscales=[1.0, 1.0, 1e-8]),
+        likelihood=gpflow.likelihoods.Gaussian(),
+        inducing_variable=X,
+    )
+
+    with pytest.raises(
+        tf.errors.InvalidArgumentError, match="SVGP posterior Cholesky factor is non-finite"
+    ):
+        collapsed.posterior()
+
+    healthy = gpflow.models.SVGP(
+        kernel=gpflow.kernels.SquaredExponential(lengthscales=[1.0, 1.0, 1.0]),
+        likelihood=gpflow.likelihoods.Gaussian(),
+        inducing_variable=X,
+    )
+    mean, _ = healthy.predict_f(X[:2])
+    assert np.all(np.isfinite(mean))

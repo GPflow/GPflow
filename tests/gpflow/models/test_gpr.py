@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import numpy as np
+import pytest
 import tensorflow as tf
 
 import gpflow
@@ -73,3 +74,38 @@ def test_varying_data() -> None:
     assert (
         np.abs((old_lml - new_lml) / (new_lml + old_lml)) > 0.1
     ), "we expect the LML for different data to be significantly different"
+
+
+def test_non_finite_posterior_cholesky_raises() -> None:
+    """A collapsed ARD lengthscale on a binary column makes K non-positive-definite.
+
+    Cholesky then returns a NaN factor. Prediction and posterior construction
+    must raise rather than cache that factor and return NaN means.
+    """
+    data_rng = np.random.RandomState(0)
+    n = 10
+    binary = np.array([0.0, 1.0] * (n // 2))[:, None]
+    X = np.hstack([data_rng.randn(n, 2), binary])
+    Y = data_rng.randn(n, 1)
+    collapsed = gpflow.models.GPR(
+        (X, Y),
+        kernel=gpflow.kernels.SquaredExponential(lengthscales=[1.0, 1.0, 1e-8]),
+        noise_variance=1e-5,
+    )
+
+    with pytest.raises(
+        tf.errors.InvalidArgumentError, match="GPR posterior Cholesky factor is non-finite"
+    ):
+        collapsed.predict_f(X[:2])
+    with pytest.raises(
+        tf.errors.InvalidArgumentError, match="GPR posterior Cholesky factor is non-finite"
+    ):
+        collapsed.posterior()
+
+    healthy = gpflow.models.GPR(
+        (X, Y),
+        kernel=gpflow.kernels.SquaredExponential(lengthscales=[1.0, 1.0, 1.0]),
+        noise_variance=1e-5,
+    )
+    mean, _ = healthy.predict_f(X[:2])
+    assert np.all(np.isfinite(mean))

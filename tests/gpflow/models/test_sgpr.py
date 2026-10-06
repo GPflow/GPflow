@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import numpy as np
+import pytest
 import tensorflow as tf
 
 import gpflow
@@ -77,3 +78,38 @@ def test_sgpr_svgp_qu_equivivalent() -> None:
         svgp.predict_f(Xnew),
         atol=1e-4,
     )
+
+
+def test_non_finite_posterior_cholesky_raises() -> None:
+    """A collapsed ARD lengthscale on a binary column makes Kuu non-positive-definite."""
+    data_rng = np.random.RandomState(0)
+    n = 10
+    binary = np.array([0.0, 1.0] * (n // 2))[:, None]
+    X = np.hstack([data_rng.randn(n, 2), binary])
+    Y = data_rng.randn(n, 1)
+    collapsed = gpflow.models.SGPR(
+        (X, Y),
+        kernel=gpflow.kernels.SquaredExponential(lengthscales=[1.0, 1.0, 1e-8]),
+        inducing_variable=X,
+        noise_variance=1e-5,
+    )
+
+    with pytest.raises(
+        tf.errors.InvalidArgumentError,
+        match="SGPR posterior inducing Cholesky factor is non-finite",
+    ):
+        collapsed.predict_f(X[:2])
+    with pytest.raises(
+        tf.errors.InvalidArgumentError,
+        match="SGPR posterior inducing Cholesky factor is non-finite",
+    ):
+        collapsed.posterior()
+
+    healthy = gpflow.models.SGPR(
+        (X, Y),
+        kernel=gpflow.kernels.SquaredExponential(lengthscales=[1.0, 1.0, 1.0]),
+        inducing_variable=X,
+        noise_variance=1e-5,
+    )
+    mean, _ = healthy.predict_f(X[:2])
+    assert np.all(np.isfinite(mean))
