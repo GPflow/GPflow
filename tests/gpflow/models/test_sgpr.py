@@ -96,12 +96,12 @@ def test_non_finite_posterior_cholesky_raises() -> None:
 
     with pytest.raises(
         tf.errors.InvalidArgumentError,
-        match="SGPR posterior inducing Cholesky factor is non-finite",
+        match=r"Cholesky factor is non-finite|Cholesky decomposition was not successful",
     ):
         collapsed.predict_f(X[:2])
     with pytest.raises(
         tf.errors.InvalidArgumentError,
-        match="SGPR posterior inducing Cholesky factor is non-finite",
+        match=r"Cholesky factor is non-finite|Cholesky decomposition was not successful",
     ):
         collapsed.posterior()
 

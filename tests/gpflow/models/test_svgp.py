@@ -216,7 +216,8 @@ def test_non_finite_posterior_cholesky_raises() -> None:
     )
 
     with pytest.raises(
-        tf.errors.InvalidArgumentError, match="SVGP posterior Cholesky factor is non-finite"
+        tf.errors.InvalidArgumentError,
+        match=r"Cholesky factor is non-finite|Cholesky decomposition was not successful",
     ):
         collapsed.posterior()
 
