@@ -291,10 +291,12 @@ class ReducingCombination(Combination):
         )
 
     def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
-        return self._reduce([k.K(X, X2) for k in self.kernels])
+        # Evaluate via Kernel.__call__ so each child applies its own active_dims slicing.
+        return self._reduce([k(X, X2, full_cov=True) for k in self.kernels])
 
     def K_diag(self, X: TensorType) -> tf.Tensor:
-        return self._reduce([k.K_diag(X) for k in self.kernels])
+        # Evaluate via Kernel.__call__ so each child applies its own active_dims slicing.
+        return self._reduce([k(X, full_cov=False) for k in self.kernels])
 
     @property
     @abc.abstractmethod
