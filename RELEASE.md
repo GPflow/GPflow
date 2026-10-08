@@ -33,6 +33,26 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
+# Release 2.11.2 (unreleased)
+
+This release adds support for TensorFlow 2.18.
+
+## Known Caveats
+
+* GPflow no longer depends on `tensorflow-macos` on Apple Silicon Macs, as that package is no longer released after TensorFlow 2.16. The regular `tensorflow` package is used on all platforms instead. Note that it only provides Apple Silicon wheels for TensorFlow 2.13 and later.
+
+## Bug Fixes and Other Changes
+
+* Support and test against TensorFlow 2.18 (and TensorFlow Probability 0.25).
+* Test the production configuration against Python 3.11.
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+uri-granta
+
+
 # Release 2.11.1
 
 This release fixes a bug in the hierarchical kernels introduced in 2.11.0.
