@@ -420,6 +420,7 @@ class GPRPosterior(AbstractPosterior):
         Kmm = self.kernel(X_data)
         Kmm_plus_s = add_likelihood_noise_cov(Kmm, self.likelihood, X_data)
         Lm = tf.linalg.cholesky(Kmm_plus_s)
+        tf.debugging.check_numerics(Lm, "GPR posterior Cholesky factor is non-finite")
 
         D = err.shape[1]
         M = X_data.shape[0]
@@ -531,11 +532,13 @@ class SGPRPosterior(AbstractPosterior):
         sigma = tf.sqrt(sigma_sq)
 
         L = tf.linalg.cholesky(kuu)  # cache alpha, qinv
+        tf.debugging.check_numerics(L, "SGPR posterior inducing Cholesky factor is non-finite")
         A = tf.linalg.triangular_solve(L, kuf / sigma, lower=True)
         B = tf.linalg.matmul(A, A, transpose_b=True) + tf.eye(
             num_inducing, dtype=default_float()
         )  # cache qinv
         LB = tf.linalg.cholesky(B)  # cache alpha
+        tf.debugging.check_numerics(LB, "SGPR posterior Cholesky factor is non-finite")
         Aerr = tf.linalg.matmul(A, err / sigma[..., None])
         c = tf.linalg.triangular_solve(LB, Aerr, lower=True)
 
@@ -622,6 +625,7 @@ class VGPPosterior(AbstractPosterior):
             tf.shape(X_data)[-2], value=default_jitter(), dtype=X_data.dtype
         )  # [..., M, M]
         Lm = tf.linalg.cholesky(Kmm)
+        tf.debugging.check_numerics(Lm, "VGP posterior Cholesky factor is non-finite")
 
         M = X_data.shape[0]
         M_dynamic = M is None
@@ -701,6 +705,7 @@ class BasePosterior(AbstractPosterior):
         if Kuu.shape.ndims == 3:
             q_mu = tf.linalg.adjoint(self._q_dist.q_mu)[..., None]  # [..., R, M, 1]
         L = tf.linalg.cholesky(Kuu)
+        tf.debugging.check_numerics(L, "SVGP posterior Cholesky factor is non-finite")
 
         if not self.whiten:
             # alpha = Kuu⁻¹ q_mu

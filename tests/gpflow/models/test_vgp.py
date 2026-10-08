@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import numpy as np
+import pytest
 import tensorflow as tf
 
 import gpflow
@@ -59,3 +60,36 @@ def test_update_vgp_data() -> None:
 
     np.testing.assert_allclose(mean_before, mean_after, atol=1e-5)
     np.testing.assert_allclose(var_before, var_after, atol=1e-6)
+
+
+def test_non_finite_posterior_cholesky_raises() -> None:
+    """A collapsed ARD lengthscale on a binary column makes K non-positive-definite."""
+    data_rng = np.random.RandomState(0)
+    n = 10
+    binary = np.array([0.0, 1.0] * (n // 2))[:, None]
+    X = np.hstack([data_rng.randn(n, 2), binary])
+    Y = data_rng.randn(n, 1)
+    collapsed = gpflow.models.VGP(
+        (X, Y),
+        kernel=gpflow.kernels.SquaredExponential(lengthscales=[1.0, 1.0, 1e-8]),
+        likelihood=gpflow.likelihoods.Gaussian(),
+    )
+
+    with pytest.raises(
+        tf.errors.InvalidArgumentError,
+        match=r"Cholesky factor is non-finite|Cholesky decomposition was not successful",
+    ):
+        collapsed.predict_f(X[:2])
+    with pytest.raises(
+        tf.errors.InvalidArgumentError,
+        match=r"Cholesky factor is non-finite|Cholesky decomposition was not successful",
+    ):
+        collapsed.posterior()
+
+    healthy = gpflow.models.VGP(
+        (X, Y),
+        kernel=gpflow.kernels.SquaredExponential(lengthscales=[1.0, 1.0, 1.0]),
+        likelihood=gpflow.likelihoods.Gaussian(),
+    )
+    mean, _ = healthy.predict_f(X[:2])
+    assert np.all(np.isfinite(mean))
