@@ -33,7 +33,7 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
-# Release 2.11.2 (unreleased)
+# Release 2.11.2
 
 This release adds support for TensorFlow 2.18.
 
@@ -43,6 +43,7 @@ This release adds support for TensorFlow 2.18.
 
 ## Bug Fixes and Other Changes
 
+* Fix an issue with Tensorflow's Cholesky decomposition where it can fail silently.
 * Support and test against TensorFlow 2.18 (and TensorFlow Probability 0.25).
 * Test the production configuration against Python 3.11.
 
