@@ -124,7 +124,7 @@ lik = gpflow.likelihoods.SwitchedLikelihood(
 m = gpflow.models.VGP((X_augmented, Y_augmented), kernel=kern, likelihood=lik)
 
 # fit the covariance function parameters
-maxiter = reduce_in_tests(10000)
+maxiter = reduce_in_tests(8000)
 gpflow.optimizers.Scipy().minimize(
     m.training_loss,
     m.trainable_variables,
