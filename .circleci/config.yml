@@ -71,6 +71,12 @@ commands:
           at: /tmp/
       - run:
           name: Run tests
+          environment:
+            # The container is limited to 2 CPUs, but TensorFlow sees all of the host's cores and
+            # creates too many threads, which slows down the tests dramatically.
+            TF_NUM_INTRAOP_THREADS: 2
+            TF_NUM_INTEROP_THREADS: 2
+            OMP_NUM_THREADS: 2
           command: "
             source /tmp/<<parameters.venv_dir>>/bin/activate \n
             pytest
@@ -243,6 +249,11 @@ jobs:
       - image: cimg/python:<<pipeline.parameters.max_py_ver>>
         environment:
           DOCS: True  # This is used in gpflow/ci_utils.py
+          # The container is limited to 2 CPUs, but TensorFlow sees all of the host's cores and
+          # creates too many threads, which slows down the notebooks dramatically.
+          TF_NUM_INTRAOP_THREADS: 2
+          TF_NUM_INTEROP_THREADS: 2
+          OMP_NUM_THREADS: 2
     parallelism: 12
     steps:
       - checkout
