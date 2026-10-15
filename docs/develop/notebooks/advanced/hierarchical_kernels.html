@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Hierarchical kernels &#8212; GPflow 2.11.2 documentation</title>
+<script>
+  document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+  document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
+</script>
+
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+
+
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css?v=c27e38e3" />
+
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
+
+    <script src="../../_static/documentation_options.js?v=b2fb886b"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="gpflow" href="../../api/gpflow/index.html" />
+    <link rel="prev" title="Natural gradients" href="natural_gradients.html" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="docsearch:language" content="en">
+  </head>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+    <div class="bd-header-announcement container-fluid" id="banner">
+      
+
+    </div>
+
+    
+    <nav class="bd-header navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="bd-header__inner container-xl">
+
+  <div id="navbar-start">
+    
+    
+  
+
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">GPflow 2.11.2 documentation</p>
+  
+</a>
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="fas fa-bars"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../getting_started.html">
+  Getting Started
+ </a>
+</li>
+
+<li class="toctree-l1 current active nav-item">
+ <a class="reference internal nav-link" href="../../user_guide.html">
+  User Guide
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../api/gpflow/index.html">
+  API reference
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../benchmarks.html">
+  Benchmarks
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../bibliography.html">
+  Bibliography
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <div class="dropdown" id="version_switcher">
+    <button type="button" class="btn btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+        develop  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div id="version_switcher_menu" class="dropdown-menu list-group-flush py-0" aria-labelledby="version_switcher_button">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+
+<!-- NOTE: this JS must live here (not in our global JS file) because it relies
+     on being processed by Jinja before it is run (specifically for replacing
+     variables notebooks/advanced/hierarchical_kernels and {'json_url': 'https://gpflow.github.io/GPflow/versions.json', 'version_match': 'develop'}.
+-->
+
+<script type="text/javascript">
+// Check if corresponding page path exists in other version of docs
+// and, if so, go there instead of the homepage of the other docs version
+function checkPageExistsAndRedirect(event) {
+    const currentFilePath = "notebooks/advanced/hierarchical_kernels.html",
+          tryUrl = event.target.getAttribute("href");
+    let otherDocsHomepage = tryUrl.replace(currentFilePath, "");
+    $.ajax({
+        type: 'HEAD',
+        url: tryUrl,
+        // if the page exists, go there
+        success: function() {
+            location.href = tryUrl;
+        }
+    }).fail(function() {
+        location.href = otherDocsHomepage;
+    });
+    // this prevents the browser from following the href of the clicked node
+    // (which is fine because this function takes care of redirecting)
+    return false;
+}
+
+// Populate the version switcher from the JSON config file
+(function () {
+    $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
+        const currentFilePath = "notebooks/advanced/hierarchical_kernels.html";
+        let btn = document.getElementById("version_switcher_button");
+        // Set empty strings by default so that these attributes exist and can be used in CSS selectors
+        btn.dataset["activeVersionName"] = "";
+        btn.dataset["activeVersion"] = "";
+        // create links to the corresponding page in the other docs versions
+        $.each(data, function(index, entry) {
+            // if no custom name specified (e.g., "latest"), use version string
+            if (!("name" in entry)) {
+                entry.name = entry.version;
+            }
+            // create the node
+            const node = document.createElement("a");
+            node.setAttribute("class", "list-group-item list-group-item-action py-1");
+            node.textContent = `${entry.name}`;
+            node.setAttribute("href", `${entry.url}${currentFilePath}`);
+            // on click, AJAX calls will check if the linked page exists before
+            // trying to redirect, and if not, will redirect to the homepage
+            // for that version of the docs.
+            node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
+            $("#version_switcher_menu").append(node);
+            // replace dropdown button text with the preferred display name of
+            // this version, rather than using sphinx's  variable.
+            // also highlight the dropdown entry for the currently-viewed
+            // version's entry
+            if (entry.version == "develop") {
+                node.classList.add("active");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
+            }
+        });
+    });
+})();
+</script>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="bd-container container-xl">
+      <div class="bd-container__inner row">
+          
+
+<!-- Only show if we have sidebars configured, else just a small margin  -->
+<div class="bd-sidebar-primary col-12 col-md-3 bd-sidebar">
+  <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    <ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/vgp_notes.html">
+   Derivation of VGP equations
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/SGPR_notes.html">
+   Derivation of SGPR equations
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/cglb.html">
+   Conjugate Gradient Lower Bound
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/upper_bound.html">
+   Discussion of the GP marginal likelihood upper bound
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/FITCvsVFE.html">
+   Comparing FITC approximation to VFE approximation
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/Sanity_check.html">
+   Sanity checking when model behaviours should overlap
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/kernel_design.html">
+   Kernel Design
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/gp_nn.html">
+   Mixing TensorFlow models with GPflow
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/external-mean-function.html">
+   Custom mean functions: metalearning with GPs
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/mixture_density_network.html">
+   Mixture Density Networks in GPflow
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="mcmc.html">
+   MCMC (Markov Chain Monte Carlo)
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="ordinal_regression.html">
+   Ordinal regression
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="gps_for_big_data.html">
+   Stochastic Variational Inference for scalability with SVGP
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="multiclass_classification.html">
+   Multiclass classification
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="varying_noise.html">
+   Gaussian process regression with varying output noise
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="heteroskedastic.html">
+   Heteroskedastic Likelihood and Multi-Latent GP
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="changepoints.html">
+   Change points
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="convolutional.html">
+   Convolutional Gaussian Processes
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="multioutput.html">
+   Multi-output Gaussian processes in GPflow
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="coregionalisation.html">
+   A simple demonstration of coregionalization
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="fast_predictions.html">
+   Faster predictions by caching
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="GPLVM.html">
+   Bayesian Gaussian process latent variable model (Bayesian GPLVM)
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="variational_fourier_features.html">
+   Variational Fourier Features in the GPflow framework
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="natural_gradients.html">
+   Natural gradients
+  </a>
+ </li>
+</ul>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
+   Hierarchical kernels
+  </a>
+ </li>
+</ul>
+
+  </div>
+</nav>
+  </div>
+  <div class="sidebar-end-items">
+  </div>
+</div>
+
+
+          
+
+
+<div class="bd-sidebar-secondary d-none d-xl-block col-xl-2 bd-toc">
+  
+    
+    <div class="toc-item">
+      
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Worked-example:-fit-a-GP-on-a-synthetic-disjunctive-function">
+   Worked example: fit a GP on a synthetic disjunctive function
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Three-axioms-for-a-conditional-distance">
+   Three axioms for a conditional distance
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Describe-the-search-space-to-the-kernel">
+   Describe the search space to the kernel
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Construct-an-Arc-kernel-and-inspect-it">
+   Construct an Arc kernel and inspect it
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#A-Wedge-variant">
+   A Wedge variant
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Validating-composed-kernels-against-the-axioms">
+   Validating composed kernels against the axioms
+  </a>
+ </li>
+</ul>
+
+</nav>
+    </div>
+    
+    <div class="toc-item">
+      
+    </div>
+    
+  
+</div>
+
+
+          
+          
+          <div class="bd-content col-12 col-md-9 col-xl-7">
+              
+              <article class="bd-article" role="main">
+                
+  <section id="Hierarchical-kernels">
+<h1>Hierarchical kernels<a class="headerlink" href="#Hierarchical-kernels" title="Link to this heading">¶</a></h1>
+<p>A <em>hierarchical</em> search space is one in which some input dimensions are only meaningful when a corresponding indicator variable takes a particular value. Concretely, you might be optimising over a four-dimensional input <span class="math notranslate nohighlight">\((x_1, y_1, x_2, x_3)\)</span> where <span class="math notranslate nohighlight">\(x_1\)</span> is always present, <span class="math notranslate nohighlight">\(y_1 \in \{0, 1\}\)</span> is an indicator, <span class="math notranslate nohighlight">\(x_2\)</span> is meaningful only when <span class="math notranslate nohighlight">\(y_1 = 1\)</span>, and <span class="math notranslate nohighlight">\(x_3\)</span> is meaningful only when <span class="math notranslate nohighlight">\(y_1 = 0\)</span>.</p>
+<p>A useful covariance on such a space must respect the activation structure: a point whose conditional feature is <em>inactive</em> should not be confused with one whose feature is <em>active and equal in value</em> — the two live in fundamentally different regions of the space.</p>
+<p>This notebook walks through GPflow’s two hierarchical kernels — <code class="docutils literal notranslate"><span class="pre">ArcHierarchical</span></code> (Swersky et al., 2014) and <code class="docutils literal notranslate"><span class="pre">WedgeHierarchical</span></code> (Horn et al., 2019) — on a small synthetic disjunctive function.</p>
+<section id="Worked-example:-fit-a-GP-on-a-synthetic-disjunctive-function">
+<h2>Worked example: fit a GP on a synthetic disjunctive function<a class="headerlink" href="#Worked-example:-fit-a-GP-on-a-synthetic-disjunctive-function" title="Link to this heading">¶</a></h2>
+<div class="math notranslate nohighlight">
+\[f(x_1, y_1, x_2, x_3) =
+    \sin(2\pi x_1)
+  \;+\; \mathbf{1}[y_1 = 1] \cdot \tfrac{1}{2} \cos(\pi x_2 / 5)
+  \;+\; \mathbf{1}[y_1 = 0] \cdot \tfrac{1}{2} x_3.\]</div>
+<p>The conditional kernel must accurately represent the disjunctive structure.</p>
+<p>import numpy as np import tensorflow as tf</p>
+<p>np.random.seed(1793) tf.random.set_seed(1793)</p>
+<p>def objective(X: np.ndarray) -&gt; np.ndarray: x1, y1, x2, x3 = X[:, 0], X[:, 1], X[:, 2], X[:, 3] return ( np.sin(2.0 * np.pi * x1) + (y1 &gt; 0.5).astype(float) * 0.5 * np.cos(np.pi * x2 / 5.0) + (y1 &lt; 0.5).astype(float) * 0.5 * x3 ).reshape(-1, 1)</p>
+<p>def sample_inputs(n: int) -&gt; np.ndarray: x1 = np.random.uniform(0.0, 1.0, size=n) y1 = np.random.randint(0, 2, size=n).astype(float) x2 = np.random.uniform(0.0, 5.0, size=n) x3 = np.random.uniform(-1.0, 1.0, size=n) return np.stack([x1, y1, x2, x3], axis=-1)</p>
+<p>X_train = sample_inputs(40) Y_train = objective(X_train) + 0.05 * np.random.randn(40, 1) X_test = np.array( [ [0.3, 1.0, 2.0, 0.0], # y1 = 1 branch [0.3, 0.0, 0.0, 0.5], # y1 = 0 branch [0.7, 1.0, 4.0, 0.0], [0.7, 0.0, 0.0, -0.4], ] )</p>
+</section>
+<section id="Three-axioms-for-a-conditional-distance">
+<h2>Three axioms for a conditional distance<a class="headerlink" href="#Three-axioms-for-a-conditional-distance" title="Link to this heading">¶</a></h2>
+<p>Let <span class="math notranslate nohighlight">\(\mathbf{x}^{nc}\)</span> be the always-active (unconditional) coordinates and <span class="math notranslate nohighlight">\(\mathbf{x}^{c}\)</span> the indicator-gated (conditional) ones. A useful per-dimension distance <span class="math notranslate nohighlight">\(d_i(\mathbf{x}, \mathbf{x}')\)</span> on a conditional dimension <span class="math notranslate nohighlight">\(i\)</span> should satisfy:</p>
+<ol class="arabic simple">
+<li><p><strong>both inactive:</strong> <span class="math notranslate nohighlight">\(d_i = 0\)</span> — the value is meaningless on either side.</p></li>
+<li><p><strong>both active:</strong> <span class="math notranslate nohighlight">\(d_i\)</span> is a function of the difference in feature value.</p></li>
+<li><p><strong>incomparable:</strong> (one active, one inactive) <span class="math notranslate nohighlight">\(d_i\)</span> is positive and places the two points in distinct regions of the embedded space.</p></li>
+</ol>
+<p>Both kernels enforce these axioms by embedding each conditional dimension into <span class="math notranslate nohighlight">\(\mathbb{R}^2\)</span> — inactive points map to the origin, active points to a value-dependent point off the origin — and evaluating a stationary base kernel on the joint embedded vector.</p>
+</section>
+<section id="Describe-the-search-space-to-the-kernel">
+<h2>Describe the search space to the kernel<a class="headerlink" href="#Describe-the-search-space-to-the-kernel" title="Link to this heading">¶</a></h2>
+<p>The kernel takes a single piece of information:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">hierarchy</span></code> — a sequence of <code class="docutils literal notranslate"><span class="pre">HierarchyNode</span></code>s. Each node binds a group of feature columns to the <code class="docutils literal notranslate"><span class="pre">ActivityCondition</span></code> that gates them (and carries the per-feature <code class="docutils literal notranslate"><span class="pre">(lower,</span> <span class="pre">upper)</span></code> bounds used to normalise to <span class="math notranslate nohighlight">\([0, 1]\)</span>). An empty <code class="docutils literal notranslate"><span class="pre">ActivityCondition</span></code> makes the node’s features unconditional. The keys of each <code class="docutils literal notranslate"><span class="pre">ActivityCondition</span></code> are column indices in <span class="math notranslate nohighlight">\(X\)</span> (the same coordinate system as <code class="docutils literal notranslate"><span class="pre">feature_dims</span></code>) — the set of indicator columns is derived automatically.</p></li>
+</ul>
+<p>For our four-variable example, the column layout in <span class="math notranslate nohighlight">\(X\)</span> is <span class="math notranslate nohighlight">\([x_1, y_1, x_2, x_3]\)</span> — so <span class="math notranslate nohighlight">\(x_1\)</span> lives in a shared node, <span class="math notranslate nohighlight">\(x_2\)</span> in a node gated by <span class="math notranslate nohighlight">\(y_1 = 1\)</span> (column 1), and <span class="math notranslate nohighlight">\(x_3\)</span> in a node gated by <span class="math notranslate nohighlight">\(y_1 = 0\)</span>:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">gpflow.kernels</span><span class="w"> </span><span class="kn">import</span> <span class="n">ActivityCondition</span><span class="p">,</span> <span class="n">HierarchyNode</span>
+
+<span class="n">hierarchy</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">HierarchyNode</span><span class="p">(</span><span class="s2">"shared"</span><span class="p">,</span> <span class="n">feature_dims</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">feature_bounds</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]]),</span>
+    <span class="n">HierarchyNode</span><span class="p">(</span>
+        <span class="s2">"branch_A"</span><span class="p">,</span>
+        <span class="n">feature_dims</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+        <span class="n">feature_bounds</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">]],</span>
+        <span class="n">activity_condition</span><span class="o">=</span><span class="n">ActivityCondition</span><span class="p">({</span><span class="mi">1</span><span class="p">:</span> <span class="mi">1</span><span class="p">}),</span>
+    <span class="p">),</span>
+    <span class="n">HierarchyNode</span><span class="p">(</span>
+        <span class="s2">"branch_B"</span><span class="p">,</span>
+        <span class="n">feature_dims</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+        <span class="n">feature_bounds</span><span class="o">=</span><span class="p">[[</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]],</span>
+        <span class="n">activity_condition</span><span class="o">=</span><span class="n">ActivityCondition</span><span class="p">({</span><span class="mi">1</span><span class="p">:</span> <span class="mi">0</span><span class="p">}),</span>
+    <span class="p">),</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2026-10-15 09:25:59.869042: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2026-10-15 09:25:59.874491: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2026-10-15 09:25:59.887133: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:477] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1792056359.908259     114 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1792056359.914353     114 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2026-10-15 09:25:59.935597: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2026-10-15 09:26:05.578236: E external/local_xla/xla/stream_executor/cuda/cuda_driver.cc:152] failed call to cuInit: INTERNAL: CUDA error: Failed call to cuInit: UNKNOWN ERROR (303)
+</pre></div></div>
+</div>
+</section>
+<section id="Construct-an-Arc-kernel-and-inspect-it">
+<h2>Construct an Arc kernel and inspect it<a class="headerlink" href="#Construct-an-Arc-kernel-and-inspect-it" title="Link to this heading">¶</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">gpflow.kernels</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArcHierarchical</span><span class="p">,</span> <span class="n">Constant</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gpflow.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">GPR</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gpflow.optimizers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Scipy</span>
+
+<span class="n">arc</span> <span class="o">=</span> <span class="n">ArcHierarchical</span><span class="p">(</span><span class="n">hierarchy</span><span class="o">=</span><span class="n">hierarchy</span><span class="p">,</span> <span class="n">active_dims</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"conditional columns:"</span><span class="p">,</span> <span class="n">arc</span><span class="o">.</span><span class="n">n_cond_dims</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"unconditional columns:"</span><span class="p">,</span> <span class="n">arc</span><span class="o">.</span><span class="n">n_uncond_dims</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"indicator columns (derived):"</span><span class="p">,</span> <span class="n">arc</span><span class="o">.</span><span class="n">indicator_dims</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"angle init:"</span><span class="p">,</span> <span class="n">arc</span><span class="o">.</span><span class="n">angle</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"radius init:"</span><span class="p">,</span> <span class="n">arc</span><span class="o">.</span><span class="n">radius</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+conditional columns: 2
+unconditional columns: 1
+indicator columns (derived): (1,)
+angle init: [0.5 0.5]
+radius init: [1. 1.]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.kernels.hierarchical.HierarchicalEmbeddingKernel.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
+  warn(
+</pre></div></div>
+</div>
+<p>Wrap in a Constant() factor so the GP can learn an overall variance. arc_for_fit = ArcHierarchical(hierarchy=hierarchy, active_dims=list(range(4))) kernel = Constant() * arc_for_fit gpr = GPR(data=(X_train, Y_train), kernel=kernel, noise_variance=0.05)</p>
+<p>print(f”LML before fit: {gpr.log_marginal_likelihood().numpy():+.3f}”) Scipy().minimize( gpr.training_loss, gpr.trainable_variables, options={“maxiter”: 100} ) print(f”LML after fit: {gpr.log_marginal_likelihood().numpy():+.3f}”) print(“learnt angle :”, arc_for_fit.angle.numpy()) print(“learnt radius:”, arc_for_fit.radius.numpy())</p>
+<p>mean, var = gpr.predict_f(X_test) truth = objective(X_test).ravel() for x, m, v, t in zip(X_test, mean.numpy().ravel(), var.numpy().ravel(), truth): print( f” x = {x.tolist()} -&gt; mean = {m:+.3f} var = {v:.3f} truth = {t:+.3f}” )</p>
+</section>
+<section id="A-Wedge-variant">
+<h2>A Wedge variant<a class="headerlink" href="#A-Wedge-variant" title="Link to this heading">¶</a></h2>
+<p>The Wedge kernel replaces Arc’s circle embedding with a triangular one:</p>
+<div class="math notranslate nohighlight">
+\[\phi_c(v_c, m_c) = \big(
+    (\theta_1 v_c + \theta_2 v_c \cos\rho)\, m_c,\;
+    (\theta_2 v_c \sin\rho)\, m_c
+  \big).\]</div>
+<p>The “incomparable” distance now scales with the active value <span class="math notranslate nohighlight">\(v_c\)</span> rather than being constant in it. GPR models may be constructed and trained in the same way as the arc above.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">gpflow.kernels</span><span class="w"> </span><span class="kn">import</span> <span class="n">WedgeHierarchical</span>
+
+<span class="n">wedge</span> <span class="o">=</span> <span class="n">WedgeHierarchical</span><span class="p">(</span><span class="n">hierarchy</span><span class="o">=</span><span class="n">hierarchy</span><span class="p">,</span> <span class="n">active_dims</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)))</span>
+<span class="n">kernel</span> <span class="o">=</span> <span class="n">Constant</span><span class="p">()</span> <span class="o">*</span> <span class="n">wedge</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"initial theta1:"</span><span class="p">,</span> <span class="n">wedge</span><span class="o">.</span><span class="n">theta1</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"initial theta2:"</span><span class="p">,</span> <span class="n">wedge</span><span class="o">.</span><span class="n">theta2</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"initial rho:   "</span><span class="p">,</span> <span class="n">wedge</span><span class="o">.</span><span class="n">rho</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+initial theta1: [1. 1.]
+initial theta2: [1. 1.]
+initial rho:    [1.57079633 1.57079633]
+</pre></div></div>
+</div>
+</section>
+<section id="Validating-composed-kernels-against-the-axioms">
+<h2>Validating composed kernels against the axioms<a class="headerlink" href="#Validating-composed-kernels-against-the-axioms" title="Link to this heading">¶</a></h2>
+<p>Once you start composing a hierarchical kernel with other kernels — scaling with <code class="docutils literal notranslate"><span class="pre">Constant()</span></code>, adding a <code class="docutils literal notranslate"><span class="pre">Matern52</span></code> on the unconditional dims, summing two hierarchical kernels — it stops being obvious whether the result still respects the three axioms. GPflow ships <code class="docutils literal notranslate"><span class="pre">validate_hierarchical_axioms</span></code> for exactly this: hand it any kernel plus the hierarchy spec, and it numerically checks the kernel-level shadows of each axiom.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">gpflow.kernels</span><span class="w"> </span><span class="kn">import</span> <span class="n">Matern52</span><span class="p">,</span> <span class="n">validate_hierarchical_axioms</span>
+
+<span class="n">safe</span> <span class="o">=</span> <span class="n">Constant</span><span class="p">()</span> <span class="o">*</span> <span class="n">ArcHierarchical</span><span class="p">(</span>
+    <span class="n">hierarchy</span><span class="o">=</span><span class="n">hierarchy</span><span class="p">,</span> <span class="n">active_dims</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
+<span class="p">)</span>
+<span class="n">report</span> <span class="o">=</span> <span class="n">validate_hierarchical_axioms</span><span class="p">(</span><span class="n">safe</span><span class="p">,</span> <span class="n">hierarchy</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">report</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.kernels.hierarchical_axioms.validate_hierarchical_axioms which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
+  warn(
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+AxiomReport (overall PASS)
+  PASS axiom 1 node=&#39;branch_A&#39; feature_dim=2 max_violation=0.000e+00 -- K(x,x) == K(x,x&#39;) when both points violate &#39;branch_A&#39;&#39;s condition and differ only on feature dim 2
+  PASS axiom 2 node=&#39;branch_A&#39; feature_dim=2 max_violation=4.441e-16 -- K stationary in feature dim 2 when &#39;branch_A&#39;&#39;s condition is satisfied on both sides
+  PASS axiom 3 node=&#39;branch_A&#39; feature_dim=2 max_violation=0.000e+00 -- K(x_active, x_inactive) &lt; K(x_active, x_active) when &#39;branch_A&#39;&#39;s condition is flipped at feature dim 2
+  PASS axiom 1 node=&#39;branch_B&#39; feature_dim=3 max_violation=0.000e+00 -- K(x,x) == K(x,x&#39;) when both points violate &#39;branch_B&#39;&#39;s condition and differ only on feature dim 3
+  PASS axiom 2 node=&#39;branch_B&#39; feature_dim=3 max_violation=7.772e-16 -- K stationary in feature dim 3 when &#39;branch_B&#39;&#39;s condition is satisfied on both sides
+  PASS axiom 3 node=&#39;branch_B&#39; feature_dim=3 max_violation=0.000e+00 -- K(x_active, x_inactive) &lt; K(x_active, x_active) when &#39;branch_B&#39;&#39;s condition is flipped at feature dim 3
+</pre></div></div>
+</div>
+<p>Multiplying by a positive <code class="docutils literal notranslate"><span class="pre">Constant()</span></code> just rescales <code class="docutils literal notranslate"><span class="pre">K</span></code> and preserves every axiom, so the report is all-<code class="docutils literal notranslate"><span class="pre">PASS</span></code>. Now build a kernel that deliberately ignores the hierarchy — add a plain <code class="docutils literal notranslate"><span class="pre">Matern52</span></code> over the full input space — and re-run the validator:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">broken</span> <span class="o">=</span> <span class="n">ArcHierarchical</span><span class="p">(</span>
+    <span class="n">hierarchy</span><span class="o">=</span><span class="n">hierarchy</span><span class="p">,</span> <span class="n">active_dims</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
+<span class="p">)</span> <span class="o">+</span> <span class="n">Matern52</span><span class="p">(</span><span class="n">active_dims</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)))</span>
+<span class="n">report</span> <span class="o">=</span> <span class="n">validate_hierarchical_axioms</span><span class="p">(</span><span class="n">broken</span><span class="p">,</span> <span class="n">hierarchy</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">report</span><span class="p">)</span>
+<span class="k">assert</span> <span class="ow">not</span> <span class="n">report</span><span class="o">.</span><span class="n">passed</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"axiom-1 violations:"</span><span class="p">,</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">max_violation</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">report</span><span class="o">.</span><span class="n">for_axiom</span><span class="p">(</span><span class="mi">1</span><span class="p">)])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+AxiomReport (overall FAIL)
+  FAIL axiom 1 node=&#39;branch_A&#39; feature_dim=2 max_violation=9.900e-01 -- K(x,x) == K(x,x&#39;) when both points violate &#39;branch_A&#39;&#39;s condition and differ only on feature dim 2
+  PASS axiom 2 node=&#39;branch_A&#39; feature_dim=2 max_violation=2.887e-15 -- K stationary in feature dim 2 when &#39;branch_A&#39;&#39;s condition is satisfied on both sides
+  PASS axiom 3 node=&#39;branch_A&#39; feature_dim=2 max_violation=0.000e+00 -- K(x_active, x_inactive) &lt; K(x_active, x_active) when &#39;branch_A&#39;&#39;s condition is flipped at feature dim 2
+  FAIL axiom 1 node=&#39;branch_B&#39; feature_dim=3 max_violation=6.971e-01 -- K(x,x) == K(x,x&#39;) when both points violate &#39;branch_B&#39;&#39;s condition and differ only on feature dim 3
+  PASS axiom 2 node=&#39;branch_B&#39; feature_dim=3 max_violation=6.661e-16 -- K stationary in feature dim 3 when &#39;branch_B&#39;&#39;s condition is satisfied on both sides
+  PASS axiom 3 node=&#39;branch_B&#39; feature_dim=3 max_violation=0.000e+00 -- K(x_active, x_inactive) &lt; K(x_active, x_active) when &#39;branch_B&#39;&#39;s condition is flipped at feature dim 3
+axiom-1 violations: [0.9899608228062187, 0.6971406771490827]
+</pre></div></div>
+</div>
+<p>Axiom 1 fails: the <code class="docutils literal notranslate"><span class="pre">Matern52</span></code> term responds to changes in a conditional feature value regardless of whether the activity condition is satisfied, so <code class="docutils literal notranslate"><span class="pre">K(x,</span> <span class="pre">x)</span></code> and <code class="docutils literal notranslate"><span class="pre">K(x,</span> <span class="pre">x')</span></code> differ even though both points are inactive on that feature. Axioms 2 and 3 still pass — they were never the discriminating predicates for this kind of break.</p>
+</section>
+</section>
+
+
+              </article>
+              
+
+              
+          </div>
+          
+      </div>
+    </div>
+
+  
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695"></script>
+
+<footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    <p class="copyright">
+    &copy; Copyright 2023, The GPflow Contributors.<br>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.3.7.<br>
+</p>
+  </div>
+  
+</div>
+</footer>
+  </body>
+</html>

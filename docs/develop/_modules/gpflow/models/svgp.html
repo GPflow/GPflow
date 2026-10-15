@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>gpflow.models.svgp &#8212; GPflow 2.9.0 documentation</title>
+    <title>gpflow.models.svgp &#8212; GPflow 2.11.2 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -22,14 +22,14 @@
   <link rel="preload" as="font" type="font/woff2" crossorigin
     href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
 
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css?v=c27e38e3" />
 
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
-    <script src="../../../_static/documentation_options.js?v=8da69bee"></script>
-    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/documentation_options.js?v=b2fb886b"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
@@ -61,7 +61,7 @@
   
   
   
-    <p class="title logo__title">GPflow 2.9.0 documentation</p>
+    <p class="title logo__title">GPflow 2.11.2 documentation</p>
   
 </a>
     
@@ -240,56 +240,56 @@ function checkPageExistsAndRedirect(event) {
   <h1>Source code for gpflow.models.svgp</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Copyright 2016-2020 The GPflow Contributors. All Rights Reserved.</span>
 <span class="c1">#</span>
-<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1"># you may not use this file except in compliance with the License.</span>
 <span class="c1"># You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1"># See the License for the specific language governing permissions and</span>
 <span class="c1"># limitations under the License.</span>
 
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
-<span class="kn">from</span> <span class="nn">check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span><span class="p">,</span> <span class="n">inherit_check_shapes</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tf</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">check_shapes</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_shapes</span><span class="p">,</span> <span class="n">inherit_check_shapes</span>
 
-<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">kullback_leiblers</span><span class="p">,</span> <span class="n">posteriors</span>
-<span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">InputData</span><span class="p">,</span> <span class="n">MeanAndVariance</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">RegressionData</span>
-<span class="kn">from</span> <span class="nn">..conditionals</span> <span class="kn">import</span> <span class="n">conditional</span>
-<span class="kn">from</span> <span class="nn">..config</span> <span class="kn">import</span> <span class="n">default_float</span>
-<span class="kn">from</span> <span class="nn">..inducing_variables</span> <span class="kn">import</span> <span class="n">InducingVariables</span>
-<span class="kn">from</span> <span class="nn">..kernels</span> <span class="kn">import</span> <span class="n">Kernel</span>
-<span class="kn">from</span> <span class="nn">..likelihoods</span> <span class="kn">import</span> <span class="n">Likelihood</span>
-<span class="kn">from</span> <span class="nn">..mean_functions</span> <span class="kn">import</span> <span class="n">MeanFunction</span>
-<span class="kn">from</span> <span class="nn">..utilities</span> <span class="kn">import</span> <span class="n">positive</span><span class="p">,</span> <span class="n">triangular</span>
-<span class="kn">from</span> <span class="nn">.model</span> <span class="kn">import</span> <span class="n">GPModel</span>
-<span class="kn">from</span> <span class="nn">.training_mixins</span> <span class="kn">import</span> <span class="n">ExternalDataTrainingLossMixin</span>
-<span class="kn">from</span> <span class="nn">.util</span> <span class="kn">import</span> <span class="n">InducingVariablesLike</span><span class="p">,</span> <span class="n">inducingpoint_wrapper</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">kullback_leiblers</span><span class="p">,</span> <span class="n">posteriors</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..base</span><span class="w"> </span><span class="kn">import</span> <span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">InputData</span><span class="p">,</span> <span class="n">MeanAndVariance</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">RegressionData</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..conditionals</span><span class="w"> </span><span class="kn">import</span> <span class="n">conditional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..config</span><span class="w"> </span><span class="kn">import</span> <span class="n">default_float</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..inducing_variables</span><span class="w"> </span><span class="kn">import</span> <span class="n">InducingVariables</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..kernels</span><span class="w"> </span><span class="kn">import</span> <span class="n">Kernel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..likelihoods</span><span class="w"> </span><span class="kn">import</span> <span class="n">Likelihood</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..mean_functions</span><span class="w"> </span><span class="kn">import</span> <span class="n">MeanFunction</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..utilities</span><span class="w"> </span><span class="kn">import</span> <span class="n">positive</span><span class="p">,</span> <span class="n">triangular</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">GPModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.training_mixins</span><span class="w"> </span><span class="kn">import</span> <span class="n">ExternalDataTrainingLossMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">InducingVariablesLike</span><span class="p">,</span> <span class="n">inducingpoint_wrapper</span>
 
 
 <div class="viewcode-block" id="SVGP_deprecated">
 <a class="viewcode-back" href="../../../api/gpflow/models/svgp/index.html#gpflow.models.SVGP_deprecated">[docs]</a>
-<span class="k">class</span> <span class="nc">SVGP_deprecated</span><span class="p">(</span><span class="n">GPModel</span><span class="p">,</span> <span class="n">ExternalDataTrainingLossMixin</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SVGP_deprecated</span><span class="p">(</span><span class="n">GPModel</span><span class="p">,</span> <span class="n">ExternalDataTrainingLossMixin</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    This is the Sparse Variational GP (SVGP).</span>
 
 <span class="sd">    The key reference is :cite:t:`hensman2014scalable`.</span>
 
 <span class="sd">    For a use example see</span>
 <span class="sd">    :doc:`../../../../notebooks/getting_started/classification_and_other_data_distributions`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="nd">@check_shapes</span><span class="p">(</span>
-        <span class="s2">&quot;q_mu: [M, P]&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;q_sqrt: [M, P] if q_diag&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;q_sqrt: [P, M, M] if (not q_diag)&quot;</span><span class="p">,</span>
+        <span class="s2">"q_mu: [M, P]"</span><span class="p">,</span>
+        <span class="s2">"q_sqrt: [M, P] if q_diag"</span><span class="p">,</span>
+        <span class="s2">"q_sqrt: [P, M, M] if (not q_diag)"</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">kernel</span><span class="p">:</span> <span class="n">Kernel</span><span class="p">,</span>
         <span class="n">likelihood</span><span class="p">:</span> <span class="n">Likelihood</span><span class="p">,</span>
@@ -303,7 +303,7 @@ function checkPageExistsAndRedirect(event) {
         <span class="n">whiten</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">num_data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        - kernel, likelihood, inducing_variables, mean_function are appropriate</span>
 <span class="sd">          GPflow objects</span>
 <span class="sd">        - num_latent_gps is the number of latent processes to use, defaults to 1</span>
@@ -313,7 +313,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">          the inducing points.</span>
 <span class="sd">        - num_data is the total number of observations, defaults to X.shape[0]</span>
 <span class="sd">          (relevant when feeding in external minibatches)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># init the super class, accept args</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">likelihood</span><span class="p">,</span> <span class="n">mean_function</span><span class="p">,</span> <span class="n">num_latent_gps</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_data</span> <span class="o">=</span> <span class="n">num_data</span>
@@ -325,18 +325,18 @@ function checkPageExistsAndRedirect(event) {
         <span class="bp">self</span><span class="o">.</span><span class="n">_init_variational_parameters</span><span class="p">(</span><span class="n">num_inducing</span><span class="p">,</span> <span class="n">q_mu</span><span class="p">,</span> <span class="n">q_sqrt</span><span class="p">,</span> <span class="n">q_diag</span><span class="p">)</span>
 
     <span class="nd">@check_shapes</span><span class="p">(</span>
-        <span class="s2">&quot;q_mu: [M, P]&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;q_sqrt: [M, P] if q_diag&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;q_sqrt: [P, M, M] if (not q_diag)&quot;</span><span class="p">,</span>
+        <span class="s2">"q_mu: [M, P]"</span><span class="p">,</span>
+        <span class="s2">"q_sqrt: [M, P] if q_diag"</span><span class="p">,</span>
+        <span class="s2">"q_sqrt: [P, M, M] if (not q_diag)"</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="k">def</span> <span class="nf">_init_variational_parameters</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_init_variational_parameters</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">num_inducing</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">q_mu</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AnyNDArray</span><span class="p">],</span>
         <span class="n">q_sqrt</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AnyNDArray</span><span class="p">],</span>
         <span class="n">q_diag</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Constructs the mean and cholesky of the covariance of the variational Gaussian posterior.</span>
 <span class="sd">        If a user passes values for `q_mu` and `q_sqrt` the routine checks if they have consistent</span>
 <span class="sd">        and correct shapes. If a user does not specify any values for `q_mu` and `q_sqrt`, the</span>
@@ -362,7 +362,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">            construct them with the correct shape. If `q_diag` is true,</span>
 <span class="sd">            `q_sqrt` is two dimensional and only holds the square root of the</span>
 <span class="sd">            covariance diagonal elements. If False, `q_sqrt` is three dimensional.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">q_mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">num_inducing</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_latent_gps</span><span class="p">))</span> <span class="k">if</span> <span class="n">q_mu</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">q_mu</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">q_mu</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">q_mu</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">default_float</span><span class="p">())</span>  <span class="c1"># [M, P]</span>
 
@@ -390,9 +390,9 @@ function checkPageExistsAndRedirect(event) {
                 <span class="bp">self</span><span class="o">.</span><span class="n">q_sqrt</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">q_sqrt</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">triangular</span><span class="p">())</span>  <span class="c1"># [L|P, M, M]</span>
 
     <span class="nd">@check_shapes</span><span class="p">(</span>
-        <span class="s2">&quot;return: []&quot;</span><span class="p">,</span>
+        <span class="s2">"return: []"</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="k">def</span> <span class="nf">prior_kl</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">prior_kl</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">kullback_leiblers</span><span class="o">.</span><span class="n">prior_kl</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_mu</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_sqrt</span><span class="p">,</span> <span class="n">whiten</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">whiten</span>
         <span class="p">)</span>
@@ -401,20 +401,20 @@ function checkPageExistsAndRedirect(event) {
 <div class="viewcode-block" id="SVGP_deprecated.maximum_log_likelihood_objective">
 <a class="viewcode-back" href="../../../api/gpflow/models/svgp/index.html#gpflow.models.SVGP_deprecated.maximum_log_likelihood_objective">[docs]</a>
     <span class="nd">@inherit_check_shapes</span>
-    <span class="k">def</span> <span class="nf">maximum_log_likelihood_objective</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">RegressionData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>  <span class="c1"># type: ignore[override]</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">maximum_log_likelihood_objective</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">RegressionData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>  <span class="c1"># type: ignore[override]</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">elbo</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SVGP_deprecated.elbo">
 <a class="viewcode-back" href="../../../api/gpflow/models/svgp/index.html#gpflow.models.SVGP_deprecated.elbo">[docs]</a>
     <span class="nd">@check_shapes</span><span class="p">(</span>
-        <span class="s2">&quot;return: []&quot;</span><span class="p">,</span>
+        <span class="s2">"return: []"</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="k">def</span> <span class="nf">elbo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">RegressionData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">elbo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">RegressionData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        This gives a variational bound (the evidence lower bound or ELBO) on</span>
 <span class="sd">        the log marginal likelihood of the model.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">data</span>
         <span class="n">kl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_kl</span><span class="p">()</span>
         <span class="n">f_mean</span><span class="p">,</span> <span class="n">f_var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_f</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -431,7 +431,7 @@ function checkPageExistsAndRedirect(event) {
 <div class="viewcode-block" id="SVGP_deprecated.predict_f">
 <a class="viewcode-back" href="../../../api/gpflow/models/svgp/index.html#gpflow.models.SVGP_deprecated.predict_f">[docs]</a>
     <span class="nd">@inherit_check_shapes</span>
-    <span class="k">def</span> <span class="nf">predict_f</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict_f</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">InputData</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
         <span class="n">mu</span><span class="p">,</span> <span class="n">var</span> <span class="o">=</span> <span class="n">conditional</span><span class="p">(</span>
@@ -452,39 +452,39 @@ function checkPageExistsAndRedirect(event) {
 
 <div class="viewcode-block" id="SVGP_with_posterior">
 <a class="viewcode-back" href="../../../api/gpflow/models/svgp/index.html#gpflow.models.SVGP_with_posterior">[docs]</a>
-<span class="k">class</span> <span class="nc">SVGP_with_posterior</span><span class="p">(</span><span class="n">SVGP_deprecated</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SVGP_with_posterior</span><span class="p">(</span><span class="n">SVGP_deprecated</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    This is the Sparse Variational GP (SVGP).</span>
 
 <span class="sd">    The key reference is :cite:t:`hensman2014scalable`.</span>
 
 <span class="sd">    This class provides a posterior() method that enables caching for faster subsequent predictions.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="SVGP_with_posterior.posterior">
 <a class="viewcode-back" href="../../../api/gpflow/models/svgp/index.html#gpflow.models.SVGP_with_posterior.posterior">[docs]</a>
-    <span class="k">def</span> <span class="nf">posterior</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">posterior</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">precompute_cache</span><span class="p">:</span> <span class="n">posteriors</span><span class="o">.</span><span class="n">PrecomputeCacheType</span> <span class="o">=</span> <span class="n">posteriors</span><span class="o">.</span><span class="n">PrecomputeCacheType</span><span class="o">.</span><span class="n">TENSOR</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">posteriors</span><span class="o">.</span><span class="n">BasePosterior</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Create the Posterior object which contains precomputed matrices for</span>
 <span class="sd">        faster prediction.</span>
 
 <span class="sd">        precompute_cache has three settings:</span>
 
-<span class="sd">        - `PrecomputeCacheType.TENSOR` (or `&quot;tensor&quot;`): Precomputes the cached</span>
+<span class="sd">        - `PrecomputeCacheType.TENSOR` (or `"tensor"`): Precomputes the cached</span>
 <span class="sd">          quantities and stores them as tensors (which allows differentiating</span>
 <span class="sd">          through the prediction). This is the default.</span>
-<span class="sd">        - `PrecomputeCacheType.VARIABLE` (or `&quot;variable&quot;`): Precomputes the cached</span>
+<span class="sd">        - `PrecomputeCacheType.VARIABLE` (or `"variable"`): Precomputes the cached</span>
 <span class="sd">          quantities and stores them as variables, which allows for updating</span>
 <span class="sd">          their values without changing the compute graph (relevant for AOT</span>
 <span class="sd">          compilation).</span>
-<span class="sd">        - `PrecomputeCacheType.NOCACHE` (or `&quot;nocache&quot;` or `None`): Avoids</span>
+<span class="sd">        - `PrecomputeCacheType.NOCACHE` (or `"nocache"` or `None`): Avoids</span>
 <span class="sd">          immediate cache computation. This is useful for avoiding extraneous</span>
-<span class="sd">          computations when you only want to call the posterior&#39;s</span>
+<span class="sd">          computations when you only want to call the posterior's</span>
 <span class="sd">          `fused_predict_f` method.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="n">posteriors</span><span class="o">.</span><span class="n">create_posterior</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable</span><span class="p">,</span>
@@ -499,16 +499,16 @@ function checkPageExistsAndRedirect(event) {
 <div class="viewcode-block" id="SVGP_with_posterior.predict_f">
 <a class="viewcode-back" href="../../../api/gpflow/models/svgp/index.html#gpflow.models.SVGP_with_posterior.predict_f">[docs]</a>
     <span class="nd">@inherit_check_shapes</span>
-    <span class="k">def</span> <span class="nf">predict_f</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict_f</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">InputData</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        For backwards compatibility, SVGP&#39;s predict_f uses the fused (no-cache)</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        For backwards compatibility, SVGP's predict_f uses the fused (no-cache)</span>
 <span class="sd">        computation, which is more efficient during training.</span>
 
 <span class="sd">        For faster (cached) prediction, predict directly from the posterior object, i.e.,:</span>
 <span class="sd">            model.posterior().predict_f(Xnew, ...)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">posterior</span><span class="p">(</span><span class="n">posteriors</span><span class="o">.</span><span class="n">PrecomputeCacheType</span><span class="o">.</span><span class="n">NOCACHE</span><span class="p">)</span><span class="o">.</span><span class="n">fused_predict_f</span><span class="p">(</span>
             <span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="o">=</span><span class="n">full_output_cov</span>
         <span class="p">)</span></div>
@@ -518,8 +518,8 @@ function checkPageExistsAndRedirect(event) {
 
 <div class="viewcode-block" id="SVGP">
 <a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.SVGP">[docs]</a>
-<span class="k">class</span> <span class="nc">SVGP</span><span class="p">(</span><span class="n">SVGP_with_posterior</span><span class="p">):</span>
-    <span class="c1"># subclassed to ensure __class__ == &quot;SVGP&quot;</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SVGP</span><span class="p">(</span><span class="n">SVGP_with_posterior</span><span class="p">):</span>
+    <span class="c1"># subclassed to ensure __class__ == "SVGP"</span>
 
     <span class="vm">__doc__</span> <span class="o">=</span> <span class="n">SVGP_deprecated</span><span class="o">.</span><span class="vm">__doc__</span>  <span class="c1"># Use documentation from SVGP_deprecated.</span></div>
 
@@ -549,7 +549,7 @@ function checkPageExistsAndRedirect(event) {
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.3.7.<br>
 </p>
   </div>
   

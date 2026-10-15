@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Mixture Density Networks in GPflow &#8212; GPflow 2.9.0 documentation</title>
+    <title>Mixture Density Networks in GPflow &#8212; GPflow 2.11.2 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -23,15 +23,15 @@
   <link rel="preload" as="font" type="font/woff2" crossorigin
     href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
 
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
-    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
     <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css?v=c27e38e3" />
 
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
-    <script src="../../_static/documentation_options.js?v=8da69bee"></script>
-    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/documentation_options.js?v=b2fb886b"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
@@ -67,7 +67,7 @@
   
   
   
-    <p class="title logo__title">GPflow 2.9.0 documentation</p>
+    <p class="title logo__title">GPflow 2.11.2 documentation</p>
   
 </a>
     
@@ -382,6 +382,13 @@ function checkPageExistsAndRedirect(event) {
   </a>
  </li>
 </ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/hierarchical_kernels.html">
+   Hierarchical kernels
+  </a>
+ </li>
+</ul>
 
   </div>
 </nav>
@@ -462,27 +469,44 @@ function checkPageExistsAndRedirect(event) {
               <article class="bd-article" role="main">
                 
   <section id="Mixture-Density-Networks-in-GPflow">
-<h1>Mixture Density Networks in GPflow<a class="headerlink" href="#Mixture-Density-Networks-in-GPflow" title="Link to this heading">#</a></h1>
+<h1>Mixture Density Networks in GPflow<a class="headerlink" href="#Mixture-Density-Networks-in-GPflow" title="Link to this heading">¶</a></h1>
 <p>In this notebook we explain how to implement a Mixture Density Network (MDN) [1] using GPflow. In theory, this is similar to <a class="reference external" href="http://blog.otoro.net/2015/11/24/mixture-density-networks-with-tensorflow/">this blog post</a> from 2015, but instead of using TensorFlow directly we’ll use GPflow. GPflow is typically used for building Gaussian Process-based models, but the framework contains many useful methods and classes that can be used to quickly prototype a wide variety of ML algorithms. Excellent
 for doing research!</p>
 <p>We start by explaining why MDNs can be useful. We then examine a GPflow implementation of the model and use it for a couple of toy experiments.</p>
 <section id="Conditional-Density-Estimation-models">
-<h2>Conditional Density Estimation models<a class="headerlink" href="#Conditional-Density-Estimation-models" title="Link to this heading">#</a></h2>
+<h2>Conditional Density Estimation models<a class="headerlink" href="#Conditional-Density-Estimation-models" title="Link to this heading">¶</a></h2>
 <p>Imagine we are interested in performing regression on the following dataset.</p>
-<div class="nbinput nblast docutils container">
+<div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">gpflow.keras</span><span class="w"> </span><span class="kn">import</span> <span class="n">tf_keras</span>
 
 <span class="o">%</span><span class="k">matplotlib</span> inline
 
 <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># for reproducibility of this notebook</span>
 
-<span class="n">CMAP</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">get_cmap</span><span class="p">(</span><span class="s2">&quot;Blues&quot;</span><span class="p">)</span>
+<span class="n">CMAP</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">get_cmap</span><span class="p">(</span><span class="s2">"Blues"</span><span class="p">)</span>
 </pre></div>
 </div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2026-10-15 09:27:02.040198: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2026-10-15 09:27:02.044530: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2026-10-15 09:27:02.055852: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:477] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1792056422.075033     163 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1792056422.080739     163 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2026-10-15 09:27:02.100776: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+</pre></div></div>
 </div>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -492,7 +516,7 @@ for doing research!</p>
 <span class="n">NOISE_STD</span> <span class="o">=</span> <span class="mf">5.0e-2</span>
 
 
-<span class="k">def</span> <span class="nf">sinusoidal_data</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">noise</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">sinusoidal_data</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">noise</span><span class="p">):</span>
     <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">N</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>
     <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">Y</span><span class="p">)</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">+</span> <span class="n">Y</span> <span class="o">*</span> <span class="mf">0.5</span>
     <span class="n">X</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">noise</span>
@@ -502,9 +526,9 @@ for doing research!</p>
 
 <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">data</span> <span class="o">=</span> <span class="n">sinusoidal_data</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">NOISE_STD</span><span class="p">)</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">&quot;ro&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;$x$&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;$y$&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">"ro"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">"$x$"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">"$y$"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -521,7 +545,7 @@ output value for every input.</p>
 passengers need to go to different destinations (airport/city center/suburbs and so on) and the density depends on the starting location [2].</p>
 </section>
 <section id="Mixture-Density-Network-models">
-<h2>Mixture Density Network models<a class="headerlink" href="#Mixture-Density-Network-models" title="Link to this heading">#</a></h2>
+<h2>Mixture Density Network models<a class="headerlink" href="#Mixture-Density-Network-models" title="Link to this heading">¶</a></h2>
 <p>Mixture Density Networks (MDNs) are a parametric class of models that allow for conditional density estimation. They consist of two parts: a neural net and a Mixture of Gaussians (MoG). The neural net is responsible for producing the characteristics of the MoG. In practice, given that the MoG consists of <span class="math notranslate nohighlight">\(M\)</span> Gaussians, the neural net will output a collection of <span class="math notranslate nohighlight">\(M\)</span> means, variances and weights <span class="math notranslate nohighlight">\(\{\mu_m, \sigma_m^2, \pi_m\}_{m=1}^M\)</span>. These means, variances and weights are used
 to define the conditional probability distribution function: <span class="math">\begin{equation}
 p(Y = y\,|\,X = x) = \sum_{m=1}^{M} \pi_{m}(x)\,\mathcal{N}\big(y\, \left|\,\mu_{m}(x), \sigma_{m}^2(x)\big)\right.
@@ -533,61 +557,44 @@ p(Y = y\,|\,X = x) = \sum_{m=1}^{M} \pi_{m}(x)\,\mathcal{N}\big(y\, \left|\,\mu_
 <p>where <span class="math notranslate nohighlight">\(\Theta\)</span> collects the neural net’s weights and biases and <span class="math notranslate nohighlight">\(\{x_n, y_n\}_{n=1}^N\)</span> represents our training dataset.</p>
 </section>
 <section id="A-GPflow-MDN-implementation">
-<h2>A GPflow MDN implementation<a class="headerlink" href="#A-GPflow-MDN-implementation" title="Link to this heading">#</a></h2>
+<h2>A GPflow MDN implementation<a class="headerlink" href="#A-GPflow-MDN-implementation" title="Link to this heading">¶</a></h2>
 <p>GPflow doesn’t reinvent the wheel; most of what follows is just plain Python/TensorFlow code. We choose to use GPflow, however, because it provides us with functionality to easily define a model. Once we have a GPflow model, we can specify its objective function, parameters and dataset. This extra layer of abstraction makes interacting with the model much easier, for example optimizing or performing inference.</p>
 <p>We begin by importing the required packages from TensorFlow and GPflow.</p>
-<div class="nbinput docutils container">
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
-<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tf</span>
 
-<span class="kn">from</span> <span class="nn">gpflow.base</span> <span class="kn">import</span> <span class="n">Parameter</span>
-<span class="kn">from</span> <span class="nn">gpflow.models</span> <span class="kn">import</span> <span class="n">BayesianModel</span><span class="p">,</span> <span class="n">ExternalDataTrainingLossMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gpflow.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">Parameter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gpflow.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">BayesianModel</span><span class="p">,</span> <span class="n">ExternalDataTrainingLossMixin</span>
 </pre></div>
 </div>
 </div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-2024-02-07 11:47:05.053229: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
-2024-02-07 11:47:05.094596: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9261] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
-2024-02-07 11:47:05.094635: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
-2024-02-07 11:47:05.095874: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1515] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-2024-02-07 11:47:05.102412: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
-2024-02-07 11:47:05.103185: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
-To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
-</pre></div></div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-2024-02-07 11:47:06.159719: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
-</pre></div></div>
-</div>
-<p>Next, we create a <code class="docutils literal notranslate"><span class="pre">MDN</span></code> class that inherits from GPflow’s <code class="docutils literal notranslate"><span class="pre">Model</span></code> class. We need to do the following: 1. Store each of the feature and target matrices (X, Y) as a <code class="docutils literal notranslate"><span class="pre">DataHolder</span></code> object. 2. Define our model’s parameters using GPflow’s <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> and <code class="docutils literal notranslate"><span class="pre">ParamList</span></code> objects. 3. Define the objective function using the <code class="docutils literal notranslate"><span class="pre">_build_likelihood</span></code> method. When we optimize the model the negative of this function will be minimized.</p>
+<p>Next, we create a <code class="docutils literal notranslate"><span class="pre">MDN</span></code> class that inherits from GPflow’s <code class="docutils literal notranslate"><span class="pre">Model</span></code> class. We need to do the following:</p>
+<ol class="arabic simple">
+<li><p>Store each of the feature and target matrices (X, Y) as a <code class="docutils literal notranslate"><span class="pre">DataHolder</span></code> object.</p></li>
+<li><p>Define our model’s parameters using GPflow’s <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> and <code class="docutils literal notranslate"><span class="pre">ParamList</span></code> objects.</p></li>
+<li><p>Define the objective function using the <code class="docutils literal notranslate"><span class="pre">_build_likelihood</span></code> method. When we optimize the model the negative of this function will be minimized.</p></li>
+</ol>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MDN</span><span class="p">(</span><span class="n">BayesianModel</span><span class="p">,</span> <span class="n">ExternalDataTrainingLossMixin</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MDN</span><span class="p">(</span><span class="n">BayesianModel</span><span class="p">,</span> <span class="n">ExternalDataTrainingLossMixin</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">num_mixtures</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
         <span class="n">inner_dims</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span>
         <span class="n">activation</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
             <span class="n">Callable</span><span class="p">[[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span>
-        <span class="p">]</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">activations</span><span class="o">.</span><span class="n">relu</span><span class="p">,</span>
+        <span class="p">]</span> <span class="o">=</span> <span class="n">tf_keras</span><span class="o">.</span><span class="n">activations</span><span class="o">.</span><span class="n">relu</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
-        <span class="c1"># `self.dims` collects the neural net&#39;s input, hidden and output dimensions.</span>
+        <span class="c1"># `self.dims` collects the neural net's input, hidden and output dimensions.</span>
         <span class="c1"># The number of output dims `self.dims[-1]` equals `num_mixtures` means +</span>
         <span class="c1"># `num _mixtures` variances + `num_mixtures` weights, a total of</span>
         <span class="c1"># 3 times `num_mixtures` variables.</span>
@@ -595,7 +602,7 @@ To enable the following instructions: AVX2 AVX512F FMA, in other operations, reb
         <span class="bp">self</span><span class="o">.</span><span class="n">activation</span> <span class="o">=</span> <span class="n">activation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_create_network</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">_create_network</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_network</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Ws</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bs</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
 
         <span class="k">for</span> <span class="n">dim_in</span><span class="p">,</span> <span class="n">dim_out</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dims</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
@@ -605,7 +612,7 @@ To enable the following instructions: AVX2 AVX512F FMA, in other operations, reb
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">bs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Parameter</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">dim_out</span><span class="p">)))</span>
 
-    <span class="k">def</span> <span class="nf">eval_network</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eval_network</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">W</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Ws</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bs</span><span class="p">)):</span>
             <span class="n">X</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">W</span><span class="p">)</span> <span class="o">+</span> <span class="n">b</span>
             <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bs</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
@@ -617,7 +624,7 @@ To enable the following instructions: AVX2 AVX512F FMA, in other operations, reb
 
         <span class="k">return</span> <span class="n">pis</span><span class="p">,</span> <span class="n">mus</span><span class="p">,</span> <span class="n">sigmas</span>
 
-    <span class="k">def</span> <span class="nf">maximum_log_likelihood_objective</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">maximum_log_likelihood_objective</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span>
     <span class="p">):</span>
         <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">data</span>
@@ -634,7 +641,7 @@ To enable the following instructions: AVX2 AVX512F FMA, in other operations, reb
 </div>
 </div>
 <section id="Notes">
-<h3>Notes<a class="headerlink" href="#Notes" title="Link to this heading">#</a></h3>
+<h3>Notes<a class="headerlink" href="#Notes" title="Link to this heading">¶</a></h3>
 <ul class="simple">
 <li><p>Given we are dealing with a MoG, the neural net output must comply with the following restrictions: <span class="math">\begin{equation}
 \sum_{m=1}^{M} \pi_{m}(x) = 1, \pi_m \ge 0\ \text{and}\ \sigma_m\ \forall\ m
@@ -645,7 +652,7 @@ To enable the following instructions: AVX2 AVX512F FMA, in other operations, reb
 </section>
 </section>
 <section id="Experiment-1:-The-sinusoidal-dataset">
-<h2>Experiment 1: The sinusoidal dataset<a class="headerlink" href="#Experiment-1:-The-sinusoidal-dataset" title="Link to this heading">#</a></h2>
+<h2>Experiment 1: The sinusoidal dataset<a class="headerlink" href="#Experiment-1:-The-sinusoidal-dataset" title="Link to this heading">¶</a></h2>
 <p>Let’s see how our model works in practice with the sinusoidal dataset presented earlier. We do this by initializing a new instance of our MDN model, and then specifying the dataset <span class="math notranslate nohighlight">\((X, Y)\)</span>, the number of hidden units of the MDN’s neural net, and the number of mixture components <span class="math notranslate nohighlight">\(M\)</span>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
@@ -653,13 +660,13 @@ To enable the following instructions: AVX2 AVX512F FMA, in other operations, reb
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">MDN</span><span class="p">(</span><span class="n">inner_dims</span><span class="o">=</span><span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">],</span> <span class="n">num_mixtures</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
 
-<span class="kn">from</span> <span class="nn">gpflow.utilities</span> <span class="kn">import</span> <span class="n">print_summary</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gpflow.utilities</span><span class="w"> </span><span class="kn">import</span> <span class="n">print_summary</span>
 
 <span class="n">print_summary</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
+<div class="nboutput docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
@@ -681,14 +688,22 @@ To enable the following instructions: AVX2 AVX512F FMA, in other operations, reb
 ╘═══════════╧═══════════╧═════════════╧═════════╧═════════════╧════════════╧═════════╧═══════════════════════════════════════════╛
 </pre></div></div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2026-10-15 09:27:06.904432: E external/local_xla/xla/stream_executor/cuda/cuda_driver.cc:152] failed call to cuInit: INTERNAL: CUDA error: Failed call to cuInit: UNKNOWN ERROR (303)
+</pre></div></div>
+</div>
 <p>The objective function for MDN instances is the <code class="docutils literal notranslate"><span class="pre">maximum_log_likelihood_objective</span></code>, which we use for optimization of the parameters. GPflow ensures that only the variables stored in <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> objects are optimized. For the MDN, the only parameters are the weights and the biases of the neural net.</p>
 <p>We use the <code class="docutils literal notranslate"><span class="pre">Scipy</span></code> optimizer, which is a wrapper around SciPy’s L-BFGS optimization algorithm. Note that GPflow supports other TensorFlow optimizers such as <code class="docutils literal notranslate"><span class="pre">Adam</span></code>, <code class="docutils literal notranslate"><span class="pre">Adagrad</span></code>, and <code class="docutils literal notranslate"><span class="pre">Adadelta</span></code> as well.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">gpflow.ci_utils</span> <span class="kn">import</span> <span class="n">reduce_in_tests</span>
-<span class="kn">from</span> <span class="nn">gpflow.optimizers</span> <span class="kn">import</span> <span class="n">Scipy</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">gpflow.ci_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">reduce_in_tests</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gpflow.optimizers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Scipy</span>
 
 <span class="n">Scipy</span><span class="p">()</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
     <span class="n">model</span><span class="o">.</span><span class="n">training_loss_closure</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">compile</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
@@ -696,7 +711,7 @@ To enable the following instructions: AVX2 AVX512F FMA, in other operations, reb
     <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">1500</span><span class="p">)),</span>
 <span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Final Likelihood&quot;</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">maximum_log_likelihood_objective</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Final Likelihood"</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">maximum_log_likelihood_objective</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
 </pre></div>
 </div>
 </div>
@@ -705,7 +720,7 @@ To enable the following instructions: AVX2 AVX512F FMA, in other operations, reb
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Final Likelihood -145.72123438754997
+Final Likelihood -131.71407057722644
 </pre></div></div>
 </div>
 <p>To evaluate the validity of our model, we draw the posterior density. We also plot <span class="math notranslate nohighlight">\(\mu(x)\)</span> of the optimized neural net. Remember that for every <span class="math notranslate nohighlight">\(x\)</span> the neural net outputs <span class="math notranslate nohighlight">\(M\)</span> means <span class="math notranslate nohighlight">\(\mu_m(x)\)</span>. These determine the location of the Gaussians. We plot all <span class="math notranslate nohighlight">\(M\)</span> means and use their corresponding mixture weight <span class="math notranslate nohighlight">\(\pi_m(X)\)</span> to determine their size. Larger dots will have more impact in the Gaussian ensemble.</p>
@@ -714,10 +729,10 @@ Final Likelihood -145.72123438754997
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">mdn_plotting</span> <span class="kn">import</span> <span class="n">plot</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">mdn_plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot</span>
 <span class="k">except</span><span class="p">:</span>
-    <span class="c1"># VS CODE&#39;s root directory is GPflow&#39;s top-level directory</span>
-    <span class="kn">from</span> <span class="nn">doc.sphinx.notebooks.tailor.mdn_plotting</span> <span class="kn">import</span> <span class="n">plot</span>
+    <span class="c1"># VS CODE's root directory is GPflow's top-level directory</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">doc.sphinx.notebooks.tailor.mdn_plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot</span>
 
 <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
 <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">axes</span><span class="p">:</span>
@@ -736,16 +751,16 @@ Final Likelihood -145.72123438754997
 </div>
 </section>
 <section id="Experiment-2:-The-half-moon-dataset">
-<h2>Experiment 2: The half moon dataset<a class="headerlink" href="#Experiment-2:-The-half-moon-dataset" title="Link to this heading">#</a></h2>
+<h2>Experiment 2: The half moon dataset<a class="headerlink" href="#Experiment-2:-The-half-moon-dataset" title="Link to this heading">¶</a></h2>
 <p>The half moon dataset is available in the <code class="docutils literal notranslate"><span class="pre">scikit-learn</span></code> package.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">make_moons</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_moons</span>
 
 
-<span class="k">def</span> <span class="nf">moon_data</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">noise</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">moon_data</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">noise</span><span class="p">):</span>
     <span class="n">data</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">make_moons</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="n">N</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">noise</span><span class="o">=</span><span class="n">noise</span><span class="p">)</span>
     <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">data</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span>
@@ -757,9 +772,9 @@ Final Likelihood -145.72123438754997
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">data</span> <span class="o">=</span> <span class="n">moon_data</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">NOISE_STD</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">&quot;ro&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;$x$&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;$y$&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">"ro"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">"$x$"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">"$y$"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -789,7 +804,7 @@ Final Likelihood -145.72123438754997
     <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="n">reduce_in_tests</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mf">10e3</span><span class="p">))),</span>
 <span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Final Likelihood&quot;</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">maximum_log_likelihood_objective</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Final Likelihood"</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">maximum_log_likelihood_objective</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
 </pre></div>
 </div>
 </div>
@@ -798,7 +813,7 @@ Final Likelihood -145.72123438754997
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Final Likelihood 226.57098990457308
+Final Likelihood 218.66053449195152
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
@@ -831,7 +846,7 @@ Final Likelihood 226.57098990457308
 </div>
 </section>
 <section id="References">
-<h2>References<a class="headerlink" href="#References" title="Link to this heading">#</a></h2>
+<h2>References<a class="headerlink" href="#References" title="Link to this heading">¶</a></h2>
 <p>[1] Bishop, Christopher M. Mixture density networks. Technical Report NCRG/4288, Aston University, Birmingham, UK, 1994.</p>
 <p>[2] Dutordoir, Vincent, et al. “Gaussian Process Conditional Density Estimation.” Advances in Neural Information Processing Systems. 2018.</p>
 </section>
@@ -862,7 +877,7 @@ Final Likelihood 226.57098990457308
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.3.7.<br>
 </p>
   </div>
   

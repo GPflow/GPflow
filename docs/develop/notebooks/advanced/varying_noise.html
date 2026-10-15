@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Gaussian process regression with varying output noise &#8212; GPflow 2.9.0 documentation</title>
+    <title>Gaussian process regression with varying output noise &#8212; GPflow 2.11.2 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -23,15 +23,15 @@
   <link rel="preload" as="font" type="font/woff2" crossorigin
     href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
 
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
-    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
     <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css?v=c27e38e3" />
 
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
-    <script src="../../_static/documentation_options.js?v=8da69bee"></script>
-    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/documentation_options.js?v=b2fb886b"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
@@ -67,7 +67,7 @@
   
   
   
-    <p class="title logo__title">GPflow 2.9.0 documentation</p>
+    <p class="title logo__title">GPflow 2.11.2 documentation</p>
   
 </a>
     
@@ -382,6 +382,13 @@ function checkPageExistsAndRedirect(event) {
   </a>
  </li>
 </ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="hierarchical_kernels.html">
+   Hierarchical kernels
+  </a>
+ </li>
+</ul>
 
   </div>
 </nav>
@@ -506,43 +513,48 @@ function checkPageExistsAndRedirect(event) {
               <article class="bd-article" role="main">
                 
   <section id="Gaussian-process-regression-with-varying-output-noise">
-<h1>Gaussian process regression with varying output noise<a class="headerlink" href="#Gaussian-process-regression-with-varying-output-noise" title="Link to this heading">#</a></h1>
+<h1>Gaussian process regression with varying output noise<a class="headerlink" href="#Gaussian-process-regression-with-varying-output-noise" title="Link to this heading">¶</a></h1>
 <p>This notebook shows how to construct a Gaussian process model where different noise is assumed for different data points. The model is:</p>
 <p><span class="math">\begin{align}
 f(\cdot) &\sim \mathcal{GP}\big(0, k(\cdot, \cdot)\big) \\
 y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 \end{align}</span></p>
-<p>We’ll demonstrate three methods for specifying the data-point specific noise: * First we’ll show how to fit the noise variance to a simple function. * In the second demonstration we’ll assume that the data comes from two different groups and show how to learn separate noise variance for the groups. * Third we’ll assume you have multiple samples at each location <span class="math notranslate nohighlight">\(x\)</span> and show how to use the empirical variance.</p>
+<p>We’ll demonstrate three methods for specifying the data-point specific noise:</p>
+<ul class="simple">
+<li><p>First we’ll show how to fit the noise variance to a simple function.</p></li>
+<li><p>In the second demonstration we’ll assume that the data comes from two different groups and show how to learn separate noise variance for the groups.</p></li>
+<li><p>Third we’ll assume you have multiple samples at each location <span class="math notranslate nohighlight">\(x\)</span> and show how to use the empirical variance.</p></li>
+</ul>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 
-<span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
-<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;TF_CPP_MIN_LOG_LEVEL&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;3&quot;</span>
+<span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s2">"ignore"</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"TF_CPP_MIN_LOG_LEVEL"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"3"</span>
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
+<div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
-<span class="kn">from</span> <span class="nn">check_shapes</span> <span class="kn">import</span> <span class="n">inherit_check_shapes</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tf</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">check_shapes</span><span class="w"> </span><span class="kn">import</span> <span class="n">inherit_check_shapes</span>
 
-<span class="kn">import</span> <span class="nn">gpflow</span> <span class="k">as</span> <span class="nn">gf</span>
-<span class="kn">from</span> <span class="nn">gpflow.ci_utils</span> <span class="kn">import</span> <span class="n">reduce_in_tests</span>
-<span class="kn">from</span> <span class="nn">gpflow.utilities</span> <span class="kn">import</span> <span class="n">print_summary</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">gpflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gf</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gpflow.ci_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">reduce_in_tests</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gpflow.utilities</span><span class="w"> </span><span class="kn">import</span> <span class="n">print_summary</span>
 
 <span class="o">%</span><span class="k">matplotlib</span> inline
 
-<span class="n">gf</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set_default_summary_fmt</span><span class="p">(</span><span class="s2">&quot;notebook&quot;</span><span class="p">)</span>
+<span class="n">gf</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set_default_summary_fmt</span><span class="p">(</span><span class="s2">"notebook"</span><span class="p">)</span>
 
 <span class="n">optimizer_config</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">1000</span><span class="p">))</span>
 <span class="n">n_data</span> <span class="o">=</span> <span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">300</span><span class="p">)</span>
@@ -550,12 +562,22 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1792056406.702992     131 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1792056406.708677     131 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+</pre></div></div>
+</div>
 <p>To help us later we’ll first define a small function for plotting data with predictions:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_distribution</span><span class="p">(</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">plot_distribution</span><span class="p">(</span>
     <span class="n">X</span><span class="p">:</span> <span class="n">gf</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AnyNDArray</span><span class="p">,</span>
     <span class="n">Y</span><span class="p">:</span> <span class="n">gf</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AnyNDArray</span><span class="p">,</span>
     <span class="n">X_plot</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">gf</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AnyNDArray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -569,9 +591,9 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 
     <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">Y</span> <span class="o">=</span> <span class="n">Y</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"gray"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">get_confidence_bounds</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_confidence_bounds</span><span class="p">(</span>
         <span class="n">mean</span><span class="p">:</span> <span class="n">gf</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">var</span><span class="p">:</span> <span class="n">gf</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AnyNDArray</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">gf</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">gf</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AnyNDArray</span><span class="p">]:</span>
         <span class="n">std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
@@ -585,17 +607,17 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
         <span class="n">var_plot</span> <span class="o">=</span> <span class="n">var_plot</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">lower_plot</span><span class="p">,</span> <span class="n">upper_plot</span> <span class="o">=</span> <span class="n">get_confidence_bounds</span><span class="p">(</span><span class="n">mean_plot</span><span class="p">,</span> <span class="n">var_plot</span><span class="p">)</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span>
-            <span class="n">X_plot</span><span class="p">,</span> <span class="n">lower_plot</span><span class="p">,</span> <span class="n">upper_plot</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;silver&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span>
+            <span class="n">X_plot</span><span class="p">,</span> <span class="n">lower_plot</span><span class="p">,</span> <span class="n">upper_plot</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"silver"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span>
         <span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X_plot</span><span class="p">,</span> <span class="n">lower_plot</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;silver&quot;</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X_plot</span><span class="p">,</span> <span class="n">upper_plot</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;silver&quot;</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X_plot</span><span class="p">,</span> <span class="n">mean_plot</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X_plot</span><span class="p">,</span> <span class="n">lower_plot</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"silver"</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X_plot</span><span class="p">,</span> <span class="n">upper_plot</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"silver"</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X_plot</span><span class="p">,</span> <span class="n">mean_plot</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"black"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">X_err</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">assert</span> <span class="n">mean_err</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="k">assert</span> <span class="n">var_err</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="n">lower_err</span><span class="p">,</span> <span class="n">upper_err</span> <span class="o">=</span> <span class="n">get_confidence_bounds</span><span class="p">(</span><span class="n">mean_err</span><span class="p">,</span> <span class="n">var_err</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">X_err</span><span class="p">,</span> <span class="n">lower_err</span><span class="p">,</span> <span class="n">upper_err</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">X_err</span><span class="p">,</span> <span class="n">lower_err</span><span class="p">,</span> <span class="n">upper_err</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"black"</span><span class="p">)</span>
 
     <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
@@ -603,15 +625,15 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 </div>
 </div>
 <section id="Demo-1:-known-noise-variances">
-<h2>Demo 1: known noise variances<a class="headerlink" href="#Demo-1:-known-noise-variances" title="Link to this heading">#</a></h2>
+<h2>Demo 1: known noise variances<a class="headerlink" href="#Demo-1:-known-noise-variances" title="Link to this heading">¶</a></h2>
 <section id="Generate-data">
-<h3>Generate data<a class="headerlink" href="#Generate-data" title="Link to this heading">#</a></h3>
+<h3>Generate data<a class="headerlink" href="#Generate-data" title="Link to this heading">¶</a></h3>
 <p>We create a utility function to generate synthetic data, including noise that varies amongst the data:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">generate_data</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">gf</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">gf</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AnyNDArray</span><span class="p">]:</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">generate_data</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">gf</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">gf</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AnyNDArray</span><span class="p">]:</span>
     <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>  <span class="c1"># for reproducibility</span>
     <span class="n">X</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="p">(</span><span class="n">n_data</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
     <span class="n">signal</span> <span class="o">=</span> <span class="p">(</span><span class="n">X</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="mf">0.05</span>
@@ -643,7 +665,7 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 </div>
 </section>
 <section id="Try-a-naive-fit">
-<h3>Try a naive fit<a class="headerlink" href="#Try-a-naive-fit" title="Link to this heading">#</a></h3>
+<h3>Try a naive fit<a class="headerlink" href="#Try-a-naive-fit" title="Link to this heading">¶</a></h3>
 <p>If we try to fit a naive GPR model to this data, which assumes a single shared noise variance value for all data points - as specified by the likelihood variance parameter - we get:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
@@ -694,7 +716,7 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 <p>Notice how this naive model underestimates the noise near the center of the figure, but overestimates at for small and large values of x?</p>
 </section>
 <section id="Fit-a-polynomial-to-the-noise-scale">
-<h3>Fit a polynomial to the noise scale<a class="headerlink" href="#Fit-a-polynomial-to-the-noise-scale" title="Link to this heading">#</a></h3>
+<h3>Fit a polynomial to the noise scale<a class="headerlink" href="#Fit-a-polynomial-to-the-noise-scale" title="Link to this heading">¶</a></h3>
 <p>To fit a model with varying noise, instead of using the default single shared noise variance, we can create a Gaussian <code class="docutils literal notranslate"><span class="pre">Likelihood</span></code> with an input dependent (polynomial) <code class="docutils literal notranslate"><span class="pre">Function</span></code> for the scale of the noise, then pass that likelihood to our model.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
@@ -721,9 +743,9 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 <tr><th>name                   </th><th>class    </th><th>transform  </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th>value                                  </th></tr>
 </thead>
 <tbody>
-<tr><td>GPR.kernel.variance    </td><td>Parameter</td><td>Softplus   </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td>0.2413839106099892                     </td></tr>
-<tr><td>GPR.kernel.lengthscales</td><td>Parameter</td><td>Softplus   </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td>0.770924147332542                      </td></tr>
-<tr><td>GPR.likelihood.scale.w </td><td>Parameter</td><td>Identity   </td><td>       </td><td>True       </td><td>(1, 3) </td><td>float64</td><td>[[ 0.14642887 -0.47432845  0.47147134]]</td></tr>
+<tr><td>GPR.kernel.variance    </td><td>Parameter</td><td>Softplus   </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td>0.9661254772680353                     </td></tr>
+<tr><td>GPR.kernel.lengthscales</td><td>Parameter</td><td>Softplus   </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td>1.06769                                </td></tr>
+<tr><td>GPR.likelihood.scale.w </td><td>Parameter</td><td>Identity   </td><td>       </td><td>True       </td><td>(1, 3) </td><td>float64</td><td>[[ 0.14628276 -0.47427039  0.47165722]]</td></tr>
 </tbody>
 </table></div>
 </div>
@@ -746,20 +768,20 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 </section>
 </section>
 <section id="Demo-2:-grouped-noise-variances">
-<h2>Demo 2: grouped noise variances<a class="headerlink" href="#Demo-2:-grouped-noise-variances" title="Link to this heading">#</a></h2>
+<h2>Demo 2: grouped noise variances<a class="headerlink" href="#Demo-2:-grouped-noise-variances" title="Link to this heading">¶</a></h2>
 <p>In this demo, we won’t assume that the noise variances is a function of <span class="math notranslate nohighlight">\(x\)</span>, but we will assume that they’re known to be in two groups. This example represents a case where we might know that data has been collected by two instruments with different fidelity, but we do not know what those fidelities are.</p>
 <p>Of course it would be straightforward to add more groups. We’ll stick with two for simplicity.</p>
 <section id="id1">
-<h3>Generate data<a class="headerlink" href="#id1" title="Link to this heading">#</a></h3>
+<h3>Generate data<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">get_group</span><span class="p">(</span><span class="n">X</span><span class="p">:</span> <span class="n">gf</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AnyNDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gf</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AnyNDArray</span><span class="p">:</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">get_group</span><span class="p">(</span><span class="n">X</span><span class="p">:</span> <span class="n">gf</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AnyNDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gf</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AnyNDArray</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((((</span><span class="mf">0.2</span> <span class="o">&lt;</span> <span class="n">X</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">X</span> <span class="o">&lt;</span> <span class="mf">0.4</span><span class="p">))</span> <span class="o">|</span> <span class="p">((</span><span class="mf">0.7</span> <span class="o">&lt;</span> <span class="n">X</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">X</span> <span class="o">&lt;</span> <span class="mf">0.8</span><span class="p">))),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">generate_grouped_data</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">gf</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">gf</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AnyNDArray</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">generate_grouped_data</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">gf</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">gf</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AnyNDArray</span><span class="p">]:</span>
     <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>  <span class="c1"># for reproducibility</span>
     <span class="n">X</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="p">(</span><span class="n">n_data</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
     <span class="n">signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">6</span> <span class="o">*</span> <span class="n">X</span><span class="p">)</span>
@@ -791,7 +813,7 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 </div>
 </section>
 <section id="Fit-a-naive-model">
-<h3>Fit a naive model<a class="headerlink" href="#Fit-a-naive-model" title="Link to this heading">#</a></h3>
+<h3>Fit a naive model<a class="headerlink" href="#Fit-a-naive-model" title="Link to this heading">¶</a></h3>
 <p>Again we’ll start by fitting a naive GPR, to demonstrate the problem.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
@@ -841,7 +863,7 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 </div>
 </section>
 <section id="Data-structure">
-<h3>Data structure<a class="headerlink" href="#Data-structure" title="Link to this heading">#</a></h3>
+<h3>Data structure<a class="headerlink" href="#Data-structure" title="Link to this heading">¶</a></h3>
 <p>To model the different noise groups, we need to let the model know which group each data point belongs to. We’ll do that by appending a column with the group to the <span class="math notranslate nohighlight">\(x\)</span> data:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
@@ -854,7 +876,7 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 </div>
 </section>
 <section id="Use-multiple-functions-for-the-noise-variance">
-<h3>Use multiple functions for the noise variance<a class="headerlink" href="#Use-multiple-functions-for-the-noise-variance" title="Link to this heading">#</a></h3>
+<h3>Use multiple functions for the noise variance<a class="headerlink" href="#Use-multiple-functions-for-the-noise-variance" title="Link to this heading">¶</a></h3>
 <p>To model this we will create two noise variance functions, each of which are just a constant, and then switch between them depending on the group labels.</p>
 <p>Notice that we initialize the constant functions to a positive value. They would have defaulted to <code class="docutils literal notranslate"><span class="pre">0.0</span></code>, but that wouldn’t work for a variance, which must be strictly positive.</p>
 <div class="nbinput docutils container">
@@ -889,7 +911,7 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 <tr><th>name                                  </th><th>class    </th><th>transform  </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th style="text-align: right;">    value</th></tr>
 </thead>
 <tbody>
-<tr><td>GPR.kernel.variance                   </td><td>Parameter</td><td>Softplus   </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">0.815667 </td></tr>
+<tr><td>GPR.kernel.variance                   </td><td>Parameter</td><td>Softplus   </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">0.815663 </td></tr>
 <tr><td>GPR.kernel.lengthscales               </td><td>Parameter</td><td>Softplus   </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">0.304088 </td></tr>
 <tr><td>GPR.likelihood.variance.functions[0].c</td><td>Parameter</td><td>Identity   </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">0.0101217</td></tr>
 <tr><td>GPR.likelihood.variance.functions[1].c</td><td>Parameter</td><td>Identity   </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td style="text-align: right;">0.258617 </td></tr>
@@ -915,10 +937,10 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 </section>
 </section>
 <section id="Demo-3:-Empirical-noise-variance">
-<h2>Demo 3: Empirical noise variance<a class="headerlink" href="#Demo-3:-Empirical-noise-variance" title="Link to this heading">#</a></h2>
+<h2>Demo 3: Empirical noise variance<a class="headerlink" href="#Demo-3:-Empirical-noise-variance" title="Link to this heading">¶</a></h2>
 <p>In this demo we will assume that you have multiple measurements at each <span class="math notranslate nohighlight">\(x\)</span> location, and want to use the empirical variance at each location.</p>
 <section id="id2">
-<h3>Generate data<a class="headerlink" href="#id2" title="Link to this heading">#</a></h3>
+<h3>Generate data<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
@@ -927,7 +949,7 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 <span class="n">n_repeats</span> <span class="o">=</span> <span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">generate_empiricial_noise_data</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">generate_empiricial_noise_data</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span>
     <span class="n">gf</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">gf</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AnyNDArray</span>
 <span class="p">]:</span>
     <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>  <span class="c1"># for reproducibility</span>
@@ -965,7 +987,7 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 </div>
 </section>
 <section id="id3">
-<h3>Data structure<a class="headerlink" href="#id3" title="Link to this heading">#</a></h3>
+<h3>Data structure<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
 <p>Our GPs don’t like it when multiple data points occupy the same <span class="math notranslate nohighlight">\(x\)</span> location. So we’ll reduce this dataset to the means and the variances at each <span class="math notranslate nohighlight">\(x\)</span>, and use a custom function to model inject the empirical variances into the model.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
@@ -977,7 +999,7 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 </div>
 </section>
 <section id="id4">
-<h3>Fit a naive model<a class="headerlink" href="#id4" title="Link to this heading">#</a></h3>
+<h3>Fit a naive model<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
 <p>Again we’ll start by fitting a naive GPR, to demonstrate the problem.</p>
 <p>Notice that this case is somewhat different from what we did above. Here we are not modelling <span class="math notranslate nohighlight">\(Y\)</span>, but the mean of <span class="math notranslate nohighlight">\(Y\)</span>, so the noise variance is not our uncertainty of <span class="math notranslate nohighlight">\(Y\)</span>, but our uncertainty of the mean of <span class="math notranslate nohighlight">\(Y\)</span>. Furthermore, while the naive model assumes a constant noise variance, the custom noise variance function we will develop below will only model the noise variance at the points where we have data, thus we cannot plot a continuous uncertainty. Instead, the shaded
 gray area is the confidence interval of <span class="math notranslate nohighlight">\(f\)</span>, and we use vertical black lines to indicate the confidence interval of the <span class="math notranslate nohighlight">\(Y\)</span> mean.</p>
@@ -1040,19 +1062,19 @@ gray area is the confidence interval of <span class="math notranslate nohighligh
 </div>
 </section>
 <section id="Create-custom-function-for-the-noise-variance">
-<h3>Create custom function for the noise variance<a class="headerlink" href="#Create-custom-function-for-the-noise-variance" title="Link to this heading">#</a></h3>
+<h3>Create custom function for the noise variance<a class="headerlink" href="#Create-custom-function-for-the-noise-variance" title="Link to this heading">¶</a></h3>
 <p>We’re modelling the <code class="docutils literal notranslate"><span class="pre">Y_mean</span></code> and its standard error is <code class="docutils literal notranslate"><span class="pre">Y_var</span> <span class="pre">/</span> <span class="pre">n_repeats</span></code>. We will create a simple function that ignores its input and returns these values as a constant. This will obviously only work for the <code class="docutils literal notranslate"><span class="pre">X</span></code> that corresponds to the <code class="docutils literal notranslate"><span class="pre">Y</span></code> we computed the variance of - that is good enough for model training, but notice that it will not allow us to use <code class="docutils literal notranslate"><span class="pre">predict_y</span></code>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">FixedVarianceOfMean</span><span class="p">(</span><span class="n">gf</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">Function</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">gf</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AnyNDArray</span><span class="p">):</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">FixedVarianceOfMean</span><span class="p">(</span><span class="n">gf</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">Function</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">gf</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AnyNDArray</span><span class="p">):</span>
         <span class="n">n_repeats</span> <span class="o">=</span> <span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">var_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">/</span> <span class="n">n_repeats</span>
 
     <span class="nd">@inherit_check_shapes</span>
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">gf</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">gf</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">var_mean</span>
 </pre></div>
 </div>
@@ -1119,7 +1141,7 @@ gray area is the confidence interval of <span class="math notranslate nohighligh
 </section>
 </section>
 <section id="Further-reading">
-<h2>Further reading<a class="headerlink" href="#Further-reading" title="Link to this heading">#</a></h2>
+<h2>Further reading<a class="headerlink" href="#Further-reading" title="Link to this heading">¶</a></h2>
 <p>To model the variance using a second GP, see the <a class="reference internal" href="heteroskedastic.html"><span class="doc">Heteroskedastic regression notebook</span></a>.</p>
 </section>
 </section>
@@ -1149,7 +1171,7 @@ gray area is the confidence interval of <span class="math notranslate nohighligh
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.3.7.<br>
 </p>
   </div>
   

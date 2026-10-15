@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>gpflow.probability_distributions &#8212; GPflow 2.9.0 documentation</title>
+    <title>gpflow.probability_distributions &#8212; GPflow 2.11.2 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -22,14 +22,14 @@
   <link rel="preload" as="font" type="font/woff2" crossorigin
     href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
 
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css?v=c27e38e3" />
 
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
-    <script src="../../_static/documentation_options.js?v=8da69bee"></script>
-    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/documentation_options.js?v=b2fb886b"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
@@ -61,7 +61,7 @@
   
   
   
-    <p class="title logo__title">GPflow 2.9.0 documentation</p>
+    <p class="title logo__title">GPflow 2.11.2 documentation</p>
   
 </a>
     
@@ -240,55 +240,55 @@ function checkPageExistsAndRedirect(event) {
   <h1>Source code for gpflow.probability_distributions</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Copyright 2017-2020 The GPflow Contributors. All Rights Reserved.</span>
 <span class="c1">#</span>
-<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1"># you may not use this file except in compliance with the License.</span>
 <span class="c1"># You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1"># See the License for the specific language governing permissions and</span>
 <span class="c1"># limitations under the License.</span>
 
 
 <span class="c1"># Eventually, it would be nice to not have to have our own classes for</span>
-<span class="c1"># probability distributions. The TensorFlow &quot;distributions&quot; framework would</span>
+<span class="c1"># probability distributions. The TensorFlow "distributions" framework would</span>
 <span class="c1"># be a good replacement.</span>
-<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
 
-<span class="kn">from</span> <span class="nn">check_shapes</span> <span class="kn">import</span> <span class="n">ErrorContext</span><span class="p">,</span> <span class="n">Shape</span><span class="p">,</span> <span class="n">check_shapes</span><span class="p">,</span> <span class="n">register_get_shape</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">check_shapes</span><span class="w"> </span><span class="kn">import</span> <span class="n">ErrorContext</span><span class="p">,</span> <span class="n">Shape</span><span class="p">,</span> <span class="n">check_shapes</span><span class="p">,</span> <span class="n">register_get_shape</span>
 
-<span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="n">TensorType</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">TensorType</span>
 
 
 <div class="viewcode-block" id="ProbabilityDistribution">
 <a class="viewcode-back" href="../../api/gpflow/probability_distributions/index.html#gpflow.probability_distributions.ProbabilityDistribution">[docs]</a>
-<span class="k">class</span> <span class="nc">ProbabilityDistribution</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ProbabilityDistribution</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    This is the base class for a probability distributions,</span>
 <span class="sd">    over which we take the expectations in the expectations framework.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="nd">@property</span>
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Return the shape of this distribution.</span>
 
 <span class="sd">        Shape should be some variation of ``[N, D]``, where:</span>
 
 <span class="sd">        * ``N`` is the number of data points.</span>
 <span class="sd">        * ``D`` is the number of input dimensions.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 
 
 
 <div class="viewcode-block" id="get_probability_distribution_shape">
 <a class="viewcode-back" href="../../api/gpflow/probability_distributions/index.html#gpflow.probability_distributions.get_probability_distribution_shape">[docs]</a>
 <span class="nd">@register_get_shape</span><span class="p">(</span><span class="n">ProbabilityDistribution</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">get_probability_distribution_shape</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_probability_distribution_shape</span><span class="p">(</span>
     <span class="n">shaped</span><span class="p">:</span> <span class="n">ProbabilityDistribution</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">shaped</span><span class="o">.</span><span class="n">shape</span></div>
@@ -297,60 +297,60 @@ function checkPageExistsAndRedirect(event) {
 
 <div class="viewcode-block" id="Gaussian">
 <a class="viewcode-back" href="../../api/gpflow/probability_distributions/index.html#gpflow.probability_distributions.Gaussian">[docs]</a>
-<span class="k">class</span> <span class="nc">Gaussian</span><span class="p">(</span><span class="n">ProbabilityDistribution</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Gaussian</span><span class="p">(</span><span class="n">ProbabilityDistribution</span><span class="p">):</span>
     <span class="nd">@check_shapes</span><span class="p">(</span>
-        <span class="s2">&quot;mu: [N, D]&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;cov: [N, D, D]&quot;</span><span class="p">,</span>
+        <span class="s2">"mu: [N, D]"</span><span class="p">,</span>
+        <span class="s2">"cov: [N, D, D]"</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">cov</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">cov</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mu</span> <span class="o">=</span> <span class="n">mu</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cov</span> <span class="o">=</span> <span class="n">cov</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="o">.</span><span class="n">shape</span>  <span class="c1"># type: ignore[no-any-return]</span></div>
 
 
 
 <div class="viewcode-block" id="DiagonalGaussian">
 <a class="viewcode-back" href="../../api/gpflow/probability_distributions/index.html#gpflow.probability_distributions.DiagonalGaussian">[docs]</a>
-<span class="k">class</span> <span class="nc">DiagonalGaussian</span><span class="p">(</span><span class="n">ProbabilityDistribution</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DiagonalGaussian</span><span class="p">(</span><span class="n">ProbabilityDistribution</span><span class="p">):</span>
     <span class="nd">@check_shapes</span><span class="p">(</span>
-        <span class="s2">&quot;mu: [N, D]&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;cov: [N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">"mu: [N, D]"</span><span class="p">,</span>
+        <span class="s2">"cov: [N, D]"</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">cov</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">cov</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mu</span> <span class="o">=</span> <span class="n">mu</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cov</span> <span class="o">=</span> <span class="n">cov</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="o">.</span><span class="n">shape</span>  <span class="c1"># type: ignore[no-any-return]</span></div>
 
 
 
 <div class="viewcode-block" id="MarkovGaussian">
 <a class="viewcode-back" href="../../api/gpflow/probability_distributions/index.html#gpflow.probability_distributions.MarkovGaussian">[docs]</a>
-<span class="k">class</span> <span class="nc">MarkovGaussian</span><span class="p">(</span><span class="n">ProbabilityDistribution</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MarkovGaussian</span><span class="p">(</span><span class="n">ProbabilityDistribution</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Gaussian distribution with Markov structure.</span>
 <span class="sd">    Only covariances and covariances between t and t+1 need to be</span>
 <span class="sd">    parameterised. We use the solution proposed by Carl Rasmussen, i.e. to</span>
 <span class="sd">    represent</span>
 <span class="sd">    Var[x_t] = cov[x_t, :, :] * cov[x_t, :, :].T</span>
 <span class="sd">    Cov[x_t, x_{t+1}] = cov[t, :, :] * cov[t+1, :, :]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="nd">@check_shapes</span><span class="p">(</span>
-        <span class="s2">&quot;mu: [N_plus_1, D]&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;cov: [2, N_plus_1, D, D]&quot;</span><span class="p">,</span>
+        <span class="s2">"mu: [N_plus_1, D]"</span><span class="p">,</span>
+        <span class="s2">"cov: [2, N_plus_1, D, D]"</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">cov</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">cov</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mu</span> <span class="o">=</span> <span class="n">mu</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cov</span> <span class="o">=</span> <span class="n">cov</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
         <span class="n">shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="o">.</span><span class="n">shape</span>
         <span class="k">if</span> <span class="n">shape</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">shape</span>
@@ -384,7 +384,7 @@ function checkPageExistsAndRedirect(event) {
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.3.7.<br>
 </p>
   </div>
   

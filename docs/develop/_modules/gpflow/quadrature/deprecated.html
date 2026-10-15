@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>gpflow.quadrature.deprecated &#8212; GPflow 2.9.0 documentation</title>
+    <title>gpflow.quadrature.deprecated &#8212; GPflow 2.11.2 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -22,14 +22,14 @@
   <link rel="preload" as="font" type="font/woff2" crossorigin
     href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
 
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css?v=c27e38e3" />
 
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
-    <script src="../../../_static/documentation_options.js?v=8da69bee"></script>
-    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/documentation_options.js?v=b2fb886b"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
@@ -61,7 +61,7 @@
   
   
   
-    <p class="title logo__title">GPflow 2.9.0 documentation</p>
+    <p class="title logo__title">GPflow 2.11.2 documentation</p>
   
 </a>
     
@@ -240,41 +240,41 @@ function checkPageExistsAndRedirect(event) {
   <h1>Source code for gpflow.quadrature.deprecated</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Copyright 2017-2020 The GPflow Contributors. All Rights Reserved.</span>
 <span class="c1">#</span>
-<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1"># you may not use this file except in compliance with the License.</span>
 <span class="c1"># You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1"># See the License for the specific language governing permissions and</span>
 <span class="c1"># limitations under the License.</span>
 
-<span class="kn">import</span> <span class="nn">itertools</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
-<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">wraps</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
-<span class="kn">from</span> <span class="nn">check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tf</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">check_shapes</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_shapes</span>
 
-<span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">TensorType</span>
-<span class="kn">from</span> <span class="nn">..config</span> <span class="kn">import</span> <span class="n">default_float</span>
-<span class="kn">from</span> <span class="nn">..utilities</span> <span class="kn">import</span> <span class="n">to_default_float</span>
-<span class="kn">from</span> <span class="nn">.gauss_hermite</span> <span class="kn">import</span> <span class="n">NDiagGHQuadrature</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..base</span><span class="w"> </span><span class="kn">import</span> <span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">TensorType</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..config</span><span class="w"> </span><span class="kn">import</span> <span class="n">default_float</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..utilities</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_default_float</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.gauss_hermite</span><span class="w"> </span><span class="kn">import</span> <span class="n">NDiagGHQuadrature</span>
 
 
 <div class="viewcode-block" id="hermgauss">
 <a class="viewcode-back" href="../../../api/gpflow/quadrature/index.html#gpflow.quadrature.hermgauss">[docs]</a>
 <span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;return[0]: [n_quad_points]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return[1]: [n_quad_points]&quot;</span><span class="p">,</span>
+    <span class="s2">"return[0]: [n_quad_points]"</span><span class="p">,</span>
+    <span class="s2">"return[1]: [n_quad_points]"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">hermgauss</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">AnyNDArray</span><span class="p">]:</span>
-    <span class="c1"># Type-ignore is because for some versions mypy can&#39;t find np.polynomial.hermite</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">hermgauss</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">AnyNDArray</span><span class="p">]:</span>
+    <span class="c1"># Type-ignore is because for some versions mypy can't find np.polynomial.hermite</span>
     <span class="n">x</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">polynomial</span><span class="o">.</span><span class="n">hermite</span><span class="o">.</span><span class="n">hermgauss</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
     <span class="n">x</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">default_float</span><span class="p">()),</span> <span class="n">w</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">default_float</span><span class="p">())</span>
     <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">w</span></div>
@@ -284,12 +284,12 @@ function checkPageExistsAndRedirect(event) {
 <div class="viewcode-block" id="mvhermgauss">
 <a class="viewcode-back" href="../../../api/gpflow/quadrature/index.html#gpflow.quadrature.mvhermgauss">[docs]</a>
 <span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;return[0]: [n_quad_points, D]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return[1]: [n_quad_points]&quot;</span><span class="p">,</span>
+    <span class="s2">"return[0]: [n_quad_points, D]"</span><span class="p">,</span>
+    <span class="s2">"return[1]: [n_quad_points]"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">mvhermgauss</span><span class="p">(</span><span class="n">H</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">D</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">AnyNDArray</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Return the evaluation locations &#39;xn&#39;, and weights &#39;wn&#39; for a multivariate</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">mvhermgauss</span><span class="p">(</span><span class="n">H</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">D</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">AnyNDArray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Return the evaluation locations 'xn', and weights 'wn' for a multivariate</span>
 <span class="sd">    Gauss-Hermite quadrature.</span>
 
 <span class="sd">    The outputs can be used to approximate the following type of integral:</span>
@@ -297,8 +297,8 @@ function checkPageExistsAndRedirect(event) {
 
 <span class="sd">    :param H: Number of Gauss-Hermite evaluation points.</span>
 <span class="sd">    :param D: Number of input dimensions. Needs to be known at call-time.</span>
-<span class="sd">    :return: eval_locations &#39;x&#39; (H**DxD), weights &#39;w&#39; (H**D)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    :return: eval_locations 'x' (H**DxD), weights 'w' (H**D)</span>
+<span class="sd">    """</span>
     <span class="n">gh_x</span><span class="p">,</span> <span class="n">gh_w</span> <span class="o">=</span> <span class="n">hermgauss</span><span class="p">(</span><span class="n">H</span><span class="p">)</span>
     <span class="n">x</span><span class="p">:</span> <span class="n">AnyNDArray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">gh_x</span><span class="p">,)</span> <span class="o">*</span> <span class="n">D</span><span class="p">)))</span>  <span class="c1"># H**DxD</span>
     <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">gh_w</span><span class="p">,)</span> <span class="o">*</span> <span class="n">D</span><span class="p">))),</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># H**D</span>
@@ -309,11 +309,11 @@ function checkPageExistsAndRedirect(event) {
 <div class="viewcode-block" id="mvnquad">
 <a class="viewcode-back" href="../../../api/gpflow/quadrature/index.html#gpflow.quadrature.mvnquad">[docs]</a>
 <span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;means: [N, Din]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;covs: [N, Din, Din]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return: [N, Dout...]&quot;</span><span class="p">,</span>
+    <span class="s2">"means: [N, Din]"</span><span class="p">,</span>
+    <span class="s2">"covs: [N, Din, Din]"</span><span class="p">,</span>
+    <span class="s2">"return: [N, Dout...]"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">mvnquad</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">mvnquad</span><span class="p">(</span>
     <span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span>
     <span class="n">means</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
     <span class="n">covs</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
@@ -321,8 +321,8 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">Din</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">Dout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Computes N Gaussian expectation integrals of a single function &#39;f&#39;</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Computes N Gaussian expectation integrals of a single function 'f'</span>
 <span class="sd">    using Gauss-Hermite quadrature.</span>
 
 <span class="sd">    :param f: integrand function. Takes one input of shape ?xD.</span>
@@ -331,16 +331,16 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    :param Dout: Number of output dimensions. Defaults to (). Dout is assumed</span>
 <span class="sd">        to leave out the item index, i.e. f actually maps (?xD)-&gt;(?x*Dout).</span>
 <span class="sd">    :return: quadratures</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Figure out input shape information</span>
     <span class="k">if</span> <span class="n">Din</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">Din</span> <span class="o">=</span> <span class="n">means</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 
     <span class="k">if</span> <span class="n">Din</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">&quot;If `Din` is passed as `None`, `means` must have a known shape. &quot;</span>
-            <span class="s2">&quot;Running mvnquad in `autoflow` without specifying `Din` and `Dout` &quot;</span>
-            <span class="s2">&quot;is problematic. Consider using your own session.&quot;</span>
+            <span class="s2">"If `Din` is passed as `None`, `means` must have a known shape. "</span>
+            <span class="s2">"Running mvnquad in `autoflow` without specifying `Din` and `Dout` "</span>
+            <span class="s2">"is problematic. Consider using your own session."</span>
         <span class="p">)</span>  <span class="c1"># pragma: no cover</span>
 
     <span class="n">xn</span><span class="p">,</span> <span class="n">wn</span> <span class="o">=</span> <span class="n">mvhermgauss</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">Din</span><span class="p">)</span>
@@ -361,9 +361,9 @@ function checkPageExistsAndRedirect(event) {
 
     <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="n">d</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">Dout</span><span class="p">]):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">&quot;If `Dout` is passed as `None`, the output of `func` must have known &quot;</span>
-            <span class="s2">&quot;shape. Running mvnquad in `autoflow` without specifying `Din` and `Dout` &quot;</span>
-            <span class="s2">&quot;is problematic. Consider using your own session.&quot;</span>
+            <span class="s2">"If `Dout` is passed as `None`, the output of `func` must have known "</span>
+            <span class="s2">"shape. Running mvnquad in `autoflow` without specifying `Din` and `Dout` "</span>
+            <span class="s2">"is problematic. Consider using your own session."</span>
         <span class="p">)</span>  <span class="c1"># pragma: no cover</span>
     <span class="n">fX</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
         <span class="n">fevals</span><span class="p">,</span>
@@ -381,12 +381,12 @@ function checkPageExistsAndRedirect(event) {
 <div class="viewcode-block" id="ndiagquad">
 <a class="viewcode-back" href="../../../api/gpflow/quadrature/index.html#gpflow.quadrature.ndiagquad">[docs]</a>
 <span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;Fmu: [broadcast Din, N...]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;Fvar: [broadcast Din, N...]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;Ys.values(): [N...]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return: [broadcast Dout, N...]&quot;</span><span class="p">,</span>
+    <span class="s2">"Fmu: [broadcast Din, N...]"</span><span class="p">,</span>
+    <span class="s2">"Fvar: [broadcast Din, N...]"</span><span class="p">,</span>
+    <span class="s2">"Ys.values(): [N...]"</span><span class="p">,</span>
+    <span class="s2">"return: [broadcast Dout, N...]"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">ndiagquad</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">ndiagquad</span><span class="p">(</span>
     <span class="n">funcs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]],</span>
     <span class="n">H</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">Fmu</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">TensorType</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">TensorType</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">TensorType</span><span class="p">]],</span>
@@ -394,7 +394,7 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">logspace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="o">**</span><span class="n">Ys</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Computes N Gaussian expectation integrals of one or more functions</span>
 <span class="sd">    using Gauss-Hermite quadrature. The Gaussians must be independent.</span>
 
@@ -412,10 +412,10 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        the log-expectation of exp(funcs)</span>
 <span class="sd">    :param Ys: arrays/tensors; deterministic arguments to be passed by name</span>
 <span class="sd">    :return: shape is the same as that of the first Fmu</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-        <span class="s2">&quot;Please use gpflow.quadrature.NDiagGHQuadrature instead &quot;</span>
-        <span class="s2">&quot;(note the changed convention of how multi-dimensional quadrature is handled)&quot;</span><span class="p">,</span>
+        <span class="s2">"Please use gpflow.quadrature.NDiagGHQuadrature instead "</span>
+        <span class="s2">"(note the changed convention of how multi-dimensional quadrature is handled)"</span><span class="p">,</span>
         <span class="ne">DeprecationWarning</span><span class="p">,</span>
     <span class="p">)</span>
 
@@ -434,9 +434,9 @@ function checkPageExistsAndRedirect(event) {
 
     <span class="n">Ys</span> <span class="o">=</span> <span class="p">{</span><span class="n">Yname</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span> <span class="k">for</span> <span class="n">Yname</span><span class="p">,</span> <span class="n">Y</span> <span class="ow">in</span> <span class="n">Ys</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
 
-    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">old_fun</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="n">old_fun</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
         <span class="nd">@wraps</span><span class="p">(</span><span class="n">old_fun</span><span class="p">)</span>
-        <span class="k">def</span> <span class="nf">new_fun</span><span class="p">(</span><span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="o">**</span><span class="n">Ys</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">new_fun</span><span class="p">(</span><span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="o">**</span><span class="n">Ys</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
             <span class="n">Xs</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">unstack</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">2</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
             <span class="n">fun_eval</span> <span class="o">=</span> <span class="n">old_fun</span><span class="p">(</span><span class="o">*</span><span class="n">Xs</span><span class="p">,</span> <span class="o">**</span><span class="n">Ys</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">cond</span><span class="p">(</span>
@@ -470,12 +470,12 @@ function checkPageExistsAndRedirect(event) {
 <div class="viewcode-block" id="ndiag_mc">
 <a class="viewcode-back" href="../../../api/gpflow/quadrature/index.html#gpflow.quadrature.ndiag_mc">[docs]</a>
 <span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;Fmu: [N, Din]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;Fvar: [N, Din]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;Ys.values(): [broadcast N, .]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return: [broadcast n_funs, N, P]&quot;</span><span class="p">,</span>
+    <span class="s2">"Fmu: [N, Din]"</span><span class="p">,</span>
+    <span class="s2">"Fvar: [N, Din]"</span><span class="p">,</span>
+    <span class="s2">"Ys.values(): [broadcast N, .]"</span><span class="p">,</span>
+    <span class="s2">"return: [broadcast n_funs, N, P]"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">ndiag_mc</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">ndiag_mc</span><span class="p">(</span>
     <span class="n">funcs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]],</span>
     <span class="n">S</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">Fmu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
@@ -484,7 +484,7 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">epsilon</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TensorType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">Ys</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Computes N Gaussian expectation integrals of one or more functions</span>
 <span class="sd">    using Monte Carlo samples. The Gaussians must be independent.</span>
 
@@ -499,7 +499,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        the log-expectation of exp(funcs)</span>
 <span class="sd">    :param Ys: arrays/tensors; deterministic arguments to be passed by name</span>
 <span class="sd">    :return: shape is the same as that of the first Fmu</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">N</span><span class="p">,</span> <span class="n">D</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Fmu</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Fvar</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
 
     <span class="k">if</span> <span class="n">epsilon</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -510,11 +510,11 @@ function checkPageExistsAndRedirect(event) {
 
     <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">Y</span> <span class="ow">in</span> <span class="n">Ys</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">D_out</span> <span class="o">=</span> <span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="c1"># we can&#39;t rely on broadcasting and need tiling</span>
+        <span class="c1"># we can't rely on broadcasting and need tiling</span>
         <span class="n">mc_Yr</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">Y</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="p">[</span><span class="n">S</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>  <span class="c1"># [S, N, D]_out</span>
         <span class="n">Ys</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">mc_Yr</span><span class="p">,</span> <span class="p">(</span><span class="n">S</span> <span class="o">*</span> <span class="n">N</span><span class="p">,</span> <span class="n">D_out</span><span class="p">))</span>  <span class="c1"># S * [N, _]out</span>
 
-    <span class="k">def</span> <span class="nf">eval_func</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eval_func</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="n">feval</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">mc_Xr</span><span class="p">,</span> <span class="o">**</span><span class="n">Ys</span><span class="p">)</span>
         <span class="n">feval</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">feval</span><span class="p">,</span> <span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">logspace</span><span class="p">:</span>
@@ -554,7 +554,7 @@ function checkPageExistsAndRedirect(event) {
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.3.7.<br>
 </p>
   </div>
   

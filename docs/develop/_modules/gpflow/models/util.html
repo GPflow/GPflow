@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>gpflow.models.util &#8212; GPflow 2.9.0 documentation</title>
+    <title>gpflow.models.util &#8212; GPflow 2.11.2 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -22,14 +22,14 @@
   <link rel="preload" as="font" type="font/woff2" crossorigin
     href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
 
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css?v=c27e38e3" />
 
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
-    <script src="../../../_static/documentation_options.js?v=8da69bee"></script>
-    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/documentation_options.js?v=b2fb886b"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
@@ -61,7 +61,7 @@
   
   
   
-    <p class="title logo__title">GPflow 2.9.0 documentation</p>
+    <p class="title logo__title">GPflow 2.11.2 documentation</p>
   
 </a>
     
@@ -240,29 +240,29 @@ function checkPageExistsAndRedirect(event) {
   <h1>Source code for gpflow.models.util</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Copyright 2017-2020 The GPflow Contributors. All Rights Reserved.</span>
 <span class="c1">#</span>
-<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1"># you may not use this file except in compliance with the License.</span>
 <span class="c1"># You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1"># See the License for the specific language governing permissions and</span>
 <span class="c1"># limitations under the License.</span>
 
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
-<span class="kn">from</span> <span class="nn">check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tf</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">check_shapes</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_shapes</span>
 
-<span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">AnyNDArray</span>
-<span class="kn">from</span> <span class="nn">..config</span> <span class="kn">import</span> <span class="n">default_float</span>
-<span class="kn">from</span> <span class="nn">..inducing_variables</span> <span class="kn">import</span> <span class="n">InducingPoints</span><span class="p">,</span> <span class="n">InducingVariables</span>
-<span class="kn">from</span> <span class="nn">.model</span> <span class="kn">import</span> <span class="n">BayesianModel</span>
-<span class="kn">from</span> <span class="nn">.training_mixins</span> <span class="kn">import</span> <span class="n">Data</span><span class="p">,</span> <span class="n">ExternalDataTrainingLossMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..base</span><span class="w"> </span><span class="kn">import</span> <span class="n">AnyNDArray</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..config</span><span class="w"> </span><span class="kn">import</span> <span class="n">default_float</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..inducing_variables</span><span class="w"> </span><span class="kn">import</span> <span class="n">InducingPoints</span><span class="p">,</span> <span class="n">InducingVariables</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">BayesianModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.training_mixins</span><span class="w"> </span><span class="kn">import</span> <span class="n">Data</span><span class="p">,</span> <span class="n">ExternalDataTrainingLossMixin</span>
 
 <span class="n">InducingVariablesLike</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">InducingVariables</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">AnyNDArray</span><span class="p">]</span>
 <span class="n">InducingPointsLike</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">InducingPoints</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">AnyNDArray</span><span class="p">]</span>
@@ -270,18 +270,18 @@ function checkPageExistsAndRedirect(event) {
 
 <div class="viewcode-block" id="inducingpoint_wrapper">
 <a class="viewcode-back" href="../../../api/gpflow/models/util/index.html#gpflow.models.inducingpoint_wrapper">[docs]</a>
-<span class="k">def</span> <span class="nf">inducingpoint_wrapper</span><span class="p">(</span><span class="n">inducing_variable</span><span class="p">:</span> <span class="n">InducingVariablesLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">InducingVariables</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">inducingpoint_wrapper</span><span class="p">(</span><span class="n">inducing_variable</span><span class="p">:</span> <span class="n">InducingVariablesLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">InducingVariables</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    This wrapper allows transparently passing either an InducingVariables</span>
 <span class="sd">    object or an array specifying InducingPoints positions.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inducing_variable</span><span class="p">,</span> <span class="n">InducingVariables</span><span class="p">):</span>
         <span class="n">inducing_variable</span> <span class="o">=</span> <span class="n">InducingPoints</span><span class="p">(</span><span class="n">inducing_variable</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">inducing_variable</span></div>
 
 
 
-<span class="k">def</span> <span class="nf">_assert_equal_data</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_assert_equal_data</span><span class="p">(</span>
     <span class="n">data1</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span> <span class="n">data2</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data1</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data2</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
@@ -294,10 +294,10 @@ function checkPageExistsAndRedirect(event) {
 <div class="viewcode-block" id="training_loss_closure">
 <a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.training_loss_closure">[docs]</a>
 <span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;data[0]: [N, D]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;data[1]: [N, P]&quot;</span><span class="p">,</span>
+    <span class="s2">"data[0]: [N, D]"</span><span class="p">,</span>
+    <span class="s2">"data[1]: [N, P]"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">training_loss_closure</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">training_loss_closure</span><span class="p">(</span>
     <span class="n">model</span><span class="p">:</span> <span class="n">BayesianModel</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Data</span><span class="p">,</span> <span class="o">**</span><span class="n">closure_kwargs</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">ExternalDataTrainingLossMixin</span><span class="p">):</span>
@@ -311,11 +311,11 @@ function checkPageExistsAndRedirect(event) {
 <div class="viewcode-block" id="training_loss">
 <a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.training_loss">[docs]</a>
 <span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;data[0]: [N, D]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;data[1]: [N, P]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return: []&quot;</span><span class="p">,</span>
+    <span class="s2">"data[0]: [N, D]"</span><span class="p">,</span>
+    <span class="s2">"data[1]: [N, P]"</span><span class="p">,</span>
+    <span class="s2">"return: []"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">training_loss</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">BayesianModel</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Data</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">training_loss</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">BayesianModel</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Data</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">ExternalDataTrainingLossMixin</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
@@ -327,11 +327,11 @@ function checkPageExistsAndRedirect(event) {
 <div class="viewcode-block" id="maximum_log_likelihood_objective">
 <a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.maximum_log_likelihood_objective">[docs]</a>
 <span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;data[0]: [N, D]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;data[1]: [N, P]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return: []&quot;</span><span class="p">,</span>
+    <span class="s2">"data[0]: [N, D]"</span><span class="p">,</span>
+    <span class="s2">"data[1]: [N, P]"</span><span class="p">,</span>
+    <span class="s2">"return: []"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">maximum_log_likelihood_objective</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">BayesianModel</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Data</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">maximum_log_likelihood_objective</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">BayesianModel</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Data</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">ExternalDataTrainingLossMixin</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">model</span><span class="o">.</span><span class="n">maximum_log_likelihood_objective</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
@@ -342,16 +342,16 @@ function checkPageExistsAndRedirect(event) {
 
 <div class="viewcode-block" id="data_input_to_tensor">
 <a class="viewcode-back" href="../../../api/gpflow/models/util/index.html#gpflow.models.data_input_to_tensor">[docs]</a>
-<span class="k">def</span> <span class="nf">data_input_to_tensor</span><span class="p">(</span><span class="n">structure</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">data_input_to_tensor</span><span class="p">(</span><span class="n">structure</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Converts non-tensor elements of a structure to TensorFlow tensors retaining the structure</span>
 <span class="sd">    itself.</span>
 
-<span class="sd">    The function doesn&#39;t keep original element&#39;s dtype and forcefully converts</span>
-<span class="sd">    them to GPflow&#39;s default float type.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    The function doesn't keep original element's dtype and forcefully converts</span>
+<span class="sd">    them to GPflow's default float type.</span>
+<span class="sd">    """</span>
 
-    <span class="k">def</span> <span class="nf">convert_to_tensor</span><span class="p">(</span><span class="n">elem</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">convert_to_tensor</span><span class="p">(</span><span class="n">elem</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">tf</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">elem</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">elem</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
@@ -386,7 +386,7 @@ function checkPageExistsAndRedirect(event) {
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.3.7.<br>
 </p>
   </div>
   

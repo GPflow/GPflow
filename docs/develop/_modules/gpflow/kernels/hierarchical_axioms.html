@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>gpflow.kernels.hierarchical_axioms &#8212; GPflow 2.11.2 documentation</title>
+<script>
+  document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+  document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
+</script>
+
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+
+
+  <link rel="stylesheet"
+    href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css?v=c27e38e3" />
+
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
+
+    <script src="../../../_static/documentation_options.js?v=b2fb886b"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="docsearch:language" content="en">
+  </head>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+    <div class="bd-header-announcement container-fluid" id="banner">
+      
+
+    </div>
+
+    
+    <nav class="bd-header navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="bd-header__inner container-xl">
+
+  <div id="navbar-start">
+    
+    
+  
+
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">GPflow 2.11.2 documentation</p>
+  
+</a>
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="fas fa-bars"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../getting_started.html">
+  Getting Started
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../user_guide.html">
+  User Guide
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../api/gpflow/index.html">
+  API reference
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../benchmarks.html">
+  Benchmarks
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../bibliography.html">
+  Bibliography
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <div class="dropdown" id="version_switcher">
+    <button type="button" class="btn btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+        develop  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div id="version_switcher_menu" class="dropdown-menu list-group-flush py-0" aria-labelledby="version_switcher_button">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+
+<!-- NOTE: this JS must live here (not in our global JS file) because it relies
+     on being processed by Jinja before it is run (specifically for replacing
+     variables _modules/gpflow/kernels/hierarchical_axioms and {'json_url': 'https://gpflow.github.io/GPflow/versions.json', 'version_match': 'develop'}.
+-->
+
+<script type="text/javascript">
+// Check if corresponding page path exists in other version of docs
+// and, if so, go there instead of the homepage of the other docs version
+function checkPageExistsAndRedirect(event) {
+    const currentFilePath = "_modules/gpflow/kernels/hierarchical_axioms.html",
+          tryUrl = event.target.getAttribute("href");
+    let otherDocsHomepage = tryUrl.replace(currentFilePath, "");
+    $.ajax({
+        type: 'HEAD',
+        url: tryUrl,
+        // if the page exists, go there
+        success: function() {
+            location.href = tryUrl;
+        }
+    }).fail(function() {
+        location.href = otherDocsHomepage;
+    });
+    // this prevents the browser from following the href of the clicked node
+    // (which is fine because this function takes care of redirecting)
+    return false;
+}
+
+// Populate the version switcher from the JSON config file
+(function () {
+    $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
+        const currentFilePath = "_modules/gpflow/kernels/hierarchical_axioms.html";
+        let btn = document.getElementById("version_switcher_button");
+        // Set empty strings by default so that these attributes exist and can be used in CSS selectors
+        btn.dataset["activeVersionName"] = "";
+        btn.dataset["activeVersion"] = "";
+        // create links to the corresponding page in the other docs versions
+        $.each(data, function(index, entry) {
+            // if no custom name specified (e.g., "latest"), use version string
+            if (!("name" in entry)) {
+                entry.name = entry.version;
+            }
+            // create the node
+            const node = document.createElement("a");
+            node.setAttribute("class", "list-group-item list-group-item-action py-1");
+            node.textContent = `${entry.name}`;
+            node.setAttribute("href", `${entry.url}${currentFilePath}`);
+            // on click, AJAX calls will check if the linked page exists before
+            // trying to redirect, and if not, will redirect to the homepage
+            // for that version of the docs.
+            node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
+            $("#version_switcher_menu").append(node);
+            // replace dropdown button text with the preferred display name of
+            // this version, rather than using sphinx's  variable.
+            // also highlight the dropdown entry for the currently-viewed
+            // version's entry
+            if (entry.version == "develop") {
+                node.classList.add("active");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
+            }
+        });
+    });
+})();
+</script>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="bd-container container-xl">
+      <div class="bd-container__inner row">
+          
+
+<!-- Only show if we have sidebars configured, else just a small margin  -->
+<div class="bd-sidebar-primary col-12 col-md-3 bd-sidebar">
+  <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    
+  </div>
+</nav>
+  </div>
+  <div class="sidebar-end-items">
+  </div>
+</div>
+
+
+          
+
+
+<div class="bd-sidebar-secondary d-none d-xl-block col-xl-2 bd-toc">
+  
+</div>
+
+
+          
+          
+          <div class="bd-content col-12 col-md-9 col-xl-7">
+              
+              <article class="bd-article" role="main">
+                
+  <h1>Source code for gpflow.kernels.hierarchical_axioms</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2026 The GPflow Contributors. All Rights Reserved.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the "License");</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an "AS IS" BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="sd">"""Runtime validation of the three hierarchical-kernel axioms on</span>
+<span class="sd">arbitrary kernel compositions.</span>
+
+<span class="sd">The three axioms are stated in</span>
+<span class="sd">``doc/sphinx/notebooks/advanced/hierarchical_kernels.pct.py`` as</span>
+<span class="sd">properties of a *per-dimension distance* ``d_i`` on a conditional</span>
+<span class="sd">input dimension ``i``:</span>
+
+<span class="sd">1. **both inactive:** ``d_i = 0``;</span>
+<span class="sd">2. **both active:** ``d_i`` is a function of the difference in feature value;</span>
+<span class="sd">3. **incomparable** (one active, one inactive): ``d_i`` is positive and</span>
+<span class="sd">   places the two points in distinct regions of the embedded space.</span>
+
+<span class="sd">A composed kernel (``Sum``, ``Product``, scaling, ...) no longer exposes</span>
+<span class="sd">``d_i`` directly, so this module checks the **kernel-level shadows**:</span>
+
+<span class="sd">* Axiom 1 shadow: ``K(x, x) == K(x, x')`` when ``x'`` differs from ``x``</span>
+<span class="sd">  only on the target feature column and the activity condition is</span>
+<span class="sd">  violated on both sides.</span>
+<span class="sd">* Axiom 2 shadow: ``K`` is stationary in the target feature column when</span>
+<span class="sd">  the activity condition is satisfied on both sides — i.e.</span>
+<span class="sd">  ``K(x_a, y_a) == K(x_b, y_b)`` whenever ``x_a, y_a`` and ``x_b, y_b``</span>
+<span class="sd">  agree on every other coordinate and their target-column differences</span>
+<span class="sd">  match.</span>
+<span class="sd">* Axiom 3 shadow: ``K(x_active, x_inactive) &lt; K(x_active, x_active)``</span>
+<span class="sd">  when the only change is the activity status of the target feature.</span>
+
+<span class="sd">The validator does not walk the kernel tree; it only calls ``kernel.K``,</span>
+<span class="sd">so it works on any GPflow kernel — including arbitrary</span>
+<span class="sd">``Sum`` / ``Product`` compositions and future combination types.</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tf</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..base</span><span class="w"> </span><span class="kn">import</span> <span class="n">AnyNDArray</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..experimental.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">experimental</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">ActiveDims</span><span class="p">,</span> <span class="n">Kernel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.hierarchical</span><span class="w"> </span><span class="kn">import</span> <span class="n">ActivityCondition</span><span class="p">,</span> <span class="n">HierarchyNode</span>
+
+
+<div class="viewcode-block" id="AxiomCheck">
+<a class="viewcode-back" href="../../../api/gpflow/kernels/index.html#gpflow.kernels.AxiomCheck">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AxiomCheck</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Outcome of one axiom check on one conditional feature column.</span>
+
+<span class="sd">    :param node_name: name of the :class:`HierarchyNode` whose conditional</span>
+<span class="sd">        behaviour was tested.</span>
+<span class="sd">    :param feature_dim: column index (sliced coordinate system) of the</span>
+<span class="sd">        conditional feature dimension that was tested.</span>
+<span class="sd">    :param axiom: which axiom — ``1``, ``2``, or ``3``.</span>
+<span class="sd">    :param passed: ``True`` iff the predicate held within tolerance over</span>
+<span class="sd">        every sampled input.</span>
+<span class="sd">    :param max_violation: largest violation observed across samples</span>
+<span class="sd">        (always ``&gt;= 0``). For axioms 1 and 2 this is ``|K_a - K_b|``;</span>
+<span class="sd">        for axiom 3 this is ``max(0, K_cross - K_self)`` — i.e. by how</span>
+<span class="sd">        much an incomparable pair was at least as similar as a self pair.</span>
+<span class="sd">    :param detail: one-line human-readable explanation.</span>
+<span class="sd">    """</span>
+
+    <span class="n">node_name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">feature_dim</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">axiom</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">passed</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">max_violation</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">detail</span><span class="p">:</span> <span class="nb">str</span></div>
+
+
+
+<div class="viewcode-block" id="AxiomReport">
+<a class="viewcode-back" href="../../../api/gpflow/kernels/index.html#gpflow.kernels.AxiomReport">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AxiomReport</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Aggregate report from :func:`validate_hierarchical_axioms`.</span>
+
+<span class="sd">    Use :attr:`passed` for the boolean summary, :meth:`for_axiom` to slice</span>
+<span class="sd">    by axiom number, and ``str(report)`` for a human-readable table.</span>
+<span class="sd">    """</span>
+
+    <span class="n">checks</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">AxiomCheck</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">passed</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""``True`` iff every axiom check passed (vacuously ``True`` when</span>
+<span class="sd">        the hierarchy has no conditional nodes)."""</span>
+        <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">passed</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">checks</span><span class="p">)</span>
+
+<div class="viewcode-block" id="AxiomReport.for_axiom">
+<a class="viewcode-back" href="../../../api/gpflow/kernels/index.html#gpflow.kernels.AxiomReport.for_axiom">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">for_axiom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">AxiomCheck</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""Return only the checks for axiom ``n`` (``1``, ``2``, or ``3``)."""</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">checks</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">axiom</span> <span class="o">==</span> <span class="n">n</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">checks</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">"AxiomReport: no conditional nodes to check (PASS by vacuity)"</span>
+        <span class="n">header</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"AxiomReport (overall </span><span class="si">{</span><span class="s1">'PASS'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">passed</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'FAIL'</span><span class="si">}</span><span class="s2">)"</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="p">[</span><span class="n">header</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">checks</span><span class="p">:</span>
+            <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="s1">'PASS'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">c</span><span class="o">.</span><span class="n">passed</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'FAIL'</span><span class="si">}</span><span class="s2"> axiom </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">axiom</span><span class="si">}</span><span class="s2"> "</span>
+                <span class="sa">f</span><span class="s2">"node=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">node_name</span><span class="si">!r}</span><span class="s2"> feature_dim=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">feature_dim</span><span class="si">}</span><span class="s2"> "</span>
+                <span class="sa">f</span><span class="s2">"max_violation=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">max_violation</span><span class="si">:</span><span class="s2">.3e</span><span class="si">}</span><span class="s2"> -- </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">detail</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_violating_value</span><span class="p">(</span><span class="n">required</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""An integer guaranteed not to equal ``required`` after rounding to</span>
+<span class="sd">    int. ``ActivityCondition`` requires values be non-negative ints, so</span>
+<span class="sd">    ``required + 1`` always differs."""</span>
+    <span class="k">return</span> <span class="n">required</span> <span class="o">+</span> <span class="mi">1</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_set_active_at</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">requirements_full</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">AnyNDArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return a copy of ``x`` with every full-input column listed in</span>
+<span class="sd">    ``requirements_full`` set to its required integer value (satisfies the</span>
+<span class="sd">    activity condition the mapping was derived from)."""</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">full_pos</span><span class="p">,</span> <span class="n">required</span> <span class="ow">in</span> <span class="n">requirements_full</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">out</span><span class="p">[</span><span class="n">full_pos</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">required</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">out</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_set_inactive_at</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">requirements_full</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">AnyNDArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return a copy of ``x`` with one full-input column set to a value that</span>
+<span class="sd">    violates the activity condition the mapping was derived from; the other</span>
+<span class="sd">    listed columns are still set to their required values, so the flip is</span>
+<span class="sd">    isolated to a single indicator."""</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">items</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">requirements_full</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+    <span class="n">flip_pos</span><span class="p">,</span> <span class="n">flip_required</span> <span class="o">=</span> <span class="n">items</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">out</span><span class="p">[</span><span class="n">flip_pos</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">_violating_value</span><span class="p">(</span><span class="n">flip_required</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">full_pos</span><span class="p">,</span> <span class="n">required</span> <span class="ow">in</span> <span class="n">items</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+        <span class="n">out</span><span class="p">[</span><span class="n">full_pos</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">required</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">out</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_resolve_active_dims_mapping</span><span class="p">(</span>
+    <span class="n">active_dims</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ActiveDims</span><span class="p">],</span>
+    <span class="n">max_hierarchy_position</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">input_dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Resolve ``active_dims`` into a ``{sliced_position: full_position}``</span>
+<span class="sd">    mapping table and the implied ``input_dim``.</span>
+
+<span class="sd">    ``active_dims`` semantics mirror :class:`gpflow.kernels.Kernel`: ``None``</span>
+<span class="sd">    means identity, a ``slice`` selects a sub-range of the input, and a</span>
+<span class="sd">    sequence of ``int`` lists the full-input columns in sliced-position</span>
+<span class="sd">    order. The returned mapping covers every sliced position the hierarchy</span>
+<span class="sd">    references (``0..max_hierarchy_position`` inclusive). The returned</span>
+<span class="sd">    ``input_dim`` is either the caller-supplied value or a default inferred</span>
+<span class="sd">    from ``active_dims``.</span>
+<span class="sd">    """</span>
+    <span class="n">n_sliced_required</span> <span class="o">=</span> <span class="n">max_hierarchy_position</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">max_hierarchy_position</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+
+    <span class="k">if</span> <span class="n">active_dims</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">mapping</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_sliced_required</span><span class="p">)}</span>
+        <span class="n">resolved_input_dim</span> <span class="o">=</span> <span class="n">input_dim</span> <span class="k">if</span> <span class="n">input_dim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">max</span><span class="p">(</span><span class="n">n_sliced_required</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">mapping</span><span class="p">,</span> <span class="n">resolved_input_dim</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">active_dims</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">input_dim</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">active_dims</span><span class="o">.</span><span class="n">stop</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">"`active_dims` is an open-ended slice; `input_dim` must be "</span>
+                    <span class="s2">"provided so the slice can be resolved."</span>
+                <span class="p">)</span>
+            <span class="n">input_dim</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">active_dims</span><span class="o">.</span><span class="n">stop</span><span class="p">)</span>
+        <span class="n">full_positions</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">input_dim</span><span class="p">))[</span><span class="n">active_dims</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">full_positions</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">active_dims</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">input_dim</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">input_dim</span> <span class="o">=</span> <span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">full_positions</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">full_positions</span> <span class="k">else</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">full_positions</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">n_sliced_required</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"`active_dims` resolves to </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">full_positions</span><span class="p">)</span><span class="si">}</span><span class="s2"> column(s) "</span>
+            <span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="n">full_positions</span><span class="si">!r}</span><span class="s2">), but the hierarchy references sliced "</span>
+            <span class="sa">f</span><span class="s2">"position </span><span class="si">{</span><span class="n">max_hierarchy_position</span><span class="si">}</span><span class="s2">; need at least "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">n_sliced_required</span><span class="si">}</span><span class="s2"> columns."</span>
+        <span class="p">)</span>
+
+    <span class="n">mapping</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="n">full_positions</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_sliced_required</span><span class="p">)}</span>
+    <span class="k">return</span> <span class="n">mapping</span><span class="p">,</span> <span class="n">input_dim</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_within</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">atol</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">rtol</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""``(ok, |a - b|)``: ``ok`` iff ``|a - b| &lt;= atol + rtol * max(|a|, |b|)``."""</span>
+    <span class="n">diff</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">a</span> <span class="o">-</span> <span class="n">b</span><span class="p">)</span>
+    <span class="n">tol</span> <span class="o">=</span> <span class="n">atol</span> <span class="o">+</span> <span class="n">rtol</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="nb">abs</span><span class="p">(</span><span class="n">b</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">diff</span> <span class="o">&lt;=</span> <span class="n">tol</span><span class="p">,</span> <span class="n">diff</span>
+
+
+<div class="viewcode-block" id="validate_hierarchical_axioms">
+<a class="viewcode-back" href="../../../api/gpflow/kernels/index.html#gpflow.kernels.validate_hierarchical_axioms">[docs]</a>
+<span class="nd">@experimental</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_hierarchical_axioms</span><span class="p">(</span>
+    <span class="n">kernel</span><span class="p">:</span> <span class="n">Kernel</span><span class="p">,</span>
+    <span class="n">hierarchy</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">HierarchyNode</span><span class="p">],</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span>
+    <span class="n">input_dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">active_dims</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ActiveDims</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">atol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-8</span><span class="p">,</span>
+    <span class="n">rtol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-6</span><span class="p">,</span>
+    <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AxiomReport</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Numerically check that ``kernel`` obeys the three conditional-distance</span>
+<span class="sd">    axioms (kernel-level shadows) on every conditional :class:`HierarchyNode`</span>
+<span class="sd">    in ``hierarchy``.</span>
+
+<span class="sd">    Test inputs are constructed in the sliced coordinate system used by</span>
+<span class="sd">    :class:`gpflow.kernels.HierarchicalEmbeddingKernel`. For each conditional</span>
+<span class="sd">    feature column, three predicates on ``K`` are evaluated over</span>
+<span class="sd">    ``n_samples`` random backgrounds; the worst violation across samples is</span>
+<span class="sd">    reported.</span>
+
+<span class="sd">    :param kernel: any GPflow :class:`Kernel`. The validator only calls</span>
+<span class="sd">        ``kernel(...)`` (i.e. :meth:`Kernel.__call__`), never ``kernel.K``</span>
+<span class="sd">        directly. ``__call__`` is what routes per-child ``active_dims``</span>
+<span class="sd">        slicing through ``Sum`` / ``Product`` / future combination kernels;</span>
+<span class="sd">        ``Sum.K`` bypasses that slicing and would feed the raw input to</span>
+<span class="sd">        every child.</span>
+<span class="sd">    :param hierarchy: the same :class:`HierarchyNode` sequence the user</span>
+<span class="sd">        passed (or would pass) to a</span>
+<span class="sd">        :class:`gpflow.kernels.HierarchicalEmbeddingKernel`. Used only to</span>
+<span class="sd">        construct test inputs; the kernel itself is treated as a black box.</span>
+<span class="sd">    :param n_samples: number of random backgrounds per (node, feature, axiom)</span>
+<span class="sd">        triple. Each background drives independent feature samples.</span>
+<span class="sd">    :param input_dim: width of the test input vectors. Defaults to the</span>
+<span class="sd">        smallest value compatible with ``active_dims``: when ``active_dims``</span>
+<span class="sd">        is ``None``, that is ``max(referenced column) + 1`` across the</span>
+<span class="sd">        hierarchy; when ``active_dims`` is provided, it is</span>
+<span class="sd">        ``max(active_dims) + 1`` (or the slice's ``stop``).</span>
+<span class="sd">    :param active_dims: optional mapping from the hierarchy's sliced-coord</span>
+<span class="sd">        positions to full-input column indices, matching the ``active_dims``</span>
+<span class="sd">        of the hierarchical kernel under test. Use this when the kernel</span>
+<span class="sd">        slices an offset sub-range of a wider input (e.g.</span>
+<span class="sd">        ``active_dims=[2, 3, 4, 5]`` inside a width-6 input). ``None``</span>
+<span class="sd">        (the default) is the identity mapping.</span>
+<span class="sd">    :param atol: absolute tolerance used by the equality predicates</span>
+<span class="sd">        (axioms 1 and 2) and as the minimum margin for axiom 3.</span>
+<span class="sd">    :param rtol: relative tolerance used by the equality predicates.</span>
+<span class="sd">    :param seed: RNG seed for reproducibility. ``None`` uses fresh entropy.</span>
+<span class="sd">    :returns: an :class:`AxiomReport` whose ``passed`` is ``True`` iff every</span>
+<span class="sd">        check held. The caller decides whether to assert, log, or display.</span>
+<span class="sd">    """</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
+    <span class="n">per_feature</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">ActivityCondition</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">indicator_dims</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">hierarchy</span><span class="p">:</span>
+        <span class="n">bounds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">feature_bounds</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">fd</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">feature_dims</span><span class="p">):</span>
+            <span class="n">per_feature</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="p">(</span>
+                    <span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                    <span class="nb">int</span><span class="p">(</span><span class="n">fd</span><span class="p">),</span>
+                    <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">bounds</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">bounds</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">])),</span>
+                    <span class="n">node</span><span class="o">.</span><span class="n">activity_condition</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">activity_condition</span><span class="o">.</span><span class="n">requirements</span><span class="p">:</span>
+            <span class="n">indicator_dims</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
+
+    <span class="n">feature_dim_set</span> <span class="o">=</span> <span class="p">{</span><span class="n">fd</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">fd</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">per_feature</span><span class="p">}</span>
+    <span class="n">all_hier_positions</span> <span class="o">=</span> <span class="n">feature_dim_set</span> <span class="o">|</span> <span class="n">indicator_dims</span>
+    <span class="n">max_hier_pos</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">all_hier_positions</span><span class="p">)</span> <span class="k">if</span> <span class="n">all_hier_positions</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span>
+
+    <span class="n">mapping</span><span class="p">,</span> <span class="n">input_dim</span> <span class="o">=</span> <span class="n">_resolve_active_dims_mapping</span><span class="p">(</span><span class="n">active_dims</span><span class="p">,</span> <span class="n">max_hier_pos</span><span class="p">,</span> <span class="n">input_dim</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">input_dim</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"`input_dim` must be positive; got </span><span class="si">{</span><span class="n">input_dim</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+
+    <span class="c1"># Bounds keyed by *full-input* column.</span>
+    <span class="n">bounds_by_full_col</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">mapping</span><span class="p">[</span><span class="n">fd</span><span class="p">]:</span> <span class="n">bnds</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">fd</span><span class="p">,</span> <span class="n">bnds</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">per_feature</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sample_background</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">AnyNDArray</span><span class="p">:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">input_dim</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">full_col</span><span class="p">,</span> <span class="p">(</span><span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">)</span> <span class="ow">in</span> <span class="n">bounds_by_full_col</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">span</span> <span class="o">=</span> <span class="n">hi</span> <span class="o">-</span> <span class="n">lo</span>
+            <span class="k">if</span> <span class="n">span</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">eps</span> <span class="o">=</span> <span class="mf">0.05</span> <span class="o">*</span> <span class="n">span</span>
+                <span class="n">x</span><span class="p">[</span><span class="n">full_col</span><span class="p">]</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">lo</span> <span class="o">+</span> <span class="n">eps</span><span class="p">,</span> <span class="n">hi</span> <span class="o">-</span> <span class="n">eps</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">x</span><span class="p">[</span><span class="n">full_col</span><span class="p">]</span> <span class="o">=</span> <span class="n">lo</span>
+        <span class="c1"># Indicators default to 0; they'll be overridden by</span>
+        <span class="c1"># _set_active_at / _set_inactive_at on the condition under test.</span>
+        <span class="k">return</span> <span class="n">x</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_K</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">AnyNDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="c1"># Use ``__call__`` rather than ``K``: combination kernels (``Sum``,</span>
+        <span class="c1"># ``Product``, ...) route through each child's ``__call__`` which</span>
+        <span class="c1"># applies the child's ``active_dims`` slice, whereas ``Sum.K``</span>
+        <span class="c1"># bypasses slicing and passes the raw input to each child.</span>
+        <span class="n">ta</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">constant</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">tb</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">constant</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">kernel</span><span class="p">(</span><span class="n">ta</span><span class="p">,</span> <span class="n">tb</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+
+    <span class="n">checks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">AxiomCheck</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">node_name</span><span class="p">,</span> <span class="n">fd</span><span class="p">,</span> <span class="p">(</span><span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">),</span> <span class="n">condition</span> <span class="ow">in</span> <span class="n">per_feature</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">condition</span><span class="o">.</span><span class="n">requirements</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">full_fd</span> <span class="o">=</span> <span class="n">mapping</span><span class="p">[</span><span class="n">fd</span><span class="p">]</span>
+        <span class="c1"># Indicator requirements re-keyed to full-input columns.</span>
+        <span class="n">requirements_full</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">mapping</span><span class="p">[</span><span class="n">ind_dim</span><span class="p">]:</span> <span class="n">required</span> <span class="k">for</span> <span class="n">ind_dim</span><span class="p">,</span> <span class="n">required</span> <span class="ow">in</span> <span class="n">condition</span><span class="o">.</span><span class="n">requirements</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+        <span class="n">span</span> <span class="o">=</span> <span class="n">hi</span> <span class="o">-</span> <span class="n">lo</span>
+        <span class="n">eps</span> <span class="o">=</span> <span class="mf">0.05</span> <span class="o">*</span> <span class="n">span</span> <span class="k">if</span> <span class="n">span</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">0.0</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_sample_in_range</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">lo</span> <span class="o">+</span> <span class="n">eps</span><span class="p">,</span> <span class="n">hi</span> <span class="o">-</span> <span class="n">eps</span><span class="p">))</span> <span class="k">if</span> <span class="n">span</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">lo</span><span class="p">)</span>
+
+        <span class="c1"># ---- Axiom 1: both inactive, K invariant in target feature value.</span>
+        <span class="n">max_vio_1</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">a1_passed</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_samples</span><span class="p">):</span>
+            <span class="n">base</span> <span class="o">=</span> <span class="n">_set_inactive_at</span><span class="p">(</span><span class="n">_sample_background</span><span class="p">(),</span> <span class="n">requirements_full</span><span class="p">)</span>
+            <span class="n">v_a</span> <span class="o">=</span> <span class="n">_sample_in_range</span><span class="p">()</span>
+            <span class="n">v_b</span> <span class="o">=</span> <span class="n">_sample_in_range</span><span class="p">()</span>
+            <span class="n">x_a</span> <span class="o">=</span> <span class="n">base</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">x_a</span><span class="p">[</span><span class="n">full_fd</span><span class="p">]</span> <span class="o">=</span> <span class="n">v_a</span>
+            <span class="n">x_b</span> <span class="o">=</span> <span class="n">base</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">x_b</span><span class="p">[</span><span class="n">full_fd</span><span class="p">]</span> <span class="o">=</span> <span class="n">v_b</span>
+            <span class="n">K_aa</span> <span class="o">=</span> <span class="n">_K</span><span class="p">(</span><span class="n">x_a</span><span class="p">,</span> <span class="n">x_a</span><span class="p">)</span>
+            <span class="n">K_ab</span> <span class="o">=</span> <span class="n">_K</span><span class="p">(</span><span class="n">x_a</span><span class="p">,</span> <span class="n">x_b</span><span class="p">)</span>
+            <span class="n">ok</span><span class="p">,</span> <span class="n">diff</span> <span class="o">=</span> <span class="n">_within</span><span class="p">(</span><span class="n">K_aa</span><span class="p">,</span> <span class="n">K_ab</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">atol</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="n">rtol</span><span class="p">)</span>
+            <span class="n">max_vio_1</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">max_vio_1</span><span class="p">,</span> <span class="n">diff</span><span class="p">)</span>
+            <span class="n">a1_passed</span> <span class="o">=</span> <span class="n">a1_passed</span> <span class="ow">and</span> <span class="n">ok</span>
+        <span class="n">checks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">AxiomCheck</span><span class="p">(</span>
+                <span class="n">node_name</span><span class="o">=</span><span class="n">node_name</span><span class="p">,</span>
+                <span class="n">feature_dim</span><span class="o">=</span><span class="n">fd</span><span class="p">,</span>
+                <span class="n">axiom</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                <span class="n">passed</span><span class="o">=</span><span class="n">a1_passed</span><span class="p">,</span>
+                <span class="n">max_violation</span><span class="o">=</span><span class="n">max_vio_1</span><span class="p">,</span>
+                <span class="n">detail</span><span class="o">=</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"K(x,x) == K(x,x') when both points violate </span><span class="si">{</span><span class="n">node_name</span><span class="si">!r}</span><span class="s2">'s "</span>
+                    <span class="sa">f</span><span class="s2">"condition and differ only on feature dim </span><span class="si">{</span><span class="n">fd</span><span class="si">}</span><span class="s2">"</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="c1"># ---- Axiom 2: both active, K stationary in the target feature value.</span>
+        <span class="n">max_vio_2</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">a2_passed</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_samples</span><span class="p">):</span>
+            <span class="n">base</span> <span class="o">=</span> <span class="n">_set_active_at</span><span class="p">(</span><span class="n">_sample_background</span><span class="p">(),</span> <span class="n">requirements_full</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">span</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># Degenerate bounds: nothing meaningful to test; record a pass.</span>
+                <span class="k">continue</span>
+            <span class="n">half</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">span</span>
+            <span class="n">v_a</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">lo</span> <span class="o">+</span> <span class="n">eps</span><span class="p">,</span> <span class="n">hi</span> <span class="o">-</span> <span class="n">eps</span> <span class="o">-</span> <span class="n">half</span><span class="p">))</span>
+            <span class="n">v_y</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">lo</span> <span class="o">+</span> <span class="n">eps</span><span class="p">,</span> <span class="n">hi</span> <span class="o">-</span> <span class="n">eps</span> <span class="o">-</span> <span class="n">half</span><span class="p">))</span>
+            <span class="n">lo_shift</span> <span class="o">=</span> <span class="p">(</span><span class="n">lo</span> <span class="o">+</span> <span class="n">eps</span><span class="p">)</span> <span class="o">-</span> <span class="nb">min</span><span class="p">(</span><span class="n">v_a</span><span class="p">,</span> <span class="n">v_y</span><span class="p">)</span>
+            <span class="n">hi_shift</span> <span class="o">=</span> <span class="p">(</span><span class="n">hi</span> <span class="o">-</span> <span class="n">eps</span><span class="p">)</span> <span class="o">-</span> <span class="nb">max</span><span class="p">(</span><span class="n">v_a</span><span class="p">,</span> <span class="n">v_y</span><span class="p">)</span>
+            <span class="c1"># Defensive: with v_a, v_y drawn from [L, L + 0.4*span] (L = lo + eps),</span>
+            <span class="c1"># hi_shift &gt;= 0.5*span &gt; 0 &gt;= lo_shift always, so the shift window is</span>
+            <span class="c1"># never empty here. Kept in case the sampling bounds above change.</span>
+            <span class="k">if</span> <span class="n">hi_shift</span> <span class="o">&lt;=</span> <span class="n">lo_shift</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+                <span class="k">continue</span>
+            <span class="n">shift</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">lo_shift</span><span class="p">,</span> <span class="n">hi_shift</span><span class="p">))</span>
+            <span class="n">x_a</span> <span class="o">=</span> <span class="n">base</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">x_a</span><span class="p">[</span><span class="n">full_fd</span><span class="p">]</span> <span class="o">=</span> <span class="n">v_a</span>
+            <span class="n">y_a</span> <span class="o">=</span> <span class="n">base</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">y_a</span><span class="p">[</span><span class="n">full_fd</span><span class="p">]</span> <span class="o">=</span> <span class="n">v_y</span>
+            <span class="n">x_b</span> <span class="o">=</span> <span class="n">base</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">x_b</span><span class="p">[</span><span class="n">full_fd</span><span class="p">]</span> <span class="o">=</span> <span class="n">v_a</span> <span class="o">+</span> <span class="n">shift</span>
+            <span class="n">y_b</span> <span class="o">=</span> <span class="n">base</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">y_b</span><span class="p">[</span><span class="n">full_fd</span><span class="p">]</span> <span class="o">=</span> <span class="n">v_y</span> <span class="o">+</span> <span class="n">shift</span>
+            <span class="n">K_a</span> <span class="o">=</span> <span class="n">_K</span><span class="p">(</span><span class="n">x_a</span><span class="p">,</span> <span class="n">y_a</span><span class="p">)</span>
+            <span class="n">K_b</span> <span class="o">=</span> <span class="n">_K</span><span class="p">(</span><span class="n">x_b</span><span class="p">,</span> <span class="n">y_b</span><span class="p">)</span>
+            <span class="n">ok</span><span class="p">,</span> <span class="n">diff</span> <span class="o">=</span> <span class="n">_within</span><span class="p">(</span><span class="n">K_a</span><span class="p">,</span> <span class="n">K_b</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">atol</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="n">rtol</span><span class="p">)</span>
+            <span class="n">max_vio_2</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">max_vio_2</span><span class="p">,</span> <span class="n">diff</span><span class="p">)</span>
+            <span class="n">a2_passed</span> <span class="o">=</span> <span class="n">a2_passed</span> <span class="ow">and</span> <span class="n">ok</span>
+        <span class="n">checks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">AxiomCheck</span><span class="p">(</span>
+                <span class="n">node_name</span><span class="o">=</span><span class="n">node_name</span><span class="p">,</span>
+                <span class="n">feature_dim</span><span class="o">=</span><span class="n">fd</span><span class="p">,</span>
+                <span class="n">axiom</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                <span class="n">passed</span><span class="o">=</span><span class="n">a2_passed</span><span class="p">,</span>
+                <span class="n">max_violation</span><span class="o">=</span><span class="n">max_vio_2</span><span class="p">,</span>
+                <span class="n">detail</span><span class="o">=</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"K stationary in feature dim </span><span class="si">{</span><span class="n">fd</span><span class="si">}</span><span class="s2"> when </span><span class="si">{</span><span class="n">node_name</span><span class="si">!r}</span><span class="s2">'s "</span>
+                    <span class="sa">f</span><span class="s2">"condition is satisfied on both sides"</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="c1"># ---- Axiom 3: K(active, inactive) &lt; K(active, active).</span>
+        <span class="n">max_vio_3</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">a3_passed</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_samples</span><span class="p">):</span>
+            <span class="n">bg</span> <span class="o">=</span> <span class="n">_sample_background</span><span class="p">()</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="n">_sample_in_range</span><span class="p">()</span>
+            <span class="n">x_active</span> <span class="o">=</span> <span class="n">_set_active_at</span><span class="p">(</span><span class="n">bg</span><span class="p">,</span> <span class="n">requirements_full</span><span class="p">)</span>
+            <span class="n">x_active</span><span class="p">[</span><span class="n">full_fd</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+            <span class="n">x_inactive</span> <span class="o">=</span> <span class="n">_set_inactive_at</span><span class="p">(</span><span class="n">bg</span><span class="p">,</span> <span class="n">requirements_full</span><span class="p">)</span>
+            <span class="n">x_inactive</span><span class="p">[</span><span class="n">full_fd</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+            <span class="n">K_self</span> <span class="o">=</span> <span class="n">_K</span><span class="p">(</span><span class="n">x_active</span><span class="p">,</span> <span class="n">x_active</span><span class="p">)</span>
+            <span class="n">K_cross</span> <span class="o">=</span> <span class="n">_K</span><span class="p">(</span><span class="n">x_active</span><span class="p">,</span> <span class="n">x_inactive</span><span class="p">)</span>
+            <span class="n">margin</span> <span class="o">=</span> <span class="n">K_self</span> <span class="o">-</span> <span class="n">K_cross</span>
+            <span class="n">tol</span> <span class="o">=</span> <span class="n">atol</span> <span class="o">+</span> <span class="n">rtol</span> <span class="o">*</span> <span class="nb">abs</span><span class="p">(</span><span class="n">K_self</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">margin</span> <span class="o">&lt;=</span> <span class="n">tol</span><span class="p">:</span>
+                <span class="n">a3_passed</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">violation</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">K_cross</span> <span class="o">-</span> <span class="n">K_self</span> <span class="o">+</span> <span class="n">tol</span><span class="p">)</span>
+            <span class="n">max_vio_3</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">max_vio_3</span><span class="p">,</span> <span class="n">violation</span><span class="p">)</span>
+        <span class="n">checks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">AxiomCheck</span><span class="p">(</span>
+                <span class="n">node_name</span><span class="o">=</span><span class="n">node_name</span><span class="p">,</span>
+                <span class="n">feature_dim</span><span class="o">=</span><span class="n">fd</span><span class="p">,</span>
+                <span class="n">axiom</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                <span class="n">passed</span><span class="o">=</span><span class="n">a3_passed</span><span class="p">,</span>
+                <span class="n">max_violation</span><span class="o">=</span><span class="n">max_vio_3</span><span class="p">,</span>
+                <span class="n">detail</span><span class="o">=</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"K(x_active, x_inactive) &lt; K(x_active, x_active) when "</span>
+                    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">node_name</span><span class="si">!r}</span><span class="s2">'s condition is flipped at feature dim </span><span class="si">{</span><span class="n">fd</span><span class="si">}</span><span class="s2">"</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">AxiomReport</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">checks</span><span class="p">))</span></div>
+
+</pre></div>
+
+              </article>
+              
+
+              
+          </div>
+          
+      </div>
+    </div>
+
+  
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695"></script>
+
+<footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    <p class="copyright">
+    &copy; Copyright 2023, The GPflow Contributors.<br>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.3.7.<br>
+</p>
+  </div>
+  
+</div>
+</footer>
+  </body>
+</html>

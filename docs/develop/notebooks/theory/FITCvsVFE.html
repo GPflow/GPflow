@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Comparing FITC approximation to VFE approximation &#8212; GPflow 2.9.0 documentation</title>
+    <title>Comparing FITC approximation to VFE approximation &#8212; GPflow 2.11.2 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -23,15 +23,15 @@
   <link rel="preload" as="font" type="font/woff2" crossorigin
     href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
 
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
-    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
     <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css?v=c27e38e3" />
 
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
-    <script src="../../_static/documentation_options.js?v=8da69bee"></script>
-    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/documentation_options.js?v=b2fb886b"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
@@ -67,7 +67,7 @@
   
   
   
-    <p class="title logo__title">GPflow 2.9.0 documentation</p>
+    <p class="title logo__title">GPflow 2.11.2 documentation</p>
   
 </a>
     
@@ -382,6 +382,13 @@ function checkPageExistsAndRedirect(event) {
   </a>
  </li>
 </ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/hierarchical_kernels.html">
+   Hierarchical kernels
+  </a>
+ </li>
+</ul>
 
   </div>
 </nav>
@@ -420,14 +427,14 @@ function checkPageExistsAndRedirect(event) {
               <article class="bd-article" role="main">
                 
   <section id="Comparing-FITC-approximation-to-VFE-approximation">
-<h1>Comparing FITC approximation to VFE approximation<a class="headerlink" href="#Comparing-FITC-approximation-to-VFE-approximation" title="Link to this heading">#</a></h1>
+<h1>Comparing FITC approximation to VFE approximation<a class="headerlink" href="#Comparing-FITC-approximation-to-VFE-approximation" title="Link to this heading">¶</a></h1>
 <p>This notebook examines why we prefer the Variational Free Energy (VFE) objective to the Fully Independent Training Conditional (FITC) approximation for our sparse approximations.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">from</span> <span class="nn">FITCvsVFE</span> <span class="kn">import</span> <span class="p">(</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">FITCvsVFE</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">getTrainingTestData</span><span class="p">,</span>
     <span class="n">plotComparisonFigure</span><span class="p">,</span>
     <span class="n">plotPredictions</span><span class="p">,</span>
@@ -436,8 +443,8 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">stretch</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="kn">import</span> <span class="nn">gpflow</span>
-<span class="kn">from</span> <span class="nn">gpflow.ci_utils</span> <span class="kn">import</span> <span class="n">reduce_in_tests</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">gpflow</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gpflow.ci_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">reduce_in_tests</span>
 
 <span class="o">%</span><span class="k">matplotlib</span> inline
 
@@ -446,26 +453,19 @@ function checkPageExistsAndRedirect(event) {
 </pre></div>
 </div>
 </div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-2024-02-07 11:47:07.707919: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
-2024-02-07 11:47:07.750453: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9261] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
-2024-02-07 11:47:07.750499: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
-2024-02-07 11:47:07.752074: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1515] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-2024-02-07 11:47:07.758790: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
-2024-02-07 11:47:07.759367: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
-To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
-</pre></div></div>
-</div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-02-07 11:47:08.806954: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
+2026-10-15 09:26:34.555575: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2026-10-15 09:26:34.559512: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2026-10-15 09:26:34.571055: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:477] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1792056394.594860     175 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1792056394.603202     175 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2026-10-15 09:26:34.623033: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
 </pre></div></div>
 </div>
 <p>First, we load the training data and plot it together with the exact GP solution (using the <code class="docutils literal notranslate"><span class="pre">GPR</span></code> model):</p>
@@ -477,7 +477,7 @@ To enable the following instructions: AVX2 AVX512F FMA, in other operations, reb
 <span class="n">Xtrain</span><span class="p">,</span> <span class="n">Ytrain</span><span class="p">,</span> <span class="n">Xtest</span><span class="p">,</span> <span class="n">Ytest</span> <span class="o">=</span> <span class="n">getTrainingTestData</span><span class="p">()</span>
 
 
-<span class="k">def</span> <span class="nf">getKernel</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">getKernel</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">()</span>
 
 
@@ -488,19 +488,27 @@ To enable the following instructions: AVX2 AVX512F FMA, in other operations, reb
 <span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
     <span class="n">exact_model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span>
     <span class="n">exact_model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span>
-    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;L-BFGS-B&quot;</span><span class="p">,</span>
+    <span class="n">method</span><span class="o">=</span><span class="s2">"L-BFGS-B"</span><span class="p">,</span>
     <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">20000</span><span class="p">)),</span>
     <span class="n">tol</span><span class="o">=</span><span class="mf">1e-11</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Exact model parameters:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Exact model parameters:"</span><span class="p">)</span>
 <span class="n">printModelParameters</span><span class="p">(</span><span class="n">exact_model</span><span class="p">)</span>
 
 <span class="n">figA</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xtrain</span><span class="p">,</span> <span class="n">Ytrain</span><span class="p">,</span> <span class="s2">&quot;ro&quot;</span><span class="p">)</span>
-<span class="n">plotPredictions</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">exact_model</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;g&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xtrain</span><span class="p">,</span> <span class="n">Ytrain</span><span class="p">,</span> <span class="s2">"ro"</span><span class="p">)</span>
+<span class="n">plotPredictions</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">exact_model</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"g"</span><span class="p">)</span>
 </pre></div>
 </div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2026-10-15 09:26:39.240806: E external/local_xla/xla/stream_executor/cuda/cuda_driver.cc:152] failed call to cuInit: INTERNAL: CUDA error: Failed call to cuInit: UNKNOWN ERROR (303)
+</pre></div></div>
 </div>
 <div class="nboutput docutils container">
 <div class="prompt empty docutils container">
@@ -517,14 +525,14 @@ Exact model parameters:
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_theory_FITCvsVFE_3_1.png" src="../../_images/notebooks_theory_FITCvsVFE_3_1.png" />
+<img alt="../../_images/notebooks_theory_FITCvsVFE_3_2.png" src="../../_images/notebooks_theory_FITCvsVFE_3_2.png" />
 </div>
 </div>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">initializeHyperparametersFromExactSolution</span><span class="p">(</span><span class="n">sparse_model</span><span class="p">):</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">initializeHyperparametersFromExactSolution</span><span class="p">(</span><span class="n">sparse_model</span><span class="p">):</span>
     <span class="n">sparse_model</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">variance</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">exact_model</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">variance</span><span class="p">)</span>
     <span class="n">sparse_model</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">variance</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">exact_model</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">variance</span><span class="p">)</span>
     <span class="n">sparse_model</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">lengthscales</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">exact_model</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">lengthscales</span><span class="p">)</span>
@@ -546,7 +554,7 @@ Exact model parameters:
 <span class="n">VFEcb</span> <span class="o">=</span> <span class="n">repeatMinimization</span><span class="p">(</span>
     <span class="n">VFEmodel</span><span class="p">,</span> <span class="n">Xtest</span><span class="p">,</span> <span class="n">Ytest</span>
 <span class="p">)</span>  <span class="c1"># optimize with several restarts</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Sparse model parameters after VFE optimization:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Sparse model parameters after VFE optimization:"</span><span class="p">)</span>
 <span class="n">printModelParameters</span><span class="p">(</span><span class="n">VFEmodel</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -576,7 +584,7 @@ Sparse model parameters after VFE optimization:
 <span class="n">FITCcb</span> <span class="o">=</span> <span class="n">repeatMinimization</span><span class="p">(</span>
     <span class="n">FITCmodel</span><span class="p">,</span> <span class="n">Xtest</span><span class="p">,</span> <span class="n">Ytest</span>
 <span class="p">)</span>  <span class="c1"># optimize with several restarts</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Sparse model parameters after FITC optimization:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Sparse model parameters after FITC optimization:"</span><span class="p">)</span>
 <span class="n">printModelParameters</span><span class="p">(</span><span class="n">FITCmodel</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -587,9 +595,9 @@ Sparse model parameters after VFE optimization:
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 Sparse model parameters after FITC optimization:
-  Likelihood variance = 0.01898
-  Kernel variance     = 1.3328
-  Kernel lengthscale  = 0.61755
+  Likelihood variance = 0.026224
+  Kernel variance     = 0.97388
+  Kernel lengthscale  = 0.56815
 </pre></div></div>
 </div>
 <p>Plotting a comparison of the two algorithms, we see that VFE stays at the optimum of exact GPR, whereas the FITC approximation eventually ends up with several inducing points on top of each other, and a worse fit:</p>
@@ -605,7 +613,7 @@ Sparse model parameters after FITC optimization:
 <span class="n">VFElog_likelihoods</span> <span class="o">=</span> <span class="n">stretch</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">VFEiters</span><span class="p">),</span> <span class="n">VFEcb</span><span class="o">.</span><span class="n">log_likelihoods</span><span class="p">)</span>
 <span class="n">VFEhold_out_likelihood</span> <span class="o">=</span> <span class="n">stretch</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">VFEiters</span><span class="p">),</span> <span class="n">VFEcb</span><span class="o">.</span><span class="n">hold_out_likelihood</span><span class="p">)</span>
 
-<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;VFE&quot;</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span> <span class="n">fontdict</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;fontsize&quot;</span><span class="p">:</span> <span class="mi">22</span><span class="p">})</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"VFE"</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s2">"center"</span><span class="p">,</span> <span class="n">fontdict</span><span class="o">=</span><span class="p">{</span><span class="s2">"fontsize"</span><span class="p">:</span> <span class="mi">22</span><span class="p">})</span>
 <span class="n">plotComparisonFigure</span><span class="p">(</span>
     <span class="n">Xtrain</span><span class="p">,</span>
     <span class="n">VFEmodel</span><span class="p">,</span>
@@ -618,7 +626,7 @@ Sparse model parameters after FITC optimization:
     <span class="n">VFEhold_out_likelihood</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;FITC&quot;</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span> <span class="n">fontdict</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;fontsize&quot;</span><span class="p">:</span> <span class="mi">22</span><span class="p">})</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"FITC"</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s2">"center"</span><span class="p">,</span> <span class="n">fontdict</span><span class="o">=</span><span class="p">{</span><span class="s2">"fontsize"</span><span class="p">:</span> <span class="mi">22</span><span class="p">})</span>
 <span class="n">plotComparisonFigure</span><span class="p">(</span>
     <span class="n">Xtrain</span><span class="p">,</span>
     <span class="n">FITCmodel</span><span class="p">,</span>
@@ -668,7 +676,7 @@ Sparse model parameters after FITC optimization:
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.3.7.<br>
 </p>
   </div>
   

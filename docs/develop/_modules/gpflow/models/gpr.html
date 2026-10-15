@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>gpflow.models.gpr &#8212; GPflow 2.9.0 documentation</title>
+    <title>gpflow.models.gpr &#8212; GPflow 2.11.2 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -22,14 +22,14 @@
   <link rel="preload" as="font" type="font/woff2" crossorigin
     href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
 
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css?v=c27e38e3" />
 
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
-    <script src="../../../_static/documentation_options.js?v=8da69bee"></script>
-    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/documentation_options.js?v=b2fb886b"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
@@ -61,7 +61,7 @@
   
   
   
-    <p class="title logo__title">GPflow 2.9.0 documentation</p>
+    <p class="title logo__title">GPflow 2.11.2 documentation</p>
   
 </a>
     
@@ -240,41 +240,41 @@ function checkPageExistsAndRedirect(event) {
   <h1>Source code for gpflow.models.gpr</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Copyright 2016-2020 The GPflow Contributors. All Rights Reserved.</span>
 <span class="c1">#</span>
-<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1"># you may not use this file except in compliance with the License.</span>
 <span class="c1"># You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1"># See the License for the specific language governing permissions and</span>
 <span class="c1"># limitations under the License.</span>
 
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
 
-<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
-<span class="kn">from</span> <span class="nn">check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span><span class="p">,</span> <span class="n">inherit_check_shapes</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tf</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">check_shapes</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_shapes</span><span class="p">,</span> <span class="n">inherit_check_shapes</span>
 
-<span class="kn">import</span> <span class="nn">gpflow</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">gpflow</span>
 
-<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">posteriors</span>
-<span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">InputData</span><span class="p">,</span> <span class="n">MeanAndVariance</span><span class="p">,</span> <span class="n">RegressionData</span><span class="p">,</span> <span class="n">TensorData</span>
-<span class="kn">from</span> <span class="nn">..kernels</span> <span class="kn">import</span> <span class="n">Kernel</span>
-<span class="kn">from</span> <span class="nn">..likelihoods</span> <span class="kn">import</span> <span class="n">Gaussian</span>
-<span class="kn">from</span> <span class="nn">..logdensities</span> <span class="kn">import</span> <span class="n">multivariate_normal</span>
-<span class="kn">from</span> <span class="nn">..mean_functions</span> <span class="kn">import</span> <span class="n">MeanFunction</span>
-<span class="kn">from</span> <span class="nn">..utilities</span> <span class="kn">import</span> <span class="n">add_likelihood_noise_cov</span><span class="p">,</span> <span class="n">assert_params_false</span>
-<span class="kn">from</span> <span class="nn">.model</span> <span class="kn">import</span> <span class="n">GPModel</span>
-<span class="kn">from</span> <span class="nn">.training_mixins</span> <span class="kn">import</span> <span class="n">InternalDataTrainingLossMixin</span>
-<span class="kn">from</span> <span class="nn">.util</span> <span class="kn">import</span> <span class="n">data_input_to_tensor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">posteriors</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..base</span><span class="w"> </span><span class="kn">import</span> <span class="n">InputData</span><span class="p">,</span> <span class="n">MeanAndVariance</span><span class="p">,</span> <span class="n">RegressionData</span><span class="p">,</span> <span class="n">TensorData</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..kernels</span><span class="w"> </span><span class="kn">import</span> <span class="n">Kernel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..likelihoods</span><span class="w"> </span><span class="kn">import</span> <span class="n">Gaussian</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..logdensities</span><span class="w"> </span><span class="kn">import</span> <span class="n">multivariate_normal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..mean_functions</span><span class="w"> </span><span class="kn">import</span> <span class="n">MeanFunction</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..utilities</span><span class="w"> </span><span class="kn">import</span> <span class="n">add_likelihood_noise_cov</span><span class="p">,</span> <span class="n">assert_params_false</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">GPModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.training_mixins</span><span class="w"> </span><span class="kn">import</span> <span class="n">InternalDataTrainingLossMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">data_input_to_tensor</span>
 
 
 <div class="viewcode-block" id="GPR_deprecated">
 <a class="viewcode-back" href="../../../api/gpflow/models/gpr/index.html#gpflow.models.gpr.GPR_deprecated">[docs]</a>
-<span class="k">class</span> <span class="nc">GPR_deprecated</span><span class="p">(</span><span class="n">GPModel</span><span class="p">,</span> <span class="n">InternalDataTrainingLossMixin</span><span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">GPR_deprecated</span><span class="p">(</span><span class="n">GPModel</span><span class="p">,</span> <span class="n">InternalDataTrainingLossMixin</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    Gaussian Process Regression.</span>
 
 <span class="sd">    This is a vanilla implementation of GP regression with a Gaussian</span>
@@ -296,14 +296,14 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">            \mathcal N(Y \,|\, 0, \mathbf{K} + \sigma_n^2 \mathbf{I})</span>
 
 <span class="sd">    For a use example see :doc:`../../../../notebooks/getting_started/basic_usage`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="nd">@check_shapes</span><span class="p">(</span>
-        <span class="s2">&quot;data[0]: [N, D]&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;data[1]: [N, P]&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;noise_variance: []&quot;</span><span class="p">,</span>
+        <span class="s2">"data[0]: [N, D]"</span><span class="p">,</span>
+        <span class="s2">"data[1]: [N, P]"</span><span class="p">,</span>
+        <span class="s2">"noise_variance: []"</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">data</span><span class="p">:</span> <span class="n">RegressionData</span><span class="p">,</span>
         <span class="n">kernel</span><span class="p">:</span> <span class="n">Kernel</span><span class="p">,</span>
@@ -313,7 +313,7 @@ function checkPageExistsAndRedirect(event) {
     <span class="p">):</span>
         <span class="k">assert</span> <span class="p">(</span><span class="n">noise_variance</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
             <span class="n">likelihood</span> <span class="ow">is</span> <span class="kc">None</span>
-        <span class="p">),</span> <span class="s2">&quot;Cannot set both `noise_variance` and `likelihood`.&quot;</span>
+        <span class="p">),</span> <span class="s2">"Cannot set both `noise_variance` and `likelihood`."</span>
         <span class="k">if</span> <span class="n">likelihood</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">noise_variance</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">noise_variance</span> <span class="o">=</span> <span class="mf">1.0</span>
@@ -326,23 +326,23 @@ function checkPageExistsAndRedirect(event) {
 <div class="viewcode-block" id="GPR_deprecated.maximum_log_likelihood_objective">
 <a class="viewcode-back" href="../../../api/gpflow/models/gpr/index.html#gpflow.models.gpr.GPR_deprecated.maximum_log_likelihood_objective">[docs]</a>
     <span class="nd">@inherit_check_shapes</span>
-    <span class="k">def</span> <span class="nf">maximum_log_likelihood_objective</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>  <span class="c1"># type: ignore[override]</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">maximum_log_likelihood_objective</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>  <span class="c1"># type: ignore[override]</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_marginal_likelihood</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="GPR_deprecated.log_marginal_likelihood">
 <a class="viewcode-back" href="../../../api/gpflow/models/gpr/index.html#gpflow.models.gpr.GPR_deprecated.log_marginal_likelihood">[docs]</a>
     <span class="nd">@check_shapes</span><span class="p">(</span>
-        <span class="s2">&quot;return: []&quot;</span><span class="p">,</span>
+        <span class="s2">"return: []"</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="k">def</span> <span class="nf">log_marginal_likelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">log_marginal_likelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">        Computes the log marginal likelihood.</span>
 
 <span class="sd">        .. math::</span>
 <span class="sd">            \log p(Y | \theta).</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
         <span class="n">K</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
         <span class="n">ks</span> <span class="o">=</span> <span class="n">add_likelihood_noise_cov</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">likelihood</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
@@ -357,10 +357,10 @@ function checkPageExistsAndRedirect(event) {
 <div class="viewcode-block" id="GPR_deprecated.predict_f">
 <a class="viewcode-back" href="../../../api/gpflow/models/gpr/index.html#gpflow.models.gpr.GPR_deprecated.predict_f">[docs]</a>
     <span class="nd">@inherit_check_shapes</span>
-    <span class="k">def</span> <span class="nf">predict_f</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict_f</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">InputData</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">        This method computes predictions at X \in R^{N \x D} input points</span>
 
 <span class="sd">        .. math::</span>
@@ -368,7 +368,7 @@ function checkPageExistsAndRedirect(event) {
 
 <span class="sd">        where F* are points on the GP at new data points, Y are noisy observations at training data</span>
 <span class="sd">        points.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">assert_params_false</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predict_f</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="o">=</span><span class="n">full_output_cov</span><span class="p">)</span>
 
         <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
@@ -391,36 +391,36 @@ function checkPageExistsAndRedirect(event) {
 
 <div class="viewcode-block" id="GPR_with_posterior">
 <a class="viewcode-back" href="../../../api/gpflow/models/gpr/index.html#gpflow.models.gpr.GPR_with_posterior">[docs]</a>
-<span class="k">class</span> <span class="nc">GPR_with_posterior</span><span class="p">(</span><span class="n">GPR_deprecated</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">GPR_with_posterior</span><span class="p">(</span><span class="n">GPR_deprecated</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    This is an implementation of GPR that provides a posterior() method that</span>
 <span class="sd">    enables caching for faster subsequent predictions.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="GPR_with_posterior.posterior">
 <a class="viewcode-back" href="../../../api/gpflow/models/gpr/index.html#gpflow.models.gpr.GPR_with_posterior.posterior">[docs]</a>
-    <span class="k">def</span> <span class="nf">posterior</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">posterior</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">precompute_cache</span><span class="p">:</span> <span class="n">posteriors</span><span class="o">.</span><span class="n">PrecomputeCacheType</span> <span class="o">=</span> <span class="n">posteriors</span><span class="o">.</span><span class="n">PrecomputeCacheType</span><span class="o">.</span><span class="n">TENSOR</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">posteriors</span><span class="o">.</span><span class="n">GPRPosterior</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Create the Posterior object which contains precomputed matrices for</span>
 <span class="sd">        faster prediction.</span>
 
 <span class="sd">        precompute_cache has three settings:</span>
 
-<span class="sd">        - `PrecomputeCacheType.TENSOR` (or `&quot;tensor&quot;`): Precomputes the cached</span>
+<span class="sd">        - `PrecomputeCacheType.TENSOR` (or `"tensor"`): Precomputes the cached</span>
 <span class="sd">          quantities and stores them as tensors (which allows differentiating</span>
 <span class="sd">          through the prediction). This is the default.</span>
-<span class="sd">        - `PrecomputeCacheType.VARIABLE` (or `&quot;variable&quot;`): Precomputes the cached</span>
+<span class="sd">        - `PrecomputeCacheType.VARIABLE` (or `"variable"`): Precomputes the cached</span>
 <span class="sd">          quantities and stores them as variables, which allows for updating</span>
 <span class="sd">          their values without changing the compute graph (relevant for AOT</span>
 <span class="sd">          compilation).</span>
-<span class="sd">        - `PrecomputeCacheType.NOCACHE` (or `&quot;nocache&quot;` or `None`): Avoids</span>
+<span class="sd">        - `PrecomputeCacheType.NOCACHE` (or `"nocache"` or `None`): Avoids</span>
 <span class="sd">          immediate cache computation. This is useful for avoiding extraneous</span>
-<span class="sd">          computations when you only want to call the posterior&#39;s</span>
+<span class="sd">          computations when you only want to call the posterior's</span>
 <span class="sd">          `fused_predict_f` method.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">return</span> <span class="n">posteriors</span><span class="o">.</span><span class="n">GPRPosterior</span><span class="p">(</span>
             <span class="n">kernel</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span>
@@ -434,16 +434,16 @@ function checkPageExistsAndRedirect(event) {
 <div class="viewcode-block" id="GPR_with_posterior.predict_f">
 <a class="viewcode-back" href="../../../api/gpflow/models/gpr/index.html#gpflow.models.gpr.GPR_with_posterior.predict_f">[docs]</a>
     <span class="nd">@inherit_check_shapes</span>
-    <span class="k">def</span> <span class="nf">predict_f</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict_f</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">InputData</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        For backwards compatibility, GPR&#39;s predict_f uses the fused (no-cache)</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        For backwards compatibility, GPR's predict_f uses the fused (no-cache)</span>
 <span class="sd">        computation, which is more efficient during training.</span>
 
 <span class="sd">        For faster (cached) prediction, predict directly from the posterior object, i.e.,:</span>
 <span class="sd">            model.posterior().predict_f(Xnew, ...)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">posterior</span><span class="p">(</span><span class="n">posteriors</span><span class="o">.</span><span class="n">PrecomputeCacheType</span><span class="o">.</span><span class="n">NOCACHE</span><span class="p">)</span><span class="o">.</span><span class="n">fused_predict_f</span><span class="p">(</span>
             <span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="o">=</span><span class="n">full_output_cov</span>
         <span class="p">)</span></div>
@@ -453,8 +453,8 @@ function checkPageExistsAndRedirect(event) {
 
 <div class="viewcode-block" id="GPR">
 <a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.gpr.GPR">[docs]</a>
-<span class="k">class</span> <span class="nc">GPR</span><span class="p">(</span><span class="n">GPR_with_posterior</span><span class="p">):</span>
-    <span class="c1"># subclassed to ensure __class__ == &quot;GPR&quot;</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">GPR</span><span class="p">(</span><span class="n">GPR_with_posterior</span><span class="p">):</span>
+    <span class="c1"># subclassed to ensure __class__ == "GPR"</span>
 
     <span class="vm">__doc__</span> <span class="o">=</span> <span class="n">GPR_deprecated</span><span class="o">.</span><span class="vm">__doc__</span>  <span class="c1"># Use documentation from GPR_deprecated.</span></div>
 
@@ -484,7 +484,7 @@ function checkPageExistsAndRedirect(event) {
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.3.7.<br>
 </p>
   </div>
   

@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Large Data with SGPR &#8212; GPflow 2.9.0 documentation</title>
+    <title>Large Data with SGPR &#8212; GPflow 2.11.2 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -23,15 +23,15 @@
   <link rel="preload" as="font" type="font/woff2" crossorigin
     href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
 
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
-    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
     <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css?v=c27e38e3" />
 
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
-    <script src="../../_static/documentation_options.js?v=8da69bee"></script>
-    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/documentation_options.js?v=b2fb886b"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
@@ -67,7 +67,7 @@
   
   
   
-    <p class="title logo__title">GPflow 2.9.0 documentation</p>
+    <p class="title logo__title">GPflow 2.11.2 documentation</p>
   
 </a>
     
@@ -337,22 +337,32 @@ function checkPageExistsAndRedirect(event) {
               <article class="bd-article" role="main">
                 
   <section id="Large-Data-with-SGPR">
-<h1>Large Data with SGPR<a class="headerlink" href="#Large-Data-with-SGPR" title="Link to this heading">#</a></h1>
+<h1>Large Data with SGPR<a class="headerlink" href="#Large-Data-with-SGPR" title="Link to this heading">¶</a></h1>
 <p>Making predictions with Gaussian Processes is <span class="math notranslate nohighlight">\(O(N^3)\)</span>, which can be prohibitive for large <span class="math notranslate nohighlight">\(N\)</span>. In this chapter we introduce the Sparse Gaussian Process Regression (SGPR), which tries to solve this problem. The SGPR tries to approximate the <span class="math notranslate nohighlight">\(N\)</span> actual data points with <span class="math notranslate nohighlight">\(M\)</span> “inducing variables”. With inducing variables the SGPR can make predicitions in <span class="math notranslate nohighlight">\(O(NM^2)\)</span>, which can make a big difference if <span class="math notranslate nohighlight">\(M &lt;&lt; N\)</span>.</p>
 <p>Note: For large datasets the “SVGP” model may also be relevant. See our section on <a class="reference internal" href="classification_and_other_data_distributions.html"><span class="doc">Classification and other data distributions</span></a>.</p>
 <p>As usual we will start with our imports:</p>
-<div class="nbinput nblast docutils container">
+<div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
-<span class="kn">import</span> <span class="nn">tensorflow_probability</span> <span class="k">as</span> <span class="nn">tfp</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tf</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow_probability</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tfp</span>
 
-<span class="kn">import</span> <span class="nn">gpflow</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">gpflow</span>
 </pre></div>
 </div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1792056391.853003     143 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1792056391.858553     143 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+</pre></div></div>
 </div>
 <p>Although the sparse models are meant for large datasets, smaller datasets can be easier to understand, so we will reuse the same data we used in our <a class="reference internal" href="basic_usage.html"><span class="doc">Basic Usage</span></a> chapter:</p>
 <div class="nbinput docutils container">
@@ -372,7 +382,7 @@ function checkPageExistsAndRedirect(event) {
     <span class="p">]</span>
 <span class="p">)</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">&quot;kx&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">"kx"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -388,11 +398,11 @@ function checkPageExistsAndRedirect(event) {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_model</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPModel</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">plot_model</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPModel</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">data</span>
     <span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
     <span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">)</span>
-    <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;notebook&quot;</span><span class="p">)</span>
+    <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">"notebook"</span><span class="p">)</span>
 
     <span class="n">Xplot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">200</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>
 
@@ -401,8 +411,8 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">y_upper</span> <span class="o">=</span> <span class="n">y_mean</span> <span class="o">+</span> <span class="mf">1.96</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">y_var</span><span class="p">)</span>
 
     <span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">&quot;kx&quot;</span><span class="p">,</span> <span class="n">mew</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-    <span class="p">(</span><span class="n">mean_line</span><span class="p">,)</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">y_mean</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">"kx"</span><span class="p">,</span> <span class="n">mew</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">mean_line</span><span class="p">,)</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">y_mean</span><span class="p">,</span> <span class="s2">"-"</span><span class="p">)</span>
     <span class="n">color</span> <span class="o">=</span> <span class="n">mean_line</span><span class="o">.</span><span class="n">get_color</span><span class="p">()</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">y_lower</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">y_upper</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
@@ -411,9 +421,9 @@ function checkPageExistsAndRedirect(event) {
     <span class="p">)</span>
 
     <span class="c1"># Also plot the inducing variables if possible:</span>
-    <span class="n">iv</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;inducing_variable&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">iv</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">"inducing_variable"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">iv</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">iv</span><span class="o">.</span><span class="n">Z</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">iv</span><span class="o">.</span><span class="n">Z</span><span class="p">),</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;^&quot;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">iv</span><span class="o">.</span><span class="n">Z</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">iv</span><span class="o">.</span><span class="n">Z</span><span class="p">),</span> <span class="n">marker</span><span class="o">=</span><span class="s2">"^"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -476,10 +486,10 @@ function checkPageExistsAndRedirect(event) {
 <tr><th>name                    </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th>value              </th></tr>
 </thead>
 <tbody>
-<tr><td>SGPR.kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td>11.79179           </td></tr>
-<tr><td>SGPR.kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td>0.38664607378177496</td></tr>
-<tr><td>SGPR.likelihood.variance</td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td>0.24753007081514652</td></tr>
-<tr><td>SGPR.inducing_variable.Z</td><td>Parameter</td><td>Identity        </td><td>       </td><td>True       </td><td>(4, 1) </td><td>float64</td><td>[[0.21006069...    </td></tr>
+<tr><td>SGPR.kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td>11.79189           </td></tr>
+<tr><td>SGPR.kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td>0.38665088867851694</td></tr>
+<tr><td>SGPR.likelihood.variance</td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td>0.24753989045363   </td></tr>
+<tr><td>SGPR.inducing_variable.Z</td><td>Parameter</td><td>Identity        </td><td>       </td><td>True       </td><td>(4, 1) </td><td>float64</td><td>[[0.21006035...    </td></tr>
 </tbody>
 </table></div>
 </div>
@@ -519,7 +529,7 @@ function checkPageExistsAndRedirect(event) {
 <tbody>
 <tr><td>SGPR.kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td>6.99571           </td></tr>
 <tr><td>SGPR.kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td>1.09965           </td></tr>
-<tr><td>SGPR.likelihood.variance</td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td>0.5799875691970902</td></tr>
+<tr><td>SGPR.likelihood.variance</td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()     </td><td>float64</td><td>0.5799875691970862</td></tr>
 <tr><td>SGPR.inducing_variable.Z</td><td>Parameter</td><td>Identity        </td><td>       </td><td>True       </td><td>(2, 1) </td><td>float64</td><td>[[0.12846436]
  [0.82829222]]                   </td></tr>
 </tbody>
@@ -534,7 +544,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 <p>The two inducing points above are not enough to capture the data well, so we get an overly simplistic <span class="math notranslate nohighlight">\(f\)</span>, and the model compensates with an overly high variance.</p>
 <section id="Picking-initial-inducing-points">
-<h2>Picking initial inducing points<a class="headerlink" href="#Picking-initial-inducing-points" title="Link to this heading">#</a></h2>
+<h2>Picking initial inducing points<a class="headerlink" href="#Picking-initial-inducing-points" title="Link to this heading">¶</a></h2>
 <p>When you use a sparse model you will need to pick initial inducing points, and choosing these correctly can have a large impact on performance. Above we used a simple grid. This often works well when your data is 1D, but we do not recommend using a grid for higher-dimensional data. In this section we discuss some alternatives.</p>
 <p>First, let us declare some 2D data:</p>
 <div class="nbinput nblast docutils container">
@@ -565,7 +575,7 @@ function checkPageExistsAndRedirect(event) {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_2d_model</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPModel</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">plot_2d_model</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPModel</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="n">n_grid</span> <span class="o">=</span> <span class="mi">50</span>
     <span class="n">_</span><span class="p">,</span> <span class="p">(</span><span class="n">ax_mean</span><span class="p">,</span> <span class="n">ax_std</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
     <span class="n">Xplots</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">n_grid</span><span class="p">)</span>
@@ -573,7 +583,7 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">Xplot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">Xplot1</span><span class="p">,</span> <span class="n">Xplot2</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">Xplot</span> <span class="o">=</span> <span class="n">Xplot</span><span class="o">.</span><span class="n">reshape</span><span class="p">([</span><span class="n">n_grid</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
 
-    <span class="n">iv</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;inducing_variable&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">iv</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">"inducing_variable"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
     <span class="c1"># Do not optimize inducing variables, so that we can better see the impact their choice has. When solving</span>
     <span class="c1"># a real problem you should generally optimise your inducing points.</span>
     <span class="k">if</span> <span class="n">iv</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -587,12 +597,12 @@ function checkPageExistsAndRedirect(event) {
 
     <span class="n">ax_mean</span><span class="o">.</span><span class="n">pcolor</span><span class="p">(</span><span class="n">Xplot1</span><span class="p">,</span> <span class="n">Xplot2</span><span class="p">,</span> <span class="n">y_mean</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">Xplot1</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
     <span class="n">ax_std</span><span class="o">.</span><span class="n">pcolor</span><span class="p">(</span><span class="n">Xplot1</span><span class="p">,</span> <span class="n">Xplot2</span><span class="p">,</span> <span class="n">y_std</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">Xplot1</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
-    <span class="n">ax_mean</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">X</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">X</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">)</span>
-    <span class="n">ax_std</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">X</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">X</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">)</span>
+    <span class="n">ax_mean</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">X</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">X</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s2">"black"</span><span class="p">)</span>
+    <span class="n">ax_std</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">X</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">X</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s2">"black"</span><span class="p">)</span>
 
     <span class="c1"># Also plot the inducing variables if possible:</span>
     <span class="k">if</span> <span class="n">iv</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">ax_mean</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">iv</span><span class="o">.</span><span class="n">Z</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">iv</span><span class="o">.</span><span class="n">Z</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">)</span>
+        <span class="n">ax_mean</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">iv</span><span class="o">.</span><span class="n">Z</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">iv</span><span class="o">.</span><span class="n">Z</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">marker</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"red"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -617,7 +627,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 </div>
 <section id="Random-data-samples">
-<h3>Random data samples<a class="headerlink" href="#Random-data-samples" title="Link to this heading">#</a></h3>
+<h3>Random data samples<a class="headerlink" href="#Random-data-samples" title="Link to this heading">¶</a></h3>
 <p>A simple approach to selecting inducing points, is to randomly select a subset of your data:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
@@ -645,13 +655,13 @@ function checkPageExistsAndRedirect(event) {
 </div>
 </section>
 <section id="k-means">
-<h3>k-means<a class="headerlink" href="#k-means" title="Link to this heading">#</a></h3>
+<h3>k-means<a class="headerlink" href="#k-means" title="Link to this heading">¶</a></h3>
 <p>Another good approach is to use the <a class="reference external" href="https://en.wikipedia.org/wiki/K-means_clustering">k-means algoritm</a>, which tries to find <span class="math notranslate nohighlight">\(k\)</span> centers of your data:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.cluster.vq</span> <span class="kn">import</span> <span class="n">kmeans</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">scipy.cluster.vq</span><span class="w"> </span><span class="kn">import</span> <span class="n">kmeans</span>
 
 <span class="n">n_inducing</span> <span class="o">=</span> <span class="mi">4</span>
 <span class="n">inducing_variable</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">kmeans</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">n_inducing</span><span class="p">)</span>
@@ -674,7 +684,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 </section>
 <section id="Uncorrelated-samples">
-<h3>Uncorrelated samples<a class="headerlink" href="#Uncorrelated-samples" title="Link to this heading">#</a></h3>
+<h3>Uncorrelated samples<a class="headerlink" href="#Uncorrelated-samples" title="Link to this heading">¶</a></h3>
 <p>It is a good idea to pick inducing points that are close to your data, which the above two algoritms does well. However they can struggle with some corner cases, such as if you do not (yet) have access to your data, or if you need to pick more inducing points than you have data. An approach that does not select points close to your data, but that can be more robust in some circumstances, is to use a <a class="reference external" href="https://en.wikipedia.org/wiki/Low-discrepancy_sequence">low-discrepancy sequence</a>:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
@@ -704,7 +714,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 </section>
 <section id="Advanced-initialisation">
-<h3>Advanced initialisation<a class="headerlink" href="#Advanced-initialisation" title="Link to this heading">#</a></h3>
+<h3>Advanced initialisation<a class="headerlink" href="#Advanced-initialisation" title="Link to this heading">¶</a></h3>
 <p>If none of the above approaches work well for you, we recommend that advanced users to look at the <a class="reference external" href="https://github.com/markvdw/RobustGP">RobustGP repository</a>.</p>
 </section>
 </section>
@@ -735,7 +745,7 @@ function checkPageExistsAndRedirect(event) {
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.3.7.<br>
 </p>
   </div>
   

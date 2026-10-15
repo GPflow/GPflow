@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Classification, other data distributions, VGP and SVGP &#8212; GPflow 2.9.0 documentation</title>
+    <title>Classification, other data distributions, VGP and SVGP &#8212; GPflow 2.11.2 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -23,15 +23,15 @@
   <link rel="preload" as="font" type="font/woff2" crossorigin
     href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
 
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
-    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
     <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css?v=c27e38e3" />
 
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
-    <script src="../../_static/documentation_options.js?v=8da69bee"></script>
-    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/documentation_options.js?v=b2fb886b"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
@@ -67,7 +67,7 @@
   
   
   
-    <p class="title logo__title">GPflow 2.9.0 documentation</p>
+    <p class="title logo__title">GPflow 2.11.2 documentation</p>
   
 </a>
     
@@ -339,24 +339,34 @@ function checkPageExistsAndRedirect(event) {
               <article class="bd-article" role="main">
                 
   <section id="Classification,-other-data-distributions,-VGP-and-SVGP">
-<h1>Classification, other data distributions, VGP and SVGP<a class="headerlink" href="#Classification,-other-data-distributions,-VGP-and-SVGP" title="Link to this heading">#</a></h1>
+<h1>Classification, other data distributions, VGP and SVGP<a class="headerlink" href="#Classification,-other-data-distributions,-VGP-and-SVGP" title="Link to this heading">¶</a></h1>
 <p>In this chapter we will talk about what you can do if your data is not normally distributed.</p>
 <p>As usual we will start with our imports:</p>
-<div class="nbinput nblast docutils container">
+<div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Sequence</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span>
 
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">import</span> <span class="nn">gpflow</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">gpflow</span>
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1792056417.758852     139 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1792056417.764560     139 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+</pre></div></div>
+</div>
 <section id="The-Variational-Gaussion-Process">
-<h2>The Variational Gaussion Process<a class="headerlink" href="#The-Variational-Gaussion-Process" title="Link to this heading">#</a></h2>
+<h2>The Variational Gaussion Process<a class="headerlink" href="#The-Variational-Gaussion-Process" title="Link to this heading">¶</a></h2>
 <p>Remember how we assume that our data is generated by:</p>
 <p><span class="math">\begin{equation}
 Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^2).
@@ -364,17 +374,17 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 <p>In this chapter we will no longer assume this — instead we will allow any stochastic function of <span class="math notranslate nohighlight">\(f\)</span>.</p>
 <p>We will be using the Variational Gaussian Process (VGP) model in this chapter. The VGP uses a <a class="reference internal" href="../../api/gpflow/likelihoods/index.html#gpflow-likelihoods-likelihood"><span class="std std-ref">Likelihood</span></a> object to define the connection between <span class="math notranslate nohighlight">\(f\)</span> and <span class="math notranslate nohighlight">\(Y\)</span>. The models we have seen so far, the GPR and SGPR, requires the likelihood to be gaussian, but the VGP allows us to configure the likelihood.</p>
 <section id="Non-gaussian-regression">
-<h3>Non-gaussian regression<a class="headerlink" href="#Non-gaussian-regression" title="Link to this heading">#</a></h3>
+<h3>Non-gaussian regression<a class="headerlink" href="#Non-gaussian-regression" title="Link to this heading">¶</a></h3>
 <p>Let us first define a helper function, for plotting a model:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_model</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPModel</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">plot_model</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPModel</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">data</span>
     <span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
     <span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">)</span>
-    <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;notebook&quot;</span><span class="p">)</span>
+    <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">"notebook"</span><span class="p">)</span>
 
     <span class="n">Xplot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">200</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>
 
@@ -383,8 +393,8 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
     <span class="n">y_upper</span> <span class="o">=</span> <span class="n">y_mean</span> <span class="o">+</span> <span class="mf">1.96</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">y_var</span><span class="p">)</span>
 
     <span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">&quot;kx&quot;</span><span class="p">,</span> <span class="n">mew</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-    <span class="p">(</span><span class="n">mean_line</span><span class="p">,)</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">y_mean</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">"kx"</span><span class="p">,</span> <span class="n">mew</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">mean_line</span><span class="p">,)</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">y_mean</span><span class="p">,</span> <span class="s2">"-"</span><span class="p">)</span>
     <span class="n">color</span> <span class="o">=</span> <span class="n">mean_line</span><span class="o">.</span><span class="n">get_color</span><span class="p">()</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">y_lower</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">y_upper</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
@@ -481,12 +491,12 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 <tr><th>name                   </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape      </th><th>dtype  </th><th>value                                               </th></tr>
 </thead>
 <tbody>
-<tr><td>VGP.kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()         </td><td>float64</td><td>5.04051                                             </td></tr>
-<tr><td>VGP.kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()         </td><td>float64</td><td>1.2941                                              </td></tr>
-<tr><td>VGP.likelihood.scale   </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()         </td><td>float64</td><td>0.05425931071105466                                 </td></tr>
+<tr><td>VGP.kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()         </td><td>float64</td><td>5.04005                                             </td></tr>
+<tr><td>VGP.kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()         </td><td>float64</td><td>1.29433                                             </td></tr>
+<tr><td>VGP.likelihood.scale   </td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()         </td><td>float64</td><td>0.054258992816275164                                </td></tr>
 <tr><td>VGP.num_data           </td><td>Parameter</td><td>Identity        </td><td>       </td><td>False      </td><td>()         </td><td>int32  </td><td>10                                                  </td></tr>
-<tr><td>VGP.q_mu               </td><td>Parameter</td><td>Identity        </td><td>       </td><td>True       </td><td>(10, 1)    </td><td>float64</td><td>[[5.16603723e-01...                                 </td></tr>
-<tr><td>VGP.q_sqrt             </td><td>Parameter</td><td>FillTriangular  </td><td>       </td><td>True       </td><td>(1, 10, 10)</td><td>float64</td><td>[[[1.31215603e-02, 0.00000000e+00, 0.00000000e+00...</td></tr>
+<tr><td>VGP.q_mu               </td><td>Parameter</td><td>Identity        </td><td>       </td><td>True       </td><td>(10, 1)    </td><td>float64</td><td>[[5.16628134e-01...                                 </td></tr>
+<tr><td>VGP.q_sqrt             </td><td>Parameter</td><td>FillTriangular  </td><td>       </td><td>True       </td><td>(1, 10, 10)</td><td>float64</td><td>[[[1.31218492e-02, 0.00000000e+00, 0.00000000e+00...</td></tr>
 </tbody>
 </table></div>
 </div>
@@ -500,7 +510,7 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 <p>Notice how this fit has smaller uncertainty, and is a much better fit for the non-outlier points.</p>
 </section>
 <section id="Classification">
-<h3>Classification<a class="headerlink" href="#Classification" title="Link to this heading">#</a></h3>
+<h3>Classification<a class="headerlink" href="#Classification" title="Link to this heading">¶</a></h3>
 <p>Variational models and custom likelihoods allow you to have arbitrary connections beween the data you are modelling and the real-valued function <span class="math notranslate nohighlight">\(f\)</span>. For example, we can use it for a classification problem where we are not trying to predict a real value (regression), but trying to predict an object label instead.</p>
 <p>To do classification we start with our unknown function <span class="math notranslate nohighlight">\(f\)</span>. <span class="math notranslate nohighlight">\(f\)</span> can have any (real) value, but we want to use it for probabilities, so we need to map it to the interval <span class="math notranslate nohighlight">\([0; 1]\)</span>. We will use the cumulative density function of a standard normal for this. Other functions can be used for this “squishing”, but the cumulative density function has nice analytical properties that simplifies some maths. We then use the mapped value as the probability in a <a class="reference external" href="https://en.wikipedia.org/wiki/Bernoulli_trial">Bernoulli
 trial</a> to determine the output class (<span class="math notranslate nohighlight">\(Y\)</span>). All of this is encapsulated in the GPflow <a class="reference internal" href="../../api/gpflow/likelihoods/index.html#gpflow-likelihoods-bernoulli"><span class="std std-ref">Bernoulli</span></a> class.</p>
@@ -563,7 +573,7 @@ trial</a> to determine the output class (<span class="math notranslate nohighlig
 <span class="p">)</span>
 <span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
 <span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">)</span>
-<span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;notebook&quot;</span><span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">"notebook"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -577,7 +587,7 @@ trial</a> to determine the output class (<span class="math notranslate nohighlig
 </thead>
 <tbody>
 <tr><td>VGP.kernel.variance    </td><td>Parameter</td><td>Softplus      </td><td>       </td><td>True       </td><td>()         </td><td>float64</td><td>4.18082                                             </td></tr>
-<tr><td>VGP.kernel.lengthscales</td><td>Parameter</td><td>Softplus      </td><td>       </td><td>True       </td><td>()         </td><td>float64</td><td>0.34062610361649165                                 </td></tr>
+<tr><td>VGP.kernel.lengthscales</td><td>Parameter</td><td>Softplus      </td><td>       </td><td>True       </td><td>()         </td><td>float64</td><td>0.34062610352275124                                 </td></tr>
 <tr><td>VGP.num_data           </td><td>Parameter</td><td>Identity      </td><td>       </td><td>False      </td><td>()         </td><td>int32  </td><td>20                                                  </td></tr>
 <tr><td>VGP.q_mu               </td><td>Parameter</td><td>Identity      </td><td>       </td><td>True       </td><td>(20, 1)    </td><td>float64</td><td>[[-9.27295579e-01...                                </td></tr>
 <tr><td>VGP.q_sqrt             </td><td>Parameter</td><td>FillTriangular</td><td>       </td><td>True       </td><td>(1, 20, 20)</td><td>float64</td><td>[[[4.53641708e-01, 0.00000000e+00, 0.00000000e+00...</td></tr>
@@ -592,7 +602,7 @@ trial</a> to determine the output class (<span class="math notranslate nohighlig
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Xplot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">200</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>
 <span class="n">Fsamples</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_f_samples</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span><span class="o">.</span><span class="n">T</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">Fsamples</span><span class="p">,</span> <span class="s2">&quot;C0&quot;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">Fsamples</span><span class="p">,</span> <span class="s2">"C0"</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -610,7 +620,7 @@ trial</a> to determine the output class (<span class="math notranslate nohighlig
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Psamples</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">invlink</span><span class="p">(</span><span class="n">Fsamples</span><span class="p">)</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">Psamples</span><span class="p">,</span> <span class="s2">&quot;C1&quot;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">Psamples</span><span class="p">,</span> <span class="s2">"C1"</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -630,7 +640,7 @@ trial</a> to determine the output class (<span class="math notranslate nohighlig
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Fmean</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_f</span><span class="p">(</span><span class="n">Xplot</span><span class="p">)</span>
 <span class="n">P</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">invlink</span><span class="p">(</span><span class="n">Fmean</span><span class="p">)</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="s2">&quot;C1&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="s2">"C1"</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -668,7 +678,7 @@ trial</a> to determine the output class (<span class="math notranslate nohighlig
 </section>
 </section>
 <section id="The-Sparse-Variational-Gaussian-Process">
-<h2>The Sparse Variational Gaussian Process<a class="headerlink" href="#The-Sparse-Variational-Gaussian-Process" title="Link to this heading">#</a></h2>
+<h2>The Sparse Variational Gaussian Process<a class="headerlink" href="#The-Sparse-Variational-Gaussian-Process" title="Link to this heading">¶</a></h2>
 <p>The Sparse Variational Gaussian Process (SVGP) combines the sparsity we studied in the previous chapter, with the generic likelihoods we have seen in this chapter. It gets a separate section, because its API is slightly different from what we’ve seen before. All the other models we have seen use the <a class="reference internal" href="../../api/gpflow/models/index.html#gpflow.models.InternalDataTrainingLossMixin"><span class="std std-ref">InternalDataTrainingLossMixin</span></a> and internally store their data. The SVGP uses the
 <a class="reference internal" href="../../api/gpflow/models/index.html#gpflow-models-externaldatatraininglossmixin"><span class="std std-ref">ExternalDataTrainingLossMixin</span></a>. This means it does not take its data in the constructor, and instead takes the data as parameters when training the model.</p>
 <p>Let us try fitting a SVGP to our classification data:</p>
@@ -683,7 +693,7 @@ trial</a> to determine the output class (<span class="math notranslate nohighlig
 <span class="p">)</span>
 <span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
 <span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">training_loss_closure</span><span class="p">((</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)),</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">)</span>
-<span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;notebook&quot;</span><span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">"notebook"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -696,11 +706,11 @@ trial</a> to determine the output class (<span class="math notranslate nohighlig
 <tr><th>name                    </th><th>class    </th><th>transform     </th><th>prior  </th><th>trainable  </th><th>shape    </th><th>dtype  </th><th>value                   </th></tr>
 </thead>
 <tbody>
-<tr><td>SVGP.kernel.variance    </td><td>Parameter</td><td>Softplus      </td><td>       </td><td>True       </td><td>()       </td><td>float64</td><td>4.17754                 </td></tr>
-<tr><td>SVGP.kernel.lengthscales</td><td>Parameter</td><td>Softplus      </td><td>       </td><td>True       </td><td>()       </td><td>float64</td><td>0.3406899522682016      </td></tr>
-<tr><td>SVGP.inducing_variable.Z</td><td>Parameter</td><td>Identity      </td><td>       </td><td>True       </td><td>(4, 1)   </td><td>float64</td><td>[[0.211331...           </td></tr>
-<tr><td>SVGP.q_mu               </td><td>Parameter</td><td>Identity      </td><td>       </td><td>True       </td><td>(4, 1)   </td><td>float64</td><td>[[-0.92779766...        </td></tr>
-<tr><td>SVGP.q_sqrt             </td><td>Parameter</td><td>FillTriangular</td><td>       </td><td>True       </td><td>(1, 4, 4)</td><td>float64</td><td>[[[0.46160276, 0., 0....</td></tr>
+<tr><td>SVGP.kernel.variance    </td><td>Parameter</td><td>Softplus      </td><td>       </td><td>True       </td><td>()       </td><td>float64</td><td>4.18116                 </td></tr>
+<tr><td>SVGP.kernel.lengthscales</td><td>Parameter</td><td>Softplus      </td><td>       </td><td>True       </td><td>()       </td><td>float64</td><td>0.34075991667417455     </td></tr>
+<tr><td>SVGP.inducing_variable.Z</td><td>Parameter</td><td>Identity      </td><td>       </td><td>True       </td><td>(4, 1)   </td><td>float64</td><td>[[0.21102328...         </td></tr>
+<tr><td>SVGP.q_mu               </td><td>Parameter</td><td>Identity      </td><td>       </td><td>True       </td><td>(4, 1)   </td><td>float64</td><td>[[-0.92763256...        </td></tr>
+<tr><td>SVGP.q_sqrt             </td><td>Parameter</td><td>FillTriangular</td><td>       </td><td>True       </td><td>(1, 4, 4)</td><td>float64</td><td>[[[0.46184426, 0., 0....</td></tr>
 </tbody>
 </table></div>
 </div>
@@ -713,7 +723,7 @@ trial</a> to determine the output class (<span class="math notranslate nohighlig
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Fsamples</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_f_samples</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span><span class="o">.</span><span class="n">T</span>
 <span class="n">Psamples</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">invlink</span><span class="p">(</span><span class="n">Fsamples</span><span class="p">)</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">Psamples</span><span class="p">,</span> <span class="s2">&quot;C1&quot;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">Psamples</span><span class="p">,</span> <span class="s2">"C1"</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -727,14 +737,14 @@ trial</a> to determine the output class (<span class="math notranslate nohighlig
 </div>
 <p>The combination of external training data and inducing points allow the SVGP to be trained on truly huge datasets. For details, see our <a class="reference internal" href="../advanced/gps_for_big_data.html"><span class="doc">advanced tutorial on scalability</span></a>.</p>
 <section id="Writing-code-that-handles-both-internal-and-external-data-models">
-<h3>Writing code that handles both internal and external data models<a class="headerlink" href="#Writing-code-that-handles-both-internal-and-external-data-models" title="Link to this heading">#</a></h3>
+<h3>Writing code that handles both internal and external data models<a class="headerlink" href="#Writing-code-that-handles-both-internal-and-external-data-models" title="Link to this heading">¶</a></h3>
 <p>Having some models store training data internally, while others take it as a parameter when training, can be frustrating if you are trying to write code that works with a generic model. The <code class="docutils literal notranslate"><span class="pre">gpflow.models</span></code> module contains <a class="reference internal" href="../../api/gpflow/models/index.html#functions"><span class="std std-ref">some functions that can help you write generic code</span></a>.</p>
 <p>Here is an example of how one might write a generic model training function:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">train_generic_model</span><span class="p">(</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">train_generic_model</span><span class="p">(</span>
     <span class="n">model</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPModel</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">RegressionData</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="n">loss</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">training_loss_closure</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
@@ -795,7 +805,7 @@ trial</a> to determine the output class (<span class="math notranslate nohighlig
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.3.7.<br>
 </p>
   </div>
   

@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Natural gradients &#8212; GPflow 2.9.0 documentation</title>
+    <title>Natural gradients &#8212; GPflow 2.11.2 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -23,15 +23,15 @@
   <link rel="preload" as="font" type="font/woff2" crossorigin
     href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
 
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
-    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
     <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css?v=c27e38e3" />
 
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
-    <script src="../../_static/documentation_options.js?v=8da69bee"></script>
-    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/documentation_options.js?v=b2fb886b"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
@@ -39,7 +39,7 @@
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="gpflow" href="../../api/gpflow/index.html" />
+    <link rel="next" title="Hierarchical kernels" href="hierarchical_kernels.html" />
     <link rel="prev" title="Variational Fourier Features in the GPflow framework" href="variational_fourier_features.html" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="docsearch:language" content="en">
@@ -67,7 +67,7 @@
   
   
   
-    <p class="title logo__title">GPflow 2.9.0 documentation</p>
+    <p class="title logo__title">GPflow 2.11.2 documentation</p>
   
 </a>
     
@@ -382,6 +382,13 @@ function checkPageExistsAndRedirect(event) {
   </a>
  </li>
 </ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="hierarchical_kernels.html">
+   Hierarchical kernels
+  </a>
+ </li>
+</ul>
 
   </div>
 </nav>
@@ -462,27 +469,28 @@ function checkPageExistsAndRedirect(event) {
               <article class="bd-article" role="main">
                 
   <section id="Natural-gradients">
-<h1>Natural gradients<a class="headerlink" href="#Natural-gradients" title="Link to this heading">#</a></h1>
+<h1>Natural gradients<a class="headerlink" href="#Natural-gradients" title="Link to this heading">¶</a></h1>
 <p>This notebook shows some basic usage of the natural gradient optimizer, both on its own and in combination with Adam optimizer.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tf</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">gpflow</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gpflow</span><span class="w"> </span><span class="kn">import</span> <span class="n">set_trainable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gpflow.ci_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">reduce_in_tests</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gpflow.keras</span><span class="w"> </span><span class="kn">import</span> <span class="n">tf_keras</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gpflow.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">GPR</span><span class="p">,</span> <span class="n">SGPR</span><span class="p">,</span> <span class="n">SVGP</span><span class="p">,</span> <span class="n">VGP</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gpflow.optimizers</span><span class="w"> </span><span class="kn">import</span> <span class="n">NaturalGradient</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gpflow.optimizers.natgrad</span><span class="w"> </span><span class="kn">import</span> <span class="n">XiSqrtMeanVar</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="c1"># use legacy Adam optimizer to support old TF versions</span>
-    <span class="kn">from</span> <span class="nn">tensorflow.keras.optimizers.legacy</span> <span class="kn">import</span> <span class="n">Adam</span>
-<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">tensorflow.keras.optimizers</span> <span class="kn">import</span> <span class="n">Adam</span>
-
-<span class="kn">import</span> <span class="nn">gpflow</span>
-<span class="kn">from</span> <span class="nn">gpflow</span> <span class="kn">import</span> <span class="n">set_trainable</span>
-<span class="kn">from</span> <span class="nn">gpflow.ci_utils</span> <span class="kn">import</span> <span class="n">reduce_in_tests</span>
-<span class="kn">from</span> <span class="nn">gpflow.models</span> <span class="kn">import</span> <span class="n">GPR</span><span class="p">,</span> <span class="n">SGPR</span><span class="p">,</span> <span class="n">SVGP</span><span class="p">,</span> <span class="n">VGP</span>
-<span class="kn">from</span> <span class="nn">gpflow.optimizers</span> <span class="kn">import</span> <span class="n">NaturalGradient</span>
-<span class="kn">from</span> <span class="nn">gpflow.optimizers.natgrad</span> <span class="kn">import</span> <span class="n">XiSqrtMeanVar</span>
+    <span class="c1"># use the legacy Adam optimizer to support old TF versions</span>
+    <span class="n">Adam</span> <span class="o">=</span> <span class="n">tf_keras</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">legacy</span><span class="o">.</span><span class="n">Adam</span>
+<span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+    <span class="n">Adam</span> <span class="o">=</span> <span class="n">tf_keras</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Adam</span>
 
 <span class="o">%</span><span class="k">matplotlib</span> inline
 <span class="o">%</span><span class="k">precision</span> 4
@@ -507,30 +515,24 @@ function checkPageExistsAndRedirect(event) {
 </pre></div>
 </div>
 </div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-2024-02-07 11:47:40.018323: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
-2024-02-07 11:47:40.059260: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9261] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
-2024-02-07 11:47:40.059295: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
-2024-02-07 11:47:40.060660: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1515] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-2024-02-07 11:47:40.067480: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
-2024-02-07 11:47:40.067989: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
-To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
-</pre></div></div>
-</div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-02-07 11:47:41.107387: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
+2026-10-15 09:26:00.356256: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2026-10-15 09:26:00.360117: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2026-10-15 09:26:00.374517: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:477] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1792056360.404035     114 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1792056360.410080     114 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2026-10-15 09:26:00.433616: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2026-10-15 09:26:07.056602: E external/local_xla/xla/stream_executor/cuda/cuda_driver.cc:152] failed call to cuInit: INTERNAL: CUDA error: Failed call to cuInit: UNKNOWN ERROR (303)
 </pre></div></div>
 </div>
 <section id="VGP-is-a-GPR">
-<h2>VGP is a GPR<a class="headerlink" href="#VGP-is-a-GPR" title="Link to this heading">#</a></h2>
+<h2>VGP is a GPR<a class="headerlink" href="#VGP-is-a-GPR" title="Link to this heading">¶</a></h2>
 <p>The following section demonstrates how natural gradients can turn VGP into GPR <em>in a single step, if the likelihood is Gaussian</em>.</p>
 <p>Let’s start by first creating a standard GPR model with Gaussian likelihood:</p>
 <div class="nbinput nblast docutils container">
@@ -569,7 +571,7 @@ To enable the following instructions: AVX2 AVX512F FMA, in other operations, reb
     <span class="n">kernel</span><span class="o">=</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Matern52</span><span class="p">(),</span>
     <span class="n">likelihood</span><span class="o">=</span><span class="n">gpflow</span><span class="o">.</span><span class="n">likelihoods</span><span class="o">.</span><span class="n">Gaussian</span><span class="p">(),</span>
 <span class="p">)</span>
-<span class="c1"># (Note that GPflow&#39;s NaturalGradient optimizer does not implement diagonal covariance parametrization, i.e., it does not work for `q_diag=True`.)</span>
+<span class="c1"># (Note that GPflow's NaturalGradient optimizer does not implement diagonal covariance parametrization, i.e., it does not work for `q_diag=True`.)</span>
 </pre></div>
 </div>
 </div>
@@ -623,7 +625,7 @@ To enable the following instructions: AVX2 AVX512F FMA, in other operations, reb
 </div>
 </section>
 <section id="Optimize-both-variational-parameters-and-kernel-hyperparameters-together">
-<h2>Optimize both variational parameters and kernel hyperparameters together<a class="headerlink" href="#Optimize-both-variational-parameters-and-kernel-hyperparameters-together" title="Link to this heading">#</a></h2>
+<h2>Optimize both variational parameters and kernel hyperparameters together<a class="headerlink" href="#Optimize-both-variational-parameters-and-kernel-hyperparameters-together" title="Link to this heading">¶</a></h2>
 <p>In the Gaussian likelihood case we can iterate between an Adam update for the hyperparameters and a NatGrad update for the variational parameters. That way, we achieve optimization of hyperparameters as if the model were a GPR.</p>
 <p>The trick is to forbid Adam from updating the variational parameters by setting them to not trainable.</p>
 <div class="nbinput nblast docutils container">
@@ -648,47 +650,19 @@ To enable the following instructions: AVX2 AVX512F FMA, in other operations, reb
         <span class="n">gpr</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">var_list</span><span class="o">=</span><span class="n">gpr</span><span class="o">.</span><span class="n">trainable_variables</span>
     <span class="p">)</span>
     <span class="n">likelihood</span> <span class="o">=</span> <span class="n">gpr</span><span class="o">.</span><span class="n">log_marginal_likelihood</span><span class="p">()</span>
-    <span class="n">tf</span><span class="o">.</span><span class="n">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;GPR with Adam: iteration </span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> likelihood </span><span class="si">{</span><span class="n">likelihood</span><span class="si">:</span><span class="s2">.04f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">tf</span><span class="o">.</span><span class="n">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"GPR with Adam: iteration </span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> likelihood </span><span class="si">{</span><span class="n">likelihood</span><span class="si">:</span><span class="s2">.04f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-GPR with Adam: iteration 1 likelihood -139.2548
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-GPR with Adam: iteration 2 likelihood -138.9456
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-GPR with Adam: iteration 3 likelihood -138.6363
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-GPR with Adam: iteration 4 likelihood -138.3270
-</pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
+GPR with Adam: iteration 1 likelihood -139.2548
+GPR with Adam: iteration 2 likelihood -138.9456
+GPR with Adam: iteration 3 likelihood -138.6363
+GPR with Adam: iteration 4 likelihood -138.3270
 GPR with Adam: iteration 5 likelihood -138.0177
 </pre></div></div>
 </div>
@@ -703,48 +677,20 @@ GPR with Adam: iteration 5 likelihood -138.0177
     <span class="p">)</span>
     <span class="n">likelihood</span> <span class="o">=</span> <span class="n">vgp</span><span class="o">.</span><span class="n">elbo</span><span class="p">()</span>
     <span class="n">tf</span><span class="o">.</span><span class="n">print</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;VGP with NaturalGradient and Adam: iteration </span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> likelihood </span><span class="si">{</span><span class="n">likelihood</span><span class="si">:</span><span class="s2">.04f</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">"VGP with NaturalGradient and Adam: iteration </span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> likelihood </span><span class="si">{</span><span class="n">likelihood</span><span class="si">:</span><span class="s2">.04f</span><span class="si">}</span><span class="s2">"</span>
     <span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-VGP with NaturalGradient and Adam: iteration 1 likelihood -139.2581
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-VGP with NaturalGradient and Adam: iteration 2 likelihood -138.9489
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-VGP with NaturalGradient and Adam: iteration 3 likelihood -138.6397
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-VGP with NaturalGradient and Adam: iteration 4 likelihood -138.3305
-</pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
+VGP with NaturalGradient and Adam: iteration 1 likelihood -139.2581
+VGP with NaturalGradient and Adam: iteration 2 likelihood -138.9489
+VGP with NaturalGradient and Adam: iteration 3 likelihood -138.6397
+VGP with NaturalGradient and Adam: iteration 4 likelihood -138.3305
 VGP with NaturalGradient and Adam: iteration 5 likelihood -138.0213
 </pre></div></div>
 </div>
@@ -753,8 +699,8 @@ VGP with NaturalGradient and Adam: iteration 5 likelihood -138.0213
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;GPR lengthscales = </span><span class="si">{</span><span class="n">gpr</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">lengthscales</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="si">:</span><span class="s2">.04f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;VGP lengthscales = </span><span class="si">{</span><span class="n">vgp</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">lengthscales</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="si">:</span><span class="s2">.04f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"GPR lengthscales = </span><span class="si">{</span><span class="n">gpr</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">lengthscales</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="si">:</span><span class="s2">.04f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"VGP lengthscales = </span><span class="si">{</span><span class="n">vgp</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">lengthscales</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="si">:</span><span class="s2">.04f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -769,7 +715,7 @@ VGP lengthscales = 0.9687
 </div>
 </section>
 <section id="Natural-gradients-also-work-for-the-sparse-model">
-<h2>Natural gradients also work for the sparse model<a class="headerlink" href="#Natural-gradients-also-work-for-the-sparse-model" title="Link to this heading">#</a></h2>
+<h2>Natural gradients also work for the sparse model<a class="headerlink" href="#Natural-gradients-also-work-for-the-sparse-model" title="Link to this heading">¶</a></h2>
 <p>Similarly, natural gradients turn SVGP into SGPR in the Gaussian likelihood case. We can again combine natural gradients with Adam to update both variational parameters and hyperparameters too. Here we’ll just do a single natural step demonstration.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
@@ -858,7 +804,7 @@ VGP lengthscales = 0.9687
 </div>
 </section>
 <section id="Minibatches">
-<h2>Minibatches<a class="headerlink" href="#Minibatches" title="Link to this heading">#</a></h2>
+<h2>Minibatches<a class="headerlink" href="#Minibatches" title="Link to this heading">¶</a></h2>
 <p>A crucial property of the natural gradient method is that it still works with minibatches. In practice though, we need to use a smaller gamma.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
@@ -904,7 +850,7 @@ VGP lengthscales = 0.9687
 </div>
 </section>
 <section id="Comparison-with-ordinary-gradients-in-the-conjugate-case">
-<h2>Comparison with ordinary gradients in the conjugate case<a class="headerlink" href="#Comparison-with-ordinary-gradients-in-the-conjugate-case" title="Link to this heading">#</a></h2>
+<h2>Comparison with ordinary gradients in the conjugate case<a class="headerlink" href="#Comparison-with-ordinary-gradients-in-the-conjugate-case" title="Link to this heading">¶</a></h2>
 <p>(Take home message: natural gradients are always better)</p>
 <p>Compared to SVGP with ordinary gradients with minibatches, the natural gradient optimizer is much faster in the Gaussian case.</p>
 <p>Here we’ll do hyperparameter learning together with optimization of the variational parameters, comparing the interleaved natural gradient approach and the one using ordinary gradients for the hyperparameters and variational parameters jointly.</p>
@@ -1021,9 +967,9 @@ VGP lengthscales = 0.9687
 </div>
 </section>
 <section id="Comparison-with-ordinary-gradients-in-the-non-conjugate-case">
-<h2>Comparison with ordinary gradients in the non-conjugate case<a class="headerlink" href="#Comparison-with-ordinary-gradients-in-the-non-conjugate-case" title="Link to this heading">#</a></h2>
+<h2>Comparison with ordinary gradients in the non-conjugate case<a class="headerlink" href="#Comparison-with-ordinary-gradients-in-the-non-conjugate-case" title="Link to this heading">¶</a></h2>
 <section id="Binary-classification">
-<h3>Binary classification<a class="headerlink" href="#Binary-classification" title="Link to this heading">#</a></h3>
+<h3>Binary classification<a class="headerlink" href="#Binary-classification" title="Link to this heading">¶</a></h3>
 <p>(Take home message: natural gradients are usually better)</p>
 <p>We can use natural gradients even when the likelihood isn’t Gaussian. It isn’t guaranteed to be better, but it usually is better in practical situations.</p>
 <div class="nbinput nblast docutils container">
@@ -1221,7 +1167,7 @@ WARNING:tensorflow:Calling GradientTape.gradient on a persistent tape inside its
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.3.7.<br>
 </p>
   </div>
   

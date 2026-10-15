@@ -1,0 +1,451 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "45c3ef4b",
+   "metadata": {
+    "lines_to_next_cell": 2
+   },
+   "source": [
+    "# Hierarchical kernels\n",
+    "\n",
+    "A *hierarchical* search space is one in which some input dimensions are only\n",
+    "meaningful when a corresponding indicator variable takes a particular value.\n",
+    "Concretely, you might be optimising over a four-dimensional input\n",
+    "$(x_1, y_1, x_2, x_3)$ where $x_1$ is always present, $y_1 \\in \\{0, 1\\}$ is\n",
+    "an indicator, $x_2$ is meaningful only when $y_1 = 1$, and $x_3$ is\n",
+    "meaningful only when $y_1 = 0$.\n",
+    "\n",
+    "A useful covariance on such a space must respect the activation structure:\n",
+    "a point whose conditional feature is *inactive* should not be confused with\n",
+    "one whose feature is *active and equal in value* \u2014 the two live in\n",
+    "fundamentally different regions of the space.\n",
+    "\n",
+    "This notebook walks through GPflow's two hierarchical kernels \u2014\n",
+    "`ArcHierarchical` (Swersky et al., 2014) and `WedgeHierarchical`\n",
+    "(Horn et al., 2019) \u2014 on a small synthetic disjunctive function.\n",
+    "\n",
+    "## Worked example: fit a GP on a synthetic disjunctive function\n",
+    "\n",
+    "$$f(x_1, y_1, x_2, x_3) =\n",
+    "    \\sin(2\\pi x_1)\n",
+    "  \\;+\\; \\mathbf{1}[y_1 = 1] \\cdot \\tfrac{1}{2} \\cos(\\pi x_2 / 5)\n",
+    "  \\;+\\; \\mathbf{1}[y_1 = 0] \\cdot \\tfrac{1}{2} x_3.$$\n",
+    "\n",
+    "The conditional kernel must accurately represent the disjunctive structure.\n",
+    "\n",
+    "import numpy as np\n",
+    "import tensorflow as tf\n",
+    "\n",
+    "np.random.seed(1793)\n",
+    "tf.random.set_seed(1793)\n",
+    "\n",
+    "\n",
+    "def objective(X: np.ndarray) -> np.ndarray:\n",
+    "    x1, y1, x2, x3 = X[:, 0], X[:, 1], X[:, 2], X[:, 3]\n",
+    "    return (\n",
+    "        np.sin(2.0 * np.pi * x1)\n",
+    "        + (y1 > 0.5).astype(float) * 0.5 * np.cos(np.pi * x2 / 5.0)\n",
+    "        + (y1 < 0.5).astype(float) * 0.5 * x3\n",
+    "    ).reshape(-1, 1)\n",
+    "\n",
+    "\n",
+    "def sample_inputs(n: int) -> np.ndarray:\n",
+    "    x1 = np.random.uniform(0.0, 1.0, size=n)\n",
+    "    y1 = np.random.randint(0, 2, size=n).astype(float)\n",
+    "    x2 = np.random.uniform(0.0, 5.0, size=n)\n",
+    "    x3 = np.random.uniform(-1.0, 1.0, size=n)\n",
+    "    return np.stack([x1, y1, x2, x3], axis=-1)\n",
+    "\n",
+    "\n",
+    "X_train = sample_inputs(40)\n",
+    "Y_train = objective(X_train) + 0.05 * np.random.randn(40, 1)\n",
+    "X_test = np.array(\n",
+    "    [\n",
+    "        [0.3, 1.0, 2.0, 0.0],  # y1 = 1 branch\n",
+    "        [0.3, 0.0, 0.0, 0.5],  # y1 = 0 branch\n",
+    "        [0.7, 1.0, 4.0, 0.0],\n",
+    "        [0.7, 0.0, 0.0, -0.4],\n",
+    "    ]\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "eda62906",
+   "metadata": {},
+   "source": [
+    "## Three axioms for a conditional distance\n",
+    "\n",
+    "Let $\\mathbf{x}^{nc}$ be the always-active (unconditional) coordinates and\n",
+    "$\\mathbf{x}^{c}$ the indicator-gated (conditional) ones. A useful\n",
+    "per-dimension distance $d_i(\\mathbf{x}, \\mathbf{x}')$ on a conditional\n",
+    "dimension $i$ should satisfy:\n",
+    "\n",
+    "1. **both inactive:** $d_i = 0$ \u2014 the value is meaningless on either side.\n",
+    "2. **both active:** $d_i$ is a function of the difference in feature value.\n",
+    "3. **incomparable:** (one active, one inactive) $d_i$ is positive and\n",
+    "   places the two points in distinct regions of the embedded space.\n",
+    "\n",
+    "Both kernels enforce these axioms by embedding each conditional dimension\n",
+    "into $\\mathbb{R}^2$ \u2014 inactive points map to the origin, active points to a\n",
+    "value-dependent point off the origin \u2014 and evaluating a stationary base\n",
+    "kernel on the joint embedded vector."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "3d128f3b",
+   "metadata": {},
+   "source": [
+    "## Describe the search space to the kernel\n",
+    "\n",
+    "The kernel takes a single piece of information:\n",
+    "\n",
+    "* `hierarchy` \u2014 a sequence of `HierarchyNode`s. Each node binds a group of\n",
+    "  feature columns to the `ActivityCondition` that gates them (and carries\n",
+    "  the per-feature `(lower, upper)` bounds used to normalise to $[0, 1]$).\n",
+    "  An empty `ActivityCondition` makes the node's features unconditional.\n",
+    "  The keys of each `ActivityCondition` are column indices in $X$ (the same\n",
+    "  coordinate system as `feature_dims`) \u2014 the set of indicator columns is\n",
+    "  derived automatically.\n",
+    "\n",
+    "For our four-variable example, the column layout in $X$ is\n",
+    "$[x_1, y_1, x_2, x_3]$ \u2014 so $x_1$ lives in a shared node, $x_2$ in a node\n",
+    "gated by $y_1 = 1$ (column 1), and $x_3$ in a node gated by $y_1 = 0$:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "8e494c6d",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-10-15T09:25:59.570770Z",
+     "iopub.status.busy": "2026-10-15T09:25:59.570528Z",
+     "iopub.status.idle": "2026-10-15T09:26:05.615492Z",
+     "shell.execute_reply": "2026-10-15T09:26:05.614638Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2026-10-15 09:25:59.869042: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.\n",
+      "2026-10-15 09:25:59.874491: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.\n",
+      "2026-10-15 09:25:59.887133: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:477] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered\n",
+      "WARNING: All log messages before absl::InitializeLog() is called are written to STDERR\n",
+      "E0000 00:00:1792056359.908259     114 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered\n",
+      "E0000 00:00:1792056359.914353     114 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n",
+      "2026-10-15 09:25:59.935597: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.\n",
+      "To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2026-10-15 09:26:05.578236: E external/local_xla/xla/stream_executor/cuda/cuda_driver.cc:152] failed call to cuInit: INTERNAL: CUDA error: Failed call to cuInit: UNKNOWN ERROR (303)\n"
+     ]
+    }
+   ],
+   "source": [
+    "from gpflow.kernels import ActivityCondition, HierarchyNode\n",
+    "\n",
+    "hierarchy = [\n",
+    "    HierarchyNode(\"shared\", feature_dims=[0], feature_bounds=[[0.0, 1.0]]),\n",
+    "    HierarchyNode(\n",
+    "        \"branch_A\",\n",
+    "        feature_dims=[2],\n",
+    "        feature_bounds=[[0.0, 5.0]],\n",
+    "        activity_condition=ActivityCondition({1: 1}),\n",
+    "    ),\n",
+    "    HierarchyNode(\n",
+    "        \"branch_B\",\n",
+    "        feature_dims=[3],\n",
+    "        feature_bounds=[[-1.0, 1.0]],\n",
+    "        activity_condition=ActivityCondition({1: 0}),\n",
+    "    ),\n",
+    "]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "6303a7f3",
+   "metadata": {},
+   "source": [
+    "## Construct an Arc kernel and inspect it"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "06d17372",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-10-15T09:26:05.617963Z",
+     "iopub.status.busy": "2026-10-15T09:26:05.617368Z",
+     "iopub.status.idle": "2026-10-15T09:26:05.721101Z",
+     "shell.execute_reply": "2026-10-15T09:26:05.720329Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "conditional columns: 2\n",
+      "unconditional columns: 1\n",
+      "indicator columns (derived): (1,)\n",
+      "angle init: [0.5 0.5]\n",
+      "radius init: [1. 1.]\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You're calling gpflow.kernels.hierarchical.HierarchicalEmbeddingKernel.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.\n",
+      "  warn(\n"
+     ]
+    }
+   ],
+   "source": [
+    "from gpflow.kernels import ArcHierarchical, Constant\n",
+    "from gpflow.models import GPR\n",
+    "from gpflow.optimizers import Scipy\n",
+    "\n",
+    "arc = ArcHierarchical(hierarchy=hierarchy, active_dims=list(range(4)))\n",
+    "print(\"conditional columns:\", arc.n_cond_dims)\n",
+    "print(\"unconditional columns:\", arc.n_uncond_dims)\n",
+    "print(\"indicator columns (derived):\", arc.indicator_dims)\n",
+    "print(\"angle init:\", arc.angle.numpy())\n",
+    "print(\"radius init:\", arc.radius.numpy())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "c18ffdbe",
+   "metadata": {},
+   "source": [
+    "Wrap in a Constant() factor so the GP can learn an overall variance.\n",
+    "arc_for_fit = ArcHierarchical(hierarchy=hierarchy, active_dims=list(range(4)))\n",
+    "kernel = Constant() * arc_for_fit\n",
+    "gpr = GPR(data=(X_train, Y_train), kernel=kernel, noise_variance=0.05)\n",
+    "\n",
+    "print(f\"LML before fit: {gpr.log_marginal_likelihood().numpy():+.3f}\")\n",
+    "Scipy().minimize(\n",
+    "    gpr.training_loss, gpr.trainable_variables, options={\"maxiter\": 100}\n",
+    ")\n",
+    "print(f\"LML after fit:  {gpr.log_marginal_likelihood().numpy():+.3f}\")\n",
+    "print(\"learnt angle :\", arc_for_fit.angle.numpy())\n",
+    "print(\"learnt radius:\", arc_for_fit.radius.numpy())\n",
+    "\n",
+    "mean, var = gpr.predict_f(X_test)\n",
+    "truth = objective(X_test).ravel()\n",
+    "for x, m, v, t in zip(X_test, mean.numpy().ravel(), var.numpy().ravel(), truth):\n",
+    "    print(\n",
+    "        f\"  x = {x.tolist()}  ->  mean = {m:+.3f}  var = {v:.3f}  truth = {t:+.3f}\"\n",
+    "    )"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "c876571b",
+   "metadata": {},
+   "source": [
+    "## A Wedge variant\n",
+    "\n",
+    "The Wedge kernel replaces Arc's circle embedding with a triangular one:\n",
+    "\n",
+    "$$\\phi_c(v_c, m_c) = \\big(\n",
+    "    (\\theta_1 v_c + \\theta_2 v_c \\cos\\rho)\\, m_c,\\;\n",
+    "    (\\theta_2 v_c \\sin\\rho)\\, m_c\n",
+    "  \\big).$$\n",
+    "\n",
+    "The \"incomparable\" distance now scales with the active value $v_c$ rather\n",
+    "than being constant in it.\n",
+    "GPR models may be constructed and trained in the same way as the arc above."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "24c5103f",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-10-15T09:26:05.723202Z",
+     "iopub.status.busy": "2026-10-15T09:26:05.722974Z",
+     "iopub.status.idle": "2026-10-15T09:26:05.777911Z",
+     "shell.execute_reply": "2026-10-15T09:26:05.777064Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "initial theta1: [1. 1.]\n",
+      "initial theta2: [1. 1.]\n",
+      "initial rho:    [1.57079633 1.57079633]\n"
+     ]
+    }
+   ],
+   "source": [
+    "from gpflow.kernels import WedgeHierarchical\n",
+    "\n",
+    "wedge = WedgeHierarchical(hierarchy=hierarchy, active_dims=list(range(4)))\n",
+    "kernel = Constant() * wedge\n",
+    "print(\"initial theta1:\", wedge.theta1.numpy())\n",
+    "print(\"initial theta2:\", wedge.theta2.numpy())\n",
+    "print(\"initial rho:   \", wedge.rho.numpy())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "267e4845",
+   "metadata": {},
+   "source": [
+    "## Validating composed kernels against the axioms\n",
+    "\n",
+    "Once you start composing a hierarchical kernel with other kernels \u2014 scaling\n",
+    "with `Constant()`, adding a `Matern52` on the unconditional dims, summing\n",
+    "two hierarchical kernels \u2014 it stops being obvious whether the result still\n",
+    "respects the three axioms. GPflow ships `validate_hierarchical_axioms` for\n",
+    "exactly this: hand it any kernel plus the hierarchy spec, and it\n",
+    "numerically checks the kernel-level shadows of each axiom."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "2bfae7a7",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-10-15T09:26:05.780199Z",
+     "iopub.status.busy": "2026-10-15T09:26:05.779996Z",
+     "iopub.status.idle": "2026-10-15T09:26:08.844239Z",
+     "shell.execute_reply": "2026-10-15T09:26:08.843096Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You're calling gpflow.kernels.hierarchical_axioms.validate_hierarchical_axioms which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.\n",
+      "  warn(\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "AxiomReport (overall PASS)\n",
+      "  PASS axiom 1 node='branch_A' feature_dim=2 max_violation=0.000e+00 -- K(x,x) == K(x,x') when both points violate 'branch_A''s condition and differ only on feature dim 2\n",
+      "  PASS axiom 2 node='branch_A' feature_dim=2 max_violation=4.441e-16 -- K stationary in feature dim 2 when 'branch_A''s condition is satisfied on both sides\n",
+      "  PASS axiom 3 node='branch_A' feature_dim=2 max_violation=0.000e+00 -- K(x_active, x_inactive) < K(x_active, x_active) when 'branch_A''s condition is flipped at feature dim 2\n",
+      "  PASS axiom 1 node='branch_B' feature_dim=3 max_violation=0.000e+00 -- K(x,x) == K(x,x') when both points violate 'branch_B''s condition and differ only on feature dim 3\n",
+      "  PASS axiom 2 node='branch_B' feature_dim=3 max_violation=7.772e-16 -- K stationary in feature dim 3 when 'branch_B''s condition is satisfied on both sides\n",
+      "  PASS axiom 3 node='branch_B' feature_dim=3 max_violation=0.000e+00 -- K(x_active, x_inactive) < K(x_active, x_active) when 'branch_B''s condition is flipped at feature dim 3\n"
+     ]
+    }
+   ],
+   "source": [
+    "from gpflow.kernels import Matern52, validate_hierarchical_axioms\n",
+    "\n",
+    "safe = Constant() * ArcHierarchical(\n",
+    "    hierarchy=hierarchy, active_dims=list(range(4))\n",
+    ")\n",
+    "report = validate_hierarchical_axioms(safe, hierarchy, seed=0)\n",
+    "print(report)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "6e904483",
+   "metadata": {},
+   "source": [
+    "Multiplying by a positive `Constant()` just rescales `K` and preserves\n",
+    "every axiom, so the report is all-`PASS`. Now build a kernel that\n",
+    "deliberately ignores the hierarchy \u2014 add a plain `Matern52` over the full\n",
+    "input space \u2014 and re-run the validator:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "e124e621",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-10-15T09:26:08.846482Z",
+     "iopub.status.busy": "2026-10-15T09:26:08.846226Z",
+     "iopub.status.idle": "2026-10-15T09:26:12.466949Z",
+     "shell.execute_reply": "2026-10-15T09:26:12.465917Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "AxiomReport (overall FAIL)\n",
+      "  FAIL axiom 1 node='branch_A' feature_dim=2 max_violation=9.900e-01 -- K(x,x) == K(x,x') when both points violate 'branch_A''s condition and differ only on feature dim 2\n",
+      "  PASS axiom 2 node='branch_A' feature_dim=2 max_violation=2.887e-15 -- K stationary in feature dim 2 when 'branch_A''s condition is satisfied on both sides\n",
+      "  PASS axiom 3 node='branch_A' feature_dim=2 max_violation=0.000e+00 -- K(x_active, x_inactive) < K(x_active, x_active) when 'branch_A''s condition is flipped at feature dim 2\n",
+      "  FAIL axiom 1 node='branch_B' feature_dim=3 max_violation=6.971e-01 -- K(x,x) == K(x,x') when both points violate 'branch_B''s condition and differ only on feature dim 3\n",
+      "  PASS axiom 2 node='branch_B' feature_dim=3 max_violation=6.661e-16 -- K stationary in feature dim 3 when 'branch_B''s condition is satisfied on both sides\n",
+      "  PASS axiom 3 node='branch_B' feature_dim=3 max_violation=0.000e+00 -- K(x_active, x_inactive) < K(x_active, x_active) when 'branch_B''s condition is flipped at feature dim 3\n",
+      "axiom-1 violations: [0.9899608228062187, 0.6971406771490827]\n"
+     ]
+    }
+   ],
+   "source": [
+    "broken = ArcHierarchical(\n",
+    "    hierarchy=hierarchy, active_dims=list(range(4))\n",
+    ") + Matern52(active_dims=list(range(4)))\n",
+    "report = validate_hierarchical_axioms(broken, hierarchy, seed=0)\n",
+    "print(report)\n",
+    "assert not report.passed\n",
+    "print(\"axiom-1 violations:\", [c.max_violation for c in report.for_axiom(1)])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "60afd6a0",
+   "metadata": {},
+   "source": [
+    "Axiom 1 fails: the `Matern52` term responds to changes in a conditional\n",
+    "feature value regardless of whether the activity condition is satisfied,\n",
+    "so `K(x, x)` and `K(x, x')` differ even though both points are inactive\n",
+    "on that feature. Axioms 2 and 3 still pass \u2014 they were never the\n",
+    "discriminating predicates for this kind of break."
+   ]
+  }
+ ],
+ "metadata": {
+  "jupytext": {
+   "formats": "ipynb,.pct.py:percent"
+  },
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.11.17"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>gpflow.conditionals.multioutput.conditionals &#8212; GPflow 2.9.0 documentation</title>
+    <title>gpflow.conditionals.multioutput.conditionals &#8212; GPflow 2.11.2 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -22,14 +22,14 @@
   <link rel="preload" as="font" type="font/woff2" crossorigin
     href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
 
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/pydata-custom.css?v=c27e38e3" />
 
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
-    <script src="../../../../_static/documentation_options.js?v=8da69bee"></script>
-    <script src="../../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../../_static/documentation_options.js?v=b2fb886b"></script>
+    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
@@ -61,7 +61,7 @@
   
   
   
-    <p class="title logo__title">GPflow 2.9.0 documentation</p>
+    <p class="title logo__title">GPflow 2.11.2 documentation</p>
   
 </a>
     
@@ -240,25 +240,25 @@ function checkPageExistsAndRedirect(event) {
   <h1>Source code for gpflow.conditionals.multioutput.conditionals</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Copyright 2017-2020 The GPflow Contributors. All Rights Reserved.</span>
 <span class="c1">#</span>
-<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1"># you may not use this file except in compliance with the License.</span>
 <span class="c1"># You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1"># See the License for the specific language governing permissions and</span>
 <span class="c1"># limitations under the License.</span>
 
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
 
-<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
-<span class="kn">from</span> <span class="nn">check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tf</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">check_shapes</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_shapes</span>
 
-<span class="kn">from</span> <span class="nn">...base</span> <span class="kn">import</span> <span class="n">MeanAndVariance</span>
-<span class="kn">from</span> <span class="nn">...inducing_variables</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">...base</span><span class="w"> </span><span class="kn">import</span> <span class="n">MeanAndVariance</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">...inducing_variables</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">FallbackSeparateIndependentInducingVariables</span><span class="p">,</span>
     <span class="n">FallbackSharedIndependentInducingVariables</span><span class="p">,</span>
     <span class="n">InducingPoints</span><span class="p">,</span>
@@ -266,20 +266,20 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">SeparateIndependentInducingVariables</span><span class="p">,</span>
     <span class="n">SharedIndependentInducingVariables</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">...kernels</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">...kernels</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">IndependentLatent</span><span class="p">,</span>
     <span class="n">LinearCoregionalization</span><span class="p">,</span>
     <span class="n">MultioutputKernel</span><span class="p">,</span>
     <span class="n">SeparateIndependent</span><span class="p">,</span>
     <span class="n">SharedIndependent</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">...posteriors</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">...posteriors</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">FallbackIndependentLatentPosterior</span><span class="p">,</span>
     <span class="n">FullyCorrelatedPosterior</span><span class="p">,</span>
     <span class="n">IndependentPosteriorMultiOutput</span><span class="p">,</span>
     <span class="n">LinearCoregionalizationPosterior</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">..dispatch</span> <span class="kn">import</span> <span class="n">conditional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..dispatch</span><span class="w"> </span><span class="kn">import</span> <span class="n">conditional</span>
 
 
 <div class="viewcode-block" id="shared_independent_conditional">
@@ -288,17 +288,17 @@ function checkPageExistsAndRedirect(event) {
     <span class="nb">object</span><span class="p">,</span> <span class="n">SharedIndependentInducingVariables</span><span class="p">,</span> <span class="n">SharedIndependent</span><span class="p">,</span> <span class="nb">object</span>
 <span class="p">)</span>
 <span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;inducing_variable: [M, D, broadcast L]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;f: [M, L]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;q_sqrt: [M_L_or_L_M_M...]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return[0]: [batch..., N, P]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov&quot;</span><span class="p">,</span>
+    <span class="s2">"Xnew: [batch..., N, D]"</span><span class="p">,</span>
+    <span class="s2">"inducing_variable: [M, D, broadcast L]"</span><span class="p">,</span>
+    <span class="s2">"f: [M, L]"</span><span class="p">,</span>
+    <span class="s2">"q_sqrt: [M_L_or_L_M_M...]"</span><span class="p">,</span>
+    <span class="s2">"return[0]: [batch..., N, P]"</span><span class="p">,</span>
+    <span class="s2">"return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)"</span><span class="p">,</span>
+    <span class="s2">"return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)"</span><span class="p">,</span>
+    <span class="s2">"return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov"</span><span class="p">,</span>
+    <span class="s2">"return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">shared_independent_conditional</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">shared_independent_conditional</span><span class="p">(</span>
     <span class="n">Xnew</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">SharedIndependentInducingVariables</span><span class="p">,</span>
     <span class="n">kernel</span><span class="p">:</span> <span class="n">SharedIndependent</span><span class="p">,</span>
@@ -309,7 +309,7 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">q_sqrt</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">white</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Multioutput conditional for an independent kernel and shared inducing inducing.</span>
 <span class="sd">    Same behaviour as conditional with non-multioutput kernels.</span>
 <span class="sd">    The covariance matrices used to calculate the conditional have the following shape:</span>
@@ -338,7 +338,7 @@ function checkPageExistsAndRedirect(event) {
 
 <span class="sd">        Please see `gpflow.conditional._expand_independent_outputs` for more information</span>
 <span class="sd">        about the shape of the variance, depending on `full_cov` and `full_output_cov`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">posterior</span> <span class="o">=</span> <span class="n">IndependentPosteriorMultiOutput</span><span class="p">(</span>
         <span class="n">kernel</span><span class="p">,</span>
         <span class="n">inducing_variable</span><span class="p">,</span>
@@ -364,17 +364,17 @@ function checkPageExistsAndRedirect(event) {
     <span class="nb">object</span><span class="p">,</span> <span class="n">SeparateIndependentInducingVariables</span><span class="p">,</span> <span class="n">SharedIndependent</span><span class="p">,</span> <span class="nb">object</span>
 <span class="p">)</span>
 <span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;inducing_variable: [M, D, broadcast L]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;f: [M, L]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;q_sqrt: [M_L_or_L_M_M...]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return[0]: [batch..., N, P]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov&quot;</span><span class="p">,</span>
+    <span class="s2">"Xnew: [batch..., N, D]"</span><span class="p">,</span>
+    <span class="s2">"inducing_variable: [M, D, broadcast L]"</span><span class="p">,</span>
+    <span class="s2">"f: [M, L]"</span><span class="p">,</span>
+    <span class="s2">"q_sqrt: [M_L_or_L_M_M...]"</span><span class="p">,</span>
+    <span class="s2">"return[0]: [batch..., N, P]"</span><span class="p">,</span>
+    <span class="s2">"return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)"</span><span class="p">,</span>
+    <span class="s2">"return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)"</span><span class="p">,</span>
+    <span class="s2">"return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov"</span><span class="p">,</span>
+    <span class="s2">"return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">separate_independent_conditional</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">separate_independent_conditional</span><span class="p">(</span>
     <span class="n">Xnew</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">MultioutputInducingVariables</span><span class="p">,</span>
     <span class="n">kernel</span><span class="p">:</span> <span class="n">MultioutputKernel</span><span class="p">,</span>
@@ -407,17 +407,17 @@ function checkPageExistsAndRedirect(event) {
     <span class="nb">object</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;inducing_variable: [M, D, broadcast L]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;f: [M, L]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;q_sqrt: [M_L_or_L_M_M...]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return[0]: [batch..., N, P]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov&quot;</span><span class="p">,</span>
+    <span class="s2">"Xnew: [batch..., N, D]"</span><span class="p">,</span>
+    <span class="s2">"inducing_variable: [M, D, broadcast L]"</span><span class="p">,</span>
+    <span class="s2">"f: [M, L]"</span><span class="p">,</span>
+    <span class="s2">"q_sqrt: [M_L_or_L_M_M...]"</span><span class="p">,</span>
+    <span class="s2">"return[0]: [batch..., N, P]"</span><span class="p">,</span>
+    <span class="s2">"return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)"</span><span class="p">,</span>
+    <span class="s2">"return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)"</span><span class="p">,</span>
+    <span class="s2">"return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov"</span><span class="p">,</span>
+    <span class="s2">"return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">fallback_independent_latent_conditional</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">fallback_independent_latent_conditional</span><span class="p">(</span>
     <span class="n">Xnew</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">MultioutputInducingVariables</span><span class="p">,</span>
     <span class="n">kernel</span><span class="p">:</span> <span class="n">IndependentLatent</span><span class="p">,</span>
@@ -428,7 +428,7 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">q_sqrt</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">white</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Interdomain conditional with independent latents.</span>
+<span class="w">    </span><span class="sd">"""Interdomain conditional with independent latents.</span>
 <span class="sd">    In this case the number of latent GPs (L) will be different than the number of outputs (P)</span>
 <span class="sd">    The covariance matrices used to calculate the conditional have the following shape:</span>
 <span class="sd">    - Kuu: [L, M, M]</span>
@@ -441,7 +441,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">      conditional in the single-output case.</span>
 <span class="sd">    - See the multioutput notebook for more information about the multioutput framework.</span>
 <span class="sd">    - See above for the parameters and the return value.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">posterior</span> <span class="o">=</span> <span class="n">FallbackIndependentLatentPosterior</span><span class="p">(</span>
         <span class="n">kernel</span><span class="p">,</span>
         <span class="n">inducing_variable</span><span class="p">,</span>
@@ -459,17 +459,17 @@ function checkPageExistsAndRedirect(event) {
 <a class="viewcode-back" href="../../../../api/gpflow/conditionals/index.html#gpflow.conditionals.multioutput.conditionals.inducing_point_conditional">[docs]</a>
 <span class="nd">@conditional</span><span class="o">.</span><span class="n">_gpflow_internal_register</span><span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="n">InducingPoints</span><span class="p">,</span> <span class="n">MultioutputKernel</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span>
 <span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;inducing_variable: [M, D, broadcast L]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;f: [L, 1]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;q_sqrt: [L_1_or_1_L_L...]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return[0]: [batch..., N, P]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov&quot;</span><span class="p">,</span>
+    <span class="s2">"Xnew: [batch..., N, D]"</span><span class="p">,</span>
+    <span class="s2">"inducing_variable: [M, D, broadcast L]"</span><span class="p">,</span>
+    <span class="s2">"f: [L, 1]"</span><span class="p">,</span>
+    <span class="s2">"q_sqrt: [L_1_or_1_L_L...]"</span><span class="p">,</span>
+    <span class="s2">"return[0]: [batch..., N, P]"</span><span class="p">,</span>
+    <span class="s2">"return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)"</span><span class="p">,</span>
+    <span class="s2">"return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)"</span><span class="p">,</span>
+    <span class="s2">"return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov"</span><span class="p">,</span>
+    <span class="s2">"return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">inducing_point_conditional</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">inducing_point_conditional</span><span class="p">(</span>
     <span class="n">Xnew</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">InducingPoints</span><span class="p">,</span>
     <span class="n">kernel</span><span class="p">:</span> <span class="n">MultioutputKernel</span><span class="p">,</span>
@@ -480,7 +480,7 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">q_sqrt</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">white</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Multi-output GP with fully correlated inducing variables.</span>
+<span class="w">    </span><span class="sd">"""Multi-output GP with fully correlated inducing variables.</span>
 <span class="sd">    The inducing variables are shaped in the same way as evaluations of K, to allow a default</span>
 <span class="sd">    inducing point scheme for multi-output kernels.</span>
 <span class="sd">    The covariance matrices used to calculate the conditional have the following shape:</span>
@@ -496,7 +496,7 @@ function checkPageExistsAndRedirect(event) {
 
 <span class="sd">    :param f: variational mean, [L, 1]</span>
 <span class="sd">    :param q_sqrt: standard-deviations or cholesky, [L, 1]  or  [1, L, L]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">posterior</span> <span class="o">=</span> <span class="n">FullyCorrelatedPosterior</span><span class="p">(</span>
         <span class="n">kernel</span><span class="p">,</span>
         <span class="n">inducing_variable</span><span class="p">,</span>
@@ -519,17 +519,17 @@ function checkPageExistsAndRedirect(event) {
     <span class="nb">object</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;inducing_variable: [M, D, broadcast L]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;f: [M, L]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;q_sqrt: [M_L_or_L_M_M...]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return[0]: [batch..., N, P]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov&quot;</span><span class="p">,</span>
+    <span class="s2">"Xnew: [batch..., N, D]"</span><span class="p">,</span>
+    <span class="s2">"inducing_variable: [M, D, broadcast L]"</span><span class="p">,</span>
+    <span class="s2">"f: [M, L]"</span><span class="p">,</span>
+    <span class="s2">"q_sqrt: [M_L_or_L_M_M...]"</span><span class="p">,</span>
+    <span class="s2">"return[0]: [batch..., N, P]"</span><span class="p">,</span>
+    <span class="s2">"return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)"</span><span class="p">,</span>
+    <span class="s2">"return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)"</span><span class="p">,</span>
+    <span class="s2">"return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov"</span><span class="p">,</span>
+    <span class="s2">"return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">coregionalization_conditional</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">coregionalization_conditional</span><span class="p">(</span>
     <span class="n">Xnew</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">MultioutputInducingVariables</span><span class="p">,</span>
     <span class="n">kernel</span><span class="p">:</span> <span class="n">LinearCoregionalization</span><span class="p">,</span>
@@ -540,7 +540,7 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">q_sqrt</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">white</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Most efficient routine to project L independent latent gps through a mixing matrix W.</span>
+<span class="w">    </span><span class="sd">"""Most efficient routine to project L independent latent gps through a mixing matrix W.</span>
 <span class="sd">    The mixing matrix is a member of the `LinearCoregionalization` and has shape [P, L].</span>
 <span class="sd">    The covariance matrices used to calculate the conditional have the following shape:</span>
 <span class="sd">    - Kuu: [L, M, M]</span>
@@ -552,7 +552,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    - See `gpflow.conditionals._conditional` for a detailed explanation of</span>
 <span class="sd">      conditional in the single-output case.</span>
 <span class="sd">    - See the multioutput notebook for more information about the multioutput framework.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">posterior</span> <span class="o">=</span> <span class="n">LinearCoregionalizationPosterior</span><span class="p">(</span>
         <span class="n">kernel</span><span class="p">,</span>
         <span class="n">inducing_variable</span><span class="p">,</span>
@@ -590,7 +590,7 @@ function checkPageExistsAndRedirect(event) {
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.3.7.<br>
 </p>
   </div>
   

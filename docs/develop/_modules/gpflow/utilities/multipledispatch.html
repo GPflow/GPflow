@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>gpflow.utilities.multipledispatch &#8212; GPflow 2.9.0 documentation</title>
+    <title>gpflow.utilities.multipledispatch &#8212; GPflow 2.11.2 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -22,14 +22,14 @@
   <link rel="preload" as="font" type="font/woff2" crossorigin
     href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
 
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css?v=c27e38e3" />
 
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
-    <script src="../../../_static/documentation_options.js?v=8da69bee"></script>
-    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/documentation_options.js?v=b2fb886b"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
@@ -61,7 +61,7 @@
   
   
   
-    <p class="title logo__title">GPflow 2.9.0 documentation</p>
+    <p class="title logo__title">GPflow 2.11.2 documentation</p>
   
 </a>
     
@@ -240,48 +240,48 @@ function checkPageExistsAndRedirect(event) {
   <h1>Source code for gpflow.utilities.multipledispatch</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Copyright 2020 The GPflow Contributors. All Rights Reserved.</span>
 <span class="c1">#</span>
-<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1"># you may not use this file except in compliance with the License.</span>
 <span class="c1"># You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1"># See the License for the specific language governing permissions and</span>
 <span class="c1"># limitations under the License.</span>
 
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">from</span> <span class="nn">multipledispatch</span> <span class="kn">import</span> <span class="n">Dispatcher</span> <span class="k">as</span> <span class="n">GeneratorDispatcher</span>
-<span class="kn">from</span> <span class="nn">multipledispatch.dispatcher</span> <span class="kn">import</span> <span class="n">str_signature</span><span class="p">,</span> <span class="n">variadic_signature_matches</span>
-<span class="kn">from</span> <span class="nn">multipledispatch.variadic</span> <span class="kn">import</span> <span class="n">isvariadic</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">multipledispatch</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dispatcher</span> <span class="k">as</span> <span class="n">GeneratorDispatcher</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">multipledispatch.dispatcher</span><span class="w"> </span><span class="kn">import</span> <span class="n">str_signature</span><span class="p">,</span> <span class="n">variadic_signature_matches</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">multipledispatch.variadic</span><span class="w"> </span><span class="kn">import</span> <span class="n">isvariadic</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Dispatcher&quot;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"Dispatcher"</span><span class="p">]</span>
 
 
 <span class="n">AnyCallable</span> <span class="o">=</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
-<span class="n">_C</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;_C&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">AnyCallable</span><span class="p">)</span>
+<span class="n">_C</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">"_C"</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">AnyCallable</span><span class="p">)</span>
 <span class="n">Types</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="o">...</span><span class="p">]]</span>
 
 
 <div class="viewcode-block" id="Dispatcher">
 <a class="viewcode-back" href="../../../api/gpflow/utilities/index.html#gpflow.utilities.Dispatcher">[docs]</a>
-<span class="k">class</span> <span class="nc">Dispatcher</span><span class="p">(</span><span class="n">GeneratorDispatcher</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Dispatcher</span><span class="p">(</span><span class="n">GeneratorDispatcher</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    multipledispatch.Dispatcher uses a generator to yield the</span>
-<span class="sd">    desired function implementation, which is problematic as TensorFlow&#39;s</span>
+<span class="sd">    desired function implementation, which is problematic as TensorFlow's</span>
 <span class="sd">    autograph is not able to compile code that passes through generators.</span>
 
 <span class="sd">    This class overwrites the problematic method in the original</span>
 <span class="sd">    Dispatcher and solely makes use of simple for-loops, which are</span>
 <span class="sd">    compilable by AutoGraph.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="Dispatcher.register">
 <a class="viewcode-back" href="../../../api/gpflow/utilities/index.html#gpflow.utilities.Dispatcher.register">[docs]</a>
-    <span class="k">def</span> <span class="nf">register</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">types</span><span class="p">:</span> <span class="n">Types</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_C</span><span class="p">],</span> <span class="n">_C</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">register</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">types</span><span class="p">:</span> <span class="n">Types</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_C</span><span class="p">],</span> <span class="n">_C</span><span class="p">]:</span>
         <span class="c1"># Override to add type hints...</span>
         <span class="n">result</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_C</span><span class="p">],</span> <span class="n">_C</span><span class="p">]</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="o">*</span><span class="n">types</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">result</span></div>
@@ -289,10 +289,10 @@ function checkPageExistsAndRedirect(event) {
 
 <div class="viewcode-block" id="Dispatcher.dispatch">
 <a class="viewcode-back" href="../../../api/gpflow/utilities/index.html#gpflow.utilities.Dispatcher.dispatch">[docs]</a>
-    <span class="k">def</span> <span class="nf">dispatch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">types</span><span class="p">:</span> <span class="n">Types</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AnyCallable</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dispatch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">types</span><span class="p">:</span> <span class="n">Types</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AnyCallable</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Returns matching function for `types`; if not existing returns None.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">types</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">funcs</span><span class="p">:</span>
             <span class="n">result</span><span class="p">:</span> <span class="n">AnyCallable</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">funcs</span><span class="p">[</span><span class="n">types</span><span class="p">]</span>
             <span class="k">return</span> <span class="n">result</span>
@@ -302,22 +302,22 @@ function checkPageExistsAndRedirect(event) {
 
 <div class="viewcode-block" id="Dispatcher.dispatch_or_raise">
 <a class="viewcode-back" href="../../../api/gpflow/utilities/index.html#gpflow.utilities.Dispatcher.dispatch_or_raise">[docs]</a>
-    <span class="k">def</span> <span class="nf">dispatch_or_raise</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">types</span><span class="p">:</span> <span class="n">Types</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AnyCallable</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dispatch_or_raise</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">types</span><span class="p">:</span> <span class="n">Types</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AnyCallable</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Returns matching function for `types`; if not existing raises an error.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dispatch</span><span class="p">(</span><span class="o">*</span><span class="n">types</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">f</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Could not find signature for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: &lt;</span><span class="si">{</span><span class="n">str_signature</span><span class="p">(</span><span class="n">types</span><span class="p">)</span><span class="si">}</span><span class="s2">&gt;&quot;</span>
+                <span class="sa">f</span><span class="s2">"Could not find signature for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: &lt;</span><span class="si">{</span><span class="n">str_signature</span><span class="p">(</span><span class="n">types</span><span class="p">)</span><span class="si">}</span><span class="s2">&gt;"</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">f</span></div>
 
 
 <div class="viewcode-block" id="Dispatcher.get_first_occurrence">
 <a class="viewcode-back" href="../../../api/gpflow/utilities/index.html#gpflow.utilities.Dispatcher.get_first_occurrence">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_first_occurrence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">types</span><span class="p">:</span> <span class="n">Types</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AnyCallable</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_first_occurrence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">types</span><span class="p">:</span> <span class="n">Types</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AnyCallable</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Returns the first occurrence of a matching function</span>
 
 <span class="sd">        Based on `multipledispatch.Dispatcher.dispatch_iter`, which</span>
@@ -325,7 +325,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        the same logic to select functions, but simply returns the first</span>
 <span class="sd">        element of the iterator. If no matching functions are found,</span>
 <span class="sd">        `None` is returned.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">types</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">signature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ordering</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">signature</span><span class="p">)</span> <span class="o">==</span> <span class="n">n</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">issubclass</span><span class="p">,</span> <span class="n">types</span><span class="p">,</span> <span class="n">signature</span><span class="p">)):</span>  <span class="c1"># type: ignore[arg-type]</span>
@@ -364,7 +364,7 @@ function checkPageExistsAndRedirect(event) {
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.3.7.<br>
 </p>
   </div>
   

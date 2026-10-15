@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Basic Usage with GPR &#8212; GPflow 2.9.0 documentation</title>
+    <title>Basic Usage with GPR &#8212; GPflow 2.11.2 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -23,15 +23,15 @@
   <link rel="preload" as="font" type="font/woff2" crossorigin
     href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
 
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
-    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
     <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css?v=c27e38e3" />
 
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
-    <script src="../../_static/documentation_options.js?v=8da69bee"></script>
-    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/documentation_options.js?v=b2fb886b"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
@@ -67,7 +67,7 @@
   
   
   
-    <p class="title logo__title">GPflow 2.9.0 documentation</p>
+    <p class="title logo__title">GPflow 2.11.2 documentation</p>
   
 </a>
     
@@ -347,26 +347,36 @@ function checkPageExistsAndRedirect(event) {
               <article class="bd-article" role="main">
                 
   <section id="Basic-Usage-with-GPR">
-<h1>Basic Usage with GPR<a class="headerlink" href="#Basic-Usage-with-GPR" title="Link to this heading">#</a></h1>
+<h1>Basic Usage with GPR<a class="headerlink" href="#Basic-Usage-with-GPR" title="Link to this heading">¶</a></h1>
 <p>In this chapter we will go over the most basic concepts you will need to understand to use GPflow. We will train a simple model on some simple data; and demonstrate how to use the model to make predictions, and how to plot the results.</p>
 <p>If your use-case is sufficiently simple, this chapter may be all you need to use</p>
 <section id="Imports">
-<h2>Imports<a class="headerlink" href="#Imports" title="Link to this heading">#</a></h2>
+<h2>Imports<a class="headerlink" href="#Imports" title="Link to this heading">¶</a></h2>
 <p>These are the imports we’ll be assuming below:</p>
-<div class="nbinput nblast docutils container">
+<div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">import</span> <span class="nn">gpflow</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">gpflow</span>
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1792056383.279271     143 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1792056383.284864     143 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+</pre></div></div>
+</div>
 </section>
 <section id="Meet-f-and-Y">
-<h2>Meet <span class="math notranslate nohighlight">\(f\)</span> and <span class="math notranslate nohighlight">\(Y\)</span><a class="headerlink" href="#Meet-f-and-Y" title="Link to this heading">#</a></h2>
+<h2>Meet <span class="math notranslate nohighlight">\(f\)</span> and <span class="math notranslate nohighlight">\(Y\)</span><a class="headerlink" href="#Meet-f-and-Y" title="Link to this heading">¶</a></h2>
 <p>In GPflow we usually assume our data is generated by a process:</p>
 <p><span class="math">\begin{equation}
 Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^2).
@@ -381,7 +391,7 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 <p>It is important to understand the difference between <span class="math notranslate nohighlight">\(f\)</span> and <span class="math notranslate nohighlight">\(Y\)</span> to understand GPflow.</p>
 </section>
 <section id="Minimal-model">
-<h2>Minimal model<a class="headerlink" href="#Minimal-model" title="Link to this heading">#</a></h2>
+<h2>Minimal model<a class="headerlink" href="#Minimal-model" title="Link to this heading">¶</a></h2>
 <p>Let’s model some data. Below we have some variables <code class="docutils literal notranslate"><span class="pre">X</span></code> and <code class="docutils literal notranslate"><span class="pre">Y</span></code>, both of which are NumPy arrays, with shapes <span class="math notranslate nohighlight">\(N \times D\)</span> and <span class="math notranslate nohighlight">\(N \times P\)</span> respectively. <span class="math notranslate nohighlight">\(N\)</span> is the number of rows of data. <span class="math notranslate nohighlight">\(D\)</span> is the number of input dimensions, and <span class="math notranslate nohighlight">\(P\)</span> is the number of output dimensions. We set both <span class="math notranslate nohighlight">\(D=1\)</span> and <span class="math notranslate nohighlight">\(P=1\)</span> to keep things simple.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -400,7 +410,7 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
     <span class="p">]</span>
 <span class="p">)</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">&quot;kx&quot;</span><span class="p">,</span> <span class="n">mew</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">"kx"</span><span class="p">,</span> <span class="n">mew</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -478,7 +488,7 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 <p>Notice how the predicted <span class="math notranslate nohighlight">\(f\)</span> and <span class="math notranslate nohighlight">\(Y\)</span> have the same mean, but <span class="math notranslate nohighlight">\(Y\)</span> has a larger variance. This is because the variance of <span class="math notranslate nohighlight">\(f\)</span> is only the uncertainty of <span class="math notranslate nohighlight">\(f\)</span>, while the variance of <span class="math notranslate nohighlight">\(Y\)</span> is both the uncertainty of <span class="math notranslate nohighlight">\(f\)</span> and the extra noise.</p>
 </section>
 <section id="Plotting-the-model">
-<h2>Plotting the model<a class="headerlink" href="#Plotting-the-model" title="Link to this heading">#</a></h2>
+<h2>Plotting the model<a class="headerlink" href="#Plotting-the-model" title="Link to this heading">¶</a></h2>
 <p>Now, lets predict <span class="math notranslate nohighlight">\(f\)</span> and <span class="math notranslate nohighlight">\(Y\)</span> for a range of <span class="math notranslate nohighlight">\(X\)</span>s and make a pretty plot of it.</p>
 <p>First we generate some test points for the prediction:</p>
 <div class="nbinput nblast docutils container">
@@ -516,17 +526,17 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">&quot;kx&quot;</span><span class="p">,</span> <span class="n">mew</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;input data&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">f_mean</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C0&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">,</span> <span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C0&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;f 95</span><span class="si">% c</span><span class="s2">onfidence&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">f_upper</span><span class="p">,</span> <span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C0&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">"kx"</span><span class="p">,</span> <span class="n">mew</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"input data"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">f_mean</span><span class="p">,</span> <span class="s2">"-"</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"C0"</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"mean"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">,</span> <span class="s2">"--"</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"C0"</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"f 95</span><span class="si">% c</span><span class="s2">onfidence"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">f_upper</span><span class="p">,</span> <span class="s2">"--"</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"C0"</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span>
-    <span class="n">Xplot</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">f_lower</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">f_upper</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C0&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span>
+    <span class="n">Xplot</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">f_lower</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">f_upper</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">"C0"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span>
 <span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">y_lower</span><span class="p">,</span> <span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C0&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Y 95</span><span class="si">% c</span><span class="s2">onfidence&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">y_upper</span><span class="p">,</span> <span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C0&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">y_lower</span><span class="p">,</span> <span class="s2">"."</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"C0"</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"Y 95</span><span class="si">% c</span><span class="s2">onfidence"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">y_upper</span><span class="p">,</span> <span class="s2">"."</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"C0"</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span>
-    <span class="n">Xplot</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">y_lower</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">y_upper</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C0&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span>
+    <span class="n">Xplot</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">y_lower</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">y_upper</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">"C0"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span>
 <span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 </pre></div>
@@ -542,7 +552,7 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 <p>Notice how the confidence of <span class="math notranslate nohighlight">\(f\)</span> is greater when you’re further away from our data, and smaller near the data. Notice also how we’re more certain about <span class="math notranslate nohighlight">\(f\)</span> than about <span class="math notranslate nohighlight">\(Y\)</span>; sometimes we’re even certain that <span class="math notranslate nohighlight">\(f\)</span> lies away from a data point.</p>
 </section>
 <section id="Marginal-variance-vs-full-covariance">
-<h2>Marginal variance vs full covariance<a class="headerlink" href="#Marginal-variance-vs-full-covariance" title="Link to this heading">#</a></h2>
+<h2>Marginal variance vs full covariance<a class="headerlink" href="#Marginal-variance-vs-full-covariance" title="Link to this heading">¶</a></h2>
 <p>As mentioned above <span class="math notranslate nohighlight">\(f\)</span> is a function, and we expect it to be, more or less, smooth. So if <span class="math notranslate nohighlight">\(x_1\)</span> and <span class="math notranslate nohighlight">\(x_2\)</span> are near each other, we expect <span class="math notranslate nohighlight">\(f(x_1)\)</span> and <span class="math notranslate nohighlight">\(f(x_2)\)</span> to be near each other as well. In Gaussian Processes we encode the information about how nearby values of <span class="math notranslate nohighlight">\(x\)</span> are similar with a <a class="reference external" href="https://en.wikipedia.org/wiki/Covariance">covariance matrix</a>.</p>
 <p>If we call <code class="docutils literal notranslate"><span class="pre">predict_f(...,</span> <span class="pre">full_cov=False)</span></code> like we did above, when we plotted the model, <code class="docutils literal notranslate"><span class="pre">predict_f</span></code> will return a <span class="math notranslate nohighlight">\(N \times P\)</span> mean vector and a <span class="math notranslate nohighlight">\(N \times P\)</span> marginal variance vector. The marginal variance vector only tells us about our uncertainty at each point individually, and does not tell us anything about how the points relate to each other. Often the marginal variance vector is all you need, and it is faster to compute than the full covariance. <code class="docutils literal notranslate"><span class="pre">False</span></code> is the default
 value for <code class="docutils literal notranslate"><span class="pre">full_cov</span></code>.</p>
@@ -599,7 +609,7 @@ value for <code class="docutils literal notranslate"><span class="pre">full_cov<
 <p>Technically the marginal variance vector we get with <code class="docutils literal notranslate"><span class="pre">predict_f(...,</span> <span class="pre">full_cov=False)</span></code> is just the diagonal of the full covariance matrix we get with <code class="docutils literal notranslate"><span class="pre">predict_f(...,</span> <span class="pre">full_cov=True)</span></code>, but the former is faster to compute, so prefer that when possible.</p>
 </section>
 <section id="What's-next?">
-<h2>What’s next?<a class="headerlink" href="#What's-next?" title="Link to this heading">#</a></h2>
+<h2>What’s next?<a class="headerlink" href="#What's-next?" title="Link to this heading">¶</a></h2>
 <p>On this page we gave you a very quick overview of how a GPflow model is created, and how we can use it to make predictions. On the following pages we will go into details of different kind of GPflow models, how they are configured and, how they are trained.</p>
 </section>
 </section>
@@ -629,7 +639,7 @@ value for <code class="docutils literal notranslate"><span class="pre">full_cov<
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.3.7.<br>
 </p>
   </div>
   

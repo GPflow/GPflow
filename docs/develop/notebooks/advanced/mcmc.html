@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>MCMC (Markov Chain Monte Carlo) &#8212; GPflow 2.9.0 documentation</title>
+    <title>MCMC (Markov Chain Monte Carlo) &#8212; GPflow 2.11.2 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -23,15 +23,15 @@
   <link rel="preload" as="font" type="font/woff2" crossorigin
     href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
 
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
-    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
     <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css?v=c27e38e3" />
 
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
-    <script src="../../_static/documentation_options.js?v=8da69bee"></script>
-    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/documentation_options.js?v=b2fb886b"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
@@ -67,7 +67,7 @@
   
   
   
-    <p class="title logo__title">GPflow 2.9.0 documentation</p>
+    <p class="title logo__title">GPflow 2.11.2 documentation</p>
   
 </a>
     
@@ -382,6 +382,13 @@ function checkPageExistsAndRedirect(event) {
   </a>
  </li>
 </ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="hierarchical_kernels.html">
+   Hierarchical kernels
+  </a>
+ </li>
+</ul>
 
   </div>
 </nav>
@@ -467,26 +474,26 @@ function checkPageExistsAndRedirect(event) {
               <article class="bd-article" role="main">
                 
   <section id="MCMC-(Markov-Chain-Monte-Carlo)">
-<h1>MCMC (Markov Chain Monte Carlo)<a class="headerlink" href="#MCMC-(Markov-Chain-Monte-Carlo)" title="Link to this heading">#</a></h1>
+<h1>MCMC (Markov Chain Monte Carlo)<a class="headerlink" href="#MCMC-(Markov-Chain-Monte-Carlo)" title="Link to this heading">¶</a></h1>
 <p>GPflow allows you to approximate the posterior over the latent functions of its models (and over the hyperparameters after setting a prior for those) using Hamiltonian Monte Carlo (HMC)</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
-<span class="kn">import</span> <span class="nn">tensorflow_probability</span> <span class="k">as</span> <span class="nn">tfp</span>
-<span class="kn">from</span> <span class="nn">multiclass_classification</span> <span class="kn">import</span> <span class="n">colors</span><span class="p">,</span> <span class="n">plot_from_samples</span>
-<span class="kn">from</span> <span class="nn">tensorflow_probability</span> <span class="kn">import</span> <span class="n">distributions</span> <span class="k">as</span> <span class="n">tfd</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tf</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow_probability</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tfp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">multiclass_classification</span><span class="w"> </span><span class="kn">import</span> <span class="n">colors</span><span class="p">,</span> <span class="n">plot_from_samples</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tensorflow_probability</span><span class="w"> </span><span class="kn">import</span> <span class="n">distributions</span> <span class="k">as</span> <span class="n">tfd</span>
 
-<span class="kn">import</span> <span class="nn">gpflow</span>
-<span class="kn">from</span> <span class="nn">gpflow</span> <span class="kn">import</span> <span class="n">set_trainable</span>
-<span class="kn">from</span> <span class="nn">gpflow.ci_utils</span> <span class="kn">import</span> <span class="n">reduce_in_tests</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">gpflow</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gpflow</span><span class="w"> </span><span class="kn">import</span> <span class="n">set_trainable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gpflow.ci_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">reduce_in_tests</span>
 
 <span class="n">gpflow</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set_default_float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
 <span class="n">gpflow</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set_default_jitter</span><span class="p">(</span><span class="mf">1e-4</span><span class="p">)</span>
-<span class="n">gpflow</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set_default_summary_fmt</span><span class="p">(</span><span class="s2">&quot;notebook&quot;</span><span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set_default_summary_fmt</span><span class="p">(</span><span class="s2">"notebook"</span><span class="p">)</span>
 <span class="c1"># convert to float64 for tfp to play nicely with gpflow in 64</span>
 <span class="n">f64</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">to_default_float</span>
 
@@ -497,26 +504,19 @@ function checkPageExistsAndRedirect(event) {
 </pre></div>
 </div>
 </div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-2024-02-07 11:46:02.098603: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
-2024-02-07 11:46:02.139364: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9261] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
-2024-02-07 11:46:02.139417: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
-2024-02-07 11:46:02.140737: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1515] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-2024-02-07 11:46:02.147662: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
-2024-02-07 11:46:02.148174: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
-To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
-</pre></div></div>
-</div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-02-07 11:46:03.220117: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
+2026-10-15 09:25:57.306155: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2026-10-15 09:25:57.310211: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2026-10-15 09:25:57.322379: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:477] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1792056357.342918     114 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1792056357.348826     114 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2026-10-15 09:25:57.369569: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
 </pre></div></div>
 </div>
 <p>In this notebook, we provide three examples:</p>
@@ -526,14 +526,14 @@ To enable the following instructions: AVX2 AVX512F FMA, in other operations, reb
 <li><p><a class="reference internal" href="#Example-3:-Fully-Bayesian-inference-for-generalized-GP-models-with-HMC"><span class="std std-ref">Example 3</span></a>: Full Bayesian inference for Gaussian process models</p></li>
 </ul>
 <section id="Example-1:-GP-regression">
-<h2>Example 1: GP regression<a class="headerlink" href="#Example-1:-GP-regression" title="Link to this heading">#</a></h2>
+<h2>Example 1: GP regression<a class="headerlink" href="#Example-1:-GP-regression" title="Link to this heading">¶</a></h2>
 <p>We first consider the GP regression (with Gaussian noise) for which the marginal likelihood <span class="math notranslate nohighlight">\(p(\mathbf y\,|\,\theta)\)</span> can be computed exactly.</p>
 <p>The GPR model parameterized by <span class="math notranslate nohighlight">\(\theta = [\tau]\)</span> is given by <span class="math">\begin{equation}
 Y_i = f(X_i) + \varepsilon_i
 \end{equation}</span> where <span class="math notranslate nohighlight">\(f \sim \mathcal{GP}(\mu(.), k(., .))\)</span>, and <span class="math notranslate nohighlight">\(\varepsilon \sim \mathcal{N}(0, \tau^2 I)\)</span>.</p>
 <p>See the <a class="reference external" href="../basics/regression.ipynb">Basic (Gaussian likelihood) GP regression model</a> for more details on GPR and for a treatment of the direct likelihood maximization.</p>
 <section id="Data-for-a-one-dimensional-regression-problem">
-<h3>Data for a one-dimensional regression problem<a class="headerlink" href="#Data-for-a-one-dimensional-regression-problem" title="Link to this heading">#</a></h3>
+<h3>Data for a one-dimensional regression problem<a class="headerlink" href="#Data-for-a-one-dimensional-regression-problem" title="Link to this heading">¶</a></h3>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
@@ -543,7 +543,7 @@ Y_i = f(X_i) + \varepsilon_i
 <span class="n">N</span> <span class="o">=</span> <span class="mi">15</span>
 
 
-<span class="k">def</span> <span class="nf">synthetic_data</span><span class="p">(</span><span class="n">num</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">synthetic_data</span><span class="p">(</span><span class="n">num</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">):</span>
     <span class="n">X</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
     <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">12</span> <span class="o">*</span> <span class="n">X</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.66</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">25</span> <span class="o">*</span> <span class="n">X</span><span class="p">)</span> <span class="o">+</span> <span class="n">rng</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.1</span> <span class="o">+</span> <span class="mi">3</span>
     <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span>
@@ -552,10 +552,10 @@ Y_i = f(X_i) + \varepsilon_i
 <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span> <span class="o">=</span> <span class="n">synthetic_data</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span>
 
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">&quot;kx&quot;</span><span class="p">,</span> <span class="n">mew</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;$X$&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;$Y$&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;toy data&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">"kx"</span><span class="p">,</span> <span class="n">mew</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">"$X$"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">"$Y$"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">"toy data"</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -569,12 +569,12 @@ Y_i = f(X_i) + \varepsilon_i
 </div>
 </section>
 <section id="MCMC-for-hyperparameters-\theta">
-<h3>MCMC for hyperparameters <span class="math notranslate nohighlight">\(\theta\)</span><a class="headerlink" href="#MCMC-for-hyperparameters-\theta" title="Link to this heading">#</a></h3>
+<h3>MCMC for hyperparameters <span class="math notranslate nohighlight">\(\theta\)</span><a class="headerlink" href="#MCMC-for-hyperparameters-\theta" title="Link to this heading">¶</a></h3>
 <p>We now want to sample from the posterior over <span class="math notranslate nohighlight">\(\theta\)</span>: <span class="math">\begin{equation}
 p(\theta|\mathbf{y}) \propto p(\mathbf{y}|\theta)p(\theta)
 \end{equation}</span></p>
 <p>Firstly, we build the GPR model.</p>
-<div class="nbinput nblast docutils container">
+<div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
@@ -584,6 +584,14 @@ p(\theta|\mathbf{y}) \propto p(\mathbf{y}|\theta)p(\theta)
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2026-10-15 09:26:02.212861: E external/local_xla/xla/stream_executor/cuda/cuda_driver.cc:152] failed call to cuInit: INTERNAL: CUDA error: Failed call to cuInit: UNKNOWN ERROR (303)
+</pre></div></div>
+</div>
 <p>Secondly, we initialize the model to the maximum likelihood solution.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
@@ -592,7 +600,7 @@ p(\theta|\mathbf{y}) \propto p(\mathbf{y}|\theta)p(\theta)
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
 <span class="n">optimizer</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;log posterior density at optimum: </span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="n">log_posterior_density</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"log posterior density at optimum: </span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="n">log_posterior_density</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -601,7 +609,7 @@ p(\theta|\mathbf{y}) \propto p(\mathbf{y}|\theta)p(\theta)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-log posterior density at optimum: -11.460240793868856
+log posterior density at optimum: -11.460240793869037
 </pre></div></div>
 </div>
 <p>Thirdly, we add priors to the hyperparameters.</p>
@@ -626,14 +634,14 @@ log posterior density at optimum: -11.460240793868856
 <div class="output_area rendered_html docutils container">
 <table>
 <thead>
-<tr><th>name                   </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th>value              </th></tr>
+<tr><th>name                   </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th>value               </th></tr>
 </thead>
 <tbody>
-<tr><td>GPR.mean_function.A    </td><td>Parameter</td><td>Identity        </td><td>Normal </td><td>True       </td><td>(1, 1) </td><td>float64</td><td>[[-0.79273871]]    </td></tr>
-<tr><td>GPR.mean_function.b    </td><td>Parameter</td><td>Identity        </td><td>Normal </td><td>True       </td><td>()     </td><td>float64</td><td>3.37839            </td></tr>
-<tr><td>GPR.kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>Gamma  </td><td>True       </td><td>()     </td><td>float64</td><td>0.8535572417464603 </td></tr>
-<tr><td>GPR.kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>Gamma  </td><td>True       </td><td>()     </td><td>float64</td><td>0.07944856776433576</td></tr>
-<tr><td>GPR.likelihood.variance</td><td>Parameter</td><td>Softplus + Shift</td><td>Gamma  </td><td>True       </td><td>()     </td><td>float64</td><td>0.01652143677262185</td></tr>
+<tr><td>GPR.mean_function.A    </td><td>Parameter</td><td>Identity        </td><td>Normal </td><td>True       </td><td>(1, 1) </td><td>float64</td><td>[[-0.79273871]]     </td></tr>
+<tr><td>GPR.mean_function.b    </td><td>Parameter</td><td>Identity        </td><td>Normal </td><td>True       </td><td>()     </td><td>float64</td><td>3.37839             </td></tr>
+<tr><td>GPR.kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>Gamma  </td><td>True       </td><td>()     </td><td>float64</td><td>0.8535572417464496  </td></tr>
+<tr><td>GPR.kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>Gamma  </td><td>True       </td><td>()     </td><td>float64</td><td>0.0794485677643304  </td></tr>
+<tr><td>GPR.likelihood.variance</td><td>Parameter</td><td>Softplus + Shift</td><td>Gamma  </td><td>True       </td><td>()     </td><td>float64</td><td>0.016521436772620173</td></tr>
 </tbody>
 </table></div>
 </div>
@@ -664,7 +672,7 @@ log posterior density at optimum: -11.460240793868856
 
 
 <span class="nd">@tf</span><span class="o">.</span><span class="n">function</span>
-<span class="k">def</span> <span class="nf">run_chain_fn</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">run_chain_fn</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">tfp</span><span class="o">.</span><span class="n">mcmc</span><span class="o">.</span><span class="n">sample_chain</span><span class="p">(</span>
         <span class="n">num_results</span><span class="o">=</span><span class="n">num_samples</span><span class="p">,</span>
         <span class="n">num_burnin_steps</span><span class="o">=</span><span class="n">num_burnin_steps</span><span class="p">,</span>
@@ -690,20 +698,20 @@ log posterior density at optimum: -11.460240793868856
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_samples</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">y_axis_label</span><span class="p">):</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">plot_samples</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">y_axis_label</span><span class="p">):</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
     <span class="k">for</span> <span class="n">val</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">parameters</span><span class="p">):</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">val</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="n">param_to_name</span><span class="p">[</span><span class="n">param</span><span class="p">])</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;HMC iteration&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">"HMC iteration"</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="n">y_axis_label</span><span class="p">)</span>
 
 
-<span class="n">plot_samples</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span><span class="p">,</span> <span class="s2">&quot;unconstrained values&quot;</span><span class="p">)</span>
+<span class="n">plot_samples</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span><span class="p">,</span> <span class="s2">"unconstrained values"</span><span class="p">)</span>
 <span class="n">plot_samples</span><span class="p">(</span>
     <span class="n">parameter_samples</span><span class="p">,</span>
     <span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span><span class="p">,</span>
-    <span class="s2">&quot;constrained parameter values&quot;</span><span class="p">,</span>
+    <span class="s2">"constrained parameter values"</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -727,7 +735,7 @@ log posterior density at optimum: -11.460240793868856
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">marginal_samples</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">y_axis_label</span><span class="p">):</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">marginal_samples</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">y_axis_label</span><span class="p">):</span>
     <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span>
         <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">param_to_name</span><span class="p">),</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">)</span>
@@ -739,12 +747,12 @@ log posterior density at optimum: -11.460240793868856
 
 
 <span class="n">marginal_samples</span><span class="p">(</span>
-    <span class="n">samples</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span><span class="p">,</span> <span class="s2">&quot;unconstrained variable samples&quot;</span>
+    <span class="n">samples</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span><span class="p">,</span> <span class="s2">"unconstrained variable samples"</span>
 <span class="p">)</span>
 <span class="n">marginal_samples</span><span class="p">(</span>
     <span class="n">parameter_samples</span><span class="p">,</span>
     <span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span><span class="p">,</span>
-    <span class="s2">&quot;constrained parameter samples&quot;</span><span class="p">,</span>
+    <span class="s2">"constrained parameter samples"</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -769,47 +777,47 @@ log posterior density at optimum: -11.460240793868856
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_joint_marginals</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">y_axis_label</span><span class="p">):</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">plot_joint_marginals</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">y_axis_label</span><span class="p">):</span>
     <span class="n">name_to_index</span> <span class="o">=</span> <span class="p">{</span>
         <span class="n">param_to_name</span><span class="p">[</span><span class="n">param</span><span class="p">]:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
     <span class="p">}</span>
     <span class="n">f</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
-        <span class="n">samples</span><span class="p">[</span><span class="n">name_to_index</span><span class="p">[</span><span class="s2">&quot;.likelihood.variance&quot;</span><span class="p">]],</span>
-        <span class="n">samples</span><span class="p">[</span><span class="n">name_to_index</span><span class="p">[</span><span class="s2">&quot;.kernel.variance&quot;</span><span class="p">]],</span>
-        <span class="s2">&quot;k.&quot;</span><span class="p">,</span>
+        <span class="n">samples</span><span class="p">[</span><span class="n">name_to_index</span><span class="p">[</span><span class="s2">".likelihood.variance"</span><span class="p">]],</span>
+        <span class="n">samples</span><span class="p">[</span><span class="n">name_to_index</span><span class="p">[</span><span class="s2">".kernel.variance"</span><span class="p">]],</span>
+        <span class="s2">"k."</span><span class="p">,</span>
         <span class="n">alpha</span><span class="o">=</span><span class="mf">0.15</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;noise_variance&quot;</span><span class="p">)</span>
-    <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;signal_variance&quot;</span><span class="p">)</span>
+    <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"noise_variance"</span><span class="p">)</span>
+    <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"signal_variance"</span><span class="p">)</span>
 
     <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
-        <span class="n">samples</span><span class="p">[</span><span class="n">name_to_index</span><span class="p">[</span><span class="s2">&quot;.likelihood.variance&quot;</span><span class="p">]],</span>
-        <span class="n">samples</span><span class="p">[</span><span class="n">name_to_index</span><span class="p">[</span><span class="s2">&quot;.kernel.lengthscales&quot;</span><span class="p">]],</span>
-        <span class="s2">&quot;k.&quot;</span><span class="p">,</span>
+        <span class="n">samples</span><span class="p">[</span><span class="n">name_to_index</span><span class="p">[</span><span class="s2">".likelihood.variance"</span><span class="p">]],</span>
+        <span class="n">samples</span><span class="p">[</span><span class="n">name_to_index</span><span class="p">[</span><span class="s2">".kernel.lengthscales"</span><span class="p">]],</span>
+        <span class="s2">"k."</span><span class="p">,</span>
         <span class="n">alpha</span><span class="o">=</span><span class="mf">0.15</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;noise_variance&quot;</span><span class="p">)</span>
-    <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;lengthscale&quot;</span><span class="p">)</span>
+    <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"noise_variance"</span><span class="p">)</span>
+    <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"lengthscale"</span><span class="p">)</span>
 
     <span class="n">axs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
-        <span class="n">samples</span><span class="p">[</span><span class="n">name_to_index</span><span class="p">[</span><span class="s2">&quot;.kernel.lengthscales&quot;</span><span class="p">]],</span>
-        <span class="n">samples</span><span class="p">[</span><span class="n">name_to_index</span><span class="p">[</span><span class="s2">&quot;.kernel.variance&quot;</span><span class="p">]],</span>
-        <span class="s2">&quot;k.&quot;</span><span class="p">,</span>
+        <span class="n">samples</span><span class="p">[</span><span class="n">name_to_index</span><span class="p">[</span><span class="s2">".kernel.lengthscales"</span><span class="p">]],</span>
+        <span class="n">samples</span><span class="p">[</span><span class="n">name_to_index</span><span class="p">[</span><span class="s2">".kernel.variance"</span><span class="p">]],</span>
+        <span class="s2">"k."</span><span class="p">,</span>
         <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">axs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;lengthscale&quot;</span><span class="p">)</span>
-    <span class="n">axs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;signal_variance&quot;</span><span class="p">)</span>
+    <span class="n">axs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"lengthscale"</span><span class="p">)</span>
+    <span class="n">axs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"signal_variance"</span><span class="p">)</span>
     <span class="n">f</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="n">y_axis_label</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 
 
 <span class="n">plot_joint_marginals</span><span class="p">(</span>
-    <span class="n">samples</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span><span class="p">,</span> <span class="s2">&quot;unconstrained variable samples&quot;</span>
+    <span class="n">samples</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span><span class="p">,</span> <span class="s2">"unconstrained variable samples"</span>
 <span class="p">)</span>
 <span class="n">plot_joint_marginals</span><span class="p">(</span>
-    <span class="n">parameter_samples</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span><span class="p">,</span> <span class="s2">&quot;parameter samples&quot;</span>
+    <span class="n">parameter_samples</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span><span class="p">,</span> <span class="s2">"parameter samples"</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -841,14 +849,14 @@ log posterior density at optimum: -11.460240793868856
     <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">var_samples</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">hmc_helper</span><span class="o">.</span><span class="n">current_state</span><span class="p">,</span> <span class="n">samples</span><span class="p">):</span>
         <span class="n">var</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">var_samples</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
     <span class="n">f</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_f_samples</span><span class="p">(</span><span class="n">xx</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xx</span><span class="p">,</span> <span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:],</span> <span class="s2">&quot;C0&quot;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xx</span><span class="p">,</span> <span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:],</span> <span class="s2">"C0"</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">&quot;kx&quot;</span><span class="p">,</span> <span class="n">mew</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">"kx"</span><span class="p">,</span> <span class="n">mew</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="n">xx</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">xx</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;$x$&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;$f|X,Y$&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Posterior GP samples&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">"$x$"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">"$f|X,Y$"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">"Posterior GP samples"</span><span class="p">)</span>
 
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
@@ -865,7 +873,7 @@ log posterior density at optimum: -11.460240793868856
 </section>
 </section>
 <section id="Example-2:-Sparse-MC-for-multiclass-classification">
-<h2>Example 2: Sparse MC for multiclass classification<a class="headerlink" href="#Example-2:-Sparse-MC-for-multiclass-classification" title="Link to this heading">#</a></h2>
+<h2>Example 2: Sparse MC for multiclass classification<a class="headerlink" href="#Example-2:-Sparse-MC-for-multiclass-classification" title="Link to this heading">¶</a></h2>
 <p>We now consider the multiclass classification problem (see the <a class="reference internal" href="multiclass_classification.html"><span class="doc">Multiclass classification</span></a> notebook). Here the marginal likelihood is not available in closed form. Instead we use a sparse variational approximation where we approximate the posterior for each GP as <span class="math notranslate nohighlight">\(q(f_c) \propto p(f_c|\mathbf{u}_c)q(\mathbf{u}_c)\)</span></p>
 <p>In the standard Sparse Variational GP (SVGP) formulation, <span class="math notranslate nohighlight">\(q(\mathbf{u_c})\)</span> is parameterized as a multivariate Gaussian.</p>
 <p>An alternative is to directly sample from the optimal <span class="math notranslate nohighlight">\(q(\mathbf{u}_c)\)</span>; this is what Sparse Variational GP using MCMC (SGPMC) does.</p>
@@ -900,13 +908,13 @@ log posterior density at optimum: -11.460240793868856
 <span class="n">order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
 
 <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">C</span><span class="p">):</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">order</span><span class="p">],</span> <span class="n">f</span><span class="p">[</span><span class="n">order</span><span class="p">,</span> <span class="n">c</span><span class="p">],</span> <span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">c</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">c</span><span class="p">))</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">order</span><span class="p">],</span> <span class="n">Y_hot</span><span class="p">[</span><span class="n">order</span><span class="p">,</span> <span class="n">c</span><span class="p">],</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">c</span><span class="p">])</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">order</span><span class="p">],</span> <span class="n">f</span><span class="p">[</span><span class="n">order</span><span class="p">,</span> <span class="n">c</span><span class="p">],</span> <span class="s2">"."</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">c</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">c</span><span class="p">))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">order</span><span class="p">],</span> <span class="n">Y_hot</span><span class="p">[</span><span class="n">order</span><span class="p">,</span> <span class="n">c</span><span class="p">],</span> <span class="s2">"-"</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">c</span><span class="p">])</span>
 
 <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;$X$&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Latent (dots) and one-hot labels (lines)&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Sample from the joint $p(Y, \mathbf</span><span class="si">{f}</span><span class="s2">)$&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">"$X$"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">"Latent (dots) and one-hot labels (lines)"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">"Sample from the joint $p(Y, \mathbf</span><span class="si">{f}</span><span class="s2">)$"</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
@@ -977,9 +985,9 @@ log posterior density at optimum: -11.460240793868856
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
 <span class="n">optimizer</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
-    <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;maxiter&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">}</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">"maxiter"</span><span class="p">:</span> <span class="mi">20</span><span class="p">}</span>
 <span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;log posterior density at optimum: </span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="n">log_posterior_density</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"log posterior density at optimum: </span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="n">log_posterior_density</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -988,7 +996,7 @@ log posterior density at optimum: -11.460240793868856
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-log posterior density at optimum: -79.7654902747724
+log posterior density at optimum: -79.76549027494484
 </pre></div></div>
 </div>
 <p>Sampling starts with a ‘burn in’ period.</p>
@@ -1019,7 +1027,7 @@ log posterior density at optimum: -79.7654902747724
 
 
 <span class="nd">@tf</span><span class="o">.</span><span class="n">function</span>
-<span class="k">def</span> <span class="nf">run_chain_fn</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">run_chain_fn</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">tfp</span><span class="o">.</span><span class="n">mcmc</span><span class="o">.</span><span class="n">sample_chain</span><span class="p">(</span>
         <span class="n">num_results</span><span class="o">=</span><span class="n">num_samples</span><span class="p">,</span>
         <span class="n">num_burnin_steps</span><span class="o">=</span><span class="n">num_burnin_steps</span><span class="p">,</span>
@@ -1066,16 +1074,16 @@ log posterior density at optimum: -79.7654902747724
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span><span class="p">)</span>
 <span class="p">}</span>
 <span class="n">hyperparameters</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">&quot;.kernel.kernels[0].lengthscales&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;.kernel.kernels[0].variance&quot;</span><span class="p">,</span>
+    <span class="s2">".kernel.kernels[0].lengthscales"</span><span class="p">,</span>
+    <span class="s2">".kernel.kernels[0].variance"</span><span class="p">,</span>
 <span class="p">]</span>
 
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
 <span class="k">for</span> <span class="n">param_name</span> <span class="ow">in</span> <span class="n">hyperparameters</span><span class="p">:</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">constrained_samples</span><span class="p">[</span><span class="n">name_to_index</span><span class="p">[</span><span class="n">param_name</span><span class="p">]],</span> <span class="n">label</span><span class="o">=</span><span class="n">param_name</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;HMC iteration&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;hyperparameter value&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">"HMC iteration"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">"hyperparameter value"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -1088,7 +1096,7 @@ log posterior density at optimum: -79.7654902747724
 </div>
 </section>
 <section id="Example-3:-Fully-Bayesian-inference-for-generalized-GP-models-with-HMC">
-<h2>Example 3: Fully Bayesian inference for generalized GP models with HMC<a class="headerlink" href="#Example-3:-Fully-Bayesian-inference-for-generalized-GP-models-with-HMC" title="Link to this heading">#</a></h2>
+<h2>Example 3: Fully Bayesian inference for generalized GP models with HMC<a class="headerlink" href="#Example-3:-Fully-Bayesian-inference-for-generalized-GP-models-with-HMC" title="Link to this heading">¶</a></h2>
 <p>You can construct very flexible models with Gaussian processes by combining them with different likelihoods (sometimes called ‘families’ in the GLM literature). This makes inference of the GP intractable because the likelihoods are not generally conjugate to the Gaussian process. The general form of the model is <span class="math">\begin{align}
 \theta &\sim p(\theta) \\
 f &\sim \mathcal {GP}(m(x; \theta),\, k(x, x'; \theta)) \\
@@ -1104,7 +1112,7 @@ y_i &\sim p(y | g(f(x_i))\,.
 \end{align}</span></p>
 <p>Joint HMC over <span class="math notranslate nohighlight">\(v\)</span> and the function values is not widely adopted in the literature because of the difficulty in differentiating <span class="math notranslate nohighlight">\(LL^\top=K\)</span>. We’ve made this derivative available in TensorFlow, and so application of HMC is relatively straightforward.</p>
 <section id="Exponential-Regression">
-<h3>Exponential Regression<a class="headerlink" href="#Exponential-Regression" title="Link to this heading">#</a></h3>
+<h3>Exponential Regression<a class="headerlink" href="#Exponential-Regression" title="Link to this heading">¶</a></h3>
 <p>We consider an exponential regression model: <span class="math">\begin{align}
 \theta &\sim p(\theta) \\
 f &\sim \mathcal {GP}(0, k(x, x'; \theta)) \\
@@ -1122,10 +1130,10 @@ y_i &\sim \mathcal {Exp} (e^{f_i})
 <span class="n">Y</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
 
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;input $X$&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;output $Y$&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;toy dataset&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">"x"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">"input $X$"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">"output $Y$"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">"toy dataset"</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 
 <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">X</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">Y</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">])</span>
@@ -1224,7 +1232,7 @@ y_i &\sim \mathcal {Exp} (e^{f_i})
 
 
 <span class="nd">@tf</span><span class="o">.</span><span class="n">function</span>
-<span class="k">def</span> <span class="nf">run_chain_fn</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">run_chain_fn</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">tfp</span><span class="o">.</span><span class="n">mcmc</span><span class="o">.</span><span class="n">sample_chain</span><span class="p">(</span>
         <span class="n">num_results</span><span class="o">=</span><span class="n">num_samples</span><span class="p">,</span>
         <span class="n">num_burnin_steps</span><span class="o">=</span><span class="n">num_burnin_steps</span><span class="p">,</span>
@@ -1271,7 +1279,7 @@ y_i &\sim \mathcal {Exp} (e^{f_i})
     <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">&quot;kx&quot;</span><span class="p">,</span> <span class="n">mew</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">"kx"</span><span class="p">,</span> <span class="n">mew</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">rate_samples</span><span class="p">,</span> <span class="mi">95</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)))</span>
 </pre></div>
 </div>
@@ -1298,9 +1306,9 @@ y_i &\sim \mathcal {Exp} (e^{f_i})
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span><span class="p">)</span>
 <span class="p">}</span>
 <span class="n">hyperparameters</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">&quot;.kernel.kernels[0].lengthscales&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;.kernel.kernels[0].variance&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;.kernel.kernels[1].variance&quot;</span><span class="p">,</span>
+    <span class="s2">".kernel.kernels[0].lengthscales"</span><span class="p">,</span>
+    <span class="s2">".kernel.kernels[0].variance"</span><span class="p">,</span>
+    <span class="s2">".kernel.kernels[1].variance"</span><span class="p">,</span>
 <span class="p">]</span>
 
 
@@ -1308,8 +1316,8 @@ y_i &\sim \mathcal {Exp} (e^{f_i})
 <span class="k">for</span> <span class="n">param_name</span> <span class="ow">in</span> <span class="n">hyperparameters</span><span class="p">:</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">parameter_samples</span><span class="p">[</span><span class="n">name_to_index</span><span class="p">[</span><span class="n">param_name</span><span class="p">]],</span> <span class="n">label</span><span class="o">=</span><span class="n">param_name</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;HMC iteration&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;hyperparameter value&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">"HMC iteration"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">"hyperparameter value"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -1343,7 +1351,7 @@ y_i &\sim \mathcal {Exp} (e^{f_i})
 </section>
 </section>
 <section id="Prior-on-constrained-and-unconstrained-parameters">
-<h2>Prior on constrained and unconstrained parameters<a class="headerlink" href="#Prior-on-constrained-and-unconstrained-parameters" title="Link to this heading">#</a></h2>
+<h2>Prior on constrained and unconstrained parameters<a class="headerlink" href="#Prior-on-constrained-and-unconstrained-parameters" title="Link to this heading">¶</a></h2>
 <p>GPflow’s <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> class provides options for setting a prior. <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> wraps a constrained tensor and provides computation of the gradient with respect to unconstrained transformation of that tensor. The user can set a prior either in <strong>constrained</strong> space or <strong>unconstrained</strong> space.</p>
 <p>By default, the prior for the <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> is set on the <em>constrained</em> space. To explicitly set the space on which the prior is defined, use the <code class="docutils literal notranslate"><span class="pre">prior_on</span></code> keyword argument:</p>
 <div class="nbinput nblast docutils container">
@@ -1351,8 +1359,8 @@ y_i &\sim \mathcal {Exp} (e^{f_i})
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prior_distribution</span> <span class="o">=</span> <span class="n">tfd</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">f64</span><span class="p">(</span><span class="mf">0.0</span><span class="p">),</span> <span class="n">f64</span><span class="p">(</span><span class="mf">1.0</span><span class="p">))</span>
-<span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">prior_on</span><span class="o">=</span><span class="s2">&quot;unconstrained&quot;</span><span class="p">,</span> <span class="n">prior</span><span class="o">=</span><span class="n">prior_distribution</span><span class="p">)</span>
-<span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">prior_on</span><span class="o">=</span><span class="s2">&quot;constrained&quot;</span><span class="p">,</span> <span class="n">prior</span><span class="o">=</span><span class="n">prior_distribution</span><span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">prior_on</span><span class="o">=</span><span class="s2">"unconstrained"</span><span class="p">,</span> <span class="n">prior</span><span class="o">=</span><span class="n">prior_distribution</span><span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">prior_on</span><span class="o">=</span><span class="s2">"constrained"</span><span class="p">,</span> <span class="n">prior</span><span class="o">=</span><span class="n">prior_distribution</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -1362,7 +1370,7 @@ y_i &\sim \mathcal {Exp} (e^{f_i})
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set_default_positive_bijector</span><span class="p">(</span><span class="s2">&quot;exp&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set_default_positive_bijector</span><span class="p">(</span><span class="s2">"exp"</span><span class="p">)</span>
 <span class="n">gpflow</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set_default_positive_minimum</span><span class="p">(</span><span class="mf">1e-6</span><span class="p">)</span>
 
 <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
@@ -1377,16 +1385,16 @@ y_i &\sim \mathcal {Exp} (e^{f_i})
 <span class="n">std</span> <span class="o">=</span> <span class="n">f64</span><span class="p">(</span><span class="mf">4.0</span><span class="p">)</span>
 <span class="n">one</span> <span class="o">=</span> <span class="n">f64</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
 
-<span class="n">model</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">lengthscales</span><span class="o">.</span><span class="n">prior_on</span> <span class="o">=</span> <span class="s2">&quot;unconstrained&quot;</span>
+<span class="n">model</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">lengthscales</span><span class="o">.</span><span class="n">prior_on</span> <span class="o">=</span> <span class="s2">"unconstrained"</span>
 <span class="n">model</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">lengthscales</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">tfd</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">std</span><span class="p">)</span>
-<span class="n">model</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">variance</span><span class="o">.</span><span class="n">prior_on</span> <span class="o">=</span> <span class="s2">&quot;unconstrained&quot;</span>
+<span class="n">model</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">variance</span><span class="o">.</span><span class="n">prior_on</span> <span class="o">=</span> <span class="s2">"unconstrained"</span>
 <span class="n">model</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">variance</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">tfd</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">std</span><span class="p">)</span>
-<span class="n">model</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">variance</span><span class="o">.</span><span class="n">prior_on</span> <span class="o">=</span> <span class="s2">&quot;unconstrained&quot;</span>
+<span class="n">model</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">variance</span><span class="o">.</span><span class="n">prior_on</span> <span class="o">=</span> <span class="s2">"unconstrained"</span>
 <span class="n">model</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">variance</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">tfd</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">std</span><span class="p">)</span>
 
-<span class="n">model</span><span class="o">.</span><span class="n">mean_function</span><span class="o">.</span><span class="n">A</span><span class="o">.</span><span class="n">prior_on</span> <span class="o">=</span> <span class="s2">&quot;constrained&quot;</span>
+<span class="n">model</span><span class="o">.</span><span class="n">mean_function</span><span class="o">.</span><span class="n">A</span><span class="o">.</span><span class="n">prior_on</span> <span class="o">=</span> <span class="s2">"constrained"</span>
 <span class="n">model</span><span class="o">.</span><span class="n">mean_function</span><span class="o">.</span><span class="n">A</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">tfd</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">std</span><span class="p">)</span>
-<span class="n">model</span><span class="o">.</span><span class="n">mean_function</span><span class="o">.</span><span class="n">b</span><span class="o">.</span><span class="n">prior_on</span> <span class="o">=</span> <span class="s2">&quot;constrained&quot;</span>
+<span class="n">model</span><span class="o">.</span><span class="n">mean_function</span><span class="o">.</span><span class="n">b</span><span class="o">.</span><span class="n">prior_on</span> <span class="o">=</span> <span class="s2">"constrained"</span>
 <span class="n">model</span><span class="o">.</span><span class="n">mean_function</span><span class="o">.</span><span class="n">b</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">tfd</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">std</span><span class="p">)</span>
 
 <span class="n">model</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">lengthscales</span><span class="o">.</span><span class="n">prior_on</span>
@@ -1428,7 +1436,7 @@ y_i &\sim \mathcal {Exp} (e^{f_i})
 
 
 <span class="nd">@tf</span><span class="o">.</span><span class="n">function</span>
-<span class="k">def</span> <span class="nf">run_chain_fn_unconstrained</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">run_chain_fn_unconstrained</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">tfp</span><span class="o">.</span><span class="n">mcmc</span><span class="o">.</span><span class="n">sample_chain</span><span class="p">(</span>
         <span class="n">num_results</span><span class="o">=</span><span class="n">num_samples</span><span class="p">,</span>
         <span class="n">num_burnin_steps</span><span class="o">=</span><span class="n">num_burnin_steps</span><span class="p">,</span>
@@ -1446,12 +1454,12 @@ y_i &\sim \mathcal {Exp} (e^{f_i})
     <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">parameter_dict</span><span class="p">(</span><span class="n">model</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
 <span class="p">}</span>
 <span class="n">marginal_samples</span><span class="p">(</span>
-    <span class="n">samples</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span><span class="p">,</span> <span class="s2">&quot;unconstrained variable samples&quot;</span>
+    <span class="n">samples</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span><span class="p">,</span> <span class="s2">"unconstrained variable samples"</span>
 <span class="p">)</span>
 <span class="n">marginal_samples</span><span class="p">(</span>
     <span class="n">parameter_samples</span><span class="p">,</span>
     <span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span><span class="p">,</span>
-    <span class="s2">&quot;constrained parameter samples&quot;</span><span class="p">,</span>
+    <span class="s2">"constrained parameter samples"</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -1498,7 +1506,7 @@ y_i &\sim \mathcal {Exp} (e^{f_i})
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.3.7.<br>
 </p>
   </div>
   

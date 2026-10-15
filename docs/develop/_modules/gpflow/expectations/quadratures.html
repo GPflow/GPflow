@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>gpflow.expectations.quadratures &#8212; GPflow 2.9.0 documentation</title>
+    <title>gpflow.expectations.quadratures &#8212; GPflow 2.11.2 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -22,14 +22,14 @@
   <link rel="preload" as="font" type="font/woff2" crossorigin
     href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
 
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css?v=c27e38e3" />
 
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
-    <script src="../../../_static/documentation_options.js?v=8da69bee"></script>
-    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/documentation_options.js?v=b2fb886b"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
@@ -61,7 +61,7 @@
   
   
   
-    <p class="title logo__title">GPflow 2.9.0 documentation</p>
+    <p class="title logo__title">GPflow 2.11.2 documentation</p>
   
 </a>
     
@@ -240,33 +240,33 @@ function checkPageExistsAndRedirect(event) {
   <h1>Source code for gpflow.expectations.quadratures</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Copyright 2017-2020 The GPflow Contributors. All Rights Reserved.</span>
 <span class="c1">#</span>
-<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1"># you may not use this file except in compliance with the License.</span>
 <span class="c1"># You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1"># See the License for the specific language governing permissions and</span>
 <span class="c1"># limitations under the License.</span>
 
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">cast</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">cast</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
-<span class="kn">from</span> <span class="nn">check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tf</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">check_shapes</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_shapes</span>
 
-<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">kernels</span>
-<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">mean_functions</span> <span class="k">as</span> <span class="n">mfn</span>
-<span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">TensorType</span>
-<span class="kn">from</span> <span class="nn">..covariances</span> <span class="kn">import</span> <span class="n">Kuf</span>
-<span class="kn">from</span> <span class="nn">..inducing_variables</span> <span class="kn">import</span> <span class="n">InducingVariables</span>
-<span class="kn">from</span> <span class="nn">..probability_distributions</span> <span class="kn">import</span> <span class="n">DiagonalGaussian</span><span class="p">,</span> <span class="n">Gaussian</span><span class="p">,</span> <span class="n">MarkovGaussian</span>
-<span class="kn">from</span> <span class="nn">..quadrature</span> <span class="kn">import</span> <span class="n">mvnquad</span>
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">dispatch</span>
-<span class="kn">from</span> <span class="nn">.expectations</span> <span class="kn">import</span> <span class="n">ExpectationObject</span><span class="p">,</span> <span class="n">PackedExpectationObject</span><span class="p">,</span> <span class="n">quadrature_expectation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">kernels</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">mean_functions</span> <span class="k">as</span> <span class="n">mfn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..base</span><span class="w"> </span><span class="kn">import</span> <span class="n">TensorType</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..covariances</span><span class="w"> </span><span class="kn">import</span> <span class="n">Kuf</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..inducing_variables</span><span class="w"> </span><span class="kn">import</span> <span class="n">InducingVariables</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..probability_distributions</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiagonalGaussian</span><span class="p">,</span> <span class="n">Gaussian</span><span class="p">,</span> <span class="n">MarkovGaussian</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..quadrature</span><span class="w"> </span><span class="kn">import</span> <span class="n">mvnquad</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">dispatch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.expectations</span><span class="w"> </span><span class="kn">import</span> <span class="n">ExpectationObject</span><span class="p">,</span> <span class="n">PackedExpectationObject</span><span class="p">,</span> <span class="n">quadrature_expectation</span>
 
 <span class="n">register</span> <span class="o">=</span> <span class="n">dispatch</span><span class="o">.</span><span class="n">quadrature_expectation</span><span class="o">.</span><span class="n">register</span>
 
@@ -277,15 +277,15 @@ function checkPageExistsAndRedirect(event) {
 
 <div class="viewcode-block" id="get_eval_func">
 <a class="viewcode-back" href="../../../api/gpflow/expectations/quadratures/index.html#gpflow.expectations.quadratures.get_eval_func">[docs]</a>
-<span class="k">def</span> <span class="nf">get_eval_func</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_eval_func</span><span class="p">(</span>
     <span class="n">obj</span><span class="p">:</span> <span class="n">ExpectationObject</span><span class="p">,</span>
     <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">InducingVariables</span><span class="p">],</span>
     <span class="nb">slice</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">slice</span><span class="p">,</span> <span class="n">EllipsisType</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">TensorType</span><span class="p">],</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Return the function of interest (kernel or mean) for the expectation</span>
 <span class="sd">    depending on the type of :obj: and whether any inducing are given</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="nb">slice</span> <span class="o">=</span> <span class="o">...</span> <span class="k">if</span> <span class="nb">slice</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">slice</span>
     <span class="k">if</span> <span class="n">inducing_variable</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -293,7 +293,7 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inducing_variable</span><span class="p">,</span> <span class="n">InducingVariables</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span>
             <span class="n">obj</span><span class="p">,</span> <span class="n">kernels</span><span class="o">.</span><span class="n">Kernel</span>
         <span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;If `inducing_variable` is supplied, `obj` must be a kernel.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"If `inducing_variable` is supplied, `obj` must be a kernel."</span><span class="p">)</span>
         <span class="k">return</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">Kuf</span><span class="p">(</span><span class="n">inducing_variable</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">x</span><span class="p">))[</span><span class="nb">slice</span><span class="p">]</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">mfn</span><span class="o">.</span><span class="n">MeanFunction</span><span class="p">):</span>
         <span class="k">return</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">obj</span><span class="p">(</span><span class="n">x</span><span class="p">)[</span><span class="nb">slice</span><span class="p">]</span>  <span class="c1"># type: ignore[misc]</span>
@@ -312,12 +312,12 @@ function checkPageExistsAndRedirect(event) {
     <span class="p">(</span><span class="n">InducingVariables</span><span class="p">,</span> <span class="n">NoneType</span><span class="p">),</span>
 <span class="p">)</span>
 <span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;p: [N, D]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;inducing_variable1: [M1, D, P]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;inducing_variable2: [M2, D, P]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return: [N, ...]&quot;</span><span class="p">,</span>
+    <span class="s2">"p: [N, D]"</span><span class="p">,</span>
+    <span class="s2">"inducing_variable1: [M1, D, P]"</span><span class="p">,</span>
+    <span class="s2">"inducing_variable2: [M2, D, P]"</span><span class="p">,</span>
+    <span class="s2">"return: [N, ...]"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">_quadrature_expectation_gaussian</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_quadrature_expectation_gaussian</span><span class="p">(</span>
     <span class="n">p</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Gaussian</span><span class="p">,</span> <span class="n">DiagonalGaussian</span><span class="p">],</span>
     <span class="n">obj1</span><span class="p">:</span> <span class="n">ExpectationObject</span><span class="p">,</span>
     <span class="n">inducing_variable1</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">InducingVariables</span><span class="p">],</span>
@@ -325,19 +325,19 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">inducing_variable2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">InducingVariables</span><span class="p">],</span>
     <span class="n">nghp</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    General handling of quadrature expectations for Gaussians and DiagonalGaussians</span>
 <span class="sd">    Fallback method for missing analytic expectations</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">nghp</span> <span class="o">=</span> <span class="mi">100</span> <span class="k">if</span> <span class="n">nghp</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">nghp</span>
 
     <span class="c1"># logger.warning(</span>
-    <span class="c1">#     &quot;Quadrature is used to calculate the expectation. This means that &quot;</span>
-    <span class="c1">#     &quot;an analytical implementations is not available for the given combination.&quot;</span>
+    <span class="c1">#     "Quadrature is used to calculate the expectation. This means that "</span>
+    <span class="c1">#     "an analytical implementations is not available for the given combination."</span>
     <span class="c1"># )</span>
 
     <span class="k">if</span> <span class="n">obj1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;First object cannot be None.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"First object cannot be None."</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">DiagonalGaussian</span><span class="p">):</span>
         <span class="n">cov</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">cov</span>
@@ -358,13 +358,13 @@ function checkPageExistsAndRedirect(event) {
 
     <span class="k">if</span> <span class="n">obj2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
 
-        <span class="k">def</span> <span class="nf">eval_func</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">eval_func</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
             <span class="n">fn</span> <span class="o">=</span> <span class="n">get_eval_func</span><span class="p">(</span><span class="n">obj1</span><span class="p">,</span> <span class="n">inducing_variable1</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">fn</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
     <span class="k">else</span><span class="p">:</span>
 
-        <span class="k">def</span> <span class="nf">eval_func</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">eval_func</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
             <span class="n">fn1</span> <span class="o">=</span> <span class="n">get_eval_func</span><span class="p">(</span><span class="n">obj1</span><span class="p">,</span> <span class="n">inducing_variable1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">s_</span><span class="p">[:,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">])</span>
             <span class="n">fn2</span> <span class="o">=</span> <span class="n">get_eval_func</span><span class="p">(</span><span class="n">obj2</span><span class="p">,</span> <span class="n">inducing_variable2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">s_</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:])</span>
             <span class="k">return</span> <span class="n">fn1</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="n">fn2</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -376,12 +376,12 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">MarkovGaussian</span><span class="p">,</span> <span class="nb">object</span><span class="p">,</span> <span class="p">(</span><span class="n">InducingVariables</span><span class="p">,</span> <span class="n">NoneType</span><span class="p">),</span> <span class="nb">object</span><span class="p">,</span> <span class="p">(</span><span class="n">InducingVariables</span><span class="p">,</span> <span class="n">NoneType</span><span class="p">)</span>
 <span class="p">)</span>
 <span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;p: [N, D]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;inducing_variable1: [M1, D, P]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;inducing_variable2: [M2, D, P]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return: [N, ...]&quot;</span><span class="p">,</span>
+    <span class="s2">"p: [N, D]"</span><span class="p">,</span>
+    <span class="s2">"inducing_variable1: [M1, D, P]"</span><span class="p">,</span>
+    <span class="s2">"inducing_variable2: [M2, D, P]"</span><span class="p">,</span>
+    <span class="s2">"return: [N, ...]"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">_quadrature_expectation_markov</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_quadrature_expectation_markov</span><span class="p">(</span>
     <span class="n">p</span><span class="p">:</span> <span class="n">MarkovGaussian</span><span class="p">,</span>
     <span class="n">obj1</span><span class="p">:</span> <span class="n">ExpectationObject</span><span class="p">,</span>
     <span class="n">inducing_variable1</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">InducingVariables</span><span class="p">],</span>
@@ -389,35 +389,35 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">inducing_variable2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">InducingVariables</span><span class="p">],</span>
     <span class="n">nghp</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Handling of quadrature expectations for Markov Gaussians (useful for time series)</span>
 <span class="sd">    Fallback method for missing analytic expectations wrt Markov Gaussians</span>
 <span class="sd">    Nota Bene: obj1 is always associated with x_n, whereas obj2 always with x_{n+1}</span>
 <span class="sd">               if one requires e.g. &lt;x_{n+1} K_{x_n, Z}&gt;_p(x_{n:n+1}), compute the</span>
 <span class="sd">               transpose and then transpose the result of the expectation</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">nghp</span> <span class="o">=</span> <span class="mi">40</span> <span class="k">if</span> <span class="n">nghp</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">nghp</span>
 
     <span class="c1"># logger.warning(</span>
-    <span class="c1">#     &quot;Quadrature is used to calculate the expectation. This means that &quot;</span>
-    <span class="c1">#     &quot;an analytical implementations is not available for the given combination.&quot;</span>
+    <span class="c1">#     "Quadrature is used to calculate the expectation. This means that "</span>
+    <span class="c1">#     "an analytical implementations is not available for the given combination."</span>
     <span class="c1"># )</span>
 
     <span class="k">if</span> <span class="n">obj2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
 
-        <span class="k">def</span> <span class="nf">eval_func</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">eval_func</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">get_eval_func</span><span class="p">(</span><span class="n">obj1</span><span class="p">,</span> <span class="n">inducing_variable1</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
 
         <span class="n">mu</span><span class="p">,</span> <span class="n">cov</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">mu</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">p</span><span class="o">.</span><span class="n">cov</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># cross covariances are not needed</span>
     <span class="k">elif</span> <span class="n">obj1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
 
-        <span class="k">def</span> <span class="nf">eval_func</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">eval_func</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">get_eval_func</span><span class="p">(</span><span class="n">obj2</span><span class="p">,</span> <span class="n">inducing_variable2</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
 
         <span class="n">mu</span><span class="p">,</span> <span class="n">cov</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">mu</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">p</span><span class="o">.</span><span class="n">cov</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">:]</span>  <span class="c1"># cross covariances are not needed</span>
     <span class="k">else</span><span class="p">:</span>
 
-        <span class="k">def</span> <span class="nf">eval_func</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">eval_func</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
             <span class="n">x1</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">x2</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
             <span class="n">res1</span> <span class="o">=</span> <span class="n">get_eval_func</span><span class="p">(</span><span class="n">obj1</span><span class="p">,</span> <span class="n">inducing_variable1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">s_</span><span class="p">[:,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">])(</span><span class="n">x1</span><span class="p">)</span>
@@ -456,7 +456,7 @@ function checkPageExistsAndRedirect(event) {
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.3.7.<br>
 </p>
   </div>
   

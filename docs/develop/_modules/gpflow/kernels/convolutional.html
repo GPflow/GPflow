@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>gpflow.kernels.convolutional &#8212; GPflow 2.9.0 documentation</title>
+    <title>gpflow.kernels.convolutional &#8212; GPflow 2.11.2 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -22,14 +22,14 @@
   <link rel="preload" as="font" type="font/woff2" crossorigin
     href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
 
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css?v=c27e38e3" />
 
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
-    <script src="../../../_static/documentation_options.js?v=8da69bee"></script>
-    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/documentation_options.js?v=b2fb886b"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
@@ -61,7 +61,7 @@
   
   
   
-    <p class="title logo__title">GPflow 2.9.0 documentation</p>
+    <p class="title logo__title">GPflow 2.11.2 documentation</p>
   
 </a>
     
@@ -240,35 +240,35 @@ function checkPageExistsAndRedirect(event) {
   <h1>Source code for gpflow.kernels.convolutional</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Copyright 2017-2020 The GPflow Contributors. All Rights Reserved.</span>
 <span class="c1">#</span>
-<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1"># you may not use this file except in compliance with the License.</span>
 <span class="c1"># You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1"># See the License for the specific language governing permissions and</span>
 <span class="c1"># limitations under the License.</span>
 
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">cast</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">cast</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
-<span class="kn">from</span> <span class="nn">check_shapes</span> <span class="kn">import</span> <span class="n">check_shape</span> <span class="k">as</span> <span class="n">cs</span>
-<span class="kn">from</span> <span class="nn">check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span><span class="p">,</span> <span class="n">inherit_check_shapes</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tf</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">check_shapes</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_shape</span> <span class="k">as</span> <span class="n">cs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">check_shapes</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_shapes</span><span class="p">,</span> <span class="n">inherit_check_shapes</span>
 
-<span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">TensorType</span>
-<span class="kn">from</span> <span class="nn">..config</span> <span class="kn">import</span> <span class="n">default_float</span>
-<span class="kn">from</span> <span class="nn">..utilities</span> <span class="kn">import</span> <span class="n">to_default_float</span>
-<span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="n">Kernel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..base</span><span class="w"> </span><span class="kn">import</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">TensorType</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..config</span><span class="w"> </span><span class="kn">import</span> <span class="n">default_float</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..utilities</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_default_float</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">Kernel</span>
 
 
 <div class="viewcode-block" id="Convolutional">
 <a class="viewcode-back" href="../../../api/gpflow/kernels/index.html#gpflow.kernels.Convolutional">[docs]</a>
-<span class="k">class</span> <span class="nc">Convolutional</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Convolutional</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    Plain convolutional kernel as described in :cite:t:`vdw2017convgp`. Defines</span>
 <span class="sd">    a GP :math:`f()` that is constructed from a sum of responses of individual patches</span>
 <span class="sd">    in an image:</span>
@@ -276,17 +276,17 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    .. math::</span>
 <span class="sd">       f(x) = \sum_p x^{[p]}</span>
 
-<span class="sd">    where :math:`x^{[p]}` is the :math:`p`&#39;th patch in the image.</span>
+<span class="sd">    where :math:`x^{[p]}` is the :math:`p`'th patch in the image.</span>
 
 <span class="sd">    The key reference is :cite:t:`vdw2017convgp`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="nd">@check_shapes</span><span class="p">(</span>
-        <span class="s2">&quot;image_shape: [2]&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;patch_shape: [2]&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;weights: [P]&quot;</span><span class="p">,</span>
+        <span class="s2">"image_shape: [2]"</span><span class="p">,</span>
+        <span class="s2">"patch_shape: [2]"</span><span class="p">,</span>
+        <span class="s2">"weights: [P]"</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">base_kernel</span><span class="p">:</span> <span class="n">Kernel</span><span class="p">,</span>
         <span class="n">image_shape</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
@@ -306,17 +306,17 @@ function checkPageExistsAndRedirect(event) {
 <div class="viewcode-block" id="Convolutional.get_patches">
 <a class="viewcode-back" href="../../../api/gpflow/kernels/index.html#gpflow.kernels.Convolutional.get_patches">[docs]</a>
     <span class="nd">@check_shapes</span><span class="p">(</span>
-        <span class="s2">&quot;X: [batch..., N, D]&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;return: [batch..., N, P, S]&quot;</span><span class="p">,</span>
+        <span class="s2">"X: [batch..., N, D]"</span><span class="p">,</span>
+        <span class="s2">"return: [batch..., N, P, S]"</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="k">def</span> <span class="nf">get_patches</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_patches</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Extracts patches from the images X. Patches are extracted separately for each of the colour</span>
 <span class="sd">        channels.</span>
 
 <span class="sd">        :param X: Images.</span>
 <span class="sd">        :return: Patches.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Roll the colour channel to the front, so it appears to</span>
         <span class="c1"># `tf.extract_image_patches()` as separate images. Then extract patches</span>
         <span class="c1"># and reshape to have the first axis the same as the number of images.</span>
@@ -327,11 +327,11 @@ function checkPageExistsAndRedirect(event) {
         <span class="n">num_data</span> <span class="o">=</span> <span class="n">flat_batch</span> <span class="o">*</span> <span class="n">N</span>
         <span class="n">X</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span>
             <span class="n">tf</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="p">[</span><span class="n">num_data</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">colour_channels</span><span class="p">]),</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span>
-            <span class="s2">&quot;[num_data, C, W_x_H]&quot;</span><span class="p">,</span>
+            <span class="s2">"[num_data, C, W_x_H]"</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">X</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span>
-            <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;rX&quot;</span><span class="p">),</span>
-            <span class="s2">&quot;[num_data_x_C, W, H, 1]&quot;</span><span class="p">,</span>
+            <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">"rX"</span><span class="p">),</span>
+            <span class="s2">"[num_data_x_C, W, H, 1]"</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">patches</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span>
             <span class="n">tf</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">extract_patches</span><span class="p">(</span>
@@ -339,24 +339,24 @@ function checkPageExistsAndRedirect(event) {
                 <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">],</span>
                 <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
                 <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
-                <span class="s2">&quot;VALID&quot;</span><span class="p">,</span>
+                <span class="s2">"VALID"</span><span class="p">,</span>
             <span class="p">),</span>
-            <span class="s2">&quot;[num_data_x_C, n_x_patches, n_y_patches, S]&quot;</span><span class="p">,</span>
+            <span class="s2">"[num_data_x_C, n_x_patches, n_y_patches, S]"</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">shp</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">patches</span><span class="p">)</span>
         <span class="n">reshaped_patches</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span>
             <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
                 <span class="n">patches</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">batch</span><span class="p">,</span> <span class="p">[</span><span class="n">N</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">colour_channels</span> <span class="o">*</span> <span class="n">shp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">shp</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">shp</span><span class="p">[</span><span class="mi">3</span><span class="p">]]],</span> <span class="mi">0</span><span class="p">)</span>
             <span class="p">),</span>
-            <span class="s2">&quot;[batch..., N, P, S]&quot;</span><span class="p">,</span>
+            <span class="s2">"[batch..., N, P, S]"</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">to_default_float</span><span class="p">(</span><span class="n">reshaped_patches</span><span class="p">)</span></div>
 
 
     <span class="nd">@inherit_check_shapes</span>
-    <span class="k">def</span> <span class="nf">K</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">X2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TensorType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-        <span class="n">Xp</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_patches</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="s2">&quot;[batch..., N, P, S]&quot;</span><span class="p">)</span>
-        <span class="n">W2</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:],</span> <span class="s2">&quot;[P, P]&quot;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">K</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">X2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TensorType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">Xp</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_patches</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="s2">"[batch..., N, P, S]"</span><span class="p">)</span>
+        <span class="n">W2</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:],</span> <span class="s2">"[P, P]"</span><span class="p">)</span>
 
         <span class="n">rank</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">rank</span><span class="p">(</span><span class="n">Xp</span><span class="p">)</span> <span class="o">-</span> <span class="mi">3</span>
         <span class="n">batch</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Xp</span><span class="p">)[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span>
@@ -366,54 +366,54 @@ function checkPageExistsAndRedirect(event) {
         <span class="n">ones</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">rank</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">X2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">Xp</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">Xp</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">batch</span><span class="p">,</span> <span class="p">[</span><span class="n">N</span> <span class="o">*</span> <span class="n">P</span><span class="p">,</span> <span class="n">S</span><span class="p">]],</span> <span class="mi">0</span><span class="p">)),</span> <span class="s2">&quot;[batch..., N_x_P, S]&quot;</span><span class="p">)</span>
-            <span class="n">bigK</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base_kernel</span><span class="o">.</span><span class="n">K</span><span class="p">(</span><span class="n">Xp</span><span class="p">),</span> <span class="s2">&quot;[batch..., N_x_P, N_x_P]&quot;</span><span class="p">)</span>
+            <span class="n">Xp</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">Xp</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">batch</span><span class="p">,</span> <span class="p">[</span><span class="n">N</span> <span class="o">*</span> <span class="n">P</span><span class="p">,</span> <span class="n">S</span><span class="p">]],</span> <span class="mi">0</span><span class="p">)),</span> <span class="s2">"[batch..., N_x_P, S]"</span><span class="p">)</span>
+            <span class="n">bigK</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base_kernel</span><span class="o">.</span><span class="n">K</span><span class="p">(</span><span class="n">Xp</span><span class="p">),</span> <span class="s2">"[batch..., N_x_P, N_x_P]"</span><span class="p">)</span>
             <span class="n">bigK</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span>
-                <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">bigK</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">batch</span><span class="p">,</span> <span class="p">[</span><span class="n">N</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">P</span><span class="p">]],</span> <span class="mi">0</span><span class="p">)),</span> <span class="s2">&quot;[batch..., N, P, N, P]&quot;</span>
+                <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">bigK</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">batch</span><span class="p">,</span> <span class="p">[</span><span class="n">N</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">P</span><span class="p">]],</span> <span class="mi">0</span><span class="p">)),</span> <span class="s2">"[batch..., N, P, N, P]"</span>
             <span class="p">)</span>
-            <span class="n">W2</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">W2</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">ones</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">P</span><span class="p">]],</span> <span class="mi">0</span><span class="p">)),</span> <span class="s2">&quot;[..., 1, P, 1, P]&quot;</span><span class="p">)</span>
-            <span class="n">W2bigK</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="n">bigK</span> <span class="o">*</span> <span class="n">W2</span><span class="p">,</span> <span class="s2">&quot;[batch..., N, P, N, P]&quot;</span><span class="p">)</span>
+            <span class="n">W2</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">W2</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">ones</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">P</span><span class="p">]],</span> <span class="mi">0</span><span class="p">)),</span> <span class="s2">"[..., 1, P, 1, P]"</span><span class="p">)</span>
+            <span class="n">W2bigK</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="n">bigK</span> <span class="o">*</span> <span class="n">W2</span><span class="p">,</span> <span class="s2">"[batch..., N, P, N, P]"</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">cs</span><span class="p">(</span>
                 <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">W2bigK</span><span class="p">,</span> <span class="p">[</span><span class="n">rank</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">rank</span> <span class="o">+</span> <span class="mi">3</span><span class="p">])</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_patches</span> <span class="o">**</span> <span class="mf">2.0</span><span class="p">,</span>
-                <span class="s2">&quot;[batch..., N, N]&quot;</span><span class="p">,</span>
+                <span class="s2">"[batch..., N, N]"</span><span class="p">,</span>
             <span class="p">)</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">Xp2</span> <span class="o">=</span> <span class="n">Xp</span> <span class="k">if</span> <span class="n">X2</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">cs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_patches</span><span class="p">(</span><span class="n">X2</span><span class="p">),</span> <span class="s2">&quot;[batch2..., N2, P, S]&quot;</span><span class="p">)</span>
+            <span class="n">Xp2</span> <span class="o">=</span> <span class="n">Xp</span> <span class="k">if</span> <span class="n">X2</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">cs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_patches</span><span class="p">(</span><span class="n">X2</span><span class="p">),</span> <span class="s2">"[batch2..., N2, P, S]"</span><span class="p">)</span>
             <span class="n">rank2</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">rank</span><span class="p">(</span><span class="n">Xp2</span><span class="p">)</span> <span class="o">-</span> <span class="mi">3</span>
             <span class="n">ones2</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">rank2</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
-            <span class="n">bigK</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base_kernel</span><span class="o">.</span><span class="n">K</span><span class="p">(</span><span class="n">Xp</span><span class="p">,</span> <span class="n">Xp2</span><span class="p">),</span> <span class="s2">&quot;[batch..., N, P, batch2..., N2, P]&quot;</span><span class="p">)</span>
+            <span class="n">bigK</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base_kernel</span><span class="o">.</span><span class="n">K</span><span class="p">(</span><span class="n">Xp</span><span class="p">,</span> <span class="n">Xp2</span><span class="p">),</span> <span class="s2">"[batch..., N, P, batch2..., N2, P]"</span><span class="p">)</span>
             <span class="n">W2</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span>
                 <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">W2</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">ones</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">P</span><span class="p">],</span> <span class="n">ones2</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">P</span><span class="p">]],</span> <span class="mi">0</span><span class="p">)),</span>
-                <span class="s2">&quot;[..., 1, P, ..., 1, P]&quot;</span><span class="p">,</span>
+                <span class="s2">"[..., 1, P, ..., 1, P]"</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="n">W2bigK</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="n">bigK</span> <span class="o">*</span> <span class="n">W2</span><span class="p">,</span> <span class="s2">&quot;[batch..., N, P, batch2..., N2, P]&quot;</span><span class="p">)</span>
+            <span class="n">W2bigK</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="n">bigK</span> <span class="o">*</span> <span class="n">W2</span><span class="p">,</span> <span class="s2">"[batch..., N, P, batch2..., N2, P]"</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">cs</span><span class="p">(</span>
                 <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">W2bigK</span><span class="p">,</span> <span class="p">[</span><span class="n">rank</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">rank</span> <span class="o">+</span> <span class="n">rank2</span> <span class="o">+</span> <span class="mi">3</span><span class="p">])</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_patches</span> <span class="o">**</span> <span class="mf">2.0</span><span class="p">,</span>
-                <span class="s2">&quot;[batch..., N, batch2..., N2]&quot;</span><span class="p">,</span>
+                <span class="s2">"[batch..., N, batch2..., N2]"</span><span class="p">,</span>
             <span class="p">)</span>
 
     <span class="nd">@inherit_check_shapes</span>
-    <span class="k">def</span> <span class="nf">K_diag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-        <span class="n">Xp</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_patches</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="s2">&quot;[batch..., N, P, S]&quot;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">K_diag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">Xp</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_patches</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="s2">"[batch..., N, P, S]"</span><span class="p">)</span>
 
         <span class="n">rank</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">rank</span><span class="p">(</span><span class="n">Xp</span><span class="p">)</span> <span class="o">-</span> <span class="mi">3</span>
         <span class="n">P</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Xp</span><span class="p">)[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
         <span class="n">ones</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">rank</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
 
-        <span class="n">W2</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:],</span> <span class="s2">&quot;[P, P]&quot;</span><span class="p">)</span>
-        <span class="n">W2</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">W2</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">ones</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">P</span><span class="p">]],</span> <span class="mi">0</span><span class="p">)),</span> <span class="s2">&quot;[..., 1, P, P]&quot;</span><span class="p">)</span>
+        <span class="n">W2</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:],</span> <span class="s2">"[P, P]"</span><span class="p">)</span>
+        <span class="n">W2</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">W2</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">ones</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">P</span><span class="p">]],</span> <span class="mi">0</span><span class="p">)),</span> <span class="s2">"[..., 1, P, P]"</span><span class="p">)</span>
 
-        <span class="n">bigK</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base_kernel</span><span class="o">.</span><span class="n">K</span><span class="p">(</span><span class="n">Xp</span><span class="p">),</span> <span class="s2">&quot;[batch..., N, P, P]&quot;</span><span class="p">)</span>
+        <span class="n">bigK</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base_kernel</span><span class="o">.</span><span class="n">K</span><span class="p">(</span><span class="n">Xp</span><span class="p">),</span> <span class="s2">"[batch..., N, P, P]"</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">bigK</span> <span class="o">*</span> <span class="n">W2</span><span class="p">,</span> <span class="p">[</span><span class="n">rank</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">rank</span> <span class="o">+</span> <span class="mi">2</span><span class="p">])</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_patches</span> <span class="o">**</span> <span class="mf">2.0</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">patch_len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">patch_len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">patch_shape</span><span class="p">))</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">num_patches</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">num_patches</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">(</span>
             <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
             <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
@@ -446,7 +446,7 @@ function checkPageExistsAndRedirect(event) {
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.3.7.<br>
 </p>
   </div>
   

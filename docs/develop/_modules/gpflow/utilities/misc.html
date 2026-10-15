@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>gpflow.utilities.misc &#8212; GPflow 2.9.0 documentation</title>
+    <title>gpflow.utilities.misc &#8212; GPflow 2.11.2 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -22,14 +22,14 @@
   <link rel="preload" as="font" type="font/woff2" crossorigin
     href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
 
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css?v=c27e38e3" />
 
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
-    <script src="../../../_static/documentation_options.js?v=8da69bee"></script>
-    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/documentation_options.js?v=b2fb886b"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
@@ -61,7 +61,7 @@
   
   
   
-    <p class="title logo__title">GPflow 2.9.0 documentation</p>
+    <p class="title logo__title">GPflow 2.11.2 documentation</p>
   
 </a>
     
@@ -240,43 +240,45 @@ function checkPageExistsAndRedirect(event) {
   <h1>Source code for gpflow.utilities.misc</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Copyright 2017-2021 The GPflow Contributors. All Rights Reserved.</span>
 <span class="c1">#</span>
-<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1"># you may not use this file except in compliance with the License.</span>
 <span class="c1"># You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1"># See the License for the specific language governing permissions and</span>
 <span class="c1"># limitations under the License.</span>
 
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
-<span class="kn">import</span> <span class="nn">tensorflow_probability</span> <span class="k">as</span> <span class="nn">tfp</span>
-<span class="kn">from</span> <span class="nn">check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tf</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow_probability</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tfp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">check_shapes</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_shapes</span>
 
-<span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">TensorData</span>
-<span class="kn">from</span> <span class="nn">..config</span> <span class="kn">import</span> <span class="n">default_float</span><span class="p">,</span> <span class="n">default_int</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..base</span><span class="w"> </span><span class="kn">import</span> <span class="n">TensorData</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..config</span><span class="w"> </span><span class="kn">import</span> <span class="n">default_float</span><span class="p">,</span> <span class="n">default_int</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">&quot;is_variable&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;set_trainable&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;to_default_float&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;to_default_int&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;training_loop&quot;</span><span class="p">,</span>
+    <span class="s2">"is_variable"</span><span class="p">,</span>
+    <span class="s2">"set_trainable"</span><span class="p">,</span>
+    <span class="s2">"to_default_float"</span><span class="p">,</span>
+    <span class="s2">"to_default_int"</span><span class="p">,</span>
+    <span class="s2">"training_loop"</span><span class="p">,</span>
 <span class="p">]</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..keras</span><span class="w"> </span><span class="kn">import</span> <span class="n">tf_keras</span>
 
 
 <div class="viewcode-block" id="to_default_int">
 <a class="viewcode-back" href="../../../api/gpflow/utilities/index.html#gpflow.to_default_int">[docs]</a>
 <span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;x: [any...]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return: [any...]&quot;</span><span class="p">,</span>
+    <span class="s2">"x: [any...]"</span><span class="p">,</span>
+    <span class="s2">"return: [any...]"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">to_default_int</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">TensorData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">to_default_int</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">TensorData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">default_int</span><span class="p">())</span></div>
 
 
@@ -284,12 +286,12 @@ function checkPageExistsAndRedirect(event) {
 <div class="viewcode-block" id="to_default_float">
 <a class="viewcode-back" href="../../../api/gpflow/utilities/index.html#gpflow.to_default_float">[docs]</a>
 <span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;x: [any...]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return: [any...]&quot;</span><span class="p">,</span>
+    <span class="s2">"x: [any...]"</span><span class="p">,</span>
+    <span class="s2">"return: [any...]"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">to_default_float</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">TensorData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">to_default_float</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">TensorData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">tf</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-        <span class="c1"># workaround for the fact that tf.cast(, dtype=tf.float64) doesn&#39;t directly convert</span>
+        <span class="c1"># workaround for the fact that tf.cast(, dtype=tf.float64) doesn't directly convert</span>
         <span class="c1"># python floats to tf.float64 tensors. Instead, it converts the python float to a</span>
         <span class="c1"># tf.float32 tensor, and then casts that to be tf.float64. This results in a loss</span>
         <span class="c1"># of precision. See https://github.com/tensorflow/tensorflow/issues/57779 for more context.</span>
@@ -300,11 +302,11 @@ function checkPageExistsAndRedirect(event) {
 
 <div class="viewcode-block" id="set_trainable">
 <a class="viewcode-back" href="../../../api/gpflow/index.html#gpflow.set_trainable">[docs]</a>
-<span class="k">def</span> <span class="nf">set_trainable</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Module</span><span class="p">]],</span> <span class="n">flag</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_trainable</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Module</span><span class="p">]],</span> <span class="n">flag</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Set trainable flag for all :class:`tf.Variable`\ s and :class:`gpflow.Parameter`\ s in a</span>
 <span class="sd">    :class:`tf.Module` or collection of :class:`tf.Module`\ s.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">modules</span> <span class="o">=</span> <span class="p">[</span><span class="n">model</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span> <span class="k">else</span> <span class="n">model</span>
 
     <span class="k">for</span> <span class="n">mod</span> <span class="ow">in</span> <span class="n">modules</span><span class="p">:</span>
@@ -315,24 +317,24 @@ function checkPageExistsAndRedirect(event) {
 
 <div class="viewcode-block" id="is_variable">
 <a class="viewcode-back" href="../../../api/gpflow/utilities/index.html#gpflow.is_variable">[docs]</a>
-<span class="k">def</span> <span class="nf">is_variable</span><span class="p">(</span><span class="n">t</span><span class="p">:</span> <span class="n">TensorData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">is_variable</span><span class="p">(</span><span class="n">t</span><span class="p">:</span> <span class="n">TensorData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Returns whether the `t` is a TensorFlow variable.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">,</span> <span class="n">tfp</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">TransformedVariable</span><span class="p">))</span></div>
 
 
 
 <div class="viewcode-block" id="training_loop">
 <a class="viewcode-back" href="../../../api/gpflow/utilities/index.html#gpflow.training_loop">[docs]</a>
-<span class="k">def</span> <span class="nf">training_loop</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">training_loop</span><span class="p">(</span>
     <span class="n">closure</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span>
-    <span class="n">optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tf_keras</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">var_list</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">maxiter</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1_000</span><span class="p">,</span>
     <span class="nb">compile</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Simple generic training loop. At each iteration uses a GradientTape to compute</span>
 <span class="sd">    the gradients of a loss function with respect to a set of variables.</span>
 
@@ -342,12 +344,12 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    :param var_list: List of model variables to be learnt during training</span>
 <span class="sd">    :param maxiter: Maximum number of</span>
 <span class="sd">    :return:</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="n">safe_optimizer</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Adam</span><span class="p">()</span> <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">optimizer</span>
+    <span class="n">safe_optimizer</span> <span class="o">=</span> <span class="n">tf_keras</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Adam</span><span class="p">()</span> <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">optimizer</span>
     <span class="n">safe_var_list</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">var_list</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">var_list</span>
 
-    <span class="k">def</span> <span class="nf">optimization_step</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">optimization_step</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">GradientTape</span><span class="p">(</span><span class="n">watch_accessed_variables</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">as</span> <span class="n">tape</span><span class="p">:</span>
             <span class="n">tape</span><span class="o">.</span><span class="n">watch</span><span class="p">(</span><span class="n">safe_var_list</span><span class="p">)</span>
             <span class="n">loss</span> <span class="o">=</span> <span class="n">closure</span><span class="p">()</span>
@@ -386,7 +388,7 @@ function checkPageExistsAndRedirect(event) {
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.3.7.<br>
 </p>
   </div>
   

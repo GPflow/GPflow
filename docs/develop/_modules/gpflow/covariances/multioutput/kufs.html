@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>gpflow.covariances.multioutput.kufs &#8212; GPflow 2.9.0 documentation</title>
+    <title>gpflow.covariances.multioutput.kufs &#8212; GPflow 2.11.2 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -22,14 +22,14 @@
   <link rel="preload" as="font" type="font/woff2" crossorigin
     href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
 
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/pydata-custom.css?v=c27e38e3" />
 
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
-    <script src="../../../../_static/documentation_options.js?v=8da69bee"></script>
-    <script src="../../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../../_static/documentation_options.js?v=b2fb886b"></script>
+    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
@@ -61,7 +61,7 @@
   
   
   
-    <p class="title logo__title">GPflow 2.9.0 documentation</p>
+    <p class="title logo__title">GPflow 2.11.2 documentation</p>
   
 </a>
     
@@ -240,49 +240,49 @@ function checkPageExistsAndRedirect(event) {
   <h1>Source code for gpflow.covariances.multioutput.kufs</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Copyright 2017-2020 The GPflow Contributors. All Rights Reserved.</span>
 <span class="c1">#</span>
-<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1"># you may not use this file except in compliance with the License.</span>
 <span class="c1"># You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1"># See the License for the specific language governing permissions and</span>
 <span class="c1"># limitations under the License.</span>
 
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
-<span class="kn">from</span> <span class="nn">check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tf</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">check_shapes</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_shapes</span>
 
-<span class="kn">from</span> <span class="nn">...base</span> <span class="kn">import</span> <span class="n">TensorType</span>
-<span class="kn">from</span> <span class="nn">...inducing_variables</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">...base</span><span class="w"> </span><span class="kn">import</span> <span class="n">TensorType</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">...inducing_variables</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">FallbackSeparateIndependentInducingVariables</span><span class="p">,</span>
     <span class="n">FallbackSharedIndependentInducingVariables</span><span class="p">,</span>
     <span class="n">InducingPoints</span><span class="p">,</span>
     <span class="n">SeparateIndependentInducingVariables</span><span class="p">,</span>
     <span class="n">SharedIndependentInducingVariables</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">...kernels</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">...kernels</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">LinearCoregionalization</span><span class="p">,</span>
     <span class="n">MultioutputKernel</span><span class="p">,</span>
     <span class="n">SeparateIndependent</span><span class="p">,</span>
     <span class="n">SharedIndependent</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">..dispatch</span> <span class="kn">import</span> <span class="n">Kuf</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..dispatch</span><span class="w"> </span><span class="kn">import</span> <span class="n">Kuf</span>
 
 
 <div class="viewcode-block" id="Kuf_generic">
 <a class="viewcode-back" href="../../../../api/gpflow/covariances/index.html#gpflow.covariances.multioutput.kufs.Kuf_generic">[docs]</a>
 <span class="nd">@Kuf</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">InducingPoints</span><span class="p">,</span> <span class="n">MultioutputKernel</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span>
 <span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;inducing_variable: [M, D, 1]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return: [M, P, batch..., N, P]&quot;</span><span class="p">,</span>
+    <span class="s2">"inducing_variable: [M, D, 1]"</span><span class="p">,</span>
+    <span class="s2">"Xnew: [batch..., N, D]"</span><span class="p">,</span>
+    <span class="s2">"return: [M, P, batch..., N, P]"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">Kuf_generic</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">Kuf_generic</span><span class="p">(</span>
     <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">InducingPoints</span><span class="p">,</span> <span class="n">kernel</span><span class="p">:</span> <span class="n">MultioutputKernel</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">kernel</span><span class="p">(</span><span class="n">inducing_variable</span><span class="o">.</span><span class="n">Z</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
@@ -293,11 +293,11 @@ function checkPageExistsAndRedirect(event) {
 <a class="viewcode-back" href="../../../../api/gpflow/covariances/index.html#gpflow.covariances.multioutput.kufs.Kuf_shared_shared">[docs]</a>
 <span class="nd">@Kuf</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">SharedIndependentInducingVariables</span><span class="p">,</span> <span class="n">SharedIndependent</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span>
 <span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;inducing_variable: [M, D, P]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return: [M, batch..., N]&quot;</span><span class="p">,</span>
+    <span class="s2">"inducing_variable: [M, D, P]"</span><span class="p">,</span>
+    <span class="s2">"Xnew: [batch..., N, D]"</span><span class="p">,</span>
+    <span class="s2">"return: [M, batch..., N]"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">Kuf_shared_shared</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">Kuf_shared_shared</span><span class="p">(</span>
     <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">SharedIndependentInducingVariables</span><span class="p">,</span>
     <span class="n">kernel</span><span class="p">:</span> <span class="n">SharedIndependent</span><span class="p">,</span>
     <span class="n">Xnew</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
@@ -310,11 +310,11 @@ function checkPageExistsAndRedirect(event) {
 <a class="viewcode-back" href="../../../../api/gpflow/covariances/index.html#gpflow.covariances.multioutput.kufs.Kuf_separate_shared">[docs]</a>
 <span class="nd">@Kuf</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">SeparateIndependentInducingVariables</span><span class="p">,</span> <span class="n">SharedIndependent</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span>
 <span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;inducing_variable: [M, D, P]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return: [L, M, batch..., N]&quot;</span><span class="p">,</span>
+    <span class="s2">"inducing_variable: [M, D, P]"</span><span class="p">,</span>
+    <span class="s2">"Xnew: [batch..., N, D]"</span><span class="p">,</span>
+    <span class="s2">"return: [L, M, batch..., N]"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">Kuf_separate_shared</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">Kuf_separate_shared</span><span class="p">(</span>
     <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">SeparateIndependentInducingVariables</span><span class="p">,</span>
     <span class="n">kernel</span><span class="p">:</span> <span class="n">SharedIndependent</span><span class="p">,</span>
     <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
@@ -329,11 +329,11 @@ function checkPageExistsAndRedirect(event) {
 <a class="viewcode-back" href="../../../../api/gpflow/covariances/index.html#gpflow.covariances.multioutput.kufs.Kuf_shared_separate">[docs]</a>
 <span class="nd">@Kuf</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">SharedIndependentInducingVariables</span><span class="p">,</span> <span class="n">SeparateIndependent</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span>
 <span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;inducing_variable: [M, D, P]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return: [L, M, batch..., N]&quot;</span><span class="p">,</span>
+    <span class="s2">"inducing_variable: [M, D, P]"</span><span class="p">,</span>
+    <span class="s2">"Xnew: [batch..., N, D]"</span><span class="p">,</span>
+    <span class="s2">"return: [L, M, batch..., N]"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">Kuf_shared_separate</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">Kuf_shared_separate</span><span class="p">(</span>
     <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">SharedIndependentInducingVariables</span><span class="p">,</span>
     <span class="n">kernel</span><span class="p">:</span> <span class="n">SeparateIndependent</span><span class="p">,</span>
     <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
@@ -348,11 +348,11 @@ function checkPageExistsAndRedirect(event) {
 <a class="viewcode-back" href="../../../../api/gpflow/covariances/index.html#gpflow.covariances.multioutput.kufs.Kuf_separate_separate">[docs]</a>
 <span class="nd">@Kuf</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">SeparateIndependentInducingVariables</span><span class="p">,</span> <span class="n">SeparateIndependent</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span>
 <span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;inducing_variable: [M, D, P]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return: [L, M, batch..., N]&quot;</span><span class="p">,</span>
+    <span class="s2">"inducing_variable: [M, D, P]"</span><span class="p">,</span>
+    <span class="s2">"Xnew: [batch..., N, D]"</span><span class="p">,</span>
+    <span class="s2">"return: [L, M, batch..., N]"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">Kuf_separate_separate</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">Kuf_separate_separate</span><span class="p">(</span>
     <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">SeparateIndependentInducingVariables</span><span class="p">,</span>
     <span class="n">kernel</span><span class="p">:</span> <span class="n">SeparateIndependent</span><span class="p">,</span>
     <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
@@ -361,7 +361,7 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">n_k</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">kernel</span><span class="o">.</span><span class="n">kernels</span><span class="p">)</span>
     <span class="k">assert</span> <span class="p">(</span>
         <span class="n">n_iv</span> <span class="o">==</span> <span class="n">n_k</span>
-    <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Must have same number of inducing variables and kernels. Found </span><span class="si">{</span><span class="n">n_iv</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">n_k</span><span class="si">}</span><span class="s2">.&quot;</span>
+    <span class="p">),</span> <span class="sa">f</span><span class="s2">"Must have same number of inducing variables and kernels. Found </span><span class="si">{</span><span class="n">n_iv</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">n_k</span><span class="si">}</span><span class="s2">."</span>
 
     <span class="n">Kufs</span> <span class="o">=</span> <span class="p">[</span>
         <span class="n">Kuf</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">inducing_variable</span><span class="o">.</span><span class="n">inducing_variable_list</span><span class="p">,</span> <span class="n">kernel</span><span class="o">.</span><span class="n">kernels</span><span class="p">)</span>
@@ -371,11 +371,11 @@ function checkPageExistsAndRedirect(event) {
 
 
 <span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;inducing_variable: [M, D, L]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return: [M, L, batch..., N, P]&quot;</span><span class="p">,</span>
+    <span class="s2">"inducing_variable: [M, D, L]"</span><span class="p">,</span>
+    <span class="s2">"Xnew: [batch..., N, D]"</span><span class="p">,</span>
+    <span class="s2">"return: [M, L, batch..., N, P]"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">_fallback_Kuf</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_fallback_Kuf</span><span class="p">(</span>
     <span class="n">kuf_impl</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span>
         <span class="p">[</span>
             <span class="n">Union</span><span class="p">[</span><span class="n">SeparateIndependentInducingVariables</span><span class="p">,</span> <span class="n">SharedIndependentInducingVariables</span><span class="p">],</span>
@@ -402,12 +402,12 @@ function checkPageExistsAndRedirect(event) {
     <span class="nb">object</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;inducing_variable: [M, D, L]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;kernel.W: [P, L]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return: [M, L, batch..., N, P]&quot;</span><span class="p">,</span>
+    <span class="s2">"inducing_variable: [M, D, L]"</span><span class="p">,</span>
+    <span class="s2">"kernel.W: [P, L]"</span><span class="p">,</span>
+    <span class="s2">"Xnew: [batch..., N, D]"</span><span class="p">,</span>
+    <span class="s2">"return: [M, L, batch..., N, P]"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">Kuf_fallback_separate_linear_coregionalization</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">Kuf_fallback_separate_linear_coregionalization</span><span class="p">(</span>
     <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">FallbackSeparateIndependentInducingVariables</span><span class="p">,</span>
     <span class="n">kernel</span><span class="p">:</span> <span class="n">LinearCoregionalization</span><span class="p">,</span>
     <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
@@ -427,12 +427,12 @@ function checkPageExistsAndRedirect(event) {
     <span class="nb">object</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;inducing_variable: [M, D, P]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;kernel.W: [P, L]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return: [M, L, batch..., N, P]&quot;</span><span class="p">,</span>
+    <span class="s2">"inducing_variable: [M, D, P]"</span><span class="p">,</span>
+    <span class="s2">"kernel.W: [P, L]"</span><span class="p">,</span>
+    <span class="s2">"Xnew: [batch..., N, D]"</span><span class="p">,</span>
+    <span class="s2">"return: [M, L, batch..., N, P]"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">Kuf_fallback_shared_linear_coregionalization</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">Kuf_fallback_shared_linear_coregionalization</span><span class="p">(</span>
     <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">FallbackSharedIndependentInducingVariables</span><span class="p">,</span>
     <span class="n">kernel</span><span class="p">:</span> <span class="n">LinearCoregionalization</span><span class="p">,</span>
     <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
@@ -448,12 +448,12 @@ function checkPageExistsAndRedirect(event) {
 <a class="viewcode-back" href="../../../../api/gpflow/covariances/index.html#gpflow.covariances.multioutput.kufs.Kuf_shared_linear_coregionalization">[docs]</a>
 <span class="nd">@Kuf</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">SharedIndependentInducingVariables</span><span class="p">,</span> <span class="n">LinearCoregionalization</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span>
 <span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;inducing_variable: [M, D, L]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;kernel.W: [P, L]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return: [L, M, batch..., N]&quot;</span><span class="p">,</span>
+    <span class="s2">"inducing_variable: [M, D, L]"</span><span class="p">,</span>
+    <span class="s2">"kernel.W: [P, L]"</span><span class="p">,</span>
+    <span class="s2">"Xnew: [batch..., N, D]"</span><span class="p">,</span>
+    <span class="s2">"return: [L, M, batch..., N]"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">Kuf_shared_linear_coregionalization</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">Kuf_shared_linear_coregionalization</span><span class="p">(</span>
     <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">SharedIndependentInducingVariables</span><span class="p">,</span>
     <span class="n">kernel</span><span class="p">:</span> <span class="n">LinearCoregionalization</span><span class="p">,</span>
     <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
@@ -468,12 +468,12 @@ function checkPageExistsAndRedirect(event) {
 <a class="viewcode-back" href="../../../../api/gpflow/covariances/index.html#gpflow.covariances.multioutput.kufs.Kuf_separate_linear_coregionalization">[docs]</a>
 <span class="nd">@Kuf</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">SeparateIndependentInducingVariables</span><span class="p">,</span> <span class="n">LinearCoregionalization</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span>
 <span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;inducing_variable: [M, D, L]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;kernel.W: [P, L]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return: [L, M, batch..., N]&quot;</span><span class="p">,</span>
+    <span class="s2">"inducing_variable: [M, D, L]"</span><span class="p">,</span>
+    <span class="s2">"kernel.W: [P, L]"</span><span class="p">,</span>
+    <span class="s2">"Xnew: [batch..., N, D]"</span><span class="p">,</span>
+    <span class="s2">"return: [L, M, batch..., N]"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">Kuf_separate_linear_coregionalization</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">Kuf_separate_linear_coregionalization</span><span class="p">(</span>
     <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">SeparateIndependentInducingVariables</span><span class="p">,</span>
     <span class="n">kernel</span><span class="p">:</span> <span class="n">LinearCoregionalization</span><span class="p">,</span>
     <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
@@ -482,7 +482,7 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">n_k</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">kernel</span><span class="o">.</span><span class="n">kernels</span><span class="p">)</span>
     <span class="k">assert</span> <span class="p">(</span>
         <span class="n">n_iv</span> <span class="o">==</span> <span class="n">n_k</span>
-    <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Must have same number of inducing variables and kernels. Found </span><span class="si">{</span><span class="n">n_iv</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">n_k</span><span class="si">}</span><span class="s2">.&quot;</span>
+    <span class="p">),</span> <span class="sa">f</span><span class="s2">"Must have same number of inducing variables and kernels. Found </span><span class="si">{</span><span class="n">n_iv</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">n_k</span><span class="si">}</span><span class="s2">."</span>
 
     <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
         <span class="p">[</span><span class="n">Kuf</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">inducing_variable</span><span class="o">.</span><span class="n">inducing_variable_list</span><span class="p">,</span> <span class="n">kernel</span><span class="o">.</span><span class="n">kernels</span><span class="p">)],</span>
@@ -515,7 +515,7 @@ function checkPageExistsAndRedirect(event) {
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.3.7.<br>
 </p>
   </div>
   

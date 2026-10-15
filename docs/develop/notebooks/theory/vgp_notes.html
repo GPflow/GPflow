@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Derivation of VGP equations &#8212; GPflow 2.9.0 documentation</title>
+    <title>Derivation of VGP equations &#8212; GPflow 2.11.2 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -23,14 +23,14 @@
   <link rel="preload" as="font" type="font/woff2" crossorigin
     href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
 
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css?v=c27e38e3" />
 
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
-    <script src="../../_static/documentation_options.js?v=8da69bee"></script>
-    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/documentation_options.js?v=b2fb886b"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
@@ -66,7 +66,7 @@
   
   
   
-    <p class="title logo__title">GPflow 2.9.0 documentation</p>
+    <p class="title logo__title">GPflow 2.11.2 documentation</p>
   
 </a>
     
@@ -381,6 +381,13 @@ function checkPageExistsAndRedirect(event) {
   </a>
  </li>
 </ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/hierarchical_kernels.html">
+   Hierarchical kernels
+  </a>
+ </li>
+</ul>
 
   </div>
 </nav>
@@ -447,12 +454,12 @@ function checkPageExistsAndRedirect(event) {
               <article class="bd-article" role="main">
                 
   <section id="Derivation-of-VGP-equations">
-<h1>Derivation of VGP equations<a class="headerlink" href="#Derivation-of-VGP-equations" title="Link to this heading">#</a></h1>
+<h1>Derivation of VGP equations<a class="headerlink" href="#Derivation-of-VGP-equations" title="Link to this heading">¶</a></h1>
 <p><em>James Hensman, 2016</em></p>
 <p>This notebook contains some implementation notes on the variational Gaussian approximation model in GPflow, <code class="docutils literal notranslate"><span class="pre">gpflow.models.VGP</span></code>. The reference for this work is <a class="reference external" href="http://www.mitpressjournals.org/doi/abs/10.1162/neco.2008.08-07-592">Opper and Archambeau 2009, The variational Gaussian approximation revisited</a>; these notes serve to map the conclusions of that paper to their implementation in GPflow. We’ll give derivations for the expressions that are implemented in the <code class="docutils literal notranslate"><span class="pre">VGP</span></code> class.</p>
 <p>Two things are not covered by this notebook: prior mean functions, and the extension to multiple independent outputs. Extensions are straightforward in theory but we have taken care in the code to ensure they are handled efficiently.</p>
 <section id="Optimal-distribution">
-<h2>Optimal distribution<a class="headerlink" href="#Optimal-distribution" title="Link to this heading">#</a></h2>
+<h2>Optimal distribution<a class="headerlink" href="#Optimal-distribution" title="Link to this heading">¶</a></h2>
 <p>The key insight in the work of Opper and Archambeau is that for a Gaussian process with a non-Gaussian likelihood, the optimal Gaussian approximation (in the KL sense) is given by:</p>
 <p><span class="math">\begin{equation}
 \hat q(\mathbf f) = \mathcal N\left(\mathbf m, [\mathbf K^{-1} + \textrm{diag}(\boldsymbol \lambda)]^{-1}\right)\,
@@ -472,7 +479,7 @@ function checkPageExistsAndRedirect(event) {
 <p>We split the rest of this document into firstly considering the marginals of <span class="math notranslate nohighlight">\(q(f)\)</span>, and then the KL term. Given these, it is straightforward to compute the ELBO; GPflow uses quadrature to compute one-dimensional expectations where no closed form is available.</p>
 </section>
 <section id="Marginals-of-q(\mathbf-f)">
-<h2>Marginals of <span class="math notranslate nohighlight">\(q(\mathbf f)\)</span><a class="headerlink" href="#Marginals-of-q(\mathbf-f)" title="Link to this heading">#</a></h2>
+<h2>Marginals of <span class="math notranslate nohighlight">\(q(\mathbf f)\)</span><a class="headerlink" href="#Marginals-of-q(\mathbf-f)" title="Link to this heading">¶</a></h2>
 <p>Given the above form for <span class="math notranslate nohighlight">\(q(\mathbf f)\)</span>, what is a quick and stable way to compute the marginals of this Gaussian? The means are trivial, but it would be better if we could obtain the variance without having to perform two matrix inversions.</p>
 <p>Let <span class="math notranslate nohighlight">\(\boldsymbol \Lambda = \textrm{diag}(\boldsymbol \lambda)\)</span> and <span class="math notranslate nohighlight">\(\boldsymbol \Sigma\)</span> be the covariance in question: <span class="math notranslate nohighlight">\(\boldsymbol \Sigma = [\mathbf K^{-1} + \boldsymbol \Lambda^2]^{-1}\)</span>. By the matrix inversion lemma we have:</p>
 <p><span class="math">\begin{align}
@@ -484,7 +491,7 @@ function checkPageExistsAndRedirect(event) {
 <p>Working with this form means that only one matrix decomposition is needed, and taking the Cholesky factor of <span class="math notranslate nohighlight">\(\mathbf A\)</span> should be numerically stable because the eigenvalues are bounded by 1.</p>
 </section>
 <section id="KL-divergence">
-<h2>KL divergence<a class="headerlink" href="#KL-divergence" title="Link to this heading">#</a></h2>
+<h2>KL divergence<a class="headerlink" href="#KL-divergence" title="Link to this heading">¶</a></h2>
 <p>The KL divergence term would benefit from a similar reorganisation. The KL is:</p>
 <p><span class="math">\begin{equation}
 \textrm{KL} = -0.5 \log |\boldsymbol \Sigma| + 0.5 \log |\mathbf K| +0.5\mathbf m^\top\mathbf K^{-1}\mathbf m + 0.5\textrm{tr}(\mathbf K^{-1} \boldsymbol \Sigma) - 0.5 N
@@ -500,7 +507,7 @@ function checkPageExistsAndRedirect(event) {
 <p>This expression is not ideal because we have to compute the diagonal elements of <span class="math notranslate nohighlight">\(\mathbf A^{-1}\)</span>. We do this with an extra back substitution (into the identity matrix), although it might be possible to do this faster in theory (though not in TensorFlow, to the best of our knowledge).</p>
 </section>
 <section id="Prediction">
-<h2>Prediction<a class="headerlink" href="#Prediction" title="Link to this heading">#</a></h2>
+<h2>Prediction<a class="headerlink" href="#Prediction" title="Link to this heading">¶</a></h2>
 <p>To make predictions with the Gaussian approximation, we need to integrate:</p>
 <p><span class="math">\begin{equation}
 q(f^\star \,|\,\mathbf y) = \int p(f^\star \,|\, \mathbf f)q(\mathbf f)\,\textrm d \mathbf f
@@ -553,7 +560,7 @@ q(f^\star \,|\,\mathbf y) = \mathcal N\left(f^\star \,|\, \mathbf K_{\star \math
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.3.7.<br>
 </p>
   </div>
   

@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>gpflow.utilities.model_utils &#8212; GPflow 2.9.0 documentation</title>
+    <title>gpflow.utilities.model_utils &#8212; GPflow 2.11.2 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -22,14 +22,14 @@
   <link rel="preload" as="font" type="font/woff2" crossorigin
     href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
 
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css?v=c27e38e3" />
 
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
-    <script src="../../../_static/documentation_options.js?v=8da69bee"></script>
-    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/documentation_options.js?v=b2fb886b"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
@@ -61,7 +61,7 @@
   
   
   
-    <p class="title logo__title">GPflow 2.9.0 documentation</p>
+    <p class="title logo__title">GPflow 2.11.2 documentation</p>
   
 </a>
     
@@ -238,32 +238,32 @@ function checkPageExistsAndRedirect(event) {
               <article class="bd-article" role="main">
                 
   <h1>Source code for gpflow.utilities.model_utils</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span>
 
-<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
-<span class="kn">from</span> <span class="nn">check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tf</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">check_shapes</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_shapes</span>
 
-<span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">TensorType</span>
-<span class="kn">from</span> <span class="nn">..likelihoods</span> <span class="kn">import</span> <span class="n">Gaussian</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..base</span><span class="w"> </span><span class="kn">import</span> <span class="n">TensorType</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..likelihoods</span><span class="w"> </span><span class="kn">import</span> <span class="n">Gaussian</span>
 
 
 <div class="viewcode-block" id="assert_params_false">
 <a class="viewcode-back" href="../../../api/gpflow/utilities/index.html#gpflow.utilities.assert_params_false">[docs]</a>
-<span class="k">def</span> <span class="nf">assert_params_false</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">assert_params_false</span><span class="p">(</span>
     <span class="n">called_method</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Asserts that parameters are ``False``.</span>
 
 <span class="sd">    :param called_method: The method or function that is calling this. Used for nice error messages.</span>
 <span class="sd">    :param kwargs: Parameters that must be ``False``.</span>
 <span class="sd">    :raises NotImplementedError: If any ``kwargs`` are ``True``.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">errors_str</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">param</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">value</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="n">errors_str</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">param</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">value</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">errors_str</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">called_method</span><span class="o">.</span><span class="vm">__qualname__</span><span class="si">}</span><span class="s2"> does not currently support: </span><span class="si">{</span><span class="n">errors_str</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">called_method</span><span class="o">.</span><span class="vm">__qualname__</span><span class="si">}</span><span class="s2"> does not currently support: </span><span class="si">{</span><span class="n">errors_str</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span></div>
 
 
@@ -271,14 +271,14 @@ function checkPageExistsAndRedirect(event) {
 <div class="viewcode-block" id="add_noise_cov">
 <a class="viewcode-back" href="../../../api/gpflow/utilities/index.html#gpflow.utilities.add_noise_cov">[docs]</a>
 <span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;K: [batch..., N, N]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;likelihood_variance: [broadcast batch..., broadcast N]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return: [batch..., N, N]&quot;</span><span class="p">,</span>
+    <span class="s2">"K: [batch..., N, N]"</span><span class="p">,</span>
+    <span class="s2">"likelihood_variance: [broadcast batch..., broadcast N]"</span><span class="p">,</span>
+    <span class="s2">"return: [batch..., N, N]"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">add_noise_cov</span><span class="p">(</span><span class="n">K</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">likelihood_variance</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_noise_cov</span><span class="p">(</span><span class="n">K</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">likelihood_variance</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Returns K + σ², where σ² is the diagonal likelihood noise variance.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">k_diag</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">diag_part</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">set_diag</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">k_diag</span> <span class="o">+</span> <span class="n">likelihood_variance</span><span class="p">)</span></div>
 
@@ -287,14 +287,14 @@ function checkPageExistsAndRedirect(event) {
 <div class="viewcode-block" id="add_likelihood_noise_cov">
 <a class="viewcode-back" href="../../../api/gpflow/utilities/index.html#gpflow.utilities.add_likelihood_noise_cov">[docs]</a>
 <span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;K: [batch..., N, N]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;X: [batch..., N, D]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return: [batch..., N, N]&quot;</span><span class="p">,</span>
+    <span class="s2">"K: [batch..., N, N]"</span><span class="p">,</span>
+    <span class="s2">"X: [batch..., N, D]"</span><span class="p">,</span>
+    <span class="s2">"return: [batch..., N, N]"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">add_likelihood_noise_cov</span><span class="p">(</span><span class="n">K</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">likelihood</span><span class="p">:</span> <span class="n">Gaussian</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_likelihood_noise_cov</span><span class="p">(</span><span class="n">K</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">likelihood</span><span class="p">:</span> <span class="n">Gaussian</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Returns K + σ², where σ² is the likelihood noise variance.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="n">add_noise_cov</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">likelihood</span><span class="o">.</span><span class="n">variance_at</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span></div>
 
 </pre></div>
@@ -323,7 +323,7 @@ function checkPageExistsAndRedirect(event) {
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.3.7.<br>
 </p>
   </div>
   

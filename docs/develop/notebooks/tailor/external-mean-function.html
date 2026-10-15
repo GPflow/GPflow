@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Custom mean functions: metalearning with GPs &#8212; GPflow 2.9.0 documentation</title>
+    <title>Custom mean functions: metalearning with GPs &#8212; GPflow 2.11.2 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -23,15 +23,15 @@
   <link rel="preload" as="font" type="font/woff2" crossorigin
     href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
 
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
-    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
     <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css?v=c27e38e3" />
 
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
-    <script src="../../_static/documentation_options.js?v=8da69bee"></script>
-    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/documentation_options.js?v=b2fb886b"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
@@ -67,7 +67,7 @@
   
   
   
-    <p class="title logo__title">GPflow 2.9.0 documentation</p>
+    <p class="title logo__title">GPflow 2.11.2 documentation</p>
   
 </a>
     
@@ -382,6 +382,13 @@ function checkPageExistsAndRedirect(event) {
   </a>
  </li>
 </ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/hierarchical_kernels.html">
+   Hierarchical kernels
+  </a>
+ </li>
+</ul>
 
   </div>
 </nav>
@@ -450,7 +457,7 @@ function checkPageExistsAndRedirect(event) {
               <article class="bd-article" role="main">
                 
   <section id="Custom-mean-functions:-metalearning-with-GPs">
-<h1>Custom mean functions: metalearning with GPs<a class="headerlink" href="#Custom-mean-functions:-metalearning-with-GPs" title="Link to this heading">#</a></h1>
+<h1>Custom mean functions: metalearning with GPs<a class="headerlink" href="#Custom-mean-functions:-metalearning-with-GPs" title="Link to this heading">¶</a></h1>
 <p>One of the advantages of Gaussian process is their flexibility as a modeling tool. For instance, if the modeler knows that there is an underlying trend in the data, they can specify a mean function that captures this trend.</p>
 <p>In this notebook, we illustrate how to use GPflow to construct a custom neural network mean function for GPs that can capture complex trends. We look at this functionality in the context of metalearning, where a number of metatasks are available at train time and the user wants to adapt a flexible model to new tasks at test time.</p>
 <p>For an in-depth discussion on this topic, see <em>(Fortuin and Rätsch, 2019)</em>. This notebook reproduces section 4.2 of this paper.</p>
@@ -458,14 +465,15 @@ function checkPageExistsAndRedirect(event) {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tf</span>
 
-<span class="kn">import</span> <span class="nn">gpflow</span>
-<span class="kn">from</span> <span class="nn">gpflow.ci_utils</span> <span class="kn">import</span> <span class="n">reduce_in_tests</span>
-<span class="kn">from</span> <span class="nn">gpflow.kernels</span> <span class="kn">import</span> <span class="n">RBF</span>
-<span class="kn">from</span> <span class="nn">gpflow.models</span> <span class="kn">import</span> <span class="n">GPR</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">gpflow</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gpflow.ci_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">reduce_in_tests</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gpflow.keras</span><span class="w"> </span><span class="kn">import</span> <span class="n">tf_keras</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gpflow.kernels</span><span class="w"> </span><span class="kn">import</span> <span class="n">RBF</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gpflow.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">GPR</span>
 
 <span class="c1"># for reproducibility of this notebook:</span>
 <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
@@ -475,43 +483,36 @@ function checkPageExistsAndRedirect(event) {
 </pre></div>
 </div>
 </div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-2024-02-07 11:47:36.171840: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
-2024-02-07 11:47:36.213536: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9261] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
-2024-02-07 11:47:36.213573: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
-2024-02-07 11:47:36.214978: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1515] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-2024-02-07 11:47:36.222055: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
-2024-02-07 11:47:36.222676: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
-To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
-</pre></div></div>
-</div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-02-07 11:47:37.218142: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
+2026-10-15 09:27:18.154375: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2026-10-15 09:27:18.158199: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2026-10-15 09:27:18.170004: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:477] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1792056438.195710     223 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1792056438.205150     223 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2026-10-15 09:27:18.228619: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
 </pre></div></div>
 </div>
 <section id="Generate-the-tasks">
-<h2>Generate the tasks<a class="headerlink" href="#Generate-the-tasks" title="Link to this heading">#</a></h2>
+<h2>Generate the tasks<a class="headerlink" href="#Generate-the-tasks" title="Link to this heading">¶</a></h2>
 <p>To generate the meta and test tasks, we sample from a Gaussian process with an Squared Exponential covariance function and a sinusoidal mean function. Each task is a realization of this process.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">generate_data</span><span class="p">(</span><span class="n">num_functions</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">500</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">generate_data</span><span class="p">(</span><span class="n">num_functions</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">500</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    For each function, sample the value at `N` equally spaced</span>
 <span class="sd">    points in the [−5, 5] interval (Fortuin and Rätsch, 2019).</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Tuple of np.arrays of size (N, 1) and (N, num_functions).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">jitter</span> <span class="o">=</span> <span class="mf">1e-6</span>
     <span class="n">Xs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">5.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span> <span class="n">N</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>
     <span class="n">kernel</span> <span class="o">=</span> <span class="n">RBF</span><span class="p">(</span><span class="n">lengthscales</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
@@ -524,13 +525,21 @@ To enable the following instructions: AVX2 AVX512F FMA, in other operations, reb
 </div>
 </div>
 <p>We generate 10 tasks for illustration.</p>
-<div class="nbinput nblast docutils container">
+<div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Xs</span><span class="p">,</span> <span class="n">F</span> <span class="o">=</span> <span class="n">generate_data</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
 </pre></div>
 </div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2026-10-15 09:27:23.013184: E external/local_xla/xla/stream_executor/cuda/cuda_driver.cc:152] failed call to cuInit: INTERNAL: CUDA error: Failed call to cuInit: UNKNOWN ERROR (303)
+</pre></div></div>
 </div>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
@@ -552,14 +561,14 @@ To enable the following instructions: AVX2 AVX512F FMA, in other operations, reb
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">generate_meta_and_test_tasks</span><span class="p">(</span><span class="n">num_datapoints</span><span class="p">,</span> <span class="n">num_meta</span><span class="p">,</span> <span class="n">num_test</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates meta-task datasets {D_i} = {x_i, y_i} and target task training</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">generate_meta_and_test_tasks</span><span class="p">(</span><span class="n">num_datapoints</span><span class="p">,</span> <span class="n">num_meta</span><span class="p">,</span> <span class="n">num_test</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Generates meta-task datasets {D_i} = {x_i, y_i} and target task training</span>
 <span class="sd">    and test data {\tilde{x}, \tilde{y}} (Fortuin and Rätsch, 2019).</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        num_datapoints: The number of training points, \tilde{n} in Table S1.</span>
-<span class="sd">        num_meta: The number of meta-tasks (&quot;sampled functions&quot;).</span>
-<span class="sd">        num_test: The number of test tasks (&quot;unseen functions&quot;).</span>
+<span class="sd">        num_meta: The number of meta-tasks ("sampled functions").</span>
+<span class="sd">        num_test: The number of test tasks ("unseen functions").</span>
 <span class="sd">        N: Number of sampled data points per function.</span>
 
 <span class="sd">    Returns:</span>
@@ -568,7 +577,7 @@ To enable the following instructions: AVX2 AVX512F FMA, in other operations, reb
 <span class="sd">        - test: List of num_test pairs of pairs of arrays of sizes</span>
 <span class="sd">                (((num_datapoints, 1), (num_datapoints, 1)),</span>
 <span class="sd">                 ((N - num_datapoints, 1), (N - num_datapoints, 1))).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">Xs</span><span class="p">,</span> <span class="n">F</span> <span class="o">=</span> <span class="n">generate_data</span><span class="p">(</span><span class="n">num_functions</span><span class="o">=</span><span class="n">num_meta</span> <span class="o">+</span> <span class="n">num_test</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="n">N</span><span class="p">)</span>
     <span class="n">meta</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">sd</span> <span class="o">=</span> <span class="mf">1e-1</span>  <span class="c1"># Standard deviation for normally-distributed observation noise.</span>
@@ -591,7 +600,7 @@ To enable the following instructions: AVX2 AVX512F FMA, in other operations, reb
         <span class="c1"># target traininig set as it is in the original implementation.</span>
         <span class="n">test_X</span> <span class="o">=</span> <span class="n">Xs</span><span class="p">[</span><span class="n">test_i</span><span class="p">]</span>
         <span class="n">test_Y</span> <span class="o">=</span> <span class="n">F</span><span class="p">[</span><span class="n">test_i</span><span class="p">,</span> <span class="n">num_meta</span> <span class="o">+</span> <span class="n">i</span><span class="p">][:,</span> <span class="kc">None</span><span class="p">]</span>
-        <span class="c1"># Form target tasks&#39; datasets \tilde{D} as a pair of pairs,</span>
+        <span class="c1"># Form target tasks' datasets \tilde{D} as a pair of pairs,</span>
         <span class="c1"># (\tilde{X}, \tilde{Y}) and (\tilde{X}*, \tilde{Y}*).</span>
         <span class="n">test</span><span class="o">.</span><span class="n">append</span><span class="p">(((</span><span class="n">train_X</span><span class="p">,</span> <span class="n">train_Y</span><span class="p">),</span> <span class="p">(</span><span class="n">test_X</span><span class="p">,</span> <span class="n">test_Y</span><span class="p">)))</span>
     <span class="k">return</span> <span class="n">meta</span><span class="p">,</span> <span class="n">test</span>
@@ -617,30 +626,30 @@ To enable the following instructions: AVX2 AVX512F FMA, in other operations, reb
 </div>
 </section>
 <section id="Create-the-mean-function">
-<h2>Create the mean function<a class="headerlink" href="#Create-the-mean-function" title="Link to this heading">#</a></h2>
+<h2>Create the mean function<a class="headerlink" href="#Create-the-mean-function" title="Link to this heading">¶</a></h2>
 <p>We will use a Keras model Deep Neural Network as mean function.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">gpflow.config</span> <span class="kn">import</span> <span class="n">default_float</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">gpflow.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">default_float</span>
 
 
-<span class="k">def</span> <span class="nf">build_mean_function</span><span class="p">():</span>
-    <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">set_floatx</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_mean_function</span><span class="p">():</span>
+    <span class="n">tf_keras</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">set_floatx</span><span class="p">(</span><span class="s2">"float64"</span><span class="p">)</span>
     <span class="k">assert</span> <span class="n">default_float</span><span class="p">()</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span>
 
-    <span class="n">inputs</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Input</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,))</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s2">&quot;relu&quot;</span><span class="p">)(</span><span class="n">inputs</span><span class="p">)</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s2">&quot;relu&quot;</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
-    <span class="n">outputs</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">1</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="n">inputs</span><span class="p">,</span> <span class="n">outputs</span><span class="o">=</span><span class="n">outputs</span><span class="p">)</span>
+    <span class="n">inputs</span> <span class="o">=</span> <span class="n">tf_keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Input</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,))</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">tf_keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s2">"relu"</span><span class="p">)(</span><span class="n">inputs</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">tf_keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s2">"relu"</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">outputs</span> <span class="o">=</span> <span class="n">tf_keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">1</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tf_keras</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="n">inputs</span><span class="p">,</span> <span class="n">outputs</span><span class="o">=</span><span class="n">outputs</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 </section>
 <section id="Build-the-GP-metamodel">
-<h2>Build the GP metamodel<a class="headerlink" href="#Build-the-GP-metamodel" title="Link to this heading">#</a></h2>
+<h2>Build the GP metamodel<a class="headerlink" href="#Build-the-GP-metamodel" title="Link to this heading">¶</a></h2>
 <p>Metalearning boils down to learning a good prior that can generalize to new tasks with a small number of data points. This framework is prevalent in GP modeling, where we usually maximize the marginal likelihood to learn a good set of hyperparameters that specify the GP prior.</p>
 <p>We perform the same optimization here, while sharing the hyperparameters across all the metatasks. For simplicity, we fix the kernel and likelihood parameters and learn those only for the mean function. Hence, our metalearning procedure is to cycle through the metatasks continuously, optimizing their marginal likelihood until a convergence criteria is reached (here, we just implement a fixed number of iterations over the tasks).</p>
 <p>To begin this process, first we create a utility function that takes in a task (X, Y) and a mean function and outputs a GP model.</p>
@@ -648,10 +657,10 @@ To enable the following instructions: AVX2 AVX512F FMA, in other operations, reb
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">gpflow</span> <span class="kn">import</span> <span class="n">set_trainable</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">gpflow</span><span class="w"> </span><span class="kn">import</span> <span class="n">set_trainable</span>
 
 
-<span class="k">def</span> <span class="nf">build_model</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mean_function</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_model</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mean_function</span><span class="p">):</span>
     <span class="n">model</span> <span class="o">=</span> <span class="n">GPR</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">kernel</span><span class="o">=</span><span class="n">RBF</span><span class="p">(),</span> <span class="n">mean_function</span><span class="o">=</span><span class="n">mean_function</span><span class="p">)</span>
     <span class="n">set_trainable</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
     <span class="n">model</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">variance</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="mf">1e-2</span><span class="p">)</span>
@@ -664,9 +673,9 @@ To enable the following instructions: AVX2 AVX512F FMA, in other operations, reb
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">create_optimization_step</span><span class="p">(</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">):</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">create_optimization_step</span><span class="p">(</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">):</span>
     <span class="nd">@tf</span><span class="o">.</span><span class="n">function</span>
-    <span class="k">def</span> <span class="nf">optimization_step</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">optimization_step</span><span class="p">():</span>
         <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">GradientTape</span><span class="p">(</span><span class="n">watch_accessed_variables</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">as</span> <span class="n">tape</span><span class="p">:</span>
             <span class="n">tape</span><span class="o">.</span><span class="n">watch</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">)</span>
             <span class="n">objective</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">()</span>
@@ -677,21 +686,21 @@ To enable the following instructions: AVX2 AVX512F FMA, in other operations, reb
     <span class="k">return</span> <span class="n">optimization_step</span>
 
 
-<span class="k">def</span> <span class="nf">run_adam</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">iterations</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">run_adam</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">iterations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Utility function running the Adam optimizer</span>
 
 <span class="sd">    :param model: GPflow model</span>
 <span class="sd">    :param interations: number of iterations</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Create an Adam Optimizer action</span>
     <span class="n">logf</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">adam</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Adam</span><span class="p">()</span>
+    <span class="n">adam</span> <span class="o">=</span> <span class="n">tf_keras</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Adam</span><span class="p">()</span>
     <span class="n">optimization_step</span> <span class="o">=</span> <span class="n">create_optimization_step</span><span class="p">(</span><span class="n">adam</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">iterations</span><span class="p">):</span>
         <span class="n">loss</span> <span class="o">=</span> <span class="n">optimization_step</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">step</span> <span class="o">%</span> <span class="mi">10</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="c1"># print(&quot;num variables&quot;, len(model.trainable_variables))</span>
+            <span class="c1"># print("num variables", len(model.trainable_variables))</span>
             <span class="n">logf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
     <span class="k">return</span> <span class="n">logf</span>
 </pre></div>
@@ -702,30 +711,30 @@ To enable the following instructions: AVX2 AVX512F FMA, in other operations, reb
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">time</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 
 
-<span class="k">def</span> <span class="nf">train_loop</span><span class="p">(</span><span class="n">meta_tasks</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">train_loop</span><span class="p">(</span><span class="n">meta_tasks</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Metalearning training loop. Trained for 100 epochs in original experiment.</span>
 
 <span class="sd">    :param meta_tasks: list of metatasks.</span>
 <span class="sd">    :param num_iter: number of iterations of tasks set</span>
 <span class="sd">    :returns: a mean function object</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Initialize mean function</span>
     <span class="n">mean_function</span> <span class="o">=</span> <span class="n">build_mean_function</span><span class="p">()</span>
     <span class="c1"># Iterate for several passes over the tasks set</span>
     <span class="k">for</span> <span class="n">iteration</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_iter</span><span class="p">):</span>
         <span class="n">ts</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Currently in meta-iteration/epoch </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">iteration</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Currently in meta-iteration/epoch </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">iteration</span><span class="p">))</span>
         <span class="c1"># Iterate over tasks</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">task</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">meta_tasks</span><span class="p">):</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">task</span>  <span class="c1"># (X, Y)</span>
             <span class="n">model</span> <span class="o">=</span> <span class="n">build_model</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mean_function</span><span class="o">=</span><span class="n">mean_function</span><span class="p">)</span>
             <span class="n">run_adam</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">100</span><span class="p">))</span>
 
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&gt;&gt;&gt; iteration took </span><span class="si">{:.2f}</span><span class="s2"> s&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">ts</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"&gt;&gt;&gt;&gt; iteration took </span><span class="si">{:.2f}</span><span class="s2"> s"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">ts</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">mean_function</span>
 
 
@@ -733,56 +742,21 @@ To enable the following instructions: AVX2 AVX512F FMA, in other operations, reb
 </pre></div>
 </div>
 </div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-Currently in meta-iteration/epoch 0
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-&gt;&gt;&gt;&gt; iteration took 80.97 s
-Currently in meta-iteration/epoch 1
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-&gt;&gt;&gt;&gt; iteration took 77.66 s
-Currently in meta-iteration/epoch 2
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-&gt;&gt;&gt;&gt; iteration took 79.13 s
-Currently in meta-iteration/epoch 3
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-&gt;&gt;&gt;&gt; iteration took 78.68 s
-Currently in meta-iteration/epoch 4
-</pre></div></div>
-</div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&gt;&gt;&gt;&gt; iteration took 77.39 s
+Currently in meta-iteration/epoch 0
+&gt;&gt;&gt;&gt; iteration took 78.03 s
+Currently in meta-iteration/epoch 1
+&gt;&gt;&gt;&gt; iteration took 78.50 s
+Currently in meta-iteration/epoch 2
+&gt;&gt;&gt;&gt; iteration took 75.29 s
+Currently in meta-iteration/epoch 3
+&gt;&gt;&gt;&gt; iteration took 72.75 s
+Currently in meta-iteration/epoch 4
+&gt;&gt;&gt;&gt; iteration took 70.59 s
 </pre></div></div>
 </div>
 <p>Finally, we use the optimized mean function for all of the test tasks. <strong>NOTE:</strong> We do not do any further optimization for the hyperparameters in this step.</p>
@@ -796,13 +770,13 @@ Currently in meta-iteration/epoch 4
 </div>
 </section>
 <section id="Assess-the-model">
-<h2>Assess the model<a class="headerlink" href="#Assess-the-model" title="Link to this heading">#</a></h2>
+<h2>Assess the model<a class="headerlink" href="#Assess-the-model" title="Link to this heading">¶</a></h2>
 <p>We assess the performance of this procedure on the test tasks. For this, we use the mean squared error as a performance metric.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">mean_squared_error</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">):</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">mean_squared_error</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">y</span> <span class="o">-</span> <span class="n">y_pred</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -816,20 +790,20 @@ Currently in meta-iteration/epoch 4
     <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
     <span class="p">(</span><span class="n">train_X</span><span class="p">,</span> <span class="n">train_Y</span><span class="p">),</span> <span class="p">(</span><span class="n">Xs</span><span class="p">,</span> <span class="n">F</span><span class="p">)</span> <span class="o">=</span> <span class="n">test_task</span>
     <span class="n">pred_mean</span><span class="p">,</span> <span class="n">pred_var</span> <span class="o">=</span> <span class="n">test_models</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">predict_f</span><span class="p">(</span><span class="n">Xs</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xs</span><span class="p">,</span> <span class="n">pred_mean</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Prediction mean&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xs</span><span class="p">,</span> <span class="n">pred_mean</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"Prediction mean"</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"blue"</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span>
         <span class="n">Xs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
         <span class="n">tf</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">pred_mean</span> <span class="o">-</span> <span class="n">pred_var</span><span class="p">),</span>
         <span class="n">tf</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">pred_mean</span> <span class="o">+</span> <span class="n">pred_var</span><span class="p">),</span>
         <span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span>
-        <span class="n">facecolor</span><span class="o">=</span><span class="s2">&quot;blue&quot;</span><span class="p">,</span>
-        <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Prediction variance&quot;</span><span class="p">,</span>
+        <span class="n">facecolor</span><span class="o">=</span><span class="s2">"blue"</span><span class="p">,</span>
+        <span class="n">label</span><span class="o">=</span><span class="s2">"Prediction variance"</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">train_X</span><span class="p">,</span> <span class="n">train_Y</span><span class="p">,</span> <span class="s2">&quot;ko&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Training points&quot;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="s2">&quot;ko&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Ground truth&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">train_X</span><span class="p">,</span> <span class="n">train_Y</span><span class="p">,</span> <span class="s2">"ko"</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"Training points"</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="s2">"ko"</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"Ground truth"</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">mse</span> <span class="o">=</span> <span class="n">mean_squared_error</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="n">pred_mean</span><span class="p">)</span>
     <span class="n">mean_squared_errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mse</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Test Task </span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> | MSE = </span><span class="si">{</span><span class="n">mse</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Test Task </span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> | MSE = </span><span class="si">{</span><span class="n">mse</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
@@ -912,7 +886,7 @@ Currently in meta-iteration/epoch 4
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean_mse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">mean_squared_errors</span><span class="p">)</span>
 <span class="n">std_mse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">mean_squared_errors</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">num_test_tasks</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span>
-    <span class="sa">f</span><span class="s2">&quot;The mean MSE over all </span><span class="si">{</span><span class="n">num_test_tasks</span><span class="si">}</span><span class="s2"> test tasks is </span><span class="si">{</span><span class="n">mean_mse</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> +/- </span><span class="si">{</span><span class="n">std_mse</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="sa">f</span><span class="s2">"The mean MSE over all </span><span class="si">{</span><span class="n">num_test_tasks</span><span class="si">}</span><span class="s2"> test tasks is </span><span class="si">{</span><span class="n">mean_mse</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> +/- </span><span class="si">{</span><span class="n">std_mse</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -922,14 +896,14 @@ Currently in meta-iteration/epoch 4
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-The mean MSE over all 10 test tasks is 0.27 +/- 0.07
+The mean MSE over all 10 test tasks is 0.26 +/- 0.06
 </pre></div></div>
 </div>
 <p>We achieve comparable results to those reported in the paper.</p>
 <p><strong>NOTE:</strong> We use only 50 metatasks and 10 test tasks over 5 epochs for scalability, whereas the paper uses 1,000 and 200 respectively over 100 epochs. To compensate, we sample 500 points per curve, whereas the paper samples only 50 points. Hence, there might be some discrepancies in the results.</p>
 </section>
 <section id="References">
-<h2>References<a class="headerlink" href="#References" title="Link to this heading">#</a></h2>
+<h2>References<a class="headerlink" href="#References" title="Link to this heading">¶</a></h2>
 <p>Fortuin, Vincent, and Gunnar Rätsch. “Deep Mean Functions for Meta-Learning in Gaussian Processes.” arXiv preprint arXiv:1901.08098 (2019).</p>
 </section>
 </section>
@@ -959,7 +933,7 @@ The mean MSE over all 10 test tasks is 0.27 +/- 0.07
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.3.7.<br>
 </p>
   </div>
   

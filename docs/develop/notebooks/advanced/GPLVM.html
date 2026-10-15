@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Bayesian Gaussian process latent variable model (Bayesian GPLVM) &#8212; GPflow 2.9.0 documentation</title>
+    <title>Bayesian Gaussian process latent variable model (Bayesian GPLVM) &#8212; GPflow 2.11.2 documentation</title>
 <script>
   document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
   document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
@@ -23,15 +23,15 @@
   <link rel="preload" as="font" type="font/woff2" crossorigin
     href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
 
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
-    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
     <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css?v=c27e38e3" />
 
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
-    <script src="../../_static/documentation_options.js?v=8da69bee"></script>
-    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/documentation_options.js?v=b2fb886b"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
@@ -67,7 +67,7 @@
   
   
   
-    <p class="title logo__title">GPflow 2.9.0 documentation</p>
+    <p class="title logo__title">GPflow 2.11.2 documentation</p>
   
 </a>
     
@@ -382,6 +382,13 @@ function checkPageExistsAndRedirect(event) {
   </a>
  </li>
 </ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="hierarchical_kernels.html">
+   Hierarchical kernels
+  </a>
+ </li>
+</ul>
 
   </div>
 </nav>
@@ -450,80 +457,81 @@ function checkPageExistsAndRedirect(event) {
               <article class="bd-article" role="main">
                 
   <section id="Bayesian-Gaussian-process-latent-variable-model-(Bayesian-GPLVM)">
-<h1>Bayesian Gaussian process latent variable model (Bayesian GPLVM)<a class="headerlink" href="#Bayesian-Gaussian-process-latent-variable-model-(Bayesian-GPLVM)" title="Link to this heading">#</a></h1>
+<h1>Bayesian Gaussian process latent variable model (Bayesian GPLVM)<a class="headerlink" href="#Bayesian-Gaussian-process-latent-variable-model-(Bayesian-GPLVM)" title="Link to this heading">¶</a></h1>
 <p>This notebook shows how to use the Bayesian GPLVM model. This is an unsupervised learning method usually used for dimensionality reduction. For an in-depth overview of GPLVMs,see <strong>[1, 2]</strong>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tf</span>
 
-<span class="kn">import</span> <span class="nn">gpflow</span>
-<span class="kn">from</span> <span class="nn">gpflow.ci_utils</span> <span class="kn">import</span> <span class="n">reduce_in_tests</span>
-<span class="kn">from</span> <span class="nn">gpflow.config</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">gpflow</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gpflow.ci_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">reduce_in_tests</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gpflow.config</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">default_float</span><span class="p">,</span>
     <span class="n">set_default_float</span><span class="p">,</span>
     <span class="n">set_default_summary_fmt</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">gpflow.utilities</span> <span class="kn">import</span> <span class="n">ops</span><span class="p">,</span> <span class="n">print_summary</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gpflow.utilities</span><span class="w"> </span><span class="kn">import</span> <span class="n">ops</span><span class="p">,</span> <span class="n">print_summary</span>
 
 <span class="n">set_default_float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
-<span class="n">set_default_summary_fmt</span><span class="p">(</span><span class="s2">&quot;notebook&quot;</span><span class="p">)</span>
+<span class="n">set_default_summary_fmt</span><span class="p">(</span><span class="s2">"notebook"</span><span class="p">)</span>
 
 <span class="o">%</span><span class="k">matplotlib</span> inline
 </pre></div>
 </div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-2024-02-07 11:46:04.876362: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
-2024-02-07 11:46:04.917803: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9261] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
-2024-02-07 11:46:04.917838: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
-2024-02-07 11:46:04.919255: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1515] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-2024-02-07 11:46:04.926149: I external/local_tsl/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
-2024-02-07 11:46:04.926680: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
-To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
-</pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-02-07 11:46:06.009886: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
+2026-10-15 09:26:32.088316: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2026-10-15 09:26:32.092215: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2026-10-15 09:26:32.103672: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:477] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1792056392.124023     108 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1792056392.129733     108 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2026-10-15 09:26:32.149929: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
 </pre></div></div>
 </div>
 <section id="Data">
-<h2>Data<a class="headerlink" href="#Data" title="Link to this heading">#</a></h2>
+<h2>Data<a class="headerlink" href="#Data" title="Link to this heading">¶</a></h2>
 <p>We are using the “three phase oil flow” dataset used initially for demonstrating the Generative Topographic mapping from <strong>[3]</strong>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;./data/three_phase_oil_flow.npz&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">"./data/three_phase_oil_flow.npz"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <p>Following the GPflow notation we assume this dataset has a shape of <code class="docutils literal notranslate"><span class="pre">[num_data,</span> <span class="pre">output_dim]</span></code></p>
-<div class="nbinput nblast docutils container">
+<div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Y</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;Y&quot;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">default_float</span><span class="p">())</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Y</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">"Y"</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">default_float</span><span class="p">())</span>
 </pre></div>
 </div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2026-10-15 09:26:37.366233: E external/local_xla/xla/stream_executor/cuda/cuda_driver.cc:152] failed call to cuInit: INTERNAL: CUDA error: Failed call to cuInit: UNKNOWN ERROR (303)
+</pre></div></div>
 </div>
 <p>Integer in <span class="math notranslate nohighlight">\([0, 2]\)</span> indicating to which class the data point belongs (shape <code class="docutils literal notranslate"><span class="pre">[num_data,]</span></code>). Not used for model fitting, only for plotting afterwards.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">labels</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;labels&quot;</span><span class="p">])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">labels</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">"labels"</span><span class="p">])</span>
 </pre></div>
 </div>
 </div>
@@ -532,7 +540,7 @@ To enable the following instructions: AVX2 AVX512F FMA, in other operations, reb
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span>
-    <span class="s2">&quot;Number of points: </span><span class="si">{}</span><span class="s2"> and Number of dimensions: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+    <span class="s2">"Number of points: </span><span class="si">{}</span><span class="s2"> and Number of dimensions: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
         <span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
     <span class="p">)</span>
 <span class="p">)</span>
@@ -549,7 +557,7 @@ Number of points: 100 and Number of dimensions: 12
 </div>
 </section>
 <section id="Model-construction">
-<h2>Model construction<a class="headerlink" href="#Model-construction" title="Link to this heading">#</a></h2>
+<h2>Model construction<a class="headerlink" href="#Model-construction" title="Link to this heading">¶</a></h2>
 <p>We start by initializing the required variables:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
@@ -637,7 +645,7 @@ Number of points: 100 and Number of dimensions: 12
 <span class="n">maxiter</span> <span class="o">=</span> <span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
 <span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
     <span class="n">gplvm</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span>
-    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;BFGS&quot;</span><span class="p">,</span>
+    <span class="n">method</span><span class="o">=</span><span class="s2">"BFGS"</span><span class="p">,</span>
     <span class="n">variables</span><span class="o">=</span><span class="n">gplvm</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span>
     <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="n">maxiter</span><span class="p">),</span>
 <span class="p">)</span>
@@ -646,7 +654,7 @@ Number of points: 100 and Number of dimensions: 12
 </div>
 </section>
 <section id="Model-analysis">
-<h2>Model analysis<a class="headerlink" href="#Model-analysis" title="Link to this heading">#</a></h2>
+<h2>Model analysis<a class="headerlink" href="#Model-analysis" title="Link to this heading">¶</a></h2>
 <p>GPflow allows you to inspect the learned model hyperparameters.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
@@ -665,18 +673,18 @@ Number of points: 100 and Number of dimensions: 12
 <tr><th>name                             </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape   </th><th>dtype  </th><th>value                               </th></tr>
 </thead>
 <tbody>
-<tr><td>BayesianGPLVM.kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()      </td><td>float64</td><td>0.9180110289150046                  </td></tr>
-<tr><td>BayesianGPLVM.kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>(2,)    </td><td>float64</td><td>[0.86661109 1.76001   ]             </td></tr>
-<tr><td>BayesianGPLVM.likelihood.variance</td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()      </td><td>float64</td><td>0.006477223077400491                </td></tr>
-<tr><td>BayesianGPLVM.X_data_mean        </td><td>Parameter</td><td>Identity        </td><td>       </td><td>True       </td><td>(100, 2)</td><td>float64</td><td>[[-7.98779573e-01, 3.04430000e+00...</td></tr>
-<tr><td>BayesianGPLVM.X_data_var         </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>(100, 2)</td><td>float64</td><td>[[0.00040637, 0.00153665...         </td></tr>
-<tr><td>BayesianGPLVM.inducing_variable.Z</td><td>Parameter</td><td>Identity        </td><td>       </td><td>True       </td><td>(20, 2) </td><td>float64</td><td>[[1.31767000e+00, -1.72367000e+00...</td></tr>
+<tr><td>BayesianGPLVM.kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()      </td><td>float64</td><td>0.9180137097589                     </td></tr>
+<tr><td>BayesianGPLVM.kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>(2,)    </td><td>float64</td><td>[0.86660823 1.76001   ]             </td></tr>
+<tr><td>BayesianGPLVM.likelihood.variance</td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()      </td><td>float64</td><td>0.0064772154934319955               </td></tr>
+<tr><td>BayesianGPLVM.X_data_mean        </td><td>Parameter</td><td>Identity        </td><td>       </td><td>True       </td><td>(100, 2)</td><td>float64</td><td>[[-7.98769892e-01, 3.04429000e+00...</td></tr>
+<tr><td>BayesianGPLVM.X_data_var         </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>(100, 2)</td><td>float64</td><td>[[0.00040637, 0.00153662...         </td></tr>
+<tr><td>BayesianGPLVM.inducing_variable.Z</td><td>Parameter</td><td>Identity        </td><td>       </td><td>True       </td><td>(20, 2) </td><td>float64</td><td>[[1.31766000e+00, -1.72368000e+00...</td></tr>
 </tbody>
 </table></div>
 </div>
 </section>
 <section id="Plotting-vs.-Principle-Component-Analysis-(PCA)">
-<h2>Plotting vs. Principle Component Analysis (PCA)<a class="headerlink" href="#Plotting-vs.-Principle-Component-Analysis-(PCA)" title="Link to this heading">#</a></h2>
+<h2>Plotting vs. Principle Component Analysis (PCA)<a class="headerlink" href="#Plotting-vs.-Principle-Component-Analysis-(PCA)" title="Link to this heading">¶</a></h2>
 <p>The reduction of the dimensionality of the dataset to two dimensions allows us to visualize the learned manifold. We compare the Bayesian GPLVM’s latent space to the deterministic PCA’s one.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
@@ -692,8 +700,8 @@ Number of points: 100 and Number of dimensions: 12
     <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
         <span class="n">gplvm_X_mean</span><span class="p">[</span><span class="n">labels</span> <span class="o">==</span> <span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">gplvm_X_mean</span><span class="p">[</span><span class="n">labels</span> <span class="o">==</span> <span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="n">i</span>
     <span class="p">)</span>
-    <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;PCA&quot;</span><span class="p">)</span>
-    <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Bayesian GPLVM&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"PCA"</span><span class="p">)</span>
+    <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"Bayesian GPLVM"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -706,7 +714,7 @@ Number of points: 100 and Number of dimensions: 12
 </div>
 </section>
 <section id="References">
-<h2>References<a class="headerlink" href="#References" title="Link to this heading">#</a></h2>
+<h2>References<a class="headerlink" href="#References" title="Link to this heading">¶</a></h2>
 <p>[1] Lawrence, Neil D. ‘Gaussian process latent variable models for visualization of high dimensional data’. <em>Advances in Neural Information Processing Systems</em>. 2004.</p>
 <p>[2] Titsias, Michalis, and Neil D. Lawrence. ‘Bayesian Gaussian process latent variable model’. <em>Proceedings of the Thirteenth International Conference on Artificial Intelligence and Statistics</em>. 2010.</p>
 <p>[3] Bishop, Christopher M., and Gwilym D. James. ‘Analysis of multiphase flows using dual-energy gamma densitometry and neural networks’. <em>Nuclear Instruments and Methods in Physics Research Section A: Accelerators, Spectrometers, Detectors and Associated Equipment</em> 327.2-3 (1993): 580-593.</p>
@@ -738,7 +746,7 @@ Number of points: 100 and Number of dimensions: 12
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.3.7.<br>
 </p>
   </div>
   
