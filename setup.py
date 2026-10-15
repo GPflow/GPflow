@@ -20,9 +20,7 @@ requirements = [
     "setuptools>=41.0.0",  # to satisfy dependency constraints
     "tabulate",
     "tensorflow-probability[tf]>=0.12.0",
-    "tensorflow>=2.4.0; platform_system!='Darwin' or platform_machine!='arm64'",
-    # NOTE: Support of Apple Silicon MacOS platforms is in an experimental mode
-    "tensorflow-macos>=2.4.0; platform_system=='Darwin' and platform_machine=='arm64'",
+    "tensorflow>=2.4.0",
     # NOTE: once we require tensorflow-probability>=0.12, we can remove our custom deepcopy handling
     "typing_extensions",
 ]
@@ -79,6 +77,7 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Typing :: Typed",
     ],
