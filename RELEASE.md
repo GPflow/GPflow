@@ -35,7 +35,7 @@ This release contains contributions from:
 
 # Release 2.11.2
 
-This release adds support for TensorFlow 2.18.
+This release fixes an issue with Tensorflow's Cholesky decomposition where it can fail silently.
 
 ## Known Caveats
 
@@ -51,7 +51,7 @@ This release adds support for TensorFlow 2.18.
 
 This release contains contributions from:
 
-uri-granta
+pakhaykwok, uri-granta
 
 
 # Release 2.11.1
