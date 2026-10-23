@@ -11,7 +11,8 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from typing import Any, Callable, DefaultDict, Optional, Set, Type, cast
+import logging
+from typing import Any, Callable, DefaultDict, Optional, Set, Tuple, Type, Union, cast
 
 import numpy as np
 import pytest
@@ -33,17 +34,22 @@ from gpflow.posteriors import (
     FallbackIndependentLatentPosterior,
     FullyCorrelatedPosterior,
     GPRPosterior,
+    IndependentOrthogonalPosteriorMultiOutput,
+    IndependentOrthogonalPosteriorSingleOutput,
     IndependentPosteriorMultiOutput,
     IndependentPosteriorSingleOutput,
     LinearCoregionalizationPosterior,
     PrecomputeCacheType,
     SGPRPosterior,
     VGPPosterior,
+    create_orthogonal_posterior,
     create_posterior,
 )
 
 INPUT_DIMS = 2
 NUM_INDUCING_POINTS = 3
+
+logging.basicConfig(filename="~/debug.log", level=logging.DEBUG)
 
 
 # `PosteriorType` really should be something like `Type[AbstractPosterior]`, except mypy doesn't
@@ -60,6 +66,8 @@ def _register_posterior_test_fixture(
         posterior: AbstractPosterior, expected_posterior_class: Type[AbstractPosterior]
     ) -> None:
         assert isinstance(posterior, expected_posterior_class)
+        # This is where the tested posteriors are registered.  But why are the orthogonal posteriors
+        # not being registered here?  The tests all call register_posterior_test appropriately.
         tested_posteriors["test_posteriors.py"].add(expected_posterior_class)
 
     return _verify_and_register_posterior_test
@@ -178,6 +186,57 @@ def _assert_fused_predict_f_equals_precomputed_predict_f_and_conditional(
     np.testing.assert_allclose(fused_f_cov, precomputed_f_cov)
     np.testing.assert_array_equal(fused_f_mean, conditional_f_mean)
     np.testing.assert_array_equal(fused_f_cov, conditional_f_cov)
+
+
+# TODO: Many of these tests could be combined by parameterising kernel
+# and register_posterior_test's second argument (PosteriorType)
+def test_independent_orthogonal_single_output(
+    register_posterior_test: RegisterPosterior,
+    q_sqrt_factory: QSqrtFactory,
+    whiten: bool,
+    full_cov: bool,
+    full_output_cov: bool,
+) -> None:
+    logging.info("Beginning test for orthogonal single output")
+    kernel = gpflow.kernels.SquaredExponential()
+    inducing_variable = inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
+
+    q_mu = np.random.randn(NUM_INDUCING_POINTS, 1)
+    q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, 1)
+
+    local_conditional = lambda Xnew, inducing_variable, kernel, q_mu: conditional(
+        Xnew,
+        inducing_variable,
+        kernel,
+        q_mu,
+        q_sqrt=q_sqrt,
+        white=whiten,
+        full_cov=full_cov,
+        full_output_cov=full_output_cov,
+    )
+    # create_conditional(
+    #    kernel=kernel,
+    #    inducing_variable=inducing_variable,
+    #    q_mu=q_mu,
+    #    q_sqrt=q_sqrt,
+    #    whiten=whiten,
+    # )
+    # FIXME: posterior is not returning the appropriate type, need a different dispatch here
+    posterior = create_orthogonal_posterior(
+        kernel=kernel,
+        inducing_variable_u=inducing_variable,
+        inducing_variable_v=inducing_variable,
+        q_mu_u=q_mu,
+        q_mu_v=q_mu,
+        q_sqrt_u=q_sqrt,
+        q_sqrt_v=q_sqrt,
+        whiten=whiten,
+    )
+    register_posterior_test(posterior, IndependentOrthogonalPosteriorSingleOutput)
+
+    _assert_fused_predict_f_equals_precomputed_predict_f_and_conditional(
+        posterior, local_conditional, full_cov, full_output_cov
+    )
 
 
 def test_independent_single_output(
@@ -430,6 +489,242 @@ def test_independent_multi_output_sek_sei(
     _assert_fused_predict_f_equals_precomputed_predict_f_and_conditional(
         posterior, conditional, full_cov, full_output_cov
     )
+
+
+# Begin Orthogonal
+def test_independent_orthogonal_multi_output_shk_shi(
+    register_posterior_test: RegisterPosterior,
+    q_sqrt_factory: QSqrtFactory,
+    full_cov: bool,
+    full_output_cov: bool,
+    whiten: bool,
+    num_latent_gps: int,
+    output_dims: int,
+) -> None:
+    """
+    Independent multi-output posterior with a shared kernel and shared inducing points.
+    """
+    logging.info("Beginning test for orthogonal multiple output")
+    kernel = gpflow.kernels.SharedIndependent(
+        gpflow.kernels.SquaredExponential(), output_dim=output_dims
+    )
+    inducing_variable = (
+        gpflow.inducing_variables.SharedIndependentInducingVariables(
+            inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
+        ),
+        gpflow.inducing_variables.SharedIndependentInducingVariables(
+            inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
+        ),
+    )
+
+    q_mu = np.random.randn(NUM_INDUCING_POINTS, num_latent_gps)
+    q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, num_latent_gps)
+
+    local_conditional = lambda Xnew, inducing_variable, kernel, q_mu: conditional(
+        Xnew,
+        inducing_variable,
+        kernel,
+        q_mu,
+        q_sqrt=q_sqrt,
+        white=whiten,
+        full_cov=full_cov,
+        full_output_cov=full_output_cov,
+    )
+    posterior = create_orthogonal_posterior(
+        kernel=kernel,
+        inducing_variable_u=inducing_variable[0],
+        inducing_variable_v=inducing_variable[1],
+        q_mu_u=q_mu,
+        q_mu_v=q_mu,
+        q_sqrt_u=q_sqrt,
+        q_sqrt_v=q_sqrt,
+        whiten=whiten,
+    )
+    register_posterior_test(posterior, IndependentOrthogonalPosteriorMultiOutput)
+
+    _assert_fused_predict_f_equals_precomputed_predict_f_and_conditional(
+        posterior, local_conditional, full_cov, full_output_cov
+    )
+
+
+def test_independent_orthogonal_multi_output_shk_sei(
+    register_posterior_test: RegisterPosterior,
+    q_sqrt_factory: QSqrtFactory,
+    full_cov: bool,
+    full_output_cov: bool,
+    whiten: bool,
+    num_latent_gps: int,
+    output_dims: int,
+) -> None:
+    """
+    Independent multi-output posterior with a shared kernel and separate inducing points.
+    """
+    logging.info("Beginning test for orthogonal multiple output")
+    kernel = gpflow.kernels.SharedIndependent(
+        gpflow.kernels.SquaredExponential(), output_dim=output_dims
+    )
+    inducing_variable = (
+        gpflow.inducing_variables.SeparateIndependentInducingVariables(
+            [
+                inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
+                for _ in range(num_latent_gps)
+            ]
+        ),
+        gpflow.inducing_variables.SeparateIndependentInducingVariables(
+            [
+                inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
+                for _ in range(num_latent_gps)
+            ]
+        ),
+    )
+
+    q_mu = np.random.randn(NUM_INDUCING_POINTS, num_latent_gps)
+    q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, num_latent_gps)
+
+    local_conditional = lambda Xnew, inducing_variable, kernel, q_mu: conditional(
+        Xnew,
+        inducing_variable,
+        kernel,
+        q_mu,
+        q_sqrt=q_sqrt,
+        white=whiten,
+        full_cov=full_cov,
+        full_output_cov=full_output_cov,
+    )
+    posterior = create_orthogonal_posterior(
+        kernel=kernel,
+        inducing_variable_u=inducing_variable[0],
+        inducing_variable_v=inducing_variable[1],
+        q_mu_u=q_mu,
+        q_mu_v=q_mu,
+        q_sqrt_u=q_sqrt,
+        q_sqrt_v=q_sqrt,
+        whiten=whiten,
+    )
+    register_posterior_test(posterior, IndependentOrthogonalPosteriorMultiOutput)
+
+    _assert_fused_predict_f_equals_precomputed_predict_f_and_conditional(
+        posterior, local_conditional, full_cov, full_output_cov
+    )
+
+
+def test_independent_orthogonal_multi_output_sek_shi(
+    register_posterior_test: RegisterPosterior,
+    q_sqrt_factory: QSqrtFactory,
+    full_cov: bool,
+    full_output_cov: bool,
+    whiten: bool,
+    num_latent_gps: int,
+    output_dims: int,
+) -> None:
+    """
+    Independent multi-output posterior with separate independent kernels and shared inducing points.
+    """
+    logging.info("Beginning test for orthogonal multiple output")
+    kernel = gpflow.kernels.SeparateIndependent(
+        [gpflow.kernels.SquaredExponential() for _ in range(num_latent_gps)]
+    )
+    inducing_variable = (
+        gpflow.inducing_variables.SharedIndependentInducingVariables(
+            inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
+        ),
+        gpflow.inducing_variables.SharedIndependentInducingVariables(
+            inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
+        ),
+    )
+
+    q_mu = np.random.randn(NUM_INDUCING_POINTS, num_latent_gps)
+    q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, num_latent_gps)
+
+    local_conditional = lambda Xnew, inducing_variable, kernel, q_mu: conditional(
+        Xnew,
+        inducing_variable,
+        kernel,
+        q_mu,
+        q_sqrt=q_sqrt,
+        white=whiten,
+        full_cov=full_cov,
+        full_output_cov=full_output_cov,
+    )
+    posterior = create_orthogonal_posterior(
+        kernel=kernel,
+        inducing_variable_u=inducing_variable[0],
+        inducing_variable_v=inducing_variable[1],
+        q_mu_u=q_mu,
+        q_mu_v=q_mu,
+        q_sqrt_u=q_sqrt,
+        q_sqrt_v=q_sqrt,
+        whiten=whiten,
+    )
+    register_posterior_test(posterior, IndependentOrthogonalPosteriorMultiOutput)
+
+    _assert_fused_predict_f_equals_precomputed_predict_f_and_conditional(
+        posterior, local_conditional, full_cov, full_output_cov
+    )
+
+
+def test_independent_orthogonal_multi_output_sek_sei(
+    register_posterior_test: RegisterPosterior,
+    q_sqrt_factory: QSqrtFactory,
+    full_cov: bool,
+    full_output_cov: bool,
+    whiten: bool,
+    num_latent_gps: int,
+    output_dims: int,
+) -> None:
+    """
+    Independent multi-output posterior with separate independent kernel and separate inducing points.
+    """
+    logging.info("Beginning test for orthogonal multiple output")
+    kernel = gpflow.kernels.SeparateIndependent(
+        [gpflow.kernels.SquaredExponential() for _ in range(num_latent_gps)]
+    )
+    inducing_variable = (
+        gpflow.inducing_variables.SeparateIndependentInducingVariables(
+            [
+                inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
+                for _ in range(num_latent_gps)
+            ]
+        ),
+        gpflow.inducing_variables.SeparateIndependentInducingVariables(
+            [
+                inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
+                for _ in range(num_latent_gps)
+            ]
+        ),
+    )
+
+    q_mu = np.random.randn(NUM_INDUCING_POINTS, num_latent_gps)
+    q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, num_latent_gps)
+
+    local_conditional = lambda Xnew, inducing_variable, kernel, q_mu: conditional(
+        Xnew,
+        inducing_variable,
+        kernel,
+        q_mu,
+        q_sqrt=q_sqrt,
+        white=whiten,
+        full_cov=full_cov,
+        full_output_cov=full_output_cov,
+    )
+    posterior = create_orthogonal_posterior(
+        kernel=kernel,
+        inducing_variable_u=inducing_variable[0],
+        inducing_variable_v=inducing_variable[1],
+        q_mu_u=q_mu,
+        q_mu_v=q_mu,
+        q_sqrt_u=q_sqrt,
+        q_sqrt_v=q_sqrt,
+        whiten=whiten,
+    )
+    register_posterior_test(posterior, IndependentOrthogonalPosteriorMultiOutput)
+
+    _assert_fused_predict_f_equals_precomputed_predict_f_and_conditional(
+        posterior, local_conditional, full_cov, full_output_cov
+    )
+
+
+# End Orthogonal
 
 
 def test_fallback_independent_multi_output_sei(
