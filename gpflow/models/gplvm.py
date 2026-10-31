@@ -160,6 +160,7 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
         "return: []",
     )
     def elbo(self) -> tf.Tensor:
+
         """
         Construct a tensorflow function to compute the bound on the marginal
         likelihood.
