@@ -100,7 +100,6 @@ def quadrature_expectation(
                                          the number of Gauss-Hermite points used
     :return: a 1-D, 2-D, or 3-D tensor containing the expectation
     """
-    print(f"2. p={p}, obj1={obj1}, obj2={obj2}")
     p, obj1, feat1, obj2, feat2 = _init_expectation(p, obj1, obj2)
     return dispatch.quadrature_expectation(p, obj1, feat1, obj2, feat2, nghp=nghp)
 
