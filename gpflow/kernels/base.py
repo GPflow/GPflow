@@ -62,16 +62,31 @@ class Kernel(Module, metaclass=abc.ABCMeta):
         Checks if the dimensions, over which the kernels are specified, overlap.
         Returns True if they are defined on different/separate dimensions and False otherwise.
         """
-        if isinstance(self.active_dims, slice) or isinstance(other.active_dims, slice):
-            # Be very conservative for kernels defined over slices of dimensions
-            return False
-
         if self.active_dims is None or other.active_dims is None:
             return False
 
-        this_dims = self.active_dims.reshape(-1, 1)
-        other_dims = other.active_dims.reshape(1, -1)
-        return not np.any(this_dims == other_dims)
+        this_dims = self.active_dims
+        other_dims = other.active_dims
+
+        # Be very conservative for kernels defined over slices of dimensions.
+        # We simply return `False` if any open-ended slices (start or stop are
+        # None) are involved. Otherwise, use np.arange() to convert slice into
+        # array and proceed as for explicitly given dimensions.
+
+        # TODO: we could handle half-open slices but there is lots of special-
+        # casing involved for negative steps, etc.
+
+        if isinstance(this_dims, slice):
+            if (this_dims.start is None) or (this_dims.stop is None):
+                return False
+            this_dims = np.arange(this_dims.start, this_dims.stop, this_dims.step)
+
+        if isinstance(other_dims, slice):
+            if (other_dims.start is None) or (other_dims.stop is None):
+                return False
+            other_dims = np.arange(other_dims.start, other_dims.stop, other_dims.step)
+
+        return not np.any(this_dims.reshape(-1, 1) == other_dims.reshape(1, -1))
 
     @overload
     def slice(self, X: TensorType, X2: TensorType) -> Tuple[tf.Tensor, tf.Tensor]:
