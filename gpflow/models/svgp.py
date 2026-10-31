@@ -26,6 +26,7 @@ from ..inducing_variables import InducingVariables
 from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
+from ..posteriors import AbstractPosterior
 from ..utilities import positive, triangular
 from .model import GPModel
 from .training_mixins import ExternalDataTrainingLossMixin
@@ -253,6 +254,33 @@ class SVGP_with_posterior(SVGP_deprecated):
         return self.posterior(posteriors.PrecomputeCacheType.NOCACHE).fused_predict_f(
             Xnew, full_cov=full_cov, full_output_cov=full_output_cov
         )
+
+    @check_shapes(
+        "Xnew: [batch..., N, D]",
+        "return[0]: [batch..., N, P]",
+        "return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov",
+        "return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)",
+        "return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov",
+        "return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)",
+    )
+    def predict_y_faster(
+        self,
+        Xnew: InputData,
+        posteriors: posteriors.BasePosterior,
+        full_cov: bool = False,
+        full_output_cov: bool = False,
+    ) -> MeanAndVariance:
+        """
+        For backwards compatibility, GPR's predict_y_faster uses the (cache)
+        computation, which is implenmented based on a given posteior.
+
+        """
+
+        f_mean, f_var = posteriors.predict_f(
+            Xnew, full_cov=full_cov, full_output_cov=full_output_cov
+        )
+
+        return self.likelihood.predict_mean_and_var(Xnew, f_mean, f_var)
 
 
 class SVGP(SVGP_with_posterior):
