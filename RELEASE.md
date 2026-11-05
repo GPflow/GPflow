@@ -22,6 +22,8 @@ Release notes for all past releases are available in the ['Releases' section](ht
 
 ## Bug Fixes and Other Changes
 
+* Correct the sine-distance norm for multidimensional periodic radial kernels, fixing an indefinite Matern32 covariance and non-finite GPR objectives.
+
 * <SIMILAR TO ABOVE SECTION, BUT FOR OTHER IMPORTANT CHANGES / BUG FIXES>
 * <IF A CHANGE CLOSES A GITHUB ISSUE, IT SHOULD BE DOCUMENTED HERE>
 * <NOTES SHOULD BE GROUPED PER AREA>

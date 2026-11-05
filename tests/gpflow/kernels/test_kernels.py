@@ -216,6 +216,24 @@ def test_periodic(
     assert_allclose(gram_matrix, reference_gram_matrix)
 
 
+def test_periodic_matern32_embedding_and_gpr() -> None:
+    X = np.array([[0.0, 0.0], [0.1, 0.0], [0.0, 0.1], [0.1, 0.1]])
+    Y = np.array([[0.0], [1.0], [-1.0], [0.5]])
+    kernel = Periodic(Matern32())
+    # The factor 1/2 follows Periodic's lengthscale convention.
+    embedding = np.concatenate([np.cos(2 * np.pi * X), np.sin(2 * np.pi * X)], axis=-1) / 2
+    covariance = kernel(X).numpy()
+    assert_allclose(covariance, Matern32()(embedding), rtol=1e-12, atol=1e-12)
+    assert np.linalg.eigvalsh(covariance)[0] >= -1e-12
+
+    model = gpflow.models.GPR((X, Y), kernel, noise_variance=0.01)
+    with tf.GradientTape() as tape:
+        loss = model.training_loss()
+    assert np.isfinite(loss.numpy())
+    gradients = tape.gradient(loss, model.trainable_variables)
+    assert all(g is not None and np.all(np.isfinite(g.numpy())) for g in gradients)
+
+
 @pytest.mark.parametrize(
     "base_class",
     [
