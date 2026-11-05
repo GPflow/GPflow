@@ -484,6 +484,31 @@ def test_active_product(N: int, D: int) -> None:
     assert np.allclose(Kff, Kff_prod)
 
 
+def test_reducing_combination_active_dims_slicing() -> None:
+    """
+    Regression test for #2137.
+
+    ReducingCombination.K / K_diag must route through the slice-aware Kernel.__call__
+    path so anisotropic sub-kernels with disjoint active_dims receive the correct
+    input columns.
+    """
+    rbf = RBF(lengthscales=[1.0, 1.0], active_dims=[0, 1])
+    linear = Linear(active_dims=[2])
+    kernel = rbf + linear
+
+    X = np.random.randn(8, 3)
+    K = kernel.K(X)
+    K_diag = kernel.K_diag(X)
+    K_call = kernel(X)
+
+    assert K.shape == (8, 8)
+    assert K_diag.shape == (8,)
+    assert np.all(np.isfinite(K))
+    assert np.all(np.isfinite(K_diag))
+    np.testing.assert_allclose(K, K_call)
+    np.testing.assert_allclose(K_diag, kernel(X, full_cov=False))
+
+
 @pytest.mark.parametrize("D", [4, 7])
 def test_ard_init_scalar(D: int) -> None:
     """
