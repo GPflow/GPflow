@@ -133,3 +133,16 @@ def test_shape__inconsistent(none_shape: bool) -> None:
         iv.num_inducing
     with pytest.raises(tf.errors.InvalidArgumentError):
         len(iv)
+
+
+def test_separate_independent_allows_different_input_dimensions() -> None:
+    iv = giv.SeparateIndependentInducingVariables(
+        [
+            giv.InducingPatches([[0, 1], [2, 3]]),
+            giv.InducingPatches([[0], [1]]),
+            giv.InducingPoints([[0, 1, 2], [3, 4, 5]]),
+        ]
+    )
+
+    assert 2 == iv.num_inducing
+    assert get_shape(iv, TestContext()) is None
