@@ -131,6 +131,13 @@ def base_conditional_with_lm(
         fvar = tf.broadcast_to(tf.expand_dims(fvar, -3), cov_shape)  # [..., R, N, N]
     else:
         fvar = Knn - tf.reduce_sum(tf.square(A), -2)  # [..., N]
+        # This is mathematically a variance (Knn minus a PSD reduction
+        # term) and can never truly be negative, but floating-point
+        # cancellation in the subtraction above can push it slightly below
+        # zero, e.g. when a test point coincides with (or is very near) a
+        # training point (#1813). Clip it, as other GP implementations do
+        # for this same computation.
+        fvar = tf.maximum(fvar, tf.zeros_like(fvar))
         cov_shape = tf.concat([leading_dims, [num_func, N]], 0)  # [..., R, N]
         fvar = tf.broadcast_to(tf.expand_dims(fvar, -2), cov_shape)  # [..., R, N]
 
