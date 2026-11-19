@@ -32,15 +32,11 @@ from check_shapes import check_shapes, inherit_check_shapes
 
 from gpflow.experimental.utils import experimental
 
-from ..base import Parameter, TensorType
+from ..base import AnyNDArray, Parameter, TensorType
 from ..config import default_float
 from ..utilities import deepcopy, positive, set_trainable, to_default_float
 from .base import ActiveDims, Kernel, NormalizedActiveDims
 from .stationaries import Matern52, Stationary
-
-# Value used to denote inactive or ignored feature entries in
-# hierarchical/disjunctive kernel activation logic.
-_IGNORE = -1
 
 
 def _check_non_negative_unique(values: Sequence[int], name: str) -> None:
@@ -219,10 +215,10 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
             raise ValueError(f"`hierarchy` contains duplicate node names: {duplicate_names}.")
 
         flat_feature_dims: List[int] = []
-        flat_bounds_rows: List[tf.Tensor] = []
+        flat_bounds_rows: List[AnyNDArray] = []
         flat_activity_conditions: List[ActivityCondition] = []
         for node in hierarchy:
-            bounds = tf.convert_to_tensor(node.feature_bounds, dtype=tf.float64)
+            bounds = tf.convert_to_tensor(node.feature_bounds, dtype=tf.float64).numpy()
             for i, fd in enumerate(node.feature_dims):
                 flat_feature_dims.append(fd)
                 flat_bounds_rows.append(bounds[i])
@@ -240,9 +236,6 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
                 f"{sorted(overlap)}; a column cannot be both a feature and an indicator."
             )
 
-        key_to_pos: Dict[int, int] = {k: p for p, k in enumerate(indicator_dims)}
-
-        bounds_tensor = tf.stack(flat_bounds_rows, axis=0)
         self._n_feat = len(flat_feature_dims)
         self._n_ind = len(indicator_dims)
 
@@ -263,10 +256,7 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
                 f"{list(range(width))} != "
                 f"{sorted(flat_feature_dims + indicator_dims)}"
             )
-        self._feature_dims = tf.constant(flat_feature_dims, dtype=tf.int32)
         self._indicator_dims_tuple: Tuple[int, ...] = tuple(indicator_dims)
-        self._indicator_dims = tf.constant(indicator_dims, dtype=tf.int32)
-        self._bounds = bounds_tensor
         self._hierarchy = hierarchy
 
         cond_local_idx = [j for j, ac in enumerate(flat_activity_conditions) if ac.requirements]
@@ -277,12 +267,39 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         self._n_cond = len(cond_local_idx)
         self._n_uncond = len(uncond_local_idx)
 
-        required = [[_IGNORE] * self._n_ind for _ in range(self._n_feat)]
-        for j, ac in enumerate(flat_activity_conditions):
-            for k, v in ac.requirements.items():
-                required[j][key_to_pos[k]] = v
-        self._required = tf.constant(required, dtype=tf.int32)
-        self._required_is_ignore = tf.equal(self._required, _IGNORE)
+        # Everything `_embed` needs from the hierarchy, worked out once as plain Python and
+        # numpy values so that they are baked into the graph as constants. Small batches cost
+        # a fixed amount per op, so the embedding is kept to as few ops as possible.
+        bounds = np.stack(flat_bounds_rows, axis=0)
+        span = bounds[:, 1] - bounds[:, 0]
+        span = np.where(np.abs(span) < 1e-12, 1.0, span)
+        self._uncond_dims = [flat_feature_dims[j] for j in uncond_local_idx]
+        self._uncond_lower = bounds[uncond_local_idx, 0]
+        self._uncond_range = span[uncond_local_idx]
+        self._cond_dims = [flat_feature_dims[j] for j in cond_local_idx]
+        self._cond_lower = bounds[cond_local_idx, 0]
+        self._cond_range = span[cond_local_idx]
+
+        # The activity mask is built from the distinct (indicator column, required value)
+        # pairs across all conditions: `_mask_pair_dims` / `_mask_pair_values` hold the pairs,
+        # and `_mask_pair_to_cond[p, c]` is 1 when conditional feature `c` requires pair `p`.
+        # A feature is active when none of its required pairs mismatch, which takes a fixed
+        # number of ops however many conditions the hierarchy has.
+        pairs = sorted(
+            {
+                pair
+                for j in cond_local_idx
+                for pair in flat_activity_conditions[j].requirements.items()
+            }
+        )
+        pair_index = {pair: p for p, pair in enumerate(pairs)}
+        pair_to_cond = np.zeros((len(pairs), self._n_cond))
+        for c, j in enumerate(cond_local_idx):
+            for pair in flat_activity_conditions[j].requirements.items():
+                pair_to_cond[pair_index[pair], c] = 1.0
+        self._mask_pair_dims = [dim for dim, _ in pairs]
+        self._mask_pair_values = np.array([value for _, value in pairs], dtype=np.float64)
+        self._mask_pair_to_cond = pair_to_cond
 
         if base_kernel is None:
             base_kernel = Matern52()
@@ -343,64 +360,73 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
 
     @check_shapes(
         "X: [batch..., N, D]", "return: [batch..., N, D_cond]"
-    )  # D_cond is inferred from context
+    )  # D_cond is the number of conditional feature columns
     def _build_activity_mask(self, X: TensorType) -> tf.Tensor:
-        if self._n_ind == 0:
-            shape = tf.concat([tf.shape(X)[:-1], [self._n_feat]], axis=0)
-            return tf.ones(shape, dtype=tf.bool)
-        ind = tf.gather(X, self._indicator_dims, axis=-1)
-        ind = tf.cast(tf.round(tf.cast(ind, tf.float64)), tf.int32)  # [..., N, D_i]
-        # broadcast comparison: ind[..., :, None, :] vs _required[None, :, :]
-        ind_expanded = tf.expand_dims(ind, axis=-2)  # [..., N, 1, D_i]
-        required_expanded = self._required[None, :, :]  # [1, D_f, D_i]
-        # left-pad required for extra leading batch dims
-        while required_expanded.shape.ndims < ind_expanded.shape.ndims:
-            required_expanded = tf.expand_dims(required_expanded, axis=0)
-        ignore_expanded = self._required_is_ignore[None, :, :]
-        while ignore_expanded.shape.ndims < ind_expanded.shape.ndims:
-            ignore_expanded = tf.expand_dims(ignore_expanded, axis=0)
-        match = tf.logical_or(
-            ignore_expanded,
-            tf.equal(ind_expanded, required_expanded),
+        """Whether each conditional feature column is active, for each point of ``X``.
+        Indicators are rounded to the nearest integer before comparison."""
+        X = tf.convert_to_tensor(X)
+        if self._n_cond == 0:
+            shape = tf.concat([tf.shape(X)[:-1], [0]], axis=0)
+            return tf.zeros(shape, dtype=tf.bool)
+        indicators = tf.round(tf.gather(X, self._mask_pair_dims, axis=-1))  # [..., N, P]
+        mismatches = tf.cast(
+            tf.not_equal(indicators, tf.constant(self._mask_pair_values, dtype=X.dtype)), X.dtype
         )
-        return tf.reduce_all(match, axis=-1)
+        # Number of required pairs each conditional feature fails: [..., N, D_cond].
+        n_failed = tf.matmul(mismatches, tf.constant(self._mask_pair_to_cond, dtype=X.dtype))
+        return n_failed < 0.5
 
-    @check_shapes(
-        "X: [batch..., N, D]", "return: [batch..., N, D_f]"
-    )  # D_f is feature_dims (i.e. D_cond + D_uncond)
-    def _normalise(self, X: TensorType) -> tf.Tensor:
-        v = tf.gather(X, self._feature_dims, axis=-1)
-        lo, hi = self._bounds[:, 0], self._bounds[:, 1]
-        lo_cast, hi_cast = tf.cast(lo, v.dtype), tf.cast(hi, v.dtype)
-        rng = hi_cast - lo_cast
-        safe_rng = tf.where(tf.abs(rng) < 1e-12, tf.ones_like(rng), rng)
-        return (v - lo_cast) / safe_rng
+    @abc.abstractmethod
+    def _conditional_parameters(self) -> Dict[str, tf.Tensor]:
+        """The constrained parameters :meth:`_embed_conditional` needs, each read once.
+
+        Reading a :class:`~gpflow.Parameter` runs its transform, so :meth:`K` reads them once
+        and shares them between its two inputs."""
 
     @abc.abstractmethod
     @check_shapes(
         "v_c: [batch..., N, D_cond]", "m_c: [batch..., N, D_cond]", "return: [batch..., N, D_econd]"
     )  # D_econd = 2*D_cond
-    def _embed_conditional(self, v_c: tf.Tensor, m_c: tf.Tensor) -> tf.Tensor:
+    def _embed_conditional(
+        self, v_c: tf.Tensor, m_c: tf.Tensor, parameters: Mapping[str, tf.Tensor]
+    ) -> tf.Tensor:
         """Map ``[batch..., N, D_cond]`` conditional values and float masks to
-        ``[batch..., N, 2 * D_cond]`` embedded coordinates."""
+        ``[batch..., N, 2 * D_cond]`` embedded coordinates, using the ``parameters``
+        returned by :meth:`_conditional_parameters`."""
+
+    def _embedding_parameters(self) -> Dict[str, tf.Tensor]:
+        """Every constrained parameter :meth:`_embed` needs, each read once."""
+        parameters = self._conditional_parameters() if self._n_cond > 0 else {}
+        if self._n_uncond > 0:
+            parameters["uncond_lengthscales"] = tf.convert_to_tensor(self.uncond_lengthscales)
+        return parameters
 
     @check_shapes("X: [batch..., N, D]", "return: [batch..., N, D_e]")  # D_e = 2*D_cond + D_uncond
-    def _embed(self, X: TensorType) -> tf.Tensor:
-        v = self._normalise(X)
-        m_float = tf.cast(self._build_activity_mask(X), v.dtype)
+    def _embed(
+        self, X: TensorType, parameters: Optional[Mapping[str, tf.Tensor]] = None
+    ) -> tf.Tensor:
+        """Embed ``X`` as ``[uncond | cond]`` coordinates for the base kernel. Feature values
+        are normalised to ``[0, 1]`` by their bounds; conditional ones are gated by
+        :meth:`_build_activity_mask`."""
+        X = tf.convert_to_tensor(X)
+        if parameters is None:
+            parameters = self._embedding_parameters()
         parts = []
         if self._n_uncond > 0:
-            v_unc = tf.gather(v, self._uncond_local_idx, axis=-1)
-            parts.append(v_unc / self.uncond_lengthscales)
+            v_unc = (
+                tf.gather(X, self._uncond_dims, axis=-1)
+                - tf.constant(self._uncond_lower, dtype=X.dtype)
+            ) / tf.constant(self._uncond_range, dtype=X.dtype)
+            parts.append(v_unc / parameters["uncond_lengthscales"])
         if self._n_cond > 0:
-            v_c = tf.gather(v, self._cond_local_idx, axis=-1)
-            m_c = tf.gather(m_float, self._cond_local_idx, axis=-1)
-            parts.append(self._embed_conditional(v_c, m_c))
-        if not parts:
-            # Unreachable: HierarchyNode/__init__ guarantee >= 1 feature column.
-            shape = tf.concat([tf.shape(X)[:-1], [0]], axis=0)  # pragma: no cover
-            return tf.zeros(shape, dtype=v.dtype)  # pragma: no cover
-        return tf.concat(parts, axis=-1)
+            v_c = (
+                tf.gather(X, self._cond_dims, axis=-1)
+                - tf.constant(self._cond_lower, dtype=X.dtype)
+            ) / tf.constant(self._cond_range, dtype=X.dtype)
+            m_c = tf.cast(self._build_activity_mask(X), X.dtype)
+            parts.append(self._embed_conditional(v_c, m_c, parameters))
+        # HierarchyNode/__init__ guarantee at least one feature column, so parts is non-empty.
+        return parts[0] if len(parts) == 1 else tf.concat(parts, axis=-1)
 
     @inherit_check_shapes
     def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
@@ -410,8 +436,9 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         The embedding and base kernel evaluation are performed in the joint embedded
         space defined by the hierarchy and indicators.
         """
-        Z = self._embed(X)
-        Z2 = self._embed(X2) if X2 is not None else None
+        parameters = self._embedding_parameters()
+        Z = self._embed(X, parameters)
+        Z2 = self._embed(X2, parameters) if X2 is not None else None
         return self.base_kernel.K(Z, Z2)
 
     @inherit_check_shapes
@@ -420,7 +447,9 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         Evaluate the kernel function on the diagonal of the covariance matrix for input ``X``.
         Assumes that X is already sliced according to active_dims, if applicable.
         """
-        return self.base_kernel.K_diag(self._embed(X))
+        # The base kernel is Stationary, so its diagonal is its variance whatever the
+        # (embedded) inputs, and X need not be embedded.
+        return self.base_kernel.K_diag(X)
 
 
 class ArcHierarchical(HierarchicalEmbeddingKernel):
@@ -462,12 +491,19 @@ class ArcHierarchical(HierarchicalEmbeddingKernel):
                 name="radius",
             )
 
+    def _conditional_parameters(self) -> Dict[str, tf.Tensor]:
+        return {
+            "frequency": np.pi * tf.convert_to_tensor(self.angle),
+            "radius": tf.convert_to_tensor(self.radius),
+        }
+
     @inherit_check_shapes
-    def _embed_conditional(self, v_c: tf.Tensor, m_c: tf.Tensor) -> tf.Tensor:
-        theta = np.pi * self.angle * v_c
-        sin_part = self.radius * tf.sin(theta) * m_c
-        cos_part = self.radius * tf.cos(theta) * m_c
-        return tf.concat([sin_part, cos_part], axis=-1)
+    def _embed_conditional(
+        self, v_c: tf.Tensor, m_c: tf.Tensor, parameters: Mapping[str, tf.Tensor]
+    ) -> tf.Tensor:
+        theta = parameters["frequency"] * v_c
+        radius_masked = parameters["radius"] * m_c
+        return tf.concat([radius_masked * tf.sin(theta), radius_masked * tf.cos(theta)], axis=-1)
 
 
 class WedgeHierarchical(HierarchicalEmbeddingKernel):
@@ -514,8 +550,18 @@ class WedgeHierarchical(HierarchicalEmbeddingKernel):
                 name="rho",
             )
 
+    def _conditional_parameters(self) -> Dict[str, tf.Tensor]:
+        # (theta1 v + theta2 v cos rho) m and (theta2 v sin rho) m, factored by v m.
+        theta2 = tf.convert_to_tensor(self.theta2)
+        rho = tf.convert_to_tensor(self.rho)
+        return {
+            "a": tf.convert_to_tensor(self.theta1) + theta2 * tf.cos(rho),
+            "b": theta2 * tf.sin(rho),
+        }
+
     @inherit_check_shapes
-    def _embed_conditional(self, v_c: tf.Tensor, m_c: tf.Tensor) -> tf.Tensor:
-        comp1 = (self.theta1 * v_c + self.theta2 * v_c * tf.cos(self.rho)) * m_c
-        comp2 = (self.theta2 * v_c * tf.sin(self.rho)) * m_c
-        return tf.concat([comp1, comp2], axis=-1)
+    def _embed_conditional(
+        self, v_c: tf.Tensor, m_c: tf.Tensor, parameters: Mapping[str, tf.Tensor]
+    ) -> tf.Tensor:
+        vm = v_c * m_c
+        return tf.concat([parameters["a"] * vm, parameters["b"] * vm], axis=-1)

@@ -33,6 +33,21 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
+# Release 2.11.3
+
+This release speeds up the hierarchical kernels.
+
+## Bug Fixes and Other Changes
+
+* Speed up `ArcHierarchical` and `WedgeHierarchical` by building much smaller graphs: the embedding constants are worked out once at construction, the activity mask needs one comparison per distinct activity condition, constrained parameters are read once per `K` call, and `K_diag` no longer embeds its inputs. Values change only at the level of floating-point rounding.
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+<INSERT>, <GITHUB>, <HANDLES>
+
+
 # Release 2.11.2
 
 This release fixes an issue with Tensorflow's Cholesky decomposition where it can fail silently.

@@ -347,7 +347,10 @@ class TestHierarchicalEmbeddingKernelConstruction:
         assert tuple(kernel.hierarchy) == tuple(hierarchy)
 
 
-class TestNormalise:
+class TestNormalisation:
+    # With the default unit `uncond_lengthscales`, the unconditional part of the
+    # embedding is exactly the normalised feature values.
+
     def test_maps_bounds_to_unit_interval(self) -> None:
         kernel = ArcHierarchical(
             hierarchy=[
@@ -360,27 +363,33 @@ class TestNormalise:
             active_dims=[0, 1],
         )
         X = tf.constant([[5.0, 0.0], [10.0, 1.0]], dtype=tf.float64)
-        v = kernel._normalise(X)
+        v = kernel._embed(X)
         np.testing.assert_allclose(v.numpy(), [[0.5, 0.5], [1.0, 1.0]])
 
     def test_ignores_indicator_columns(self) -> None:
-        # `_normalise` should pick out only the feature columns from its
-        # input; indicator columns (here column 1, gated by an
-        # `ActivityCondition`) must not appear in the normalised output.
+        # Only feature columns are normalised and embedded; the indicator
+        # (column 1, gating feature column 3) must not appear in the output.
         kernel = ArcHierarchical(
             hierarchy=[
                 HierarchyNode(
-                    "n",
+                    "shared",
                     feature_dims=[0, 2],
                     feature_bounds=tf.constant([[0.0, 1.0], [0.0, 4.0]], dtype=tf.float64),
+                ),
+                HierarchyNode(
+                    "branch",
+                    feature_dims=[3],
+                    feature_bounds=tf.constant([[0.0, 1.0]], dtype=tf.float64),
                     activity_condition=ActivityCondition({1: 1}),
                 ),
             ],
-            active_dims=[0, 1, 2],
+            active_dims=[0, 1, 2, 3],
         )
-        X = tf.constant([[0.5, 1.0, 2.0]], dtype=tf.float64)
-        v = kernel._normalise(X)
-        np.testing.assert_allclose(v.numpy(), [[0.5, 0.5]])
+        X = tf.constant([[0.5, 1.0, 2.0, 0.5]], dtype=tf.float64)
+        Z = kernel._embed(X).numpy()
+        # Layout: [x0, x2, sin_x3, cos_x3]; no column for the indicator.
+        assert Z.shape == (1, 4)
+        np.testing.assert_allclose(Z[:, :2], [[0.5, 0.5]])
 
     def test_zero_range_bound_does_not_nan(self) -> None:
         kernel = ArcHierarchical(
@@ -394,22 +403,24 @@ class TestNormalise:
             active_dims=[0],
         )
         X = tf.constant([[3.0], [3.0]], dtype=tf.float64)
-        v = kernel._normalise(X)
+        v = kernel._embed(X)
         assert np.all(np.isfinite(v.numpy()))
 
 
 class TestActivityMask:
+    # The mask covers the conditional feature columns only, here [x2, x3].
+
     def test_canonical_disjunction_truth_table(self) -> None:
         kernel = _canonical_disjunction_kernel()
         X = tf.constant(
             [
-                [0.5, 1.0, 2.5, 0.0],  # y1 = 1: x1 + x2 active, x3 inactive
-                [0.5, 0.0, 2.5, 0.0],  # y1 = 0: x1 + x3 active, x2 inactive
+                [0.5, 1.0, 2.5, 0.0],  # y1 = 1: x2 active, x3 inactive
+                [0.5, 0.0, 2.5, 0.0],  # y1 = 0: x3 active, x2 inactive
             ],
             dtype=tf.float64,
         )
         mask = kernel._build_activity_mask(X).numpy()
-        np.testing.assert_array_equal(mask, [[True, True, False], [True, False, True]])
+        np.testing.assert_array_equal(mask, [[True, False], [False, True]])
 
     def test_jittered_indicators_round_to_nearest(self) -> None:
         kernel = _canonical_disjunction_kernel()
@@ -421,13 +432,13 @@ class TestActivityMask:
             dtype=tf.float64,
         )
         mask = kernel._build_activity_mask(X).numpy()
-        np.testing.assert_array_equal(mask, [[True, True, False], [True, False, True]])
+        np.testing.assert_array_equal(mask, [[True, False], [False, True]])
 
-    def test_no_indicators_means_all_active(self) -> None:
+    def test_no_indicators_means_no_conditional_columns(self) -> None:
         kernel = ArcHierarchical(hierarchy=_unconditional_hierarchy([0, 1]), active_dims=[0, 1])
         X = tf.constant([[0.5, 0.5], [0.3, 0.7]], dtype=tf.float64)
         mask = kernel._build_activity_mask(X).numpy()
-        np.testing.assert_array_equal(mask, np.ones((2, 2), dtype=bool))
+        assert mask.shape == (2, 0)
 
     def test_mask_supports_leading_batch_dims(self) -> None:
         # Regression guard: trieste prototype used tf.shape(X)[0], which breaks
@@ -441,11 +452,11 @@ class TestActivityMask:
             dtype=tf.float64,
         )
         mask = kernel._build_activity_mask(X).numpy()
-        assert mask.shape == (2, 2, 3)
+        assert mask.shape == (2, 2, 2)
         expected = np.array(
             [
-                [[True, True, False], [True, False, True]],
-                [[True, False, True], [True, True, False]],
+                [[True, False], [False, True]],
+                [[False, True], [True, False]],
             ]
         )
         np.testing.assert_array_equal(mask, expected)
@@ -801,8 +812,8 @@ class TestTFFunctionCompilation:
     """The kernel must be usable inside a ``tf.function`` (graph mode).
 
     GPflow models wrap loss/prediction in ``tf.function``; the kernel's Python-level
-    ``if``/``while`` branch only on static values (``self._n_*`` ints, ``.shape.ndims``),
-    so it should trace cleanly. These tests prove it does and that compiled output matches
+    ``if``/``for`` branch only on static values (``self._n_*`` ints and the hierarchy's
+    activity conditions), so it should trace cleanly. These tests prove it does and that compiled output matches
     eager. An ``input_signature`` with ``None`` rows means a single trace must handle any
     ``N``; a tracing failure raises, so a passing call is itself evidence of compilation.
     """
@@ -848,7 +859,7 @@ class TestTFFunctionCompilation:
             )
 
     def test_batched_input_compiles(self) -> None:
-        # Leading batch dim exercises the static-rank rank-padding `while` loop in
+        # Leading batch dim exercises the `[..., i]` indicator slicing in
         # `_build_activity_mask` under graph mode.
         kernel = _canonical_disjunction_kernel()
 
