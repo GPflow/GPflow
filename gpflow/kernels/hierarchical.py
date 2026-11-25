@@ -154,9 +154,15 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
     """Abstract base for kernels that embed conditional features into a stationary
     base kernel's input space, gated by indicator-derived activity masks.
 
-    Concrete subclasses implement :meth:`_embed_conditional`, which receives the
-    normalised conditional features ``v_c`` and their float activity mask ``m_c``
-    (both ``[batch..., N, D_cond]``) and returns ``[batch..., N, 2 * D_cond]``.
+    Concrete subclasses implement two methods:
+
+    - :meth:`_conditional_parameters`, which reads the constrained parameters the
+      embedding needs and returns them as a dict. :meth:`K` calls it once and shares
+      the result between ``X`` and ``X2``, so each parameter transform runs only once.
+    - :meth:`_embed_conditional`, which receives the normalised conditional features
+      ``v_c``, their float activity mask ``m_c`` (both ``[batch..., N, D_cond]``) and
+      the dict from :meth:`_conditional_parameters`, and returns
+      ``[batch..., N, 2 * D_cond]``.
 
     :param hierarchy: sequence of :class:`HierarchyNode`. Each node binds a
         group of feature columns to an :class:`ActivityCondition` that gates

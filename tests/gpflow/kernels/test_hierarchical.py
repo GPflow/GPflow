@@ -812,10 +812,11 @@ class TestTFFunctionCompilation:
     """The kernel must be usable inside a ``tf.function`` (graph mode).
 
     GPflow models wrap loss/prediction in ``tf.function``; the kernel's Python-level
-    ``if``/``for`` branch only on static values (``self._n_*`` ints and the hierarchy's
-    activity conditions), so it should trace cleanly. These tests prove it does and that compiled output matches
-    eager. An ``input_signature`` with ``None`` rows means a single trace must handle any
-    ``N``; a tracing failure raises, so a passing call is itself evidence of compilation.
+    ``if`` branches only on static values (``self._n_*`` ints), and the hierarchy is baked
+    into the graph as constants, so it should trace cleanly. These tests prove it does and
+    that compiled output matches eager. An ``input_signature`` with ``None`` rows means a
+    single trace must handle any ``N``; a tracing failure raises, so a passing call is
+    itself evidence of compilation.
     """
 
     def test_K_compiles_and_matches_eager(self) -> None:
@@ -859,8 +860,9 @@ class TestTFFunctionCompilation:
             )
 
     def test_batched_input_compiles(self) -> None:
-        # Leading batch dim exercises the `[..., i]` indicator slicing in
-        # `_build_activity_mask` under graph mode.
+        # Leading batch dim exercises the indicator gather and the broadcast matmul
+        # against the constant pair-to-feature matrix in `_build_activity_mask` under
+        # graph mode.
         kernel = _canonical_disjunction_kernel()
 
         @tf.function(input_signature=[tf.TensorSpec([None, None, 4], dtype=tf.float64)])
