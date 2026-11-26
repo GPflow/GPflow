@@ -101,7 +101,7 @@ With these two definitions, we're ready to expand the bound:
 \end{equation}
 
 \begin{equation}
-= -\tfrac{N}{2}\log{2\pi} -\tfrac{1}{2}\log(|\mathbf B||\sigma^{2}\mathbf I|)  - \tfrac{1}{2}\sigma^{-2}\mathbf y^\top (\mathbf I - \sigma^{-2} \mathbf A^{\top} \mathbf B^{-1}\mathbf A)\mathbf y - \tfrac{1}{2} \sigma^{-2}\textrm{tr}(\mathbf K_{ff} - \mathbf Q_{ff})
+= -\tfrac{N}{2}\log{2\pi} -\tfrac{1}{2}\log(|\mathbf B||\sigma^{2}\mathbf I|)  - \tfrac{1}{2}\sigma^{-2}\mathbf y^\top (\mathbf I - \mathbf A^{\top} \mathbf B^{-1}\mathbf A)\mathbf y - \tfrac{1}{2} \sigma^{-2}\textrm{tr}(\mathbf K_{ff} - \mathbf Q_{ff})
 \end{equation}
 
 \begin{equation}
