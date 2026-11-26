@@ -90,10 +90,5 @@ class Periodic(Kernel):
     def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
         r = np.pi * (difference_matrix(X, X2)) / self.period
         scaled_sine = tf.sin(r) / self.base_kernel.lengthscales
-        if hasattr(self.base_kernel, "K_r"):
-            sine_r = tf.reduce_sum(tf.abs(scaled_sine), -1)
-            K = self.base_kernel.K_r(sine_r)
-        else:
-            sine_r2 = tf.reduce_sum(tf.square(scaled_sine), -1)
-            K = self.base_kernel.K_r2(sine_r2)
-        return K
+        sine_r2 = tf.reduce_sum(tf.square(scaled_sine), -1)
+        return self.base_kernel.K_r2(sine_r2)

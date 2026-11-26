@@ -101,13 +101,13 @@ def ref_periodic_kernel(
         dist = 0.5 * np.sum(np.square(sine_base), axis=-1)
         exp_dist = np.exp(-dist)
     elif base_name == "Matern12":
-        dist = np.sum(np.abs(sine_base), axis=-1)
+        dist = np.linalg.norm(sine_base, axis=-1)
         exp_dist = np.exp(-dist)
     elif base_name == "Matern32":
-        dist = np.sqrt(3) * np.sum(np.abs(sine_base), axis=-1)
+        dist = np.sqrt(3) * np.linalg.norm(sine_base, axis=-1)
         exp_dist = (1 + dist) * np.exp(-dist)
     elif base_name == "Matern52":
-        dist = np.sqrt(5) * np.sum(np.abs(sine_base), axis=-1)
+        dist = np.sqrt(5) * np.linalg.norm(sine_base, axis=-1)
         exp_dist = (1 + dist + dist ** 2 / 3) * np.exp(-dist)
     return signal_variance * exp_dist
 
