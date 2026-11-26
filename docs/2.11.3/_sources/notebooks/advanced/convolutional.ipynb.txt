@@ -1,0 +1,686 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "9309ebeb",
+   "metadata": {},
+   "source": [
+    "# Convolutional Gaussian Processes\n",
+    "Mark van der Wilk (July 2019)\n",
+    "\n",
+    "Here we show a simple example of the rectangles experiment, where we compare a normal squared exponential GP, and a convolutional GP. This is similar to the experiment in [1].\n",
+    "\n",
+    "[1] Van der Wilk, Rasmussen, Hensman (2017). Convolutional Gaussian Processes. *Advances in Neural Information Processing Systems 30*."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "cb51af17",
+   "metadata": {},
+   "source": [
+    "## Generate dataset\n",
+    "Generate a simple dataset of rectangles. We want to classify whether they are tall or wide. **NOTE:** Here we take care to make sure that the rectangles don't touch the edge, which is different to the original paper. We do this to avoid needing to use patch weights, which are needed to correctly account for edge effects."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "ef97dbe3",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-11-26T23:20:34.111893Z",
+     "iopub.status.busy": "2026-11-26T23:20:34.111735Z",
+     "iopub.status.idle": "2026-11-26T23:20:39.509088Z",
+     "shell.execute_reply": "2026-11-26T23:20:39.508285Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2026-11-26 23:20:34.801994: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.\n",
+      "2026-11-26 23:20:34.805813: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.\n",
+      "2026-11-26 23:20:34.817216: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:477] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered\n",
+      "WARNING: All log messages before absl::InitializeLog() is called are written to STDERR\n",
+      "E0000 00:00:1795735234.837320     114 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered\n",
+      "E0000 00:00:1795735234.843405     114 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n",
+      "2026-11-26 23:20:34.863663: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.\n",
+      "To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
+     ]
+    }
+   ],
+   "source": [
+    "import time\n",
+    "\n",
+    "import matplotlib.pyplot as plt\n",
+    "import numpy as np\n",
+    "import tensorflow as tf\n",
+    "import tensorflow_probability as tfp\n",
+    "\n",
+    "import gpflow\n",
+    "from gpflow import set_trainable\n",
+    "from gpflow.ci_utils import is_continuous_integration\n",
+    "\n",
+    "gpflow.config.set_default_float(np.float64)\n",
+    "gpflow.config.set_default_jitter(1e-4)\n",
+    "gpflow.config.set_default_summary_fmt(\"notebook\")\n",
+    "\n",
+    "# for reproducibility of this notebook:\n",
+    "np.random.seed(123)\n",
+    "tf.random.set_seed(42)\n",
+    "\n",
+    "MAXITER = 2 if is_continuous_integration() else 100\n",
+    "NUM_TRAIN_DATA = (\n",
+    "    5 if is_continuous_integration() else 100\n",
+    ")  # This is less than in the original rectangles dataset\n",
+    "NUM_TEST_DATA = 7 if is_continuous_integration() else 300\n",
+    "H = W = 14  # width and height. In the original paper this is 28\n",
+    "IMAGE_SHAPE = [H, W]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "6c960704",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-11-26T23:20:39.511738Z",
+     "iopub.status.busy": "2026-11-26T23:20:39.511313Z",
+     "iopub.status.idle": "2026-11-26T23:20:39.519367Z",
+     "shell.execute_reply": "2026-11-26T23:20:39.518650Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "def affine_scalar_bijector(shift=None, scale=None):\n",
+    "    scale_bijector = (\n",
+    "        tfp.bijectors.Scale(scale) if scale else tfp.bijectors.Identity()\n",
+    "    )\n",
+    "    shift_bijector = (\n",
+    "        tfp.bijectors.Shift(shift) if shift else tfp.bijectors.Identity()\n",
+    "    )\n",
+    "    return shift_bijector(scale_bijector)\n",
+    "\n",
+    "\n",
+    "def make_rectangle(arr, x0, y0, x1, y1):\n",
+    "    arr[y0:y1, x0] = 1\n",
+    "    arr[y0:y1, x1] = 1\n",
+    "    arr[y0, x0:x1] = 1\n",
+    "    arr[y1, x0 : x1 + 1] = 1\n",
+    "\n",
+    "\n",
+    "def make_random_rectangle(arr):\n",
+    "    x0 = np.random.randint(1, arr.shape[1] - 3)\n",
+    "    y0 = np.random.randint(1, arr.shape[0] - 3)\n",
+    "    x1 = np.random.randint(x0 + 2, arr.shape[1] - 1)\n",
+    "    y1 = np.random.randint(y0 + 2, arr.shape[0] - 1)\n",
+    "    make_rectangle(arr, x0, y0, x1, y1)\n",
+    "    return x0, y0, x1, y1\n",
+    "\n",
+    "\n",
+    "def make_rectangles_dataset(num, w, h):\n",
+    "    d, Y = np.zeros((num, h, w)), np.zeros((num, 1))\n",
+    "    for i, img in enumerate(d):\n",
+    "        for j in range(1000):  # Finite number of tries\n",
+    "            x0, y0, x1, y1 = make_random_rectangle(img)\n",
+    "            rw, rh = y1 - y0, x1 - x0\n",
+    "            if rw == rh:\n",
+    "                img[:, :] = 0\n",
+    "                continue\n",
+    "            Y[i, 0] = rw > rh\n",
+    "            break\n",
+    "    return (\n",
+    "        d.reshape(num, w * h).astype(gpflow.config.default_float()),\n",
+    "        Y.astype(gpflow.config.default_float()),\n",
+    "    )"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "c82754e4",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-11-26T23:20:39.521285Z",
+     "iopub.status.busy": "2026-11-26T23:20:39.521115Z",
+     "iopub.status.idle": "2026-11-26T23:20:39.531893Z",
+     "shell.execute_reply": "2026-11-26T23:20:39.531158Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "X, Y = data = make_rectangles_dataset(NUM_TRAIN_DATA, *IMAGE_SHAPE)\n",
+    "Xt, Yt = test_data = make_rectangles_dataset(NUM_TEST_DATA, *IMAGE_SHAPE)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "ef83b832",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-11-26T23:20:39.534097Z",
+     "iopub.status.busy": "2026-11-26T23:20:39.533911Z",
+     "iopub.status.idle": "2026-11-26T23:20:39.822921Z",
+     "shell.execute_reply": "2026-11-26T23:20:39.822202Z"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "image/png": "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Ojg4OGDQoEGYM2cO3NzcTP1UstiTmyJ3CVSDgIAALF26FKtWrcIff/yBhx56CIsWLcKkSZPkLo2syAsvvABXV1esWbMG165dg7+/P3bu3MlrbpJZffrpp1i5ciUWL14MlUqFwMBAnD17Fu3atZOtJr6PWh+Th82WLVviww8/NPWvJaqVbt264ZtvvpG7DLJiCoUCMTExiImJkbsUsmIODg6YN28e5s2bJ3cpZMXMcoIQEREREVknhk0iIiIikgzDJhERERFJhmGTiIiIiCTDsElEREREkmHYJCIiIiLJMGwSERERkWQYNomIiIhIMia/qLsli/TqIncJREREFovvo6QPj2wSERERkWQYNomIiIhIMgybRERERCQZhk0iIiIikgzDJhERERFJhmGTiIiIiCTDsElEREREkmHYJCIiIiLJMGwSERERkWQYNomIiIhIMgybRERERCQZhk0iIiIikgzDJhERERFJhmGTiIiIiCTDsElEREREkmHYJCIiIiLJMGwSERERkWQYNomIiIhIMgybRERERCQZhk0iIiIikgzDJhERERFJhmGTiIiIiCTDsElEREREkmHYJCIiIiLJMGwSERERkWQYNomIiIhIMgybRERERCSZOofN8vJyaDSa+65T03KiB6HRaFBeXm7UekRSqaiogEqluu86QggzVUPWSqVSoaKi4r7rcF9IcrGtzcpFRUVISEjA6tWrcf78eaxduxZjx46ttl58fDzefvtt5OTkwN/fH++99x6eeeYZkxVNtHDhQnz33XcoKChAXl4eHnroIZ3lKpUKc+bMQUJCAsrKytCzZ0+sXr0agYGBMlVsWntyU+QuocGK9Opi1HpJSUlISEjAjz/+CD8/P/zxxx/V1snOzsbUqVOxd+9eNGrUCCNGjMCnn34KFxcXE1dN1mrz5s345ptvcPDgQUyfPh2rVq2qts6hQ4cwc+ZMnDt3Dh4eHnjxxRexYMECGaola1WrI5vr1q3DhQsXsH79eoPrbN++HdOnT8fSpUtRUlKC2bNnY9SoUUhKSnrgYomquLq6Yvny5QaXv/LKK9iyZQuOHDmCGzduwM/PD5GRkSgtLTVjldSQvfnmmxg8eDBmzJihd7lGo8GwYcOgUqlw9epVnD9/HmlpaRg3bpyZK6WGbMuWLViwYAG6d++ud3lmZiaio6MxfPhwFBUV4YcffsCS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",
+      "text/plain": [
+       "<Figure size 800x300 with 4 Axes>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "plt.figure(figsize=(8, 3))\n",
+    "for i in range(4):\n",
+    "    plt.subplot(1, 4, i + 1)\n",
+    "    plt.imshow(X[i, :].reshape(*IMAGE_SHAPE))\n",
+    "    plt.title(Y[i, 0])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "463e858c",
+   "metadata": {},
+   "source": [
+    "## Squared Exponential kernel"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "28828afc",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-11-26T23:20:39.824737Z",
+     "iopub.status.busy": "2026-11-26T23:20:39.824555Z",
+     "iopub.status.idle": "2026-11-26T23:20:39.937228Z",
+     "shell.execute_reply": "2026-11-26T23:20:39.936504Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2026-11-26 23:20:39.827747: E external/local_xla/xla/stream_executor/cuda/cuda_driver.cc:152] failed call to cuInit: INTERNAL: CUDA error: Failed call to cuInit: UNKNOWN ERROR (303)\n"
+     ]
+    }
+   ],
+   "source": [
+    "rbf_m = gpflow.models.SVGP(\n",
+    "    gpflow.kernels.SquaredExponential(),\n",
+    "    gpflow.likelihoods.Bernoulli(),\n",
+    "    gpflow.inducing_variables.InducingPoints(X.copy()),\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "7400c4a0",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-11-26T23:20:39.939217Z",
+     "iopub.status.busy": "2026-11-26T23:20:39.939019Z",
+     "iopub.status.idle": "2026-11-26T23:20:43.319131Z",
+     "shell.execute_reply": "2026-11-26T23:20:43.318465Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "RBF elbo before training: -9.9408e+01\n"
+     ]
+    }
+   ],
+   "source": [
+    "rbf_training_loss_closure = rbf_m.training_loss_closure(data, compile=True)\n",
+    "rbf_elbo = lambda: -rbf_training_loss_closure().numpy()\n",
+    "print(\"RBF elbo before training: %.4e\" % rbf_elbo())"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "dba60d72",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-11-26T23:20:43.321191Z",
+     "iopub.status.busy": "2026-11-26T23:20:43.321008Z",
+     "iopub.status.idle": "2026-11-26T23:20:44.421475Z",
+     "shell.execute_reply": "2026-11-26T23:20:44.420687Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "44.009 iter/s\n"
+     ]
+    }
+   ],
+   "source": [
+    "set_trainable(rbf_m.inducing_variable, False)\n",
+    "start_time = time.time()\n",
+    "res = gpflow.optimizers.Scipy().minimize(\n",
+    "    rbf_training_loss_closure,\n",
+    "    variables=rbf_m.trainable_variables,\n",
+    "    method=\"l-bfgs-b\",\n",
+    "    options={\"disp\": True, \"maxiter\": MAXITER},\n",
+    ")\n",
+    "print(f\"{res.nfev / (time.time() - start_time):.3f} iter/s\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "160098e0",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-11-26T23:20:44.426265Z",
+     "iopub.status.busy": "2026-11-26T23:20:44.426065Z",
+     "iopub.status.idle": "2026-11-26T23:20:44.530321Z",
+     "shell.execute_reply": "2026-11-26T23:20:44.529499Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Train acc: 100.0%\n",
+      "Test acc : 68.33333333333333%\n",
+      "RBF elbo after training: -6.0371e+01\n"
+     ]
+    }
+   ],
+   "source": [
+    "train_acc = np.mean((rbf_m.predict_y(X)[0] > 0.5).numpy().astype(\"float\") == Y)\n",
+    "test_acc = np.mean((rbf_m.predict_y(Xt)[0] > 0.5).numpy().astype(\"float\") == Yt)\n",
+    "print(f\"Train acc: {train_acc * 100}%\\nTest acc : {test_acc*100}%\")\n",
+    "print(\"RBF elbo after training: %.4e\" % rbf_elbo())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "bc51215d",
+   "metadata": {},
+   "source": [
+    "## Convolutional kernel"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "15e70528",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-11-26T23:20:44.532555Z",
+     "iopub.status.busy": "2026-11-26T23:20:44.532366Z",
+     "iopub.status.idle": "2026-11-26T23:20:44.679725Z",
+     "shell.execute_reply": "2026-11-26T23:20:44.678929Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "f64 = lambda x: np.array(x, dtype=np.float64)\n",
+    "positive_with_min = lambda: affine_scalar_bijector(shift=f64(1e-4))(\n",
+    "    tfp.bijectors.Softplus()\n",
+    ")\n",
+    "constrained = lambda: affine_scalar_bijector(shift=f64(1e-4), scale=f64(100.0))(\n",
+    "    tfp.bijectors.Sigmoid()\n",
+    ")\n",
+    "max_abs_1 = lambda: affine_scalar_bijector(shift=f64(-2.0), scale=f64(4.0))(\n",
+    "    tfp.bijectors.Sigmoid()\n",
+    ")\n",
+    "\n",
+    "patch_shape = [3, 3]\n",
+    "conv_k = gpflow.kernels.Convolutional(\n",
+    "    gpflow.kernels.SquaredExponential(), IMAGE_SHAPE, patch_shape\n",
+    ")\n",
+    "conv_k.base_kernel.lengthscales = gpflow.Parameter(\n",
+    "    1.0, transform=positive_with_min()\n",
+    ")\n",
+    "# Weight scale and variance are non-identifiable. We also need to prevent variance from shooting off crazily.\n",
+    "conv_k.base_kernel.variance = gpflow.Parameter(1.0, transform=constrained())\n",
+    "conv_k.weights = gpflow.Parameter(conv_k.weights.numpy(), transform=max_abs_1())\n",
+    "conv_f = gpflow.inducing_variables.InducingPatches(\n",
+    "    np.unique(conv_k.get_patches(X).numpy().reshape(-1, 9), axis=0)\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "418a277e",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-11-26T23:20:44.682233Z",
+     "iopub.status.busy": "2026-11-26T23:20:44.682027Z",
+     "iopub.status.idle": "2026-11-26T23:20:44.705346Z",
+     "shell.execute_reply": "2026-11-26T23:20:44.704570Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "conv_m = gpflow.models.SVGP(conv_k, gpflow.likelihoods.Bernoulli(), conv_f)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "3c0064c6",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-11-26T23:20:44.707731Z",
+     "iopub.status.busy": "2026-11-26T23:20:44.707536Z",
+     "iopub.status.idle": "2026-11-26T23:20:44.720411Z",
+     "shell.execute_reply": "2026-11-26T23:20:44.719674Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "set_trainable(conv_m.inducing_variable, False)\n",
+    "set_trainable(conv_m.kernel.base_kernel.variance, False)\n",
+    "set_trainable(conv_m.kernel.weights, False)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "id": "0740b920",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-11-26T23:20:44.722653Z",
+     "iopub.status.busy": "2026-11-26T23:20:44.722461Z",
+     "iopub.status.idle": "2026-11-26T23:20:45.670856Z",
+     "shell.execute_reply": "2026-11-26T23:20:45.670155Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "conv elbo before training: -8.7271e+01\n"
+     ]
+    }
+   ],
+   "source": [
+    "conv_training_loss_closure = conv_m.training_loss_closure(data, compile=True)\n",
+    "conv_elbo = lambda: -conv_training_loss_closure().numpy()\n",
+    "print(\"conv elbo before training: %.4e\" % conv_elbo())"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "id": "150b45eb",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-11-26T23:20:45.673354Z",
+     "iopub.status.busy": "2026-11-26T23:20:45.673152Z",
+     "iopub.status.idle": "2026-11-26T23:20:47.072237Z",
+     "shell.execute_reply": "2026-11-26T23:20:47.071576Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "7.883 iter/s\n"
+     ]
+    }
+   ],
+   "source": [
+    "start_time = time.time()\n",
+    "res = gpflow.optimizers.Scipy().minimize(\n",
+    "    conv_training_loss_closure,\n",
+    "    variables=conv_m.trainable_variables,\n",
+    "    method=\"l-bfgs-b\",\n",
+    "    options={\"disp\": True, \"maxiter\": MAXITER / 10},\n",
+    ")\n",
+    "print(f\"{res.nfev / (time.time() - start_time):.3f} iter/s\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "id": "5bea567c",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-11-26T23:20:47.074694Z",
+     "iopub.status.busy": "2026-11-26T23:20:47.074520Z",
+     "iopub.status.idle": "2026-11-26T23:20:55.836839Z",
+     "shell.execute_reply": "2026-11-26T23:20:55.836275Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Train acc: 100.0%\n",
+      "Test acc : 99.0%\n",
+      "conv elbo after training: -2.6753e+01\n"
+     ]
+    }
+   ],
+   "source": [
+    "set_trainable(conv_m.kernel.base_kernel.variance, True)\n",
+    "res = gpflow.optimizers.Scipy().minimize(\n",
+    "    conv_training_loss_closure,\n",
+    "    variables=conv_m.trainable_variables,\n",
+    "    method=\"l-bfgs-b\",\n",
+    "    options={\"disp\": True, \"maxiter\": MAXITER},\n",
+    ")\n",
+    "train_acc = np.mean((conv_m.predict_y(X)[0] > 0.5).numpy().astype(\"float\") == Y)\n",
+    "test_acc = np.mean(\n",
+    "    (conv_m.predict_y(Xt)[0] > 0.5).numpy().astype(\"float\") == Yt\n",
+    ")\n",
+    "print(f\"Train acc: {train_acc * 100}%\\nTest acc : {test_acc*100}%\")\n",
+    "print(\"conv elbo after training: %.4e\" % conv_elbo())"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "id": "7f1ba2ca",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-11-26T23:20:55.838791Z",
+     "iopub.status.busy": "2026-11-26T23:20:55.838612Z",
+     "iopub.status.idle": "2026-11-26T23:21:04.195408Z",
+     "shell.execute_reply": "2026-11-26T23:21:04.194649Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Train acc: 100.0%\n",
+      "Test acc : 99.0%\n",
+      "conv elbo after training: -2.6734e+01\n"
+     ]
+    }
+   ],
+   "source": [
+    "res = gpflow.optimizers.Scipy().minimize(\n",
+    "    conv_training_loss_closure,\n",
+    "    variables=conv_m.trainable_variables,\n",
+    "    method=\"l-bfgs-b\",\n",
+    "    options={\"disp\": True, \"maxiter\": MAXITER},\n",
+    ")\n",
+    "train_acc = np.mean((conv_m.predict_y(X)[0] > 0.5).numpy().astype(\"float\") == Y)\n",
+    "test_acc = np.mean(\n",
+    "    (conv_m.predict_y(Xt)[0] > 0.5).numpy().astype(\"float\") == Yt\n",
+    ")\n",
+    "print(f\"Train acc: {train_acc * 100}%\\nTest acc : {test_acc*100}%\")\n",
+    "print(\"conv elbo after training: %.4e\" % conv_elbo())"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "id": "41b7d23c",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-11-26T23:21:04.197071Z",
+     "iopub.status.busy": "2026-11-26T23:21:04.196891Z",
+     "iopub.status.idle": "2026-11-26T23:21:14.243860Z",
+     "shell.execute_reply": "2026-11-26T23:21:14.243262Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Train acc: 100.0%\n",
+      "Test acc : 98.66666666666667%\n",
+      "conv elbo after training: -1.7047e+01\n"
+     ]
+    }
+   ],
+   "source": [
+    "set_trainable(conv_m.kernel.weights, True)\n",
+    "res = gpflow.optimizers.Scipy().minimize(\n",
+    "    conv_training_loss_closure,\n",
+    "    variables=conv_m.trainable_variables,\n",
+    "    method=\"l-bfgs-b\",\n",
+    "    options={\"disp\": True, \"maxiter\": MAXITER},\n",
+    ")\n",
+    "train_acc = np.mean((conv_m.predict_y(X)[0] > 0.5).numpy().astype(\"float\") == Y)\n",
+    "test_acc = np.mean(\n",
+    "    (conv_m.predict_y(Xt)[0] > 0.5).numpy().astype(\"float\") == Yt\n",
+    ")\n",
+    "print(f\"Train acc: {train_acc * 100}%\\nTest acc : {test_acc*100}%\")\n",
+    "print(\"conv elbo after training: %.4e\" % conv_elbo())"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "id": "678446bb",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-11-26T23:21:14.245929Z",
+     "iopub.status.busy": "2026-11-26T23:21:14.245740Z",
+     "iopub.status.idle": "2026-11-26T23:21:14.259868Z",
+     "shell.execute_reply": "2026-11-26T23:21:14.259194Z"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<table>\n",
+       "<thead>\n",
+       "<tr><th>name                    </th><th>class    </th><th>transform     </th><th>prior  </th><th>trainable  </th><th>shape        </th><th>dtype  </th><th>value                                               </th></tr>\n",
+       "</thead>\n",
+       "<tbody>\n",
+       "<tr><td>SVGP.kernel.variance    </td><td>Parameter</td><td>Softplus      </td><td>       </td><td>True       </td><td>()           </td><td>float64</td><td>3.56655                                             </td></tr>\n",
+       "<tr><td>SVGP.kernel.lengthscales</td><td>Parameter</td><td>Softplus      </td><td>       </td><td>True       </td><td>()           </td><td>float64</td><td>2.75129                                             </td></tr>\n",
+       "<tr><td>SVGP.inducing_variable.Z</td><td>Parameter</td><td>Identity      </td><td>       </td><td>False      </td><td>(100, 196)   </td><td>float64</td><td>[[0., 0., 0....                                     </td></tr>\n",
+       "<tr><td>SVGP.q_mu               </td><td>Parameter</td><td>Identity      </td><td>       </td><td>True       </td><td>(100, 1)     </td><td>float64</td><td>[[-5.78241751e-01...                                </td></tr>\n",
+       "<tr><td>SVGP.q_sqrt             </td><td>Parameter</td><td>FillTriangular</td><td>       </td><td>True       </td><td>(1, 100, 100)</td><td>float64</td><td>[[[6.44747990e-01, 0.00000000e+00, 0.00000000e+00...</td></tr>\n",
+       "</tbody>\n",
+       "</table>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "gpflow.utilities.print_summary(rbf_m)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "id": "d732ee9e",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-11-26T23:21:14.261675Z",
+     "iopub.status.busy": "2026-11-26T23:21:14.261476Z",
+     "iopub.status.idle": "2026-11-26T23:21:14.302322Z",
+     "shell.execute_reply": "2026-11-26T23:21:14.301431Z"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<table>\n",
+       "<thead>\n",
+       "<tr><th>name                                </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape      </th><th>dtype  </th><th>value                                 </th></tr>\n",
+       "</thead>\n",
+       "<tbody>\n",
+       "<tr><td>SVGP.kernel.base_kernel.variance    </td><td>Parameter</td><td>Sigmoid + Chain </td><td>       </td><td>True       </td><td>()         </td><td>float64</td><td>99.99595                              </td></tr>\n",
+       "<tr><td>SVGP.kernel.base_kernel.lengthscales</td><td>Parameter</td><td>Softplus + Chain</td><td>       </td><td>True       </td><td>()         </td><td>float64</td><td>0.6471227645854579                    </td></tr>\n",
+       "<tr><td>SVGP.kernel.weights                 </td><td>Parameter</td><td>Sigmoid + Chain </td><td>       </td><td>True       </td><td>(144,)     </td><td>float64</td><td>[0.42872092, 0.55459298, 0.68450341...</td></tr>\n",
+       "<tr><td>SVGP.inducing_variable.Z            </td><td>Parameter</td><td>Identity        </td><td>       </td><td>False      </td><td>(45, 9)    </td><td>float64</td><td>[[0., 0., 0....                       </td></tr>\n",
+       "<tr><td>SVGP.q_mu                           </td><td>Parameter</td><td>Identity        </td><td>       </td><td>True       </td><td>(45, 1)    </td><td>float64</td><td>[[0.01468073...                       </td></tr>\n",
+       "<tr><td>SVGP.q_sqrt                         </td><td>Parameter</td><td>FillTriangular  </td><td>       </td><td>True       </td><td>(1, 45, 45)</td><td>float64</td><td>[[[0.06753868, 0., 0....              </td></tr>\n",
+       "</tbody>\n",
+       "</table>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "gpflow.utilities.print_summary(conv_m)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "3902813b",
+   "metadata": {},
+   "source": [
+    "## Conclusion\n",
+    "The convolutional kernel performs much better in this simple task. It demonstrates non-local generalization of the strong assumptions in the kernel."
+   ]
+  }
+ ],
+ "metadata": {
+  "jupytext": {
+   "formats": "ipynb,.pct.py:percent"
+  },
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.11.18"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
