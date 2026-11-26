@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "a156a833",
+   "id": "fec2161c",
    "metadata": {},
    "source": [
     "# Heteroskedastic Likelihood and Multi-Latent GP"
@@ -10,7 +10,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a16b6c71",
+   "id": "2452c9ae",
    "metadata": {},
    "source": [
     "## Standard (Homoskedastic) Regression\n",
@@ -34,13 +34,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "4dae7c09",
+   "id": "8acd3a9d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:34.709378Z",
-     "iopub.status.busy": "2026-11-26T17:18:34.709083Z",
-     "iopub.status.idle": "2026-11-26T17:18:41.333193Z",
-     "shell.execute_reply": "2026-11-26T17:18:41.332132Z"
+     "iopub.execute_input": "2026-11-26T21:36:32.297855Z",
+     "iopub.status.busy": "2026-11-26T21:36:32.297573Z",
+     "iopub.status.idle": "2026-11-26T21:36:38.004567Z",
+     "shell.execute_reply": "2026-11-26T21:36:38.003479Z"
     }
    },
    "outputs": [
@@ -48,13 +48,13 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2026-11-26 17:18:35.516026: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.\n",
-      "2026-11-26 17:18:35.520255: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.\n",
-      "2026-11-26 17:18:35.533322: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:477] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered\n",
+      "2026-11-26 21:36:33.012636: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.\n",
+      "2026-11-26 21:36:33.016492: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.\n",
+      "2026-11-26 21:36:33.028095: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:477] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered\n",
       "WARNING: All log messages before absl::InitializeLog() is called are written to STDERR\n",
-      "E0000 00:00:1795713515.555028     110 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered\n",
-      "E0000 00:00:1795713515.560835     110 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n",
-      "2026-11-26 17:18:35.581460: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.\n",
+      "E0000 00:00:1795728993.048157     109 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered\n",
+      "E0000 00:00:1795728993.053827     109 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n",
+      "2026-11-26 21:36:33.074020: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.\n",
       "To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     }
@@ -71,7 +71,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "16c21355",
+   "id": "5b4c3412",
    "metadata": {},
    "source": [
     "## Data Generation\n",
@@ -88,13 +88,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "6458f5ce",
+   "id": "d0ce0b5d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:41.335863Z",
-     "iopub.status.busy": "2026-11-26T17:18:41.335390Z",
-     "iopub.status.idle": "2026-11-26T17:18:41.341089Z",
-     "shell.execute_reply": "2026-11-26T17:18:41.340142Z"
+     "iopub.execute_input": "2026-11-26T21:36:38.007563Z",
+     "iopub.status.busy": "2026-11-26T21:36:38.007110Z",
+     "iopub.status.idle": "2026-11-26T21:36:38.012472Z",
+     "shell.execute_reply": "2026-11-26T21:36:38.011661Z"
     },
     "lines_to_next_cell": 1
    },
@@ -125,7 +125,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ff954862",
+   "id": "57d2f528",
    "metadata": {},
    "source": [
     "### Plot Data\n",
@@ -135,13 +135,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "57b36d2e",
+   "id": "36507eae",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:41.343607Z",
-     "iopub.status.busy": "2026-11-26T17:18:41.343398Z",
-     "iopub.status.idle": "2026-11-26T17:18:41.545415Z",
-     "shell.execute_reply": "2026-11-26T17:18:41.544411Z"
+     "iopub.execute_input": "2026-11-26T21:36:38.014579Z",
+     "iopub.status.busy": "2026-11-26T21:36:38.014398Z",
+     "iopub.status.idle": "2026-11-26T21:36:38.182290Z",
+     "shell.execute_reply": "2026-11-26T21:36:38.181175Z"
     },
     "lines_to_next_cell": 2
    },
@@ -178,7 +178,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a3882f1e",
+   "id": "379f03ea",
    "metadata": {},
    "source": [
     "## Build Model"
@@ -186,7 +186,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e904a52f",
+   "id": "336170c1",
    "metadata": {},
    "source": [
     "### Likelihood\n",
@@ -199,13 +199,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "4a490c6b",
+   "id": "ed8cb79d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:41.549258Z",
-     "iopub.status.busy": "2026-11-26T17:18:41.549040Z",
-     "iopub.status.idle": "2026-11-26T17:18:41.600327Z",
-     "shell.execute_reply": "2026-11-26T17:18:41.599573Z"
+     "iopub.execute_input": "2026-11-26T21:36:38.184942Z",
+     "iopub.status.busy": "2026-11-26T21:36:38.184716Z",
+     "iopub.status.idle": "2026-11-26T21:36:38.240822Z",
+     "shell.execute_reply": "2026-11-26T21:36:38.239898Z"
     }
    },
    "outputs": [
@@ -220,7 +220,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2026-11-26 17:18:41.560932: E external/local_xla/xla/stream_executor/cuda/cuda_driver.cc:152] failed call to cuInit: INTERNAL: CUDA error: Failed call to cuInit: UNKNOWN ERROR (303)\n"
+      "2026-11-26 21:36:38.195947: E external/local_xla/xla/stream_executor/cuda/cuda_driver.cc:152] failed call to cuInit: INTERNAL: CUDA error: Failed call to cuInit: UNKNOWN ERROR (303)\n"
      ]
     }
    ],
@@ -235,7 +235,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "6370a41d",
+   "id": "e4aad795",
    "metadata": {},
    "source": [
     "### Kernel\n",
@@ -249,13 +249,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "aa30939e",
+   "id": "b9276002",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:41.602663Z",
-     "iopub.status.busy": "2026-11-26T17:18:41.602469Z",
-     "iopub.status.idle": "2026-11-26T17:18:41.651917Z",
-     "shell.execute_reply": "2026-11-26T17:18:41.650914Z"
+     "iopub.execute_input": "2026-11-26T21:36:38.242948Z",
+     "iopub.status.busy": "2026-11-26T21:36:38.242731Z",
+     "iopub.status.idle": "2026-11-26T21:36:38.287111Z",
+     "shell.execute_reply": "2026-11-26T21:36:38.286163Z"
     }
    },
    "outputs": [],
@@ -271,7 +271,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a2d153d0",
+   "id": "c4d1f661",
    "metadata": {},
    "source": [
     "### Inducing Points\n",
@@ -283,13 +283,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "5458f391",
+   "id": "800f1570",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:41.654492Z",
-     "iopub.status.busy": "2026-11-26T17:18:41.654261Z",
-     "iopub.status.idle": "2026-11-26T17:18:41.670404Z",
-     "shell.execute_reply": "2026-11-26T17:18:41.669546Z"
+     "iopub.execute_input": "2026-11-26T21:36:38.289387Z",
+     "iopub.status.busy": "2026-11-26T21:36:38.289185Z",
+     "iopub.status.idle": "2026-11-26T21:36:38.300315Z",
+     "shell.execute_reply": "2026-11-26T21:36:38.299249Z"
     }
    },
    "outputs": [],
@@ -309,7 +309,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a6c57d32",
+   "id": "30f2dcf8",
    "metadata": {},
    "source": [
     "### SVGP Model\n",
@@ -321,20 +321,20 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "aeaf5955",
+   "id": "a611bdc8",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:41.673942Z",
-     "iopub.status.busy": "2026-11-26T17:18:41.673600Z",
-     "iopub.status.idle": "2026-11-26T17:18:41.765978Z",
-     "shell.execute_reply": "2026-11-26T17:18:41.764931Z"
+     "iopub.execute_input": "2026-11-26T21:36:38.303047Z",
+     "iopub.status.busy": "2026-11-26T21:36:38.302846Z",
+     "iopub.status.idle": "2026-11-26T21:36:38.383681Z",
+     "shell.execute_reply": "2026-11-26T21:36:38.382851Z"
     }
    },
    "outputs": [
     {
      "data": {
       "text/html": [
-       "&lt;gpflow.models.svgp.SVGP object at 0x7dac33416290&gt;\n",
+       "&lt;gpflow.models.svgp.SVGP object at 0x79cc38f2a450&gt;\n",
        "<table>\n",
        "<thead>\n",
        "<tr><th>name                                              </th><th>class    </th><th>transform     </th><th>prior  </th><th>trainable  </th><th>shape      </th><th>dtype  </th><th>value           </th></tr>\n",
@@ -352,7 +352,7 @@
        "</table>"
       ],
       "text/plain": [
-       "<gpflow.models.svgp.SVGP object at 0x7dac33416290>\n",
+       "<gpflow.models.svgp.SVGP object at 0x79cc38f2a450>\n",
        "\u2552\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2555\n",
        "\u2502 name                                               \u2502 class     \u2502 transform      \u2502 prior   \u2502 trainable   \u2502 shape       \u2502 dtype   \u2502 value            \u2502\n",
        "\u255e\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2561\n",
@@ -392,7 +392,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "501e06fb",
+   "id": "c76e76cb",
    "metadata": {},
    "source": [
     "## Model Optimization\n",
@@ -403,13 +403,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "faefdf18",
+   "id": "32a2795e",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:41.768329Z",
-     "iopub.status.busy": "2026-11-26T17:18:41.768044Z",
-     "iopub.status.idle": "2026-11-26T17:18:41.803652Z",
-     "shell.execute_reply": "2026-11-26T17:18:41.802681Z"
+     "iopub.execute_input": "2026-11-26T21:36:38.385605Z",
+     "iopub.status.busy": "2026-11-26T21:36:38.385400Z",
+     "iopub.status.idle": "2026-11-26T21:36:38.416485Z",
+     "shell.execute_reply": "2026-11-26T21:36:38.415518Z"
     }
    },
    "outputs": [],
@@ -435,7 +435,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "b2056ac9",
+   "id": "ea6098e3",
    "metadata": {},
    "source": [
     "### Run Optimization Loop"
@@ -444,13 +444,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "f54cdd1f",
+   "id": "755b5994",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:41.805671Z",
-     "iopub.status.busy": "2026-11-26T17:18:41.805388Z",
-     "iopub.status.idle": "2026-11-26T17:19:08.276296Z",
-     "shell.execute_reply": "2026-11-26T17:19:08.274926Z"
+     "iopub.execute_input": "2026-11-26T21:36:38.419162Z",
+     "iopub.status.busy": "2026-11-26T21:36:38.418943Z",
+     "iopub.status.idle": "2026-11-26T21:36:58.914107Z",
+     "shell.execute_reply": "2026-11-26T21:36:58.913245Z"
     }
    },
    "outputs": [
@@ -551,7 +551,7 @@
     {
      "data": {
       "text/html": [
-       "&lt;gpflow.models.svgp.SVGP object at 0x7dac33416290&gt;\n",
+       "&lt;gpflow.models.svgp.SVGP object at 0x79cc38f2a450&gt;\n",
        "<table>\n",
        "<thead>\n",
        "<tr><th>name                                              </th><th>class    </th><th>transform     </th><th>prior  </th><th>trainable  </th><th>shape      </th><th>dtype  </th><th>value                                               </th></tr>\n",
@@ -569,7 +569,7 @@
        "</table>"
       ],
       "text/plain": [
-       "<gpflow.models.svgp.SVGP object at 0x7dac33416290>\n",
+       "<gpflow.models.svgp.SVGP object at 0x79cc38f2a450>\n",
        "\u2552\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2555\n",
        "\u2502 name                                               \u2502 class     \u2502 transform      \u2502 prior   \u2502 trainable   \u2502 shape       \u2502 dtype   \u2502 value                                                \u2502\n",
        "\u255e\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2561\n",
@@ -616,7 +616,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ca043fbb",
+   "id": "9e5d6b40",
    "metadata": {},
    "source": [
     "## Further reading\n",

@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "83baeac9",
+   "id": "1cfe349f",
    "metadata": {},
    "source": [
     "# Gaussian process regression with varying output noise"
@@ -10,7 +10,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e11df322",
+   "id": "332f0722",
    "metadata": {},
    "source": [
     "This notebook shows how to construct a Gaussian process model where different noise is assumed for different data points. The model is:\n",
@@ -29,13 +29,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "3f8f1365",
+   "id": "de594ec1",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:25.275353Z",
-     "iopub.status.busy": "2026-11-26T17:19:25.275078Z",
-     "iopub.status.idle": "2026-11-26T17:19:25.283066Z",
-     "shell.execute_reply": "2026-11-26T17:19:25.282052Z"
+     "iopub.execute_input": "2026-11-26T21:37:11.126180Z",
+     "iopub.status.busy": "2026-11-26T21:37:11.126015Z",
+     "iopub.status.idle": "2026-11-26T21:37:11.131819Z",
+     "shell.execute_reply": "2026-11-26T21:37:11.131190Z"
     }
    },
    "outputs": [],
@@ -50,13 +50,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "5030e8c1",
+   "id": "6fee4723",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:25.285383Z",
-     "iopub.status.busy": "2026-11-26T17:19:25.285032Z",
-     "iopub.status.idle": "2026-11-26T17:19:31.007963Z",
-     "shell.execute_reply": "2026-11-26T17:19:31.006947Z"
+     "iopub.execute_input": "2026-11-26T21:37:11.133417Z",
+     "iopub.status.busy": "2026-11-26T21:37:11.133165Z",
+     "iopub.status.idle": "2026-11-26T21:37:16.282681Z",
+     "shell.execute_reply": "2026-11-26T21:37:16.281958Z"
     }
    },
    "outputs": [
@@ -65,8 +65,8 @@
      "output_type": "stream",
      "text": [
       "WARNING: All log messages before absl::InitializeLog() is called are written to STDERR\n",
-      "E0000 00:00:1795713566.100557     143 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered\n",
-      "E0000 00:00:1795713566.106227     143 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n"
+      "E0000 00:00:1795729031.798183     135 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered\n",
+      "E0000 00:00:1795729031.803856     135 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n"
      ]
     }
    ],
@@ -93,7 +93,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "54d8ebfc",
+   "id": "33b092f9",
    "metadata": {},
    "source": [
     "To help us later we'll first define a small function for plotting data with predictions:"
@@ -102,13 +102,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "db157e38",
+   "id": "4384b77d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:31.010561Z",
-     "iopub.status.busy": "2026-11-26T17:19:31.010133Z",
-     "iopub.status.idle": "2026-11-26T17:19:31.018899Z",
-     "shell.execute_reply": "2026-11-26T17:19:31.018149Z"
+     "iopub.execute_input": "2026-11-26T21:37:16.285127Z",
+     "iopub.status.busy": "2026-11-26T21:37:16.284728Z",
+     "iopub.status.idle": "2026-11-26T21:37:16.292364Z",
+     "shell.execute_reply": "2026-11-26T21:37:16.291734Z"
     }
    },
    "outputs": [],
@@ -161,7 +161,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "0aa5cf0e",
+   "id": "632e3b95",
    "metadata": {},
    "source": [
     "## Demo 1: known noise variances\n",
@@ -172,13 +172,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "a624ea2c",
+   "id": "da52f4d2",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:31.020646Z",
-     "iopub.status.busy": "2026-11-26T17:19:31.020457Z",
-     "iopub.status.idle": "2026-11-26T17:19:31.024606Z",
-     "shell.execute_reply": "2026-11-26T17:19:31.023904Z"
+     "iopub.execute_input": "2026-11-26T21:37:16.294004Z",
+     "iopub.status.busy": "2026-11-26T21:37:16.293819Z",
+     "iopub.status.idle": "2026-11-26T21:37:16.297669Z",
+     "shell.execute_reply": "2026-11-26T21:37:16.297210Z"
     }
    },
    "outputs": [],
@@ -198,7 +198,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "58c8abc8",
+   "id": "9aa508dc",
    "metadata": {},
    "source": [
     "The data alone looks like:"
@@ -207,13 +207,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "938e0d33",
+   "id": "695689a1",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:31.026771Z",
-     "iopub.status.busy": "2026-11-26T17:19:31.026597Z",
-     "iopub.status.idle": "2026-11-26T17:19:31.146283Z",
-     "shell.execute_reply": "2026-11-26T17:19:31.145420Z"
+     "iopub.execute_input": "2026-11-26T21:37:16.299467Z",
+     "iopub.status.busy": "2026-11-26T21:37:16.299307Z",
+     "iopub.status.idle": "2026-11-26T21:37:16.409691Z",
+     "shell.execute_reply": "2026-11-26T21:37:16.408947Z"
     }
    },
    "outputs": [
@@ -234,7 +234,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "0e0a245e",
+   "id": "43b43158",
    "metadata": {},
    "source": [
     "### Try a naive fit\n",
@@ -244,13 +244,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "a2b5c802",
+   "id": "b7669658",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:31.148597Z",
-     "iopub.status.busy": "2026-11-26T17:19:31.148376Z",
-     "iopub.status.idle": "2026-11-26T17:19:33.297628Z",
-     "shell.execute_reply": "2026-11-26T17:19:33.296699Z"
+     "iopub.execute_input": "2026-11-26T21:37:16.411526Z",
+     "iopub.status.busy": "2026-11-26T21:37:16.411327Z",
+     "iopub.status.idle": "2026-11-26T21:37:18.314105Z",
+     "shell.execute_reply": "2026-11-26T21:37:18.313330Z"
     }
    },
    "outputs": [
@@ -287,13 +287,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "23d5d011",
+   "id": "835e9dcd",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:33.300238Z",
-     "iopub.status.busy": "2026-11-26T17:19:33.300038Z",
-     "iopub.status.idle": "2026-11-26T17:19:33.507690Z",
-     "shell.execute_reply": "2026-11-26T17:19:33.506528Z"
+     "iopub.execute_input": "2026-11-26T21:37:18.315726Z",
+     "iopub.status.busy": "2026-11-26T21:37:18.315531Z",
+     "iopub.status.idle": "2026-11-26T21:37:18.515614Z",
+     "shell.execute_reply": "2026-11-26T21:37:18.514904Z"
     }
    },
    "outputs": [
@@ -315,7 +315,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "06915276",
+   "id": "2ed0b3d9",
    "metadata": {},
    "source": [
     "Notice how this naive model underestimates the noise near the center of the figure, but overestimates at for small and large values of x?"
@@ -323,7 +323,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "2abd2a21",
+   "id": "e567828c",
    "metadata": {},
    "source": [
     "### Fit a polynomial to the noise scale\n",
@@ -335,13 +335,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "7df30d05",
+   "id": "e551a9ba",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:33.510604Z",
-     "iopub.status.busy": "2026-11-26T17:19:33.510327Z",
-     "iopub.status.idle": "2026-11-26T17:19:35.034763Z",
-     "shell.execute_reply": "2026-11-26T17:19:35.034099Z"
+     "iopub.execute_input": "2026-11-26T21:37:18.517262Z",
+     "iopub.status.busy": "2026-11-26T21:37:18.517075Z",
+     "iopub.status.idle": "2026-11-26T21:37:19.891691Z",
+     "shell.execute_reply": "2026-11-26T21:37:19.890958Z"
     }
    },
    "outputs": [
@@ -379,13 +379,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "88648a6d",
+   "id": "7de2b098",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:35.036649Z",
-     "iopub.status.busy": "2026-11-26T17:19:35.036465Z",
-     "iopub.status.idle": "2026-11-26T17:19:35.244667Z",
-     "shell.execute_reply": "2026-11-26T17:19:35.243882Z"
+     "iopub.execute_input": "2026-11-26T21:37:19.893340Z",
+     "iopub.status.busy": "2026-11-26T21:37:19.893155Z",
+     "iopub.status.idle": "2026-11-26T21:37:20.097320Z",
+     "shell.execute_reply": "2026-11-26T21:37:20.096525Z"
     }
    },
    "outputs": [
@@ -407,7 +407,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "cd749444",
+   "id": "64965739",
    "metadata": {},
    "source": [
     "## Demo 2: grouped noise variances\n",
@@ -419,7 +419,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "eba37aab",
+   "id": "5bc03c51",
    "metadata": {},
    "source": [
     "### Generate data"
@@ -428,13 +428,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "145f524d",
+   "id": "0fb0ca48",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:35.246374Z",
-     "iopub.status.busy": "2026-11-26T17:19:35.246194Z",
-     "iopub.status.idle": "2026-11-26T17:19:35.251803Z",
-     "shell.execute_reply": "2026-11-26T17:19:35.251071Z"
+     "iopub.execute_input": "2026-11-26T21:37:20.098908Z",
+     "iopub.status.busy": "2026-11-26T21:37:20.098719Z",
+     "iopub.status.idle": "2026-11-26T21:37:20.103939Z",
+     "shell.execute_reply": "2026-11-26T21:37:20.103405Z"
     }
    },
    "outputs": [],
@@ -458,7 +458,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "b9edd677",
+   "id": "7800ac9b",
    "metadata": {},
    "source": [
     "And here's a plot of the raw data:"
@@ -467,13 +467,13 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "44c96419",
+   "id": "2bc040cc",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:35.254246Z",
-     "iopub.status.busy": "2026-11-26T17:19:35.254055Z",
-     "iopub.status.idle": "2026-11-26T17:19:35.375642Z",
-     "shell.execute_reply": "2026-11-26T17:19:35.374881Z"
+     "iopub.execute_input": "2026-11-26T21:37:20.105760Z",
+     "iopub.status.busy": "2026-11-26T21:37:20.105581Z",
+     "iopub.status.idle": "2026-11-26T21:37:20.257001Z",
+     "shell.execute_reply": "2026-11-26T21:37:20.256139Z"
     }
    },
    "outputs": [
@@ -494,7 +494,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "f86766a9",
+   "id": "902b7978",
    "metadata": {},
    "source": [
     "### Fit a naive model\n",
@@ -505,13 +505,13 @@
   {
    "cell_type": "code",
    "execution_count": 12,
-   "id": "be8658ed",
+   "id": "91162714",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:35.378244Z",
-     "iopub.status.busy": "2026-11-26T17:19:35.378056Z",
-     "iopub.status.idle": "2026-11-26T17:19:36.124193Z",
-     "shell.execute_reply": "2026-11-26T17:19:36.123298Z"
+     "iopub.execute_input": "2026-11-26T21:37:20.258621Z",
+     "iopub.status.busy": "2026-11-26T21:37:20.258430Z",
+     "iopub.status.idle": "2026-11-26T21:37:20.890018Z",
+     "shell.execute_reply": "2026-11-26T21:37:20.889289Z"
     }
    },
    "outputs": [
@@ -548,13 +548,13 @@
   {
    "cell_type": "code",
    "execution_count": 13,
-   "id": "7a69fa51",
+   "id": "5bd9b324",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:36.126395Z",
-     "iopub.status.busy": "2026-11-26T17:19:36.126144Z",
-     "iopub.status.idle": "2026-11-26T17:19:36.290799Z",
-     "shell.execute_reply": "2026-11-26T17:19:36.290122Z"
+     "iopub.execute_input": "2026-11-26T21:37:20.892316Z",
+     "iopub.status.busy": "2026-11-26T21:37:20.892121Z",
+     "iopub.status.idle": "2026-11-26T21:37:21.072074Z",
+     "shell.execute_reply": "2026-11-26T21:37:21.071293Z"
     }
    },
    "outputs": [
@@ -576,7 +576,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "5a801f95",
+   "id": "da51d864",
    "metadata": {},
    "source": [
     "### Data structure\n",
@@ -587,13 +587,13 @@
   {
    "cell_type": "code",
    "execution_count": 14,
-   "id": "3cda3c04",
+   "id": "78965300",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:36.294256Z",
-     "iopub.status.busy": "2026-11-26T17:19:36.294061Z",
-     "iopub.status.idle": "2026-11-26T17:19:36.297260Z",
-     "shell.execute_reply": "2026-11-26T17:19:36.296472Z"
+     "iopub.execute_input": "2026-11-26T21:37:21.073736Z",
+     "iopub.status.busy": "2026-11-26T21:37:21.073547Z",
+     "iopub.status.idle": "2026-11-26T21:37:21.076588Z",
+     "shell.execute_reply": "2026-11-26T21:37:21.075899Z"
     }
    },
    "outputs": [],
@@ -604,7 +604,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "577faff6",
+   "id": "75d266de",
    "metadata": {},
    "source": [
     "### Use multiple functions for the noise variance\n",
@@ -617,13 +617,13 @@
   {
    "cell_type": "code",
    "execution_count": 15,
-   "id": "76c2ad85",
+   "id": "0e6f5621",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:36.299280Z",
-     "iopub.status.busy": "2026-11-26T17:19:36.299096Z",
-     "iopub.status.idle": "2026-11-26T17:19:37.849766Z",
-     "shell.execute_reply": "2026-11-26T17:19:37.842317Z"
+     "iopub.execute_input": "2026-11-26T21:37:21.078065Z",
+     "iopub.status.busy": "2026-11-26T21:37:21.077866Z",
+     "iopub.status.idle": "2026-11-26T21:37:22.470009Z",
+     "shell.execute_reply": "2026-11-26T21:37:22.469205Z"
     }
    },
    "outputs": [
@@ -669,13 +669,13 @@
   {
    "cell_type": "code",
    "execution_count": 16,
-   "id": "a880e7e2",
+   "id": "09ea071d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:37.852814Z",
-     "iopub.status.busy": "2026-11-26T17:19:37.852495Z",
-     "iopub.status.idle": "2026-11-26T17:19:38.056335Z",
-     "shell.execute_reply": "2026-11-26T17:19:38.055304Z"
+     "iopub.execute_input": "2026-11-26T21:37:22.471569Z",
+     "iopub.status.busy": "2026-11-26T21:37:22.471395Z",
+     "iopub.status.idle": "2026-11-26T21:37:22.640866Z",
+     "shell.execute_reply": "2026-11-26T21:37:22.640103Z"
     }
    },
    "outputs": [
@@ -697,7 +697,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7d70bc13",
+   "id": "cf46305a",
    "metadata": {},
    "source": [
     "## Demo 3: Empirical noise variance\n",
@@ -707,7 +707,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7b825344",
+   "id": "d76951b8",
    "metadata": {},
    "source": [
     "### Generate data"
@@ -716,13 +716,13 @@
   {
    "cell_type": "code",
    "execution_count": 17,
-   "id": "ea041e39",
+   "id": "a7ee9285",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:38.058572Z",
-     "iopub.status.busy": "2026-11-26T17:19:38.058357Z",
-     "iopub.status.idle": "2026-11-26T17:19:38.064616Z",
-     "shell.execute_reply": "2026-11-26T17:19:38.063454Z"
+     "iopub.execute_input": "2026-11-26T21:37:22.642636Z",
+     "iopub.status.busy": "2026-11-26T21:37:22.642461Z",
+     "iopub.status.idle": "2026-11-26T21:37:22.647452Z",
+     "shell.execute_reply": "2026-11-26T21:37:22.646943Z"
     }
    },
    "outputs": [],
@@ -750,7 +750,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "665b32c3",
+   "id": "8d1fc11e",
    "metadata": {},
    "source": [
     "For the sake of plotting we'll create flat lists of (x, y) pairs:"
@@ -759,13 +759,13 @@
   {
    "cell_type": "code",
    "execution_count": 18,
-   "id": "a224e8b9",
+   "id": "50c3d6c7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:38.066612Z",
-     "iopub.status.busy": "2026-11-26T17:19:38.066415Z",
-     "iopub.status.idle": "2026-11-26T17:19:38.188360Z",
-     "shell.execute_reply": "2026-11-26T17:19:38.187673Z"
+     "iopub.execute_input": "2026-11-26T21:37:22.649253Z",
+     "iopub.status.busy": "2026-11-26T21:37:22.649091Z",
+     "iopub.status.idle": "2026-11-26T21:37:22.742845Z",
+     "shell.execute_reply": "2026-11-26T21:37:22.742166Z"
     }
    },
    "outputs": [
@@ -788,7 +788,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "af707bfc",
+   "id": "140552cd",
    "metadata": {},
    "source": [
     "### Data structure\n",
@@ -799,13 +799,13 @@
   {
    "cell_type": "code",
    "execution_count": 19,
-   "id": "ff2a71b4",
+   "id": "064f9323",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:38.190273Z",
-     "iopub.status.busy": "2026-11-26T17:19:38.190059Z",
-     "iopub.status.idle": "2026-11-26T17:19:38.193643Z",
-     "shell.execute_reply": "2026-11-26T17:19:38.192652Z"
+     "iopub.execute_input": "2026-11-26T21:37:22.744629Z",
+     "iopub.status.busy": "2026-11-26T21:37:22.744450Z",
+     "iopub.status.idle": "2026-11-26T21:37:22.747146Z",
+     "shell.execute_reply": "2026-11-26T21:37:22.746565Z"
     }
    },
    "outputs": [],
@@ -815,7 +815,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "04f3918e",
+   "id": "96dd40c2",
    "metadata": {},
    "source": [
     "### Fit a naive model\n",
@@ -828,13 +828,13 @@
   {
    "cell_type": "code",
    "execution_count": 20,
-   "id": "c51a7397",
+   "id": "c848afb3",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:38.195333Z",
-     "iopub.status.busy": "2026-11-26T17:19:38.195145Z",
-     "iopub.status.idle": "2026-11-26T17:19:38.556665Z",
-     "shell.execute_reply": "2026-11-26T17:19:38.555540Z"
+     "iopub.execute_input": "2026-11-26T21:37:22.748967Z",
+     "iopub.status.busy": "2026-11-26T21:37:22.748770Z",
+     "iopub.status.idle": "2026-11-26T21:37:23.096059Z",
+     "shell.execute_reply": "2026-11-26T21:37:23.095302Z"
     }
    },
    "outputs": [
@@ -871,13 +871,13 @@
   {
    "cell_type": "code",
    "execution_count": 21,
-   "id": "f734aa71",
+   "id": "443c562a",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:38.558643Z",
-     "iopub.status.busy": "2026-11-26T17:19:38.558439Z",
-     "iopub.status.idle": "2026-11-26T17:19:38.732350Z",
-     "shell.execute_reply": "2026-11-26T17:19:38.731277Z"
+     "iopub.execute_input": "2026-11-26T21:37:23.097780Z",
+     "iopub.status.busy": "2026-11-26T21:37:23.097599Z",
+     "iopub.status.idle": "2026-11-26T21:37:23.269477Z",
+     "shell.execute_reply": "2026-11-26T21:37:23.268785Z"
     }
    },
    "outputs": [
@@ -910,7 +910,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "1b2e2ea8",
+   "id": "91c2a7fc",
    "metadata": {},
    "source": [
     "### Create custom function for the noise variance\n",
@@ -921,13 +921,13 @@
   {
    "cell_type": "code",
    "execution_count": 22,
-   "id": "330acea2",
+   "id": "9ea4060a",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:38.734451Z",
-     "iopub.status.busy": "2026-11-26T17:19:38.734243Z",
-     "iopub.status.idle": "2026-11-26T17:19:38.738900Z",
-     "shell.execute_reply": "2026-11-26T17:19:38.737968Z"
+     "iopub.execute_input": "2026-11-26T21:37:23.271446Z",
+     "iopub.status.busy": "2026-11-26T21:37:23.271256Z",
+     "iopub.status.idle": "2026-11-26T21:37:23.275141Z",
+     "shell.execute_reply": "2026-11-26T21:37:23.274470Z"
     }
    },
    "outputs": [],
@@ -944,7 +944,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "72258074",
+   "id": "642e5aec",
    "metadata": {},
    "source": [
     "Now we can plug that into our model:"
@@ -953,13 +953,13 @@
   {
    "cell_type": "code",
    "execution_count": 23,
-   "id": "5b8d2c99",
+   "id": "4579d20d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:38.741295Z",
-     "iopub.status.busy": "2026-11-26T17:19:38.741097Z",
-     "iopub.status.idle": "2026-11-26T17:19:39.062133Z",
-     "shell.execute_reply": "2026-11-26T17:19:39.060983Z"
+     "iopub.execute_input": "2026-11-26T21:37:23.276728Z",
+     "iopub.status.busy": "2026-11-26T21:37:23.276563Z",
+     "iopub.status.idle": "2026-11-26T21:37:23.593414Z",
+     "shell.execute_reply": "2026-11-26T21:37:23.592545Z"
     }
    },
    "outputs": [
@@ -996,13 +996,13 @@
   {
    "cell_type": "code",
    "execution_count": 24,
-   "id": "bd0b05c5",
+   "id": "c14771d1",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:39.064256Z",
-     "iopub.status.busy": "2026-11-26T17:19:39.064038Z",
-     "iopub.status.idle": "2026-11-26T17:19:39.239371Z",
-     "shell.execute_reply": "2026-11-26T17:19:39.238306Z"
+     "iopub.execute_input": "2026-11-26T21:37:23.595073Z",
+     "iopub.status.busy": "2026-11-26T21:37:23.594874Z",
+     "iopub.status.idle": "2026-11-26T21:37:23.761927Z",
+     "shell.execute_reply": "2026-11-26T21:37:23.761191Z"
     }
    },
    "outputs": [
@@ -1035,7 +1035,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "f4a3fbd6",
+   "id": "b95fd4a1",
    "metadata": {},
    "source": [
     "You may notice that the data points fall outside our confidence interval. Again, this is because the confidence interval is for the mean of $Y$, and not the $Y$ points themselves."
@@ -1043,7 +1043,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ed0c0629",
+   "id": "fd67d367",
    "metadata": {},
    "source": [
     "## Further reading\n",

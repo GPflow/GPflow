@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "a7c7a478",
+   "id": "c8fe470b",
    "metadata": {},
    "source": [
     "# Kernels"
@@ -10,7 +10,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "324aa487",
+   "id": "eeb5f0f3",
    "metadata": {},
    "source": [
     "In this chapter we will be explaining what kernels are, how they affect your models, and how you can create them.\n",
@@ -21,13 +21,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "c8dafa4e",
+   "id": "3a4ac364",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:27.112169Z",
-     "iopub.status.busy": "2026-11-26T17:19:27.111966Z",
-     "iopub.status.idle": "2026-11-26T17:19:34.463710Z",
-     "shell.execute_reply": "2026-11-26T17:19:34.463027Z"
+     "iopub.execute_input": "2026-11-26T21:37:37.492904Z",
+     "iopub.status.busy": "2026-11-26T21:37:37.492666Z",
+     "iopub.status.idle": "2026-11-26T21:37:43.270198Z",
+     "shell.execute_reply": "2026-11-26T21:37:43.269365Z"
     }
    },
    "outputs": [
@@ -36,8 +36,8 @@
      "output_type": "stream",
      "text": [
       "WARNING: All log messages before absl::InitializeLog() is called are written to STDERR\n",
-      "E0000 00:00:1795713568.056766     604 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered\n",
-      "E0000 00:00:1795713568.062942     604 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n"
+      "E0000 00:00:1795729058.291453     600 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered\n",
+      "E0000 00:00:1795729058.297569     600 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n"
      ]
     }
    ],
@@ -55,7 +55,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "cbfb056c",
+   "id": "9f6a724e",
    "metadata": {},
    "source": [
     "## What is a kernel?\n",
@@ -72,13 +72,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "ede2b03e",
+   "id": "392dfcd4",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:34.466922Z",
-     "iopub.status.busy": "2026-11-26T17:19:34.466409Z",
-     "iopub.status.idle": "2026-11-26T17:19:34.563856Z",
-     "shell.execute_reply": "2026-11-26T17:19:34.562900Z"
+     "iopub.execute_input": "2026-11-26T21:37:43.273003Z",
+     "iopub.status.busy": "2026-11-26T21:37:43.272444Z",
+     "iopub.status.idle": "2026-11-26T21:37:43.358710Z",
+     "shell.execute_reply": "2026-11-26T21:37:43.357841Z"
     }
    },
    "outputs": [],
@@ -91,7 +91,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e5fe8856",
+   "id": "0d6e9b5b",
    "metadata": {},
    "source": [
     "The `kernel` defines what kind of shapes $f$ can take, and it is one of the primary ways you fit your model to your data.\n",
@@ -103,7 +103,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "9abc5f02",
+   "id": "61653d9a",
    "metadata": {},
    "source": [
     "Below we will introduce the most important kernels, and how they can be composed to create new kernels that fit any structure in your data. To see the full list of kernels implemented in GPflow vist our [API documentation](../../api/gpflow/kernels/index.rst)."
@@ -111,7 +111,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "1c4e346c",
+   "id": "e0d62b9c",
    "metadata": {},
    "source": [
     "## Visualising a kernel\n",
@@ -122,13 +122,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "f06daae9",
+   "id": "7cb1a93c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:34.566707Z",
-     "iopub.status.busy": "2026-11-26T17:19:34.566436Z",
-     "iopub.status.idle": "2026-11-26T17:19:34.582362Z",
-     "shell.execute_reply": "2026-11-26T17:19:34.581561Z"
+     "iopub.execute_input": "2026-11-26T21:37:43.361302Z",
+     "iopub.status.busy": "2026-11-26T21:37:43.361068Z",
+     "iopub.status.idle": "2026-11-26T21:37:43.371882Z",
+     "shell.execute_reply": "2026-11-26T21:37:43.370880Z"
     }
    },
    "outputs": [],
@@ -189,7 +189,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "3c94fead",
+   "id": "7ecdbabe",
    "metadata": {},
    "source": [
     "## The Mat\u00e9rn family\n",
@@ -216,13 +216,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "7ec7e2f3",
+   "id": "ca5862cb",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:34.584404Z",
-     "iopub.status.busy": "2026-11-26T17:19:34.584191Z",
-     "iopub.status.idle": "2026-11-26T17:19:38.159967Z",
-     "shell.execute_reply": "2026-11-26T17:19:38.159120Z"
+     "iopub.execute_input": "2026-11-26T21:37:43.374533Z",
+     "iopub.status.busy": "2026-11-26T21:37:43.374286Z",
+     "iopub.status.idle": "2026-11-26T21:37:46.129876Z",
+     "shell.execute_reply": "2026-11-26T21:37:46.129093Z"
     }
    },
    "outputs": [
@@ -244,13 +244,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "068d9196",
+   "id": "47fa1188",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:38.162166Z",
-     "iopub.status.busy": "2026-11-26T17:19:38.161927Z",
-     "iopub.status.idle": "2026-11-26T17:19:39.142230Z",
-     "shell.execute_reply": "2026-11-26T17:19:39.141435Z"
+     "iopub.execute_input": "2026-11-26T21:37:46.132098Z",
+     "iopub.status.busy": "2026-11-26T21:37:46.131900Z",
+     "iopub.status.idle": "2026-11-26T21:37:46.991263Z",
+     "shell.execute_reply": "2026-11-26T21:37:46.989944Z"
     }
    },
    "outputs": [
@@ -272,13 +272,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "50605c8a",
+   "id": "4625879e",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:39.144253Z",
-     "iopub.status.busy": "2026-11-26T17:19:39.144031Z",
-     "iopub.status.idle": "2026-11-26T17:19:40.223076Z",
-     "shell.execute_reply": "2026-11-26T17:19:40.222207Z"
+     "iopub.execute_input": "2026-11-26T21:37:46.993326Z",
+     "iopub.status.busy": "2026-11-26T21:37:46.993077Z",
+     "iopub.status.idle": "2026-11-26T21:37:47.844434Z",
+     "shell.execute_reply": "2026-11-26T21:37:47.843705Z"
     }
    },
    "outputs": [
@@ -300,13 +300,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "e2d8dec4",
+   "id": "f82410f8",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:40.225251Z",
-     "iopub.status.busy": "2026-11-26T17:19:40.224980Z",
-     "iopub.status.idle": "2026-11-26T17:19:41.182494Z",
-     "shell.execute_reply": "2026-11-26T17:19:41.181513Z"
+     "iopub.execute_input": "2026-11-26T21:37:47.846534Z",
+     "iopub.status.busy": "2026-11-26T21:37:47.846299Z",
+     "iopub.status.idle": "2026-11-26T21:37:48.636303Z",
+     "shell.execute_reply": "2026-11-26T21:37:48.635381Z"
     }
    },
    "outputs": [
@@ -327,7 +327,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a1cdf9cc",
+   "id": "48a64a66",
    "metadata": {},
    "source": [
     "And all of them together:"
@@ -336,13 +336,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "b16a8723",
+   "id": "d5f4410f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:41.184469Z",
-     "iopub.status.busy": "2026-11-26T17:19:41.184227Z",
-     "iopub.status.idle": "2026-11-26T17:19:43.300975Z",
-     "shell.execute_reply": "2026-11-26T17:19:43.299945Z"
+     "iopub.execute_input": "2026-11-26T21:37:48.638015Z",
+     "iopub.status.busy": "2026-11-26T21:37:48.637840Z",
+     "iopub.status.idle": "2026-11-26T21:37:50.453195Z",
+     "shell.execute_reply": "2026-11-26T21:37:50.452242Z"
     }
    },
    "outputs": [
@@ -368,7 +368,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "f0c5779f",
+   "id": "7fd65401",
    "metadata": {},
    "source": [
     "## Kernel parameters\n",
@@ -386,13 +386,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "ec989779",
+   "id": "09e9f1b7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:43.305541Z",
-     "iopub.status.busy": "2026-11-26T17:19:43.305293Z",
-     "iopub.status.idle": "2026-11-26T17:19:43.880246Z",
-     "shell.execute_reply": "2026-11-26T17:19:43.879130Z"
+     "iopub.execute_input": "2026-11-26T21:37:50.456252Z",
+     "iopub.status.busy": "2026-11-26T21:37:50.456047Z",
+     "iopub.status.idle": "2026-11-26T21:37:50.917977Z",
+     "shell.execute_reply": "2026-11-26T21:37:50.917178Z"
     }
    },
    "outputs": [
@@ -417,13 +417,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "ed24758f",
+   "id": "bfd7c2a5",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:43.882970Z",
-     "iopub.status.busy": "2026-11-26T17:19:43.882713Z",
-     "iopub.status.idle": "2026-11-26T17:19:44.465162Z",
-     "shell.execute_reply": "2026-11-26T17:19:44.464524Z"
+     "iopub.execute_input": "2026-11-26T21:37:50.920304Z",
+     "iopub.status.busy": "2026-11-26T21:37:50.920078Z",
+     "iopub.status.idle": "2026-11-26T21:37:51.417706Z",
+     "shell.execute_reply": "2026-11-26T21:37:51.416636Z"
     }
    },
    "outputs": [
@@ -448,13 +448,13 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "4ba4746b",
+   "id": "3db499e1",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:44.467863Z",
-     "iopub.status.busy": "2026-11-26T17:19:44.467624Z",
-     "iopub.status.idle": "2026-11-26T17:19:45.037043Z",
-     "shell.execute_reply": "2026-11-26T17:19:45.036087Z"
+     "iopub.execute_input": "2026-11-26T21:37:51.419765Z",
+     "iopub.status.busy": "2026-11-26T21:37:51.419538Z",
+     "iopub.status.idle": "2026-11-26T21:37:51.889983Z",
+     "shell.execute_reply": "2026-11-26T21:37:51.889239Z"
     }
    },
    "outputs": [
@@ -478,7 +478,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "796eb30d",
+   "id": "2de21211",
    "metadata": {},
    "source": [
     "These parameters are usually set automatically during model training, and ideally you don't need to worry too much about them. In the above examples we did not optimise the model, to demonstrate how model parameters impact predictions. For more about parameters and their training see our section on [Parameters and Their Optimisation](parameters_and_their_optimisation.ipynb).\n",
@@ -488,7 +488,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e1ee0370",
+   "id": "b0663bcb",
    "metadata": {},
    "source": [
     "## Kernel composition\n",
@@ -504,7 +504,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "3bc12ab2",
+   "id": "5c18edea",
    "metadata": {},
    "source": [
     "### Periodic\n",
@@ -515,13 +515,13 @@
   {
    "cell_type": "code",
    "execution_count": 12,
-   "id": "a37bdac9",
+   "id": "12229015",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:45.039275Z",
-     "iopub.status.busy": "2026-11-26T17:19:45.039040Z",
-     "iopub.status.idle": "2026-11-26T17:19:46.181343Z",
-     "shell.execute_reply": "2026-11-26T17:19:46.180363Z"
+     "iopub.execute_input": "2026-11-26T21:37:51.891875Z",
+     "iopub.status.busy": "2026-11-26T21:37:51.891685Z",
+     "iopub.status.idle": "2026-11-26T21:37:52.911239Z",
+     "shell.execute_reply": "2026-11-26T21:37:52.910231Z"
     }
    },
    "outputs": [
@@ -544,7 +544,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7e91665c",
+   "id": "e6fc9d00",
    "metadata": {},
    "source": [
     "### Change-points\n",
@@ -555,13 +555,13 @@
   {
    "cell_type": "code",
    "execution_count": 13,
-   "id": "8b3f5989",
+   "id": "f89e18d7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:46.184669Z",
-     "iopub.status.busy": "2026-11-26T17:19:46.184425Z",
-     "iopub.status.idle": "2026-11-26T17:19:46.831223Z",
-     "shell.execute_reply": "2026-11-26T17:19:46.829945Z"
+     "iopub.execute_input": "2026-11-26T21:37:52.913633Z",
+     "iopub.status.busy": "2026-11-26T21:37:52.913386Z",
+     "iopub.status.idle": "2026-11-26T21:37:53.582894Z",
+     "shell.execute_reply": "2026-11-26T21:37:53.582155Z"
     }
    },
    "outputs": [
@@ -593,7 +593,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "dba70460",
+   "id": "5e62665c",
    "metadata": {},
    "source": [
     "### Some other simple kernels\n",
@@ -603,7 +603,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "560ba099",
+   "id": "923cea7e",
    "metadata": {},
    "source": [
     "We have the `Constant` kernel, which makes $f$ a constant value:"
@@ -612,13 +612,13 @@
   {
    "cell_type": "code",
    "execution_count": 14,
-   "id": "d21f726e",
+   "id": "fe944ed6",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:46.833635Z",
-     "iopub.status.busy": "2026-11-26T17:19:46.833274Z",
-     "iopub.status.idle": "2026-11-26T17:19:47.777176Z",
-     "shell.execute_reply": "2026-11-26T17:19:47.776263Z"
+     "iopub.execute_input": "2026-11-26T21:37:53.585242Z",
+     "iopub.status.busy": "2026-11-26T21:37:53.585022Z",
+     "iopub.status.idle": "2026-11-26T21:37:54.312031Z",
+     "shell.execute_reply": "2026-11-26T21:37:54.311207Z"
     }
    },
    "outputs": [
@@ -639,7 +639,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a6b8f051",
+   "id": "f26c3b1e",
    "metadata": {},
    "source": [
     "And we have the `Linear` kernel, which creates a stright line through $(0, 0)$:"
@@ -648,13 +648,13 @@
   {
    "cell_type": "code",
    "execution_count": 15,
-   "id": "ded23e4c",
+   "id": "694758e9",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:47.779156Z",
-     "iopub.status.busy": "2026-11-26T17:19:47.778924Z",
-     "iopub.status.idle": "2026-11-26T17:19:48.624110Z",
-     "shell.execute_reply": "2026-11-26T17:19:48.623236Z"
+     "iopub.execute_input": "2026-11-26T21:37:54.314803Z",
+     "iopub.status.busy": "2026-11-26T21:37:54.314578Z",
+     "iopub.status.idle": "2026-11-26T21:37:55.050127Z",
+     "shell.execute_reply": "2026-11-26T21:37:55.048818Z"
     }
    },
    "outputs": [
@@ -675,7 +675,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "accb1fa9",
+   "id": "c971ab39",
    "metadata": {},
    "source": [
     "### Addition and multiplication\n",
@@ -685,7 +685,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "00c9ab6b",
+   "id": "57b011d5",
    "metadata": {},
    "source": [
     "For example you can add a constant and a linear to get a $f$ that is a straight line that does not pass through $(0, 0)$:"
@@ -694,13 +694,13 @@
   {
    "cell_type": "code",
    "execution_count": 16,
-   "id": "764e74ac",
+   "id": "965ca2ff",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:48.626440Z",
-     "iopub.status.busy": "2026-11-26T17:19:48.626210Z",
-     "iopub.status.idle": "2026-11-26T17:19:49.571468Z",
-     "shell.execute_reply": "2026-11-26T17:19:49.570626Z"
+     "iopub.execute_input": "2026-11-26T21:37:55.052954Z",
+     "iopub.status.busy": "2026-11-26T21:37:55.052640Z",
+     "iopub.status.idle": "2026-11-26T21:37:55.946394Z",
+     "shell.execute_reply": "2026-11-26T21:37:55.945625Z"
     }
    },
    "outputs": [
@@ -721,7 +721,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ed4184e9",
+   "id": "f24abc65",
    "metadata": {},
    "source": [
     "Or you can add a linear and a periodic kernel to get repeating pattern with a linear trend:"
@@ -730,13 +730,13 @@
   {
    "cell_type": "code",
    "execution_count": 17,
-   "id": "84ca037e",
+   "id": "e6b188c9",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:49.573519Z",
-     "iopub.status.busy": "2026-11-26T17:19:49.573293Z",
-     "iopub.status.idle": "2026-11-26T17:19:50.543751Z",
-     "shell.execute_reply": "2026-11-26T17:19:50.542814Z"
+     "iopub.execute_input": "2026-11-26T21:37:55.948232Z",
+     "iopub.status.busy": "2026-11-26T21:37:55.948040Z",
+     "iopub.status.idle": "2026-11-26T21:37:56.903682Z",
+     "shell.execute_reply": "2026-11-26T21:37:56.902900Z"
     }
    },
    "outputs": [
@@ -760,7 +760,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "0aa5443a",
+   "id": "20d76f37",
    "metadata": {},
    "source": [
     "You can multiply two linear kernels to get a quadratic (though please use [`gpflow.kernels.Polynomial`](../../api/gpflow/kernels/index.rst#gpflow-kernels-polynomial) if you actually want a quadratic function):"
@@ -769,13 +769,13 @@
   {
    "cell_type": "code",
    "execution_count": 18,
-   "id": "136e49e7",
+   "id": "74e77ec1",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:50.546022Z",
-     "iopub.status.busy": "2026-11-26T17:19:50.545705Z",
-     "iopub.status.idle": "2026-11-26T17:19:51.646169Z",
-     "shell.execute_reply": "2026-11-26T17:19:51.645230Z"
+     "iopub.execute_input": "2026-11-26T21:37:56.907497Z",
+     "iopub.status.busy": "2026-11-26T21:37:56.907222Z",
+     "iopub.status.idle": "2026-11-26T21:37:58.128019Z",
+     "shell.execute_reply": "2026-11-26T21:37:58.127082Z"
     }
    },
    "outputs": [
@@ -796,7 +796,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "bb655773",
+   "id": "80a96166",
    "metadata": {},
    "source": [
     "Or you can scale a periodic by a linear:"
@@ -805,13 +805,13 @@
   {
    "cell_type": "code",
    "execution_count": 19,
-   "id": "21ee39be",
+   "id": "e2805612",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:51.648333Z",
-     "iopub.status.busy": "2026-11-26T17:19:51.648127Z",
-     "iopub.status.idle": "2026-11-26T17:19:52.595180Z",
-     "shell.execute_reply": "2026-11-26T17:19:52.594364Z"
+     "iopub.execute_input": "2026-11-26T21:37:58.129895Z",
+     "iopub.status.busy": "2026-11-26T21:37:58.129693Z",
+     "iopub.status.idle": "2026-11-26T21:37:59.125901Z",
+     "shell.execute_reply": "2026-11-26T21:37:59.125105Z"
     }
    },
    "outputs": [
@@ -835,7 +835,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "b216865e",
+   "id": "80186945",
    "metadata": {},
    "source": [
     "## Multiple-dimensional data\n",
@@ -851,7 +851,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "cdec841b",
+   "id": "f3de6a3b",
    "metadata": {},
    "source": [
     "Let us define a function to plot a kernel with 2D input:"
@@ -860,13 +860,13 @@
   {
    "cell_type": "code",
    "execution_count": 20,
-   "id": "7be562e5",
+   "id": "c7049757",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:52.597422Z",
-     "iopub.status.busy": "2026-11-26T17:19:52.597210Z",
-     "iopub.status.idle": "2026-11-26T17:19:52.609491Z",
-     "shell.execute_reply": "2026-11-26T17:19:52.608630Z"
+     "iopub.execute_input": "2026-11-26T21:37:59.128229Z",
+     "iopub.status.busy": "2026-11-26T21:37:59.128039Z",
+     "iopub.status.idle": "2026-11-26T21:37:59.138978Z",
+     "shell.execute_reply": "2026-11-26T21:37:59.137920Z"
     }
    },
    "outputs": [],
@@ -933,7 +933,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "4dec3a3f",
+   "id": "22614e5f",
    "metadata": {},
    "source": [
     "Now, if we just use a kernel with default parameters, like we did above, with multi-dimensional input data it will work:"
@@ -942,13 +942,13 @@
   {
    "cell_type": "code",
    "execution_count": 21,
-   "id": "027519a8",
+   "id": "de3cc54c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:52.611260Z",
-     "iopub.status.busy": "2026-11-26T17:19:52.611062Z",
-     "iopub.status.idle": "2026-11-26T17:19:53.606869Z",
-     "shell.execute_reply": "2026-11-26T17:19:53.605991Z"
+     "iopub.execute_input": "2026-11-26T21:37:59.140795Z",
+     "iopub.status.busy": "2026-11-26T21:37:59.140604Z",
+     "iopub.status.idle": "2026-11-26T21:38:00.132601Z",
+     "shell.execute_reply": "2026-11-26T21:38:00.131436Z"
     }
    },
    "outputs": [
@@ -969,7 +969,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "293816b0",
+   "id": "ed62eefd",
    "metadata": {},
    "source": [
     "However, by default the kernel will use the same parameters for all the input dimensions, and in practice it is rare that all the input dimensions behave in the same way, so usually this is not what we want."
@@ -977,7 +977,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ab63ff71",
+   "id": "6f7cade7",
    "metadata": {},
    "source": [
     "### Multi-dimensional parameters\n",
@@ -990,13 +990,13 @@
   {
    "cell_type": "code",
    "execution_count": 22,
-   "id": "8467bb4b",
+   "id": "6b8531cc",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:53.609956Z",
-     "iopub.status.busy": "2026-11-26T17:19:53.609755Z",
-     "iopub.status.idle": "2026-11-26T17:19:54.626426Z",
-     "shell.execute_reply": "2026-11-26T17:19:54.625616Z"
+     "iopub.execute_input": "2026-11-26T21:38:00.140444Z",
+     "iopub.status.busy": "2026-11-26T21:38:00.140206Z",
+     "iopub.status.idle": "2026-11-26T21:38:01.142765Z",
+     "shell.execute_reply": "2026-11-26T21:38:01.142062Z"
     }
    },
    "outputs": [
@@ -1017,7 +1017,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "400cc755",
+   "id": "c555e023",
    "metadata": {},
    "source": [
     "Notice that even though we explicitly initialise the `lengthscales` the values are still optimised / scaled, so usually you do not have to worry too much about setting the values right.\n",
@@ -1027,7 +1027,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "dc4b6871",
+   "id": "a5b2da08",
    "metadata": {},
    "source": [
     "### Active dimensions\n",
@@ -1038,13 +1038,13 @@
   {
    "cell_type": "code",
    "execution_count": 23,
-   "id": "55902815",
+   "id": "baec5cdd",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:54.630268Z",
-     "iopub.status.busy": "2026-11-26T17:19:54.630061Z",
-     "iopub.status.idle": "2026-11-26T17:19:55.719888Z",
-     "shell.execute_reply": "2026-11-26T17:19:55.719100Z"
+     "iopub.execute_input": "2026-11-26T21:38:01.146157Z",
+     "iopub.status.busy": "2026-11-26T21:38:01.145961Z",
+     "iopub.status.idle": "2026-11-26T21:38:02.276947Z",
+     "shell.execute_reply": "2026-11-26T21:38:02.275730Z"
     }
    },
    "outputs": [

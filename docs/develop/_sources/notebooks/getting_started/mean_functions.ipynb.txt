@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "a774fa45",
+   "id": "27104c95",
    "metadata": {},
    "source": [
     "# Mean Functions\n",
@@ -12,7 +12,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "0ecbe5b2",
+   "id": "9bc29f25",
    "metadata": {},
    "source": [
     "As usual we will start with some necessary imports:"
@@ -21,13 +21,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "e7c4cc22",
+   "id": "429eecdb",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:47.527057Z",
-     "iopub.status.busy": "2026-11-26T17:18:47.526871Z",
-     "iopub.status.idle": "2026-11-26T17:18:53.230998Z",
-     "shell.execute_reply": "2026-11-26T17:18:53.229948Z"
+     "iopub.execute_input": "2026-11-26T21:36:43.849717Z",
+     "iopub.status.busy": "2026-11-26T21:36:43.849544Z",
+     "iopub.status.idle": "2026-11-26T21:36:49.314910Z",
+     "shell.execute_reply": "2026-11-26T21:36:49.313917Z"
     }
    },
    "outputs": [
@@ -36,8 +36,8 @@
      "output_type": "stream",
      "text": [
       "WARNING: All log messages before absl::InitializeLog() is called are written to STDERR\n",
-      "E0000 00:00:1795713528.272529     142 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered\n",
-      "E0000 00:00:1795713528.278236     142 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n"
+      "E0000 00:00:1795729004.581731     139 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered\n",
+      "E0000 00:00:1795729004.587576     139 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n"
      ]
     }
    ],
@@ -52,7 +52,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "1da17ff0",
+   "id": "65e73600",
    "metadata": {},
    "source": [
     "And a helper function to visualise our models:"
@@ -61,13 +61,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "d243a027",
+   "id": "419cd0ea",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:53.233908Z",
-     "iopub.status.busy": "2026-11-26T17:18:53.233378Z",
-     "iopub.status.idle": "2026-11-26T17:18:53.240493Z",
-     "shell.execute_reply": "2026-11-26T17:18:53.239686Z"
+     "iopub.execute_input": "2026-11-26T21:36:49.317995Z",
+     "iopub.status.busy": "2026-11-26T21:36:49.317571Z",
+     "iopub.status.idle": "2026-11-26T21:36:49.324428Z",
+     "shell.execute_reply": "2026-11-26T21:36:49.323494Z"
     }
    },
    "outputs": [],
@@ -104,7 +104,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "db6a58fb",
+   "id": "05721519",
    "metadata": {},
    "source": [
     "## Mean reversion\n",
@@ -115,13 +115,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "5c054768",
+   "id": "2364d84e",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:53.242860Z",
-     "iopub.status.busy": "2026-11-26T17:18:53.242654Z",
-     "iopub.status.idle": "2026-11-26T17:18:55.486096Z",
-     "shell.execute_reply": "2026-11-26T17:18:55.484930Z"
+     "iopub.execute_input": "2026-11-26T21:36:49.326673Z",
+     "iopub.status.busy": "2026-11-26T21:36:49.326475Z",
+     "iopub.status.idle": "2026-11-26T21:36:51.505975Z",
+     "shell.execute_reply": "2026-11-26T21:36:51.505193Z"
     }
    },
    "outputs": [
@@ -145,7 +145,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "15d67b8f",
+   "id": "222eb45f",
    "metadata": {},
    "source": [
     "As we move away from the data our predictions converge towards 0. Basically, as we move away from the data, the model does not know what to predict, and will revert towards the mean function. This is called [\"mean reversion\"](https://en.wikipedia.org/wiki/Regression_toward_the_mean), and this is the primary use case where having a reasonable mean function can help. In the areas where we have plenty of data, we don't need a mean function."
@@ -153,7 +153,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d8ad3f7b",
+   "id": "fbaef3e4",
    "metadata": {},
    "source": [
     "## Setting a mean function\n",
@@ -166,13 +166,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "5fdcb925",
+   "id": "a7934a68",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:55.488254Z",
-     "iopub.status.busy": "2026-11-26T17:18:55.488035Z",
-     "iopub.status.idle": "2026-11-26T17:18:56.465973Z",
-     "shell.execute_reply": "2026-11-26T17:18:56.464953Z"
+     "iopub.execute_input": "2026-11-26T21:36:51.509056Z",
+     "iopub.status.busy": "2026-11-26T21:36:51.508853Z",
+     "iopub.status.idle": "2026-11-26T21:36:52.492733Z",
+     "shell.execute_reply": "2026-11-26T21:36:52.491892Z"
     }
    },
    "outputs": [
@@ -198,7 +198,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "6ad51553",
+   "id": "8548a9de",
    "metadata": {},
    "source": [
     "Our model now fits our mean function to the data without any noise, and happily extrapolates the quadratic function."
@@ -206,7 +206,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "b56192f5",
+   "id": "8780a0cd",
    "metadata": {},
    "source": [
     "## Interactions with the kernel\n",
@@ -219,13 +219,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "a34974bd",
+   "id": "f2f878a3",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:56.468863Z",
-     "iopub.status.busy": "2026-11-26T17:18:56.468524Z",
-     "iopub.status.idle": "2026-11-26T17:18:57.078936Z",
-     "shell.execute_reply": "2026-11-26T17:18:57.078023Z"
+     "iopub.execute_input": "2026-11-26T21:36:52.495590Z",
+     "iopub.status.busy": "2026-11-26T21:36:52.495356Z",
+     "iopub.status.idle": "2026-11-26T21:36:53.081907Z",
+     "shell.execute_reply": "2026-11-26T21:36:53.081105Z"
     }
    },
    "outputs": [
@@ -255,7 +255,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "8e8543e9",
+   "id": "12b5d745",
    "metadata": {},
    "source": [
     "And a periodic kernel:"
@@ -264,13 +264,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "bb160796",
+   "id": "825c0246",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:57.081702Z",
-     "iopub.status.busy": "2026-11-26T17:18:57.081451Z",
-     "iopub.status.idle": "2026-11-26T17:18:57.822578Z",
-     "shell.execute_reply": "2026-11-26T17:18:57.821519Z"
+     "iopub.execute_input": "2026-11-26T21:36:53.083840Z",
+     "iopub.status.busy": "2026-11-26T21:36:53.083628Z",
+     "iopub.status.idle": "2026-11-26T21:36:53.807797Z",
+     "shell.execute_reply": "2026-11-26T21:36:53.806965Z"
     }
    },
    "outputs": [
@@ -297,7 +297,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "6f145839",
+   "id": "2060aa21",
    "metadata": {},
    "source": [
     "And combine them, we get a period around a line:"
@@ -306,13 +306,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "7dd501e9",
+   "id": "96800831",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:57.825327Z",
-     "iopub.status.busy": "2026-11-26T17:18:57.825094Z",
-     "iopub.status.idle": "2026-11-26T17:18:58.575420Z",
-     "shell.execute_reply": "2026-11-26T17:18:58.574376Z"
+     "iopub.execute_input": "2026-11-26T21:36:53.810292Z",
+     "iopub.status.busy": "2026-11-26T21:36:53.810074Z",
+     "iopub.status.idle": "2026-11-26T21:36:54.448044Z",
+     "shell.execute_reply": "2026-11-26T21:36:54.447328Z"
     }
    },
    "outputs": [
@@ -339,7 +339,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "2618098a",
+   "id": "c53227e5",
    "metadata": {},
    "source": [
     "## Kernels versus mean functions\n",
@@ -349,7 +349,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "f658d068",
+   "id": "fb8b3701",
    "metadata": {},
    "source": [
     "## Custom mean functions\n",
@@ -360,13 +360,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "081a322a",
+   "id": "c31e8caa",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:58.578171Z",
-     "iopub.status.busy": "2026-11-26T17:18:58.577969Z",
-     "iopub.status.idle": "2026-11-26T17:18:59.137632Z",
-     "shell.execute_reply": "2026-11-26T17:18:59.136656Z"
+     "iopub.execute_input": "2026-11-26T21:36:54.449858Z",
+     "iopub.status.busy": "2026-11-26T21:36:54.449672Z",
+     "iopub.status.idle": "2026-11-26T21:36:54.974658Z",
+     "shell.execute_reply": "2026-11-26T21:36:54.973849Z"
     }
    },
    "outputs": [
@@ -400,7 +400,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ba7acf29",
+   "id": "f0b4640a",
    "metadata": {},
    "source": [
     "The above mean function does not have any trainable parameters. It is common for a mean function to have parameters that will be set during model training. To learn more about parameters see our section on [Parameters and Their Optimisation](parameters_and_their_optimisation.ipynb)."
@@ -408,7 +408,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "62739c32",
+   "id": "73ca17b5",
    "metadata": {},
    "source": [
     "## Composition\n",
@@ -418,7 +418,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "9afb7a86",
+   "id": "7bc7bc9c",
    "metadata": {},
    "source": [
     "For example we can add a linear to our sine wave above:"
@@ -427,13 +427,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "455d88ed",
+   "id": "89ee5534",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:59.139742Z",
-     "iopub.status.busy": "2026-11-26T17:18:59.139513Z",
-     "iopub.status.idle": "2026-11-26T17:18:59.710261Z",
-     "shell.execute_reply": "2026-11-26T17:18:59.709222Z"
+     "iopub.execute_input": "2026-11-26T21:36:54.976901Z",
+     "iopub.status.busy": "2026-11-26T21:36:54.976706Z",
+     "iopub.status.idle": "2026-11-26T21:36:55.528645Z",
+     "shell.execute_reply": "2026-11-26T21:36:55.527899Z"
     }
    },
    "outputs": [
@@ -459,7 +459,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d47df9b2",
+   "id": "6687918d",
    "metadata": {},
    "source": [
     "Or we can multiply the sine by a linear:"
@@ -468,13 +468,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "8a3d864a",
+   "id": "5630548b",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:59.712425Z",
-     "iopub.status.busy": "2026-11-26T17:18:59.712219Z",
-     "iopub.status.idle": "2026-11-26T17:19:00.272148Z",
-     "shell.execute_reply": "2026-11-26T17:19:00.271244Z"
+     "iopub.execute_input": "2026-11-26T21:36:55.530568Z",
+     "iopub.status.busy": "2026-11-26T21:36:55.530385Z",
+     "iopub.status.idle": "2026-11-26T21:36:56.084197Z",
+     "shell.execute_reply": "2026-11-26T21:36:56.083495Z"
     }
    },
    "outputs": [

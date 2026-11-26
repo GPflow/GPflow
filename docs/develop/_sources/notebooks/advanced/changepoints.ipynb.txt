@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "fd4a0b97",
+   "id": "a846de72",
    "metadata": {},
    "source": [
     "# Change points\n",
@@ -21,13 +21,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "c1f961da",
+   "id": "d471bbb1",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:41.394912Z",
-     "iopub.status.busy": "2026-11-26T17:18:41.394439Z",
-     "iopub.status.idle": "2026-11-26T17:18:47.967898Z",
-     "shell.execute_reply": "2026-11-26T17:18:47.966764Z"
+     "iopub.execute_input": "2026-11-26T21:36:38.679497Z",
+     "iopub.status.busy": "2026-11-26T21:36:38.679307Z",
+     "iopub.status.idle": "2026-11-26T21:36:44.461760Z",
+     "shell.execute_reply": "2026-11-26T21:36:44.460915Z"
     }
    },
    "outputs": [
@@ -35,13 +35,13 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2026-11-26 17:18:42.239550: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.\n",
-      "2026-11-26 17:18:42.244013: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.\n",
-      "2026-11-26 17:18:42.256070: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:477] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered\n",
+      "2026-11-26 21:36:39.411257: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.\n",
+      "2026-11-26 21:36:39.415124: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.\n",
+      "2026-11-26 21:36:39.426614: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:477] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered\n",
       "WARNING: All log messages before absl::InitializeLog() is called are written to STDERR\n",
-      "E0000 00:00:1795713522.278537     109 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered\n",
-      "E0000 00:00:1795713522.285920     109 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n",
-      "2026-11-26 17:18:42.305898: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.\n",
+      "E0000 00:00:1795728999.446712     113 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered\n",
+      "E0000 00:00:1795728999.452539     113 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n",
+      "2026-11-26 21:36:39.472753: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.\n",
       "To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     }
@@ -66,7 +66,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "61148fdd",
+   "id": "b9debd84",
    "metadata": {},
    "source": [
     "We demonstrate the use of the kernel by drawing a number of samples from different parameterizations. Firstly, a simple single change-point between two kernels of differing lengthscales."
@@ -75,13 +75,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "b89be2a4",
+   "id": "250669dd",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:47.970831Z",
-     "iopub.status.busy": "2026-11-26T17:18:47.970315Z",
-     "iopub.status.idle": "2026-11-26T17:18:48.238700Z",
-     "shell.execute_reply": "2026-11-26T17:18:48.237611Z"
+     "iopub.execute_input": "2026-11-26T21:36:44.464393Z",
+     "iopub.status.busy": "2026-11-26T21:36:44.463977Z",
+     "iopub.status.idle": "2026-11-26T21:36:44.751855Z",
+     "shell.execute_reply": "2026-11-26T21:36:44.751032Z"
     }
    },
    "outputs": [
@@ -89,7 +89,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2026-11-26 17:18:47.973937: E external/local_xla/xla/stream_executor/cuda/cuda_driver.cc:152] failed call to cuInit: INTERNAL: CUDA error: Failed call to cuInit: UNKNOWN ERROR (303)\n"
+      "2026-11-26 21:36:44.469014: E external/local_xla/xla/stream_executor/cuda/cuda_driver.cc:152] failed call to cuInit: INTERNAL: CUDA error: Failed call to cuInit: UNKNOWN ERROR (303)\n"
      ]
     },
     {
@@ -116,7 +116,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d3faf227",
+   "id": "8844c172",
    "metadata": {},
    "source": [
     "Secondly, an implementation of a \"change window\" in which we change from one kernel to another, then back to the original."
@@ -125,13 +125,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "30a8f11d",
+   "id": "076bf3ac",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:48.241883Z",
-     "iopub.status.busy": "2026-11-26T17:18:48.241633Z",
-     "iopub.status.idle": "2026-11-26T17:18:48.433746Z",
-     "shell.execute_reply": "2026-11-26T17:18:48.432385Z"
+     "iopub.execute_input": "2026-11-26T21:36:44.753682Z",
+     "iopub.status.busy": "2026-11-26T21:36:44.753486Z",
+     "iopub.status.idle": "2026-11-26T21:36:44.926166Z",
+     "shell.execute_reply": "2026-11-26T21:36:44.925444Z"
     }
    },
    "outputs": [
@@ -161,7 +161,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "0b9d362a",
+   "id": "715b9999",
    "metadata": {},
    "source": [
     "And finally, allowing different change-points to occur more or less abruptly by defining different steepness parameters."
@@ -170,13 +170,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "5173ab12",
+   "id": "91beeb90",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:48.436437Z",
-     "iopub.status.busy": "2026-11-26T17:18:48.436038Z",
-     "iopub.status.idle": "2026-11-26T17:18:48.626535Z",
-     "shell.execute_reply": "2026-11-26T17:18:48.625727Z"
+     "iopub.execute_input": "2026-11-26T21:36:44.928569Z",
+     "iopub.status.busy": "2026-11-26T21:36:44.928353Z",
+     "iopub.status.idle": "2026-11-26T21:36:45.090596Z",
+     "shell.execute_reply": "2026-11-26T21:36:45.089922Z"
     }
    },
    "outputs": [

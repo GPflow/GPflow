@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "85d9cb5b",
+   "id": "46d9715e",
    "metadata": {},
    "source": [
     "# Convolutional Gaussian Processes\n",
@@ -15,7 +15,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e01c6831",
+   "id": "9fd31921",
    "metadata": {},
    "source": [
     "## Generate dataset\n",
@@ -25,13 +25,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "a7c73f66",
+   "id": "a19873f0",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:37.505190Z",
-     "iopub.status.busy": "2026-11-26T17:18:37.504884Z",
-     "iopub.status.idle": "2026-11-26T17:18:43.211405Z",
-     "shell.execute_reply": "2026-11-26T17:18:43.210757Z"
+     "iopub.execute_input": "2026-11-26T21:36:28.684902Z",
+     "iopub.status.busy": "2026-11-26T21:36:28.684733Z",
+     "iopub.status.idle": "2026-11-26T21:36:34.346417Z",
+     "shell.execute_reply": "2026-11-26T21:36:34.345774Z"
     }
    },
    "outputs": [
@@ -39,13 +39,13 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2026-11-26 17:18:38.282791: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.\n",
-      "2026-11-26 17:18:38.286866: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.\n",
-      "2026-11-26 17:18:38.298248: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:477] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered\n",
+      "2026-11-26 21:36:29.360069: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.\n",
+      "2026-11-26 21:36:29.363970: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.\n",
+      "2026-11-26 21:36:29.375757: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:477] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered\n",
       "WARNING: All log messages before absl::InitializeLog() is called are written to STDERR\n",
-      "E0000 00:00:1795713518.317915     113 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered\n",
-      "E0000 00:00:1795713518.323697     113 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n",
-      "2026-11-26 17:18:38.343591: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.\n",
+      "E0000 00:00:1795728989.396205     105 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered\n",
+      "E0000 00:00:1795728989.402110     105 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\n",
+      "2026-11-26 21:36:29.423143: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.\n",
       "To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     }
@@ -82,13 +82,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "686c7635",
+   "id": "5e71ec67",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:43.214209Z",
-     "iopub.status.busy": "2026-11-26T17:18:43.213777Z",
-     "iopub.status.idle": "2026-11-26T17:18:43.227394Z",
-     "shell.execute_reply": "2026-11-26T17:18:43.221459Z"
+     "iopub.execute_input": "2026-11-26T21:36:34.349516Z",
+     "iopub.status.busy": "2026-11-26T21:36:34.349109Z",
+     "iopub.status.idle": "2026-11-26T21:36:34.356945Z",
+     "shell.execute_reply": "2026-11-26T21:36:34.356169Z"
     }
    },
    "outputs": [],
@@ -139,13 +139,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "bc829a3f",
+   "id": "8298d200",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:43.230265Z",
-     "iopub.status.busy": "2026-11-26T17:18:43.229982Z",
-     "iopub.status.idle": "2026-11-26T17:18:43.245202Z",
-     "shell.execute_reply": "2026-11-26T17:18:43.244424Z"
+     "iopub.execute_input": "2026-11-26T21:36:34.358434Z",
+     "iopub.status.busy": "2026-11-26T21:36:34.358257Z",
+     "iopub.status.idle": "2026-11-26T21:36:34.368729Z",
+     "shell.execute_reply": "2026-11-26T21:36:34.367948Z"
     }
    },
    "outputs": [],
@@ -157,13 +157,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "23efd297",
+   "id": "ae876905",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:43.247505Z",
-     "iopub.status.busy": "2026-11-26T17:18:43.247270Z",
-     "iopub.status.idle": "2026-11-26T17:18:43.604574Z",
-     "shell.execute_reply": "2026-11-26T17:18:43.603670Z"
+     "iopub.execute_input": "2026-11-26T21:36:34.370250Z",
+     "iopub.status.busy": "2026-11-26T21:36:34.370062Z",
+     "iopub.status.idle": "2026-11-26T21:36:34.656596Z",
+     "shell.execute_reply": "2026-11-26T21:36:34.655702Z"
     }
    },
    "outputs": [
@@ -188,7 +188,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "6567f677",
+   "id": "0d9f750c",
    "metadata": {},
    "source": [
     "## Squared Exponential kernel"
@@ -197,13 +197,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "eee24b50",
+   "id": "24489355",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:43.606303Z",
-     "iopub.status.busy": "2026-11-26T17:18:43.606106Z",
-     "iopub.status.idle": "2026-11-26T17:18:43.717431Z",
-     "shell.execute_reply": "2026-11-26T17:18:43.716792Z"
+     "iopub.execute_input": "2026-11-26T21:36:34.658218Z",
+     "iopub.status.busy": "2026-11-26T21:36:34.658026Z",
+     "iopub.status.idle": "2026-11-26T21:36:34.768824Z",
+     "shell.execute_reply": "2026-11-26T21:36:34.768111Z"
     }
    },
    "outputs": [
@@ -211,7 +211,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2026-11-26 17:18:43.608348: E external/local_xla/xla/stream_executor/cuda/cuda_driver.cc:152] failed call to cuInit: INTERNAL: CUDA error: Failed call to cuInit: UNKNOWN ERROR (303)\n"
+      "2026-11-26 21:36:34.661378: E external/local_xla/xla/stream_executor/cuda/cuda_driver.cc:152] failed call to cuInit: INTERNAL: CUDA error: Failed call to cuInit: UNKNOWN ERROR (303)\n"
      ]
     }
    ],
@@ -226,13 +226,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "3d4cc868",
+   "id": "10085b71",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:43.719687Z",
-     "iopub.status.busy": "2026-11-26T17:18:43.719476Z",
-     "iopub.status.idle": "2026-11-26T17:18:47.446074Z",
-     "shell.execute_reply": "2026-11-26T17:18:47.444750Z"
+     "iopub.execute_input": "2026-11-26T21:36:34.770779Z",
+     "iopub.status.busy": "2026-11-26T21:36:34.770583Z",
+     "iopub.status.idle": "2026-11-26T21:36:37.959057Z",
+     "shell.execute_reply": "2026-11-26T21:36:37.958239Z"
     }
    },
    "outputs": [
@@ -253,13 +253,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "426b2948",
+   "id": "53c1e234",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:47.447921Z",
-     "iopub.status.busy": "2026-11-26T17:18:47.447707Z",
-     "iopub.status.idle": "2026-11-26T17:18:48.768344Z",
-     "shell.execute_reply": "2026-11-26T17:18:48.767698Z"
+     "iopub.execute_input": "2026-11-26T21:36:37.960590Z",
+     "iopub.status.busy": "2026-11-26T21:36:37.960411Z",
+     "iopub.status.idle": "2026-11-26T21:36:39.064610Z",
+     "shell.execute_reply": "2026-11-26T21:36:39.063950Z"
     }
    },
    "outputs": [
@@ -267,7 +267,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "36.606 iter/s\n"
+      "43.792 iter/s\n"
      ]
     }
    ],
@@ -286,13 +286,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "1b943cbb",
+   "id": "95f892f4",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:48.770676Z",
-     "iopub.status.busy": "2026-11-26T17:18:48.770457Z",
-     "iopub.status.idle": "2026-11-26T17:18:48.892328Z",
-     "shell.execute_reply": "2026-11-26T17:18:48.891551Z"
+     "iopub.execute_input": "2026-11-26T21:36:39.066632Z",
+     "iopub.status.busy": "2026-11-26T21:36:39.066445Z",
+     "iopub.status.idle": "2026-11-26T21:36:39.156611Z",
+     "shell.execute_reply": "2026-11-26T21:36:39.156074Z"
     }
    },
    "outputs": [
@@ -315,7 +315,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ec27fe37",
+   "id": "2da8832e",
    "metadata": {},
    "source": [
     "## Convolutional kernel"
@@ -324,13 +324,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "7c76cd4f",
+   "id": "0a1c6bd9",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:48.894074Z",
-     "iopub.status.busy": "2026-11-26T17:18:48.893837Z",
-     "iopub.status.idle": "2026-11-26T17:18:49.063564Z",
-     "shell.execute_reply": "2026-11-26T17:18:49.062795Z"
+     "iopub.execute_input": "2026-11-26T21:36:39.158538Z",
+     "iopub.status.busy": "2026-11-26T21:36:39.158281Z",
+     "iopub.status.idle": "2026-11-26T21:36:39.296522Z",
+     "shell.execute_reply": "2026-11-26T21:36:39.295735Z"
     }
    },
    "outputs": [],
@@ -364,13 +364,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "8f9fdbbd",
+   "id": "0aa5b0f7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:49.066382Z",
-     "iopub.status.busy": "2026-11-26T17:18:49.066117Z",
-     "iopub.status.idle": "2026-11-26T17:18:49.093629Z",
-     "shell.execute_reply": "2026-11-26T17:18:49.092808Z"
+     "iopub.execute_input": "2026-11-26T21:36:39.298211Z",
+     "iopub.status.busy": "2026-11-26T21:36:39.298028Z",
+     "iopub.status.idle": "2026-11-26T21:36:39.318933Z",
+     "shell.execute_reply": "2026-11-26T21:36:39.318221Z"
     }
    },
    "outputs": [],
@@ -381,13 +381,13 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "3af566e0",
+   "id": "60f51f06",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:49.095610Z",
-     "iopub.status.busy": "2026-11-26T17:18:49.095415Z",
-     "iopub.status.idle": "2026-11-26T17:18:49.109393Z",
-     "shell.execute_reply": "2026-11-26T17:18:49.108440Z"
+     "iopub.execute_input": "2026-11-26T21:36:39.320910Z",
+     "iopub.status.busy": "2026-11-26T21:36:39.320741Z",
+     "iopub.status.idle": "2026-11-26T21:36:39.332991Z",
+     "shell.execute_reply": "2026-11-26T21:36:39.332322Z"
     }
    },
    "outputs": [],
@@ -400,13 +400,13 @@
   {
    "cell_type": "code",
    "execution_count": 12,
-   "id": "0dc906d5",
+   "id": "85c88db7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:49.111296Z",
-     "iopub.status.busy": "2026-11-26T17:18:49.111096Z",
-     "iopub.status.idle": "2026-11-26T17:18:50.193519Z",
-     "shell.execute_reply": "2026-11-26T17:18:50.192714Z"
+     "iopub.execute_input": "2026-11-26T21:36:39.334625Z",
+     "iopub.status.busy": "2026-11-26T21:36:39.334454Z",
+     "iopub.status.idle": "2026-11-26T21:36:40.243898Z",
+     "shell.execute_reply": "2026-11-26T21:36:40.243183Z"
     }
    },
    "outputs": [
@@ -427,13 +427,13 @@
   {
    "cell_type": "code",
    "execution_count": 13,
-   "id": "689b763c",
+   "id": "e6d003c2",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:50.195972Z",
-     "iopub.status.busy": "2026-11-26T17:18:50.195755Z",
-     "iopub.status.idle": "2026-11-26T17:18:51.884693Z",
-     "shell.execute_reply": "2026-11-26T17:18:51.883905Z"
+     "iopub.execute_input": "2026-11-26T21:36:40.245518Z",
+     "iopub.status.busy": "2026-11-26T21:36:40.245341Z",
+     "iopub.status.idle": "2026-11-26T21:36:41.666332Z",
+     "shell.execute_reply": "2026-11-26T21:36:41.665545Z"
     }
    },
    "outputs": [
@@ -441,7 +441,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "6.528 iter/s\n"
+      "7.762 iter/s\n"
      ]
     }
    ],
@@ -459,13 +459,13 @@
   {
    "cell_type": "code",
    "execution_count": 14,
-   "id": "469d65f0",
+   "id": "05af7fa4",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:18:51.887258Z",
-     "iopub.status.busy": "2026-11-26T17:18:51.887035Z",
-     "iopub.status.idle": "2026-11-26T17:19:01.029639Z",
-     "shell.execute_reply": "2026-11-26T17:19:01.028962Z"
+     "iopub.execute_input": "2026-11-26T21:36:41.667876Z",
+     "iopub.status.busy": "2026-11-26T21:36:41.667696Z",
+     "iopub.status.idle": "2026-11-26T21:36:50.266319Z",
+     "shell.execute_reply": "2026-11-26T21:36:50.265551Z"
     }
    },
    "outputs": [
@@ -498,13 +498,13 @@
   {
    "cell_type": "code",
    "execution_count": 15,
-   "id": "8ff018cd",
+   "id": "c065bbac",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:01.031837Z",
-     "iopub.status.busy": "2026-11-26T17:19:01.031645Z",
-     "iopub.status.idle": "2026-11-26T17:19:10.174496Z",
-     "shell.execute_reply": "2026-11-26T17:19:10.173675Z"
+     "iopub.execute_input": "2026-11-26T21:36:50.268219Z",
+     "iopub.status.busy": "2026-11-26T21:36:50.268028Z",
+     "iopub.status.idle": "2026-11-26T21:36:58.340356Z",
+     "shell.execute_reply": "2026-11-26T21:36:58.339769Z"
     }
    },
    "outputs": [
@@ -536,13 +536,13 @@
   {
    "cell_type": "code",
    "execution_count": 16,
-   "id": "db955fd7",
+   "id": "01f3be10",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:10.176239Z",
-     "iopub.status.busy": "2026-11-26T17:19:10.176044Z",
-     "iopub.status.idle": "2026-11-26T17:19:21.287178Z",
-     "shell.execute_reply": "2026-11-26T17:19:21.286323Z"
+     "iopub.execute_input": "2026-11-26T21:36:58.342467Z",
+     "iopub.status.busy": "2026-11-26T21:36:58.342206Z",
+     "iopub.status.idle": "2026-11-26T21:37:08.424073Z",
+     "shell.execute_reply": "2026-11-26T21:37:08.423345Z"
     }
    },
    "outputs": [
@@ -575,13 +575,13 @@
   {
    "cell_type": "code",
    "execution_count": 17,
-   "id": "981ac8ab",
+   "id": "450e061f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:21.288953Z",
-     "iopub.status.busy": "2026-11-26T17:19:21.288732Z",
-     "iopub.status.idle": "2026-11-26T17:19:21.319129Z",
-     "shell.execute_reply": "2026-11-26T17:19:21.318331Z"
+     "iopub.execute_input": "2026-11-26T21:37:08.425685Z",
+     "iopub.status.busy": "2026-11-26T21:37:08.425496Z",
+     "iopub.status.idle": "2026-11-26T21:37:08.447953Z",
+     "shell.execute_reply": "2026-11-26T21:37:08.447314Z"
     }
    },
    "outputs": [
@@ -613,13 +613,13 @@
   {
    "cell_type": "code",
    "execution_count": 18,
-   "id": "231dc39c",
+   "id": "da1c16af",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-11-26T17:19:21.321830Z",
-     "iopub.status.busy": "2026-11-26T17:19:21.321625Z",
-     "iopub.status.idle": "2026-11-26T17:19:21.379336Z",
-     "shell.execute_reply": "2026-11-26T17:19:21.378576Z"
+     "iopub.execute_input": "2026-11-26T21:37:08.449712Z",
+     "iopub.status.busy": "2026-11-26T21:37:08.449538Z",
+     "iopub.status.idle": "2026-11-26T21:37:08.487258Z",
+     "shell.execute_reply": "2026-11-26T21:37:08.486633Z"
     }
    },
    "outputs": [
@@ -651,7 +651,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "f4c66c65",
+   "id": "59fa5ffc",
    "metadata": {},
    "source": [
     "## Conclusion\n",
