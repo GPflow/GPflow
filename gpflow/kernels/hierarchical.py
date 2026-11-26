@@ -32,7 +32,7 @@ from check_shapes import check_shapes, inherit_check_shapes
 
 from gpflow.experimental.utils import experimental
 
-from ..base import AnyNDArray, Parameter, TensorType
+from ..base import Parameter, TensorType
 from ..config import default_float
 from ..utilities import deepcopy, positive, set_trainable, to_default_float
 from .base import ActiveDims, Kernel, NormalizedActiveDims
@@ -221,13 +221,10 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
             raise ValueError(f"`hierarchy` contains duplicate node names: {duplicate_names}.")
 
         flat_feature_dims: List[int] = []
-        flat_bounds_rows: List[AnyNDArray] = []
         flat_activity_conditions: List[ActivityCondition] = []
         for node in hierarchy:
-            bounds = tf.convert_to_tensor(node.feature_bounds, dtype=tf.float64).numpy()
-            for i, fd in enumerate(node.feature_dims):
+            for fd in node.feature_dims:
                 flat_feature_dims.append(fd)
-                flat_bounds_rows.append(bounds[i])
                 flat_activity_conditions.append(node.activity_condition)
 
         _check_non_negative_unique(flat_feature_dims, "feature_dims")
@@ -273,18 +270,27 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         self._n_cond = len(cond_local_idx)
         self._n_uncond = len(uncond_local_idx)
 
-        # Everything `_embed` needs from the hierarchy, worked out once as plain Python and
-        # numpy values so that they are baked into the graph as constants. Small batches cost
-        # a fixed amount per op, so the embedding is kept to as few ops as possible.
-        bounds = np.stack(flat_bounds_rows, axis=0)
+        # Everything `_embed` needs from the hierarchy is worked out once here rather than on
+        # every call. Small batches cost a fixed amount per op, so the embedding is kept to as
+        # few ops as possible.
+        bounds = tf.concat(
+            [
+                tf.convert_to_tensor(node.feature_bounds, dtype=default_float())
+                for node in hierarchy
+            ],
+            axis=0,
+        )  # [n_feat, 2], rows in `flat_feature_dims` order
+        lower = bounds[:, 0]
         span = bounds[:, 1] - bounds[:, 0]
-        span = np.where(np.abs(span) < 1e-12, 1.0, span)
+        span = tf.where(tf.abs(span) < 1e-12, tf.ones_like(span), span)
+        uncond_idx = tf.constant(uncond_local_idx, dtype=tf.int32)
+        cond_idx = tf.constant(cond_local_idx, dtype=tf.int32)
         self._uncond_dims = [flat_feature_dims[j] for j in uncond_local_idx]
-        self._uncond_lower = bounds[uncond_local_idx, 0]
-        self._uncond_range = span[uncond_local_idx]
+        self._uncond_lower = tf.gather(lower, uncond_idx)
+        self._uncond_range = tf.gather(span, uncond_idx)
         self._cond_dims = [flat_feature_dims[j] for j in cond_local_idx]
-        self._cond_lower = bounds[cond_local_idx, 0]
-        self._cond_range = span[cond_local_idx]
+        self._cond_lower = tf.gather(lower, cond_idx)
+        self._cond_range = tf.gather(span, cond_idx)
 
         # The activity mask is built from the distinct (indicator column, required value)
         # pairs across all conditions: `_mask_pair_dims` / `_mask_pair_values` hold the pairs,
@@ -299,13 +305,17 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
             }
         )
         pair_index = {pair: p for p, pair in enumerate(pairs)}
-        pair_to_cond = np.zeros((len(pairs), self._n_cond))
+        pair_to_cond = [[0.0] * self._n_cond for _ in pairs]
         for c, j in enumerate(cond_local_idx):
             for pair in flat_activity_conditions[j].requirements.items():
-                pair_to_cond[pair_index[pair], c] = 1.0
+                pair_to_cond[pair_index[pair]][c] = 1.0
         self._mask_pair_dims = [dim for dim, _ in pairs]
-        self._mask_pair_values = np.array([value for _, value in pairs], dtype=np.float64)
-        self._mask_pair_to_cond = pair_to_cond
+        self._mask_pair_values = tf.constant(
+            [value for _, value in pairs], dtype=default_float(), shape=[len(pairs)]
+        )
+        self._mask_pair_to_cond = tf.constant(
+            pair_to_cond, dtype=default_float(), shape=[len(pairs), self._n_cond]
+        )
 
         if base_kernel is None:
             base_kernel = Matern52()
@@ -375,11 +385,9 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
             shape = tf.concat([tf.shape(X)[:-1], [0]], axis=0)
             return tf.zeros(shape, dtype=tf.bool)
         indicators = tf.round(tf.gather(X, self._mask_pair_dims, axis=-1))  # [..., N, P]
-        mismatches = tf.cast(
-            tf.not_equal(indicators, tf.constant(self._mask_pair_values, dtype=X.dtype)), X.dtype
-        )
+        mismatches = tf.cast(tf.not_equal(indicators, self._mask_pair_values), X.dtype)
         # Number of required pairs each conditional feature fails: [..., N, D_cond].
-        n_failed = tf.matmul(mismatches, tf.constant(self._mask_pair_to_cond, dtype=X.dtype))
+        n_failed = tf.matmul(mismatches, self._mask_pair_to_cond)
         return n_failed < 0.5
 
     @abc.abstractmethod
@@ -420,15 +428,11 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         parts = []
         if self._n_uncond > 0:
             v_unc = (
-                tf.gather(X, self._uncond_dims, axis=-1)
-                - tf.constant(self._uncond_lower, dtype=X.dtype)
-            ) / tf.constant(self._uncond_range, dtype=X.dtype)
+                tf.gather(X, self._uncond_dims, axis=-1) - self._uncond_lower
+            ) / self._uncond_range
             parts.append(v_unc / parameters["uncond_lengthscales"])
         if self._n_cond > 0:
-            v_c = (
-                tf.gather(X, self._cond_dims, axis=-1)
-                - tf.constant(self._cond_lower, dtype=X.dtype)
-            ) / tf.constant(self._cond_range, dtype=X.dtype)
+            v_c = (tf.gather(X, self._cond_dims, axis=-1) - self._cond_lower) / self._cond_range
             m_c = tf.cast(self._build_activity_mask(X), X.dtype)
             parts.append(self._embed_conditional(v_c, m_c, parameters))
         # HierarchyNode/__init__ guarantee at least one feature column, so parts is non-empty.
