@@ -216,8 +216,8 @@ class TestHierarchicalEmbeddingKernelConstruction:
         assert kernel._n_cond == 2
         assert kernel._n_ind == 1
         assert kernel.indicator_dims == (1,)
-        assert kernel._uncond_local_idx == [0]
-        assert kernel._cond_local_idx == [1, 2]
+        assert kernel._uncond_dims == [0]
+        assert kernel._cond_dims == [2, 3]
 
     def test_features_grouped_by_node_share_activity_condition(self) -> None:
         # A single node owning two features ⇒ both share the same condition.
@@ -233,7 +233,7 @@ class TestHierarchicalEmbeddingKernelConstruction:
             active_dims=[0, 1, 2],
         )
         assert kernel._n_cond == 2
-        assert kernel._cond_local_idx == [0, 1]
+        assert kernel._cond_dims == [0, 2]
         assert kernel.indicator_dims == (1,)
 
     def test_empty_hierarchy_rejected(self) -> None:
@@ -460,6 +460,55 @@ class TestActivityMask:
             ]
         )
         np.testing.assert_array_equal(mask, expected)
+
+    @staticmethod
+    def _conjunction_hierarchy() -> List[HierarchyNode]:
+        # Columns: 0 and 1 are indicators; feature 2 (A) is active when indicator 0 is 1;
+        # feature 3 (B) is active when indicator 0 is 1 *and* indicator 1 is 0. A mask that
+        # dropped one of B's requirements, or transposed the pair-to-feature matrix, would
+        # disagree with the expected values below.
+        return [
+            HierarchyNode(
+                "A",
+                feature_dims=[2],
+                feature_bounds=[[0.0, 1.0]],
+                activity_condition=ActivityCondition({0: 1}),
+            ),
+            HierarchyNode(
+                "B",
+                feature_dims=[3],
+                feature_bounds=[[0.0, 1.0]],
+                activity_condition=ActivityCondition({0: 1, 1: 0}),
+            ),
+        ]
+
+    _CONJUNCTION_X = np.array(
+        [
+            [1.0, 0.0, 0.2, 0.7],  # A and B active
+            [1.0, 1.0, 0.4, 0.1],  # A active; B fails its indicator-1 requirement
+            [0.0, 0.0, 0.9, 0.5],  # neither active
+        ]
+    )
+
+    def test_conjunction_requires_every_indicator(self) -> None:
+        kernel = ArcHierarchical(hierarchy=self._conjunction_hierarchy(), active_dims=[0, 1, 2, 3])
+        mask = kernel._build_activity_mask(tf.constant(self._CONJUNCTION_X)).numpy()
+        np.testing.assert_array_equal(mask, [[True, True], [True, False], [False, False]])
+
+    def test_conjunction_K_matches_reference(self) -> None:
+        from tests.gpflow.kernels.reference import ref_arc_hierarchical_kernel
+
+        kernel = ArcHierarchical(hierarchy=self._conjunction_hierarchy(), active_dims=[0, 1, 2, 3])
+        ref = ref_arc_hierarchical_kernel(
+            self._CONJUNCTION_X,
+            feature_dims=[2, 3],
+            feature_bounds=np.array([[0.0, 1.0], [0.0, 1.0]]),
+            activity_conditions=[{0: 1}, {0: 1, 1: 0}],
+            angle=kernel.angle.numpy(),
+            radius=kernel.radius.numpy(),
+        )
+        actual = kernel.K(tf.constant(self._CONJUNCTION_X)).numpy()
+        np.testing.assert_allclose(actual, ref, rtol=1e-10)
 
 
 class TestEmbed:

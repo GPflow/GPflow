@@ -265,8 +265,6 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         cond_local_idx = [j for j, ac in enumerate(flat_activity_conditions) if ac.requirements]
         uncond_local_idx = [j for j in range(self._n_feat) if j not in set(cond_local_idx)]
 
-        self._cond_local_idx = cond_local_idx
-        self._uncond_local_idx = uncond_local_idx
         self._n_cond = len(cond_local_idx)
         self._n_uncond = len(uncond_local_idx)
 
@@ -275,7 +273,9 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         # few ops as possible.
         bounds = tf.concat(
             [
-                tf.convert_to_tensor(node.feature_bounds, dtype=default_float())
+                tf.cast(
+                    tf.convert_to_tensor(node.feature_bounds, dtype=tf.float64), default_float()
+                )
                 for node in hierarchy
             ],
             axis=0,
@@ -385,9 +385,11 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
             shape = tf.concat([tf.shape(X)[:-1], [0]], axis=0)
             return tf.zeros(shape, dtype=tf.bool)
         indicators = tf.round(tf.gather(X, self._mask_pair_dims, axis=-1))  # [..., N, P]
-        mismatches = tf.cast(tf.not_equal(indicators, self._mask_pair_values), X.dtype)
+        mismatches = tf.cast(
+            tf.not_equal(indicators, tf.cast(self._mask_pair_values, X.dtype)), X.dtype
+        )
         # Number of required pairs each conditional feature fails: [..., N, D_cond].
-        n_failed = tf.matmul(mismatches, self._mask_pair_to_cond)
+        n_failed = tf.matmul(mismatches, tf.cast(self._mask_pair_to_cond, X.dtype))
         return n_failed < 0.5
 
     @abc.abstractmethod
@@ -410,7 +412,7 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
 
     def _embedding_parameters(self) -> Dict[str, tf.Tensor]:
         """Every constrained parameter :meth:`_embed` needs, each read once."""
-        parameters = self._conditional_parameters() if self._n_cond > 0 else {}
+        parameters = dict(self._conditional_parameters()) if self._n_cond > 0 else {}
         if self._n_uncond > 0:
             parameters["uncond_lengthscales"] = tf.convert_to_tensor(self.uncond_lengthscales)
         return parameters
@@ -428,11 +430,13 @@ class HierarchicalEmbeddingKernel(Kernel, metaclass=abc.ABCMeta):
         parts = []
         if self._n_uncond > 0:
             v_unc = (
-                tf.gather(X, self._uncond_dims, axis=-1) - self._uncond_lower
-            ) / self._uncond_range
+                tf.gather(X, self._uncond_dims, axis=-1) - tf.cast(self._uncond_lower, X.dtype)
+            ) / tf.cast(self._uncond_range, X.dtype)
             parts.append(v_unc / parameters["uncond_lengthscales"])
         if self._n_cond > 0:
-            v_c = (tf.gather(X, self._cond_dims, axis=-1) - self._cond_lower) / self._cond_range
+            v_c = (
+                tf.gather(X, self._cond_dims, axis=-1) - tf.cast(self._cond_lower, X.dtype)
+            ) / tf.cast(self._cond_range, X.dtype)
             m_c = tf.cast(self._build_activity_mask(X), X.dtype)
             parts.append(self._embed_conditional(v_c, m_c, parameters))
         # HierarchyNode/__init__ guarantee at least one feature column, so parts is non-empty.
