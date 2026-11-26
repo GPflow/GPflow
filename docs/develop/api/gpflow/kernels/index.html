@@ -1968,9 +1968,16 @@ lengthscale parameter ℓ (i.e. Σᵢ [(X - X2ᵀ) / ℓ]ᵢ),
 <dd><p>Bases: <a class="reference internal" href="#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a></p>
 <p>Abstract base for kernels that embed conditional features into a stationary
 base kernel’s input space, gated by indicator-derived activity masks.</p>
-<p>Concrete subclasses implement <code class="xref py py-meth docutils literal notranslate"><span class="pre">_embed_conditional()</span></code>, which receives the
-normalised conditional features <code class="docutils literal notranslate"><span class="pre">v_c</span></code> and their float activity mask <code class="docutils literal notranslate"><span class="pre">m_c</span></code>
-(both <code class="docutils literal notranslate"><span class="pre">[batch...,</span> <span class="pre">N,</span> <span class="pre">D_cond]</span></code>) and returns <code class="docutils literal notranslate"><span class="pre">[batch...,</span> <span class="pre">N,</span> <span class="pre">2</span> <span class="pre">*</span> <span class="pre">D_cond]</span></code>.</p>
+<p>Concrete subclasses implement two methods:</p>
+<ul class="simple">
+<li><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">_conditional_parameters()</span></code>, which reads the constrained parameters the
+embedding needs and returns them as a dict. <a class="reference internal" href="#gpflow.kernels.HierarchicalEmbeddingKernel.K" title="gpflow.kernels.HierarchicalEmbeddingKernel.K"><code class="xref py py-meth docutils literal notranslate"><span class="pre">K()</span></code></a> calls it once and shares
+the result between <code class="docutils literal notranslate"><span class="pre">X</span></code> and <code class="docutils literal notranslate"><span class="pre">X2</span></code>, so each parameter transform runs only once.</p></li>
+<li><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">_embed_conditional()</span></code>, which receives the normalised conditional features
+<code class="docutils literal notranslate"><span class="pre">v_c</span></code>, their float activity mask <code class="docutils literal notranslate"><span class="pre">m_c</span></code> (both <code class="docutils literal notranslate"><span class="pre">[batch...,</span> <span class="pre">N,</span> <span class="pre">D_cond]</span></code>) and
+the dict from <code class="xref py py-meth docutils literal notranslate"><span class="pre">_conditional_parameters()</span></code>, and returns
+<code class="docutils literal notranslate"><span class="pre">[batch...,</span> <span class="pre">N,</span> <span class="pre">2</span> <span class="pre">*</span> <span class="pre">D_cond]</span></code>.</p></li>
+</ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
