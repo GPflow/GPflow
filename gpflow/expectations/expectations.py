@@ -96,11 +96,10 @@ def quadrature_expectation(
     :type p: (mu, cov) tuple or a `ProbabilityDistribution` object
     :type obj1: kernel, mean function, (kernel, inducing_variable), or None
     :type obj2: kernel, mean function, (kernel, inducing_variable), or None
-    :param int num_gauss_hermite_points: passed to `_quadrature_expectation` to set
-                                         the number of Gauss-Hermite points used
+    :param int nghp: passed to `_quadrature_expectation` to set the number
+                     of Gauss-Hermite points used: `num_gauss_hermite_points`
     :return: a 1-D, 2-D, or 3-D tensor containing the expectation
     """
-    print(f"2. p={p}, obj1={obj1}, obj2={obj2}")
     p, obj1, feat1, obj2, feat2 = _init_expectation(p, obj1, obj2)
     return dispatch.quadrature_expectation(p, obj1, feat1, obj2, feat2, nghp=nghp)
 
