@@ -129,7 +129,7 @@ class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables)
     """
 
     @check_shapes(
-        "inducing_variable_list[all]: [., D, 1]",
+        "inducing_variable_list[all]: [., ., 1]",
     )
     def __init__(self, inducing_variable_list: Sequence[InducingVariables]):
         super().__init__()
