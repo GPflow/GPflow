@@ -106,10 +106,14 @@ class Categorical(Kernel):
         return tf.expand_dims(tf.linalg.matvec(m, Z), -1)
 
     def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
-        return self.wrapped_kernel.K(
+        return self.wrapped_kernel(
             self._concat_inputs_with_latents(X),
             self._concat_inputs_with_latents(X2) if X2 is not None else None,
+            full_cov=True,
         )
 
     def K_diag(self, X: TensorType) -> tf.Tensor:
-        return self.wrapped_kernel.K_diag(self._concat_inputs_with_latents(X))
+        return self.wrapped_kernel(
+            self._concat_inputs_with_latents(X),
+            full_cov=False,
+        )
