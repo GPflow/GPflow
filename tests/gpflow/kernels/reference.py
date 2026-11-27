@@ -1,4 +1,4 @@
-from typing import Callable, Mapping, Sequence
+from typing import Callable, Mapping, Sequence, Tuple, Union
 
 import numpy as np
 from check_shapes import check_shapes
@@ -112,13 +112,14 @@ def ref_periodic_kernel(
     return signal_variance * exp_dist
 
 
-def _hierarchical_embedding(
+def _hierarchical_values_and_mask(
     X: AnyNDArray,
     feature_dims: Sequence[int],
     feature_bounds: AnyNDArray,
     activity_conditions: Sequence[Mapping[int, int]],
-    embed_conditional: _EmbedFn,
-) -> AnyNDArray:
+) -> Tuple[AnyNDArray, AnyNDArray, AnyNDArray]:
+    """Normalised unconditional values ``[N, D_uncond]``, normalised conditional values
+    ``[N, D_cond]`` and the boolean activity mask ``[N, D_cond]`` of the conditional ones."""
     X_feat = X[:, list(feature_dims)]
     lo, hi = feature_bounds[:, 0], feature_bounds[:, 1]
     rng = np.where(np.abs(hi - lo) < 1e-12, 1.0, hi - lo)
@@ -131,14 +132,24 @@ def _hierarchical_embedding(
 
     cond_idx = [j for j, req in enumerate(activity_conditions) if req]
     uncond_idx = [j for j in range(len(feature_dims)) if j not in set(cond_idx)]
+    return v[:, uncond_idx], v[:, cond_idx], mask[:, cond_idx]
 
+
+def _hierarchical_embedding(
+    X: AnyNDArray,
+    feature_dims: Sequence[int],
+    feature_bounds: AnyNDArray,
+    activity_conditions: Sequence[Mapping[int, int]],
+    embed_conditional: _EmbedFn,
+) -> AnyNDArray:
+    v_unc, v_c, m_c = _hierarchical_values_and_mask(
+        X, feature_dims, feature_bounds, activity_conditions
+    )
     parts = []
-    if uncond_idx:
-        parts.append(v[:, uncond_idx])
-    if cond_idx:
-        v_c = v[:, cond_idx]
-        m_c = mask[:, cond_idx].astype(float)
-        parts.append(embed_conditional(v_c, m_c))
+    if v_unc.shape[1]:
+        parts.append(v_unc)
+    if v_c.shape[1]:
+        parts.append(embed_conditional(v_c, m_c.astype(float)))
     return np.concatenate(parts, axis=-1) if parts else np.zeros((X.shape[0], 0))
 
 
@@ -186,6 +197,52 @@ def ref_arc_hierarchical_kernel(
     return result
 
 
+def ref_wedge_squared_distance(
+    v: AnyNDArray,
+    active: AnyNDArray,
+    v2: AnyNDArray,
+    active2: AnyNDArray,
+    theta1: Union[float, AnyNDArray],
+    theta2: Union[float, AnyNDArray],
+    rho: Union[float, AnyNDArray],
+) -> AnyNDArray:
+    """Squared distance one conditional input contributes under the Wedge kernel.
+
+    This is the distance of Horn et al. (2019), section 4.4, written out case by case rather
+    than through an embedding, so that it does not share its derivation with
+    :class:`gpflow.kernels.WedgeHierarchical`:
+
+    - both inactive: ``0``;
+    - both active: ``(v - v2)^2 (theta1^2 + theta2^2 - 2 theta1 theta2 cos rho)``;
+    - one active (at ``u``), one inactive:
+      ``(theta1 + u (theta2 cos rho - theta1))^2 + (u theta2 sin rho)^2``.
+
+    All arguments broadcast against each other.
+
+    :param v: normalised (``[0, 1]``) values of the first points.
+    :param active: boolean, whether the input is active at the first points.
+    :param v2: normalised values of the second points.
+    :param active2: boolean, whether the input is active at the second points.
+    :param theta1: distance from "inactive" to "active at the lower bound".
+    :param theta2: distance from "inactive" to "active at the upper bound".
+    :param rho: angle between those two directions.
+    """
+
+    def active_to_inactive(u: AnyNDArray) -> AnyNDArray:
+        d2: AnyNDArray = (theta1 + u * (theta2 * np.cos(rho) - theta1)) ** 2 + (
+            u * theta2 * np.sin(rho)
+        ) ** 2
+        return d2
+
+    both_active = (v - v2) ** 2 * (theta1 ** 2 + theta2 ** 2 - 2.0 * theta1 * theta2 * np.cos(rho))
+    result: AnyNDArray = np.select(
+        [active & active2, active & ~active2, ~active & active2],
+        [both_active, active_to_inactive(v), active_to_inactive(v2)],
+        default=0.0,
+    )
+    return result
+
+
 def ref_wedge_hierarchical_kernel(
     X: AnyNDArray,
     feature_dims: Sequence[int],
@@ -198,11 +255,9 @@ def ref_wedge_hierarchical_kernel(
 ) -> AnyNDArray:
     """Numpy reference for :class:`gpflow.kernels.WedgeHierarchical`.
 
-    Each conditional feature column ``c`` (normalised value ``v_c``, float
-    activity mask ``m_c``) is embedded into the plane as
-    ``((theta1 v_c + theta2 v_c cos rho) m_c, (theta2 v_c sin rho) m_c)``;
-    unconditional columns are passed through unchanged. The full embedding
-    is then fed into a unit-lengthscale Matérn-5/2 kernel.
+    The squared distance between two points is the sum of the squared differences of the
+    normalised unconditional columns and of :func:`ref_wedge_squared_distance` for each
+    conditional column. It is then fed into a unit-lengthscale Matérn-5/2 kernel.
 
     :param X: input data of shape ``[N, D]``.
     :param feature_dims: column indices of the real-valued features.
@@ -214,21 +269,21 @@ def ref_wedge_hierarchical_kernel(
         unconditional.
     :param theta1: per-conditional-column ``theta1`` parameters.
     :param theta2: per-conditional-column ``theta2`` parameters.
-    :param rho: per-conditional-column wedge-angle parameters (strictly
-        between ``0`` and ``pi``).
+    :param rho: per-conditional-column wedge-angle parameters (between
+        ``0`` and ``pi``).
     :param base_variance: signal variance applied to the base Matérn-5/2.
     :returns: kernel matrix of shape ``[N, N]``.
     """
-
-    def wedge(v_c: AnyNDArray, m_c: AnyNDArray) -> AnyNDArray:
-        comp1 = (theta1 * v_c + theta2 * v_c * np.cos(rho)) * m_c
-        comp2 = (theta2 * v_c * np.sin(rho)) * m_c
-        return np.concatenate([comp1, comp2], axis=-1)
-
-    Z = _hierarchical_embedding(X, feature_dims, feature_bounds, activity_conditions, wedge)
-    diff = Z[:, None, :] - Z[None, :, :]
-    r2 = np.sum(diff ** 2, axis=-1)
-    r = np.sqrt(np.maximum(r2, 0.0))
+    v_unc, v_c, m_c = _hierarchical_values_and_mask(
+        X, feature_dims, feature_bounds, activity_conditions
+    )
+    r2 = np.sum((v_unc[:, None, :] - v_unc[None, :, :]) ** 2, axis=-1) + np.sum(
+        ref_wedge_squared_distance(
+            v_c[:, None, :], m_c[:, None, :], v_c[None, :, :], m_c[None, :, :], theta1, theta2, rho
+        ),
+        axis=-1,
+    )
+    r = np.sqrt(r2)
     sqrt5 = np.sqrt(5.0)
     result: AnyNDArray = base_variance * (1.0 + sqrt5 * r + 5.0 / 3.0 * r ** 2) * np.exp(-sqrt5 * r)
     return result

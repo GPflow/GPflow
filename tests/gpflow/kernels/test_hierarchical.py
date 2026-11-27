@@ -13,7 +13,7 @@
 # limitations under the License.
 """Tests for ``gpflow.kernels.hierarchical``."""
 
-from typing import Any, Dict, List, Mapping, Tuple, Union
+from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
 
 import numpy as np
 import pytest
@@ -28,6 +28,8 @@ from gpflow.kernels.hierarchical import (
     HierarchyNode,
     WedgeHierarchical,
 )
+from gpflow.kernels.stationaries import Stationary
+from gpflow.models import GPR
 
 
 def _canonical_bounds(n_feat: int) -> tf.Tensor:
@@ -1168,10 +1170,16 @@ class TestWedgeHierarchical:
             rtol=1e-12,
         )
 
-    def test_axiom_one_active_one_inactive_distinct(self) -> None:
+    @pytest.mark.parametrize(
+        "x2,x3",
+        [(2.5, 0.0), (0.0, -1.0), (5.0, 1.0)],
+        ids=["mid-range", "lower bounds", "upper bounds"],
+    )
+    def test_axiom_one_active_one_inactive_distinct(self, x2: float, x3: float) -> None:
         kernel = _wedge()
-        X_active = tf.constant([[0.5, 1.0, 2.5, 0.0]], dtype=tf.float64)
-        X_inactive = tf.constant([[0.5, 0.0, 2.5, 0.0]], dtype=tf.float64)
+        # Flipping y1 swaps which of x2 and x3 is active; their stored values are unchanged.
+        X_active = tf.constant([[0.5, 1.0, x2, x3]], dtype=tf.float64)
+        X_inactive = tf.constant([[0.5, 0.0, x2, x3]], dtype=tf.float64)
         K_self = kernel.K(X_active, X_active).numpy().item()
         K_cross = kernel.K(X_active, X_inactive).numpy().item()
         assert K_cross < K_self - 1e-6
@@ -1186,6 +1194,181 @@ class TestWedgeHierarchical:
             kernel.K(X_a, X_b).numpy(),
             rtol=1e-12,
         )
+
+
+# One conditional input: column 0 is the switch, column 1 the input, active when the switch
+# is 1 and normalised to v in [0, 1] by the bounds [2, 6].
+_ONE_SWITCH_LOWER, _ONE_SWITCH_UPPER = 2.0, 6.0
+
+
+def _one_switch_wedge(
+    theta1: float, theta2: float, rho: float, base_kernel: Optional[Stationary] = None
+) -> WedgeHierarchical:
+    kernel = WedgeHierarchical(
+        hierarchy=[
+            HierarchyNode(
+                "x",
+                feature_dims=[1],
+                feature_bounds=[[_ONE_SWITCH_LOWER, _ONE_SWITCH_UPPER]],
+                activity_condition=ActivityCondition({0: 1}),
+            )
+        ],
+        base_kernel=base_kernel,
+        active_dims=[0, 1],
+    )
+    kernel.theta1.assign([theta1])
+    kernel.theta2.assign([theta2])
+    kernel.rho.assign([rho])
+    return kernel
+
+
+def _one_switch_X(v: AnyNDArray, active: AnyNDArray) -> AnyNDArray:
+    x = _ONE_SWITCH_LOWER + (_ONE_SWITCH_UPPER - _ONE_SWITCH_LOWER) * np.asarray(v)
+    return np.stack([np.asarray(active, dtype=np.float64), x], axis=-1)
+
+
+# Active at the bounds and in between, and inactive with two different stored values.
+_ONE_SWITCH_V: AnyNDArray = np.array([0.0, 0.3, 0.75, 1.0, 0.0, 0.6])
+_ONE_SWITCH_ACTIVE: AnyNDArray = np.array([True, True, True, True, False, False])
+
+_WEDGE_PARAMETERS = [(1.0, 1.0, 0.5 * np.pi), (0.3, 2.0, 0.4), (1.5, 0.7, 2.5)]
+
+# (theta1, theta2, rho) with the same sqrt(theta1^2 + theta2^2 + 2 theta1 theta2 cos(rho)) = 2.
+_EQUAL_L_WEDGE_PARAMETERS = [
+    (1.2, 1.6, 0.5 * np.pi),
+    (1.0, np.sqrt(3.0), 0.5 * np.pi),
+    (2.0, 2.0, 2.0 * np.pi / 3.0),
+]
+
+
+class TestWedgeIsThePapersWedge:
+    """The embedding is that of Horn et al. (2019), section 4.4: inactive at the origin, active
+    at the lower bound at distance ``theta1``, active at the upper bound at distance ``theta2``,
+    with angle ``rho`` between the two.
+
+    An earlier version scaled ``theta1`` by ``v`` instead of ``1 - v``. That put "active at the
+    lower bound" on top of "inactive" and made the kernel an ordinary stationary kernel in
+    ``v * mask``, depending on its parameters only through
+    ``sqrt(theta1^2 + theta2^2 + 2 theta1 theta2 cos(rho))``. The tests in this class fail on
+    that version, except the two properties it shares with the paper's kernel: the
+    ``theta1 = 0`` special case and ignoring the stored values of inactive inputs.
+    """
+
+    @staticmethod
+    def _squared_distances(kernel: WedgeHierarchical, X: AnyNDArray) -> AnyNDArray:
+        # Under a unit-variance squared exponential, K = exp(-d^2 / 2).
+        d2: AnyNDArray = -2.0 * np.log(kernel.K(tf.constant(X)).numpy())
+        return d2
+
+    @pytest.mark.parametrize("theta1,theta2,rho", _WEDGE_PARAMETERS)
+    def test_squared_distances_are_the_papers(
+        self, theta1: float, theta2: float, rho: float
+    ) -> None:
+        from tests.gpflow.kernels.reference import ref_wedge_squared_distance
+
+        kernel = _one_switch_wedge(theta1, theta2, rho, SquaredExponential())
+        v, active = _ONE_SWITCH_V, _ONE_SWITCH_ACTIVE
+        expected = ref_wedge_squared_distance(
+            v[:, None], active[:, None], v[None, :], active[None, :], theta1, theta2, rho
+        )
+        np.testing.assert_allclose(
+            self._squared_distances(kernel, _one_switch_X(v, active)), expected, atol=1e-12
+        )
+
+    @pytest.mark.parametrize("theta1,theta2,rho", _WEDGE_PARAMETERS)
+    def test_inactive_is_theta1_from_lower_bound_and_theta2_from_upper_bound(
+        self, theta1: float, theta2: float, rho: float
+    ) -> None:
+        kernel = _one_switch_wedge(theta1, theta2, rho, SquaredExponential())
+        X = _one_switch_X(np.array([0.5, 0.0, 1.0]), np.array([False, True, True]))
+        K = kernel.K(tf.constant(X)).numpy()
+        np.testing.assert_allclose(np.sqrt(-2.0 * np.log(K[0, 1:])), [theta1, theta2], rtol=1e-12)
+        # In particular "active at the lower bound" is not the same point as "inactive".
+        assert K[0, 1] < 1.0 - 1e-3
+
+    def test_parameters_are_not_redundant(self) -> None:
+        X = tf.constant(_one_switch_X(_ONE_SWITCH_V, _ONE_SWITCH_ACTIVE))
+        Ks = [_one_switch_wedge(*p).K(X).numpy() for p in _EQUAL_L_WEDGE_PARAMETERS]
+        for i in range(len(Ks)):
+            for j in range(i):
+                assert np.max(np.abs(Ks[i] - Ks[j])) > 1e-2
+
+    @pytest.mark.parametrize("theta1,theta2,rho", _EQUAL_L_WEDGE_PARAMETERS)
+    def test_is_not_a_stationary_kernel_on_masked_values(
+        self, theta1: float, theta2: float, rho: float
+    ) -> None:
+        X = _one_switch_X(_ONE_SWITCH_V, _ONE_SWITCH_ACTIVE)
+        u = (_ONE_SWITCH_V * _ONE_SWITCH_ACTIVE)[:, None]
+        L = np.sqrt(theta1 ** 2 + theta2 ** 2 + 2.0 * theta1 * theta2 * np.cos(rho))
+        K = _one_switch_wedge(theta1, theta2, rho).K(tf.constant(X)).numpy()
+        K_masked = Matern52(lengthscales=1.0 / L).K(tf.constant(u)).numpy()
+        assert np.max(np.abs(K - K_masked)) > 1e-2
+
+    @pytest.mark.parametrize(
+        "theta1,theta2,rho,inactive_value,lengthscale",
+        [
+            # theta1 = 0: inactive coincides with the lower bound, whatever rho is.
+            (1e-9, 1.7, 0.9, 0.0, 1.0 / 1.7),
+            # theta2 = 0: inactive coincides with the upper bound.
+            (1.7, 1e-9, 0.9, 1.0, 1.0 / 1.7),
+            # rho = 0: collinear, inactive beyond the bound it is nearer to.
+            (0.8, 2.0, 1e-5, -2.0 / 3.0, 1.0 / 1.2),
+            (2.0, 0.8, 1e-5, 5.0 / 3.0, 1.0 / 1.2),
+            # rho = pi: collinear, inactive between the bounds.
+            (1.0, 3.0, np.pi - 1e-5, 0.25, 1.0 / 4.0),
+        ],
+    )
+    def test_degenerate_parameters_give_an_imputation_kernel(
+        self, theta1: float, theta2: float, rho: float, inactive_value: float, lengthscale: float
+    ) -> None:
+        # The paper's special cases: when inactive, lower bound and upper bound are collinear,
+        # the kernel is the base kernel on the normalised value with a fixed value imputed
+        # for "inactive".
+        X = _one_switch_X(_ONE_SWITCH_V, _ONE_SWITCH_ACTIVE)
+        u = np.where(_ONE_SWITCH_ACTIVE, _ONE_SWITCH_V, inactive_value)[:, None]
+        K = _one_switch_wedge(theta1, theta2, rho).K(tf.constant(X)).numpy()
+        K_imputed = Matern52(lengthscales=lengthscale).K(tf.constant(u)).numpy()
+        np.testing.assert_allclose(K, K_imputed, atol=1e-7)
+
+    def test_stored_values_of_inactive_inputs_are_ignored(self) -> None:
+        rng = np.random.default_rng(0)
+        y1 = np.array([1.0, 0.0, 1.0, 0.0, 1.0])
+        X = np.stack(
+            [rng.uniform(0, 1, 5), y1, rng.uniform(0, 5, 5), rng.uniform(-1, 1, 5)], axis=-1
+        )
+        X_changed = X.copy()
+        X_changed[y1 == 0.0, 2] = rng.uniform(0, 5, 2)  # x2 is inactive when y1 = 0
+        X_changed[y1 == 1.0, 3] = rng.uniform(-1, 1, 3)  # x3 is inactive when y1 = 1
+        kernel = _wedge()
+        np.testing.assert_allclose(
+            kernel.K(tf.constant(X_changed)).numpy(), kernel.K(tf.constant(X)).numpy(), rtol=1e-12
+        )
+
+    def test_log_marginal_likelihood_gradient_uses_all_three_parameters(self) -> None:
+        # Data with a jump between "inactive" and "active at the lower bound".
+        rng = np.random.default_rng(0)
+        active = np.arange(20) % 2 == 0
+        v = rng.uniform(0.0, 1.0, 20)
+        v[:4] = 0.0
+        Y = np.where(active, 1.0 + 0.5 * np.sin(3.0 * v), 0.0) + 0.05 * rng.standard_normal(20)
+        kernel = _one_switch_wedge(0.7, 1.3, 1.1)
+        model = GPR((_one_switch_X(v, active), Y[:, None]), kernel=kernel, noise_variance=0.01)
+
+        parameters = [kernel.theta1, kernel.theta2, kernel.rho]
+
+        with tf.GradientTape(persistent=True) as tape:
+            lml = model.log_marginal_likelihood()
+            theta1, theta2, rho = (tf.convert_to_tensor(p) for p in parameters)
+            L = tf.sqrt(theta1 ** 2 + theta2 ** 2 + 2.0 * theta1 * theta2 * tf.cos(rho))
+        variables = [p.unconstrained_variable for p in parameters]
+        grad_lml = tf.concat(tape.gradient(lml, variables), axis=0).numpy()
+        grad_L = tf.concat(tape.gradient(L, variables), axis=0).numpy()
+
+        assert np.all(np.isfinite(grad_lml))
+        # If the likelihood depended on the parameters only through L, its gradient would be
+        # parallel to that of L and two directions in parameter space would be flat.
+        across = grad_lml - (grad_lml @ grad_L) / (grad_L @ grad_L) * grad_L
+        assert np.linalg.norm(across) > 1e-2 * np.linalg.norm(grad_lml)
 
 
 class TestClosedFormReference:

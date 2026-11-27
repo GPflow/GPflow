@@ -521,7 +521,7 @@ class ArcHierarchical(HierarchicalEmbeddingKernel):
 
 
 class WedgeHierarchical(HierarchicalEmbeddingKernel):
-    """The Wedge kernel of Horn et al. (2019).
+    """The Wedge kernel of Horn et al. (2019), section 4.4.
 
     Each conditional column ``c`` (normalised value ``v_c`` in ``[0, 1]``,
     activity mask ``m_c``) is mapped into the plane via
@@ -529,13 +529,36 @@ class WedgeHierarchical(HierarchicalEmbeddingKernel):
     .. math::
 
         \\phi_c(v_c, m_c) = \\big(
-            (\\theta_1 v_c + \\theta_2 v_c \\cos\\rho)\\, m_c,\\;
+            (\\theta_1 (1 - v_c) + \\theta_2 v_c \\cos\\rho)\\, m_c,\\;
             (\\theta_2 v_c \\sin\\rho)\\, m_c
         \\big).
 
-    The "incomparable" distance now scales with the active value ``v_c``
-    rather than being constant in it. ``rho`` is bounded away from zero
-    because at ``rho = 0`` the embedding degenerates to a line.
+    Inactive points sit at the origin. Active points sit on the straight
+    segment from :math:`(\\theta_1, 0)` (the lower bound, ``v_c = 0``) to
+    :math:`\\theta_2 (\\cos\\rho, \\sin\\rho)` (the upper bound,
+    ``v_c = 1``). So ``theta1`` is the distance from "inactive" to "active at
+    the lower bound", ``theta2`` the distance from "inactive" to "active at
+    the upper bound", and ``rho`` the angle between the two. Two active
+    points with values ``v_c`` and ``v_c'`` are at distance
+    :math:`|v_c - v_c'| \\sqrt{\\theta_1^2 + \\theta_2^2 - 2 \\theta_1
+    \\theta_2 \\cos\\rho}`. A stationary base kernel then evaluates
+    covariance in the joint embedded space.
+
+    Because ``theta1`` is positive, a point whose feature is active at its
+    lower bound is distinct from one whose feature is inactive, which lets
+    the kernel model a jump between the two.
+
+    When the three points are collinear the kernel reduces to an imputation
+    kernel, i.e. the base kernel applied to ``v_c`` with a fixed value
+    substituted for "inactive": at the lower bound as ``theta1`` tends to 0,
+    at the upper bound as ``theta2`` tends to 0, outside ``[0, 1]`` as ``rho``
+    tends to 0 and inside it as ``rho`` tends to :math:`\\pi`. The parameter
+    transforms keep ``theta1`` and ``theta2`` positive and ``rho`` strictly
+    between 0 and :math:`\\pi`, so these are limiting cases.
+
+    Reference: D. Horn, J. Stork, N.-J. Schüßler and M. Zaefferer,
+    "Surrogates for hierarchical search spaces: the wedge-kernel and an
+    automated analysis", GECCO 2019.
     """
 
     def __init__(
@@ -565,11 +588,14 @@ class WedgeHierarchical(HierarchicalEmbeddingKernel):
             )
 
     def _conditional_parameters(self) -> Dict[str, tf.Tensor]:
-        # (theta1 v + theta2 v cos rho) m and (theta2 v sin rho) m, factored by v m.
+        # Active points are theta1 * (1, 0) + v * (a, b): the lower bound plus v times the
+        # vector from the lower bound to the upper bound.
+        theta1 = tf.convert_to_tensor(self.theta1)
         theta2 = tf.convert_to_tensor(self.theta2)
         rho = tf.convert_to_tensor(self.rho)
         return {
-            "a": tf.convert_to_tensor(self.theta1) + theta2 * tf.cos(rho),
+            "theta1": theta1,
+            "a": theta2 * tf.cos(rho) - theta1,
             "b": theta2 * tf.sin(rho),
         }
 
@@ -578,4 +604,6 @@ class WedgeHierarchical(HierarchicalEmbeddingKernel):
         self, v_c: tf.Tensor, m_c: tf.Tensor, parameters: Mapping[str, tf.Tensor]
     ) -> tf.Tensor:
         vm = v_c * m_c
-        return tf.concat([parameters["a"] * vm, parameters["b"] * vm], axis=-1)
+        return tf.concat(
+            [parameters["theta1"] * m_c + parameters["a"] * vm, parameters["b"] * vm], axis=-1
+        )
