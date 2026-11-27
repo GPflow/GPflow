@@ -174,12 +174,18 @@ for x, m, v, t in zip(X_test, mean.numpy().ravel(), var.numpy().ravel(), truth):
 # The Wedge kernel replaces Arc's circle embedding with a triangular one:
 #
 # $$\phi_c(v_c, m_c) = \big(
-#     (\theta_1 v_c + \theta_2 v_c \cos\rho)\, m_c,\;
+#     (\theta_1 (1 - v_c) + \theta_2 v_c \cos\rho)\, m_c,\;
 #     (\theta_2 v_c \sin\rho)\, m_c
 #   \big).$$
 #
-# The "incomparable" distance now scales with the active value $v_c$ rather
-# than being constant in it.
+# Inactive points sit at the origin, as with Arc. Active points sit on a
+# straight segment rather than a circular arc: it runs from distance
+# $\theta_1$ from the origin (the lower bound, $v_c = 0$) to distance
+# $\theta_2$ from the origin (the upper bound, $v_c = 1$), with angle $\rho$
+# between the two ends. The "incomparable" distance between an active and an
+# inactive point therefore varies with the active value $v_c$ rather than
+# being constant in it, and is $\theta_1$ at the lower bound and $\theta_2$
+# at the upper bound.
 # GPR models may be constructed and trained in the same way as the arc above.
 
 # %%

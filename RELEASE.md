@@ -33,6 +33,31 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
+# Release 2.11.4 (next upcoming release in progress)
+
+This release fixes the embedding of the `WedgeHierarchical` kernel.
+
+## Breaking Changes
+
+* `WedgeHierarchical` now uses the embedding of the paper it cites (Horn et al., 2019, section
+  4.4). The first embedded coordinate of an active input with normalised value `v` is
+  `theta1 * (1 - v) + theta2 * v * cos(rho)`; it used to be `theta1 * v + theta2 * v * cos(rho)`.
+  * Before, an input that was active at its lower bound was embedded at the same point as an
+    inactive one, so the kernel could not represent a jump between the two. The kernel was
+    equal to its base kernel applied to `v * mask` with lengthscale
+    `1 / sqrt(theta1**2 + theta2**2 + 2 * theta1 * theta2 * cos(rho))`, and so depended on its
+    three parameters only through that one number.
+  * Now `theta1` is the distance from "inactive" to "active at the lower bound", `theta2` the
+    distance from "inactive" to "active at the upper bound" and `rho` the angle between them.
+  * The parameters keep their names, shapes, transforms and initial values, but they mean
+    something different. Kernel values change for the same parameter values, so models fitted
+    with the old kernel must be refitted, and priors or bounds placed on `theta1`, `theta2`
+    and `rho` should be reviewed. With the initial values, "inactive" and "active at the lower
+    bound" now have correlation of about 0.52 under the default Matern52 base kernel; it used
+    to be 1.
+  * `ArcHierarchical` is unchanged.
+
+
 # Release 2.11.3
 
 This release speeds up the hierarchical kernels.
